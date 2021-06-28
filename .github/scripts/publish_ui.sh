@@ -10,10 +10,9 @@ sbt ui/fullLinkJS
 if [ ! -d docs ]; then
   mkdir --verbose --parents docs
 fi
-
 cp --verbose ui/index-dev.html docs/index.html
 mv --verbose ui/target/scala-3.0.0/ui-opt/main.js docs/main.js
-sed --in-place 's/(?<=src=").*(?=")/main\.js/g' docs/index.html
+sed --in-place 's/src=".*"/src="main\.js"/g' docs/index.html
 
 git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git config --local user.name 'github-actions[bot]'
