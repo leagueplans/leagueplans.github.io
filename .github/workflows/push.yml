@@ -31,7 +31,7 @@ jobs:
         run: sbt test
 
   publish-ui:
-    needs: [identify-changes, test]
+    needs: [identify-changes, test-ui]
     if: ${{ needs.identify-changes.outputs.ui && (github.ref == 'refs/heads/master') }}
     runs-on: ubuntu-20.04
     steps:
