@@ -11,13 +11,13 @@ jobs:
       #TODO Detect changes against current branch
       - name: Identify changes
         uses: dorny/paths-filter@v2
-          id: identify-changes
-          with:
-            filters: |
-              ui:
-                - 'package.json'
-                - 'package-lock.json'
-                - 'ui/**'
+        id: identify-changes
+        with:
+          filters: |
+            ui:
+              - 'package.json'
+              - 'package-lock.json'
+              - 'ui/**'
 
       - name: Run UI tests
         if: steps.identify-changes.outputs.ui
