@@ -27,5 +27,5 @@ jobs:
           sbt test
 
       - name: Publish UI
-       # if: ${{ (steps.identify-changes.outputs.ui == 'true') && (github.ref == 'refs/heads/master') }}
+        if: ${{ (steps.identify-changes.outputs.ui == 'true') && (github.ref == 'refs/heads/master') }}
         run: ./.github/scripts/publish_ui.sh
