@@ -8,11 +8,11 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
 
-      #TODO Detect changes against current branch
       - name: Identify changes
         uses: dorny/paths-filter@v2
         id: identify-changes
         with:
+          base: ${{ github.ref }}
           filters: |
             ui:
               - 'package.json'
