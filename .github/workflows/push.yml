@@ -20,11 +20,11 @@ jobs:
               - 'ui/**'
 
       - name: Run UI tests
-        if: steps.identify-changes.outputs.ui
+        if: steps.identify-changes.outputs.ui == 'true'
         run: |
           npm ci
           sbt test
 
       - name: Publish UI
-        if: ${{ steps.identify-changes.outputs.ui && (github.ref == 'refs/heads/#1') }}
+        if: ${{ (steps.identify-changes.outputs.ui == 'true') && (github.ref == 'refs/heads/#1') }}
         run: ./.github/scripts/publish_ui.sh
