@@ -8,14 +8,15 @@ set -o pipefail
 sbt ui/fullLinkJS
 
 if [ ! -d docs ]; then
-  mkdir -p docs
+  mkdir --verbose --parents docs
 fi
 
-cp ui/index-dev.html docs/index.html
-mv ui/target/scala-3.0.0/ui-opt/main.js docs/main.js
-sed -i 's/(?<=src=").*(?=")/main\.js/g' docs/index.html
+cp --verbose ui/index-dev.html docs/index.html
+mv --verbose ui/target/scala-3.0.0/ui-opt/main.js docs/main.js
+sed --in-place 's/(?<=src=").*(?=")/main\.js/g' docs/index.html
 
 git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git config --local user.name 'github-actions[bot]'
-git commit -am 'Publish github-pages'
+git add docs
+git commit --message='Publish github-pages'
 git push
