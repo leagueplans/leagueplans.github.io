@@ -7,6 +7,9 @@ jobs:
     outputs:
       ui: ${{ steps.identify-changes.outputs.ui }}
     steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
       - uses: dorny/paths-filter@v2
         id: identify-changes
         with:
@@ -21,9 +24,6 @@ jobs:
     if: ${{ needs.identify-changes.outputs.ui == 'true' }}
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v2
-
       - name: Install npm packages
         run: npm ci
 
