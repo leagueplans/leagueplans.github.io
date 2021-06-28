@@ -1,0 +1,32 @@
+on: push
+
+jobs:
+  push:
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Identify changes
+        uses: dorny/paths-filter@v2
+        id: identify-changes
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            ui:
+              - 'package.json'
+              - 'package-lock.json'
+              - 'ui/index-dev.html'
+              - 'ui/src/**'
+              - 'project/**'
+
+      - name: Run UI tests
+        if: steps.identify-changes.outputs.ui == 'true'
+        run: |
+          npm ci
+          sbt test
+
+      - name: Publish UI
+        if: ${{ (steps.identify-changes.outputs.ui == 'true') && (github.ref == 'refs/heads/master') }}
+        run: ./.github/scripts/publish_ui.sh

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "jsdom": "^16.6.0",
+    "source-map-support": "^0.5.19"
+  },
+  "devDependencies": {},
+  "scripts": {}
+}

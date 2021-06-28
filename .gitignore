@@ -1,0 +1,9 @@
+# sbt
+target/
+
+# IntelliJ
+.bsp/*
+.idea/*
+
+# npm
+node_modules
