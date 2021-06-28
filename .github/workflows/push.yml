@@ -1,61 +1,30 @@
 on: push
 
 jobs:
-  identify-changes:
+  push:
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     runs-on: ubuntu-20.04
-    outputs:
-      ui: ${{ steps.identify-changes.outputs.ui }}
     steps:
       - name: Checkout project
         uses: actions/checkout@v2
 
-      - uses: dorny/paths-filter@v2
-        id: identify-changes
-        with:
-          filters: |
-            ui:
-              - 'package.json'
-              - 'package-lock.json'
-              - 'ui/**'
+      #TODO Detect changes against current branch
+      - name: Identify changes
+        uses: dorny/paths-filter@v2
+          id: identify-changes
+          with:
+            filters: |
+              ui:
+                - 'package.json'
+                - 'package-lock.json'
+                - 'ui/**'
 
-  test-ui:
-    needs: identify-changes
-    if: ${{ needs.identify-changes.outputs.ui == 'true' }}
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Install npm packages
-        run: npm ci
-
-      - name: Run tests
-        run: sbt test
-
-  publish-ui:
-    needs: [identify-changes, test-ui]
-    if: ${{ needs.identify-changes.outputs.ui && (github.ref == 'refs/heads/master') }}
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Configure commit bot
+      - name: Run UI tests
+        if: steps.identify-changes.outputs.ui
         run: |
-          git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git config --local user.name 'github-actions[bot]'
+          npm ci
+          sbt test
 
-      - name: Optimise JS
-        run: sbt ui/fullLinkJS
-
-      - name: Move optimised JS to docs/
-        run: mv ui/target/scala-3.0.0/ui-opt/main.js docs/main.js
-
-      - name: Update docs/index.html
-        run: |
-          cp ui/index-dev.html docs/index.html
-          sed -i 's/(?<=src=").*(?=")/main\.js/g' docs/index.html
-
-      - name: Commit updates
-        run: git commit -a -m 'Publish github-pages'
-
-      - name: Push updates
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+      - name: Publish UI
+        if: ${{ steps.identify-changes.outputs.ui && (github.ref == 'refs/heads/master') }}
+        run: ./.github/scripts/publish_ui.sh
