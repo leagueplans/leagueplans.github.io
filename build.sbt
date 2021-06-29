@@ -8,7 +8,7 @@ lazy val root =
 
 lazy val ui =
   (project in file("ui"))
-    .enablePlugins(ScalaJSBundlerPlugin)
+    .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
     .settings(
       libraryDependencies ++= List(
         ("org.scala-js" %%% "scalajs-dom" % "1.1.0").cross(CrossVersion.for3Use2_13),
