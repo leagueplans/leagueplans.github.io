@@ -1,6 +1,6 @@
 name := "osrs-planner"
 
-ThisBuild / scalaVersion := "3.0.0"
+ThisBuild / scalaVersion := "2.13.6"
 
 lazy val root =
   (project in file("."))
@@ -11,8 +11,8 @@ lazy val ui =
     .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
     .settings(
       libraryDependencies ++= List(
-        ("org.scala-js" %%% "scalajs-dom" % "1.1.0").cross(CrossVersion.for3Use2_13),
-        ("com.github.japgolly.scalajs-react" %%% "core" % "1.7.7").cross(CrossVersion.for3Use2_13)
+        "org.scala-js" %%% "scalajs-dom" % "1.1.0",
+        "com.github.japgolly.scalajs-react" %%% "core" % "1.7.7"
       ),
       Compile / npmDependencies ++= List(
         "react" -> "17.0.2",
