@@ -19,5 +19,8 @@ lazy val ui =
         "react-dom" -> "17.0.2"
       ),
       scalaJSUseMainModuleInitializer := true,
-      jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv()
+      jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
+      Test / requireJsDomEnv := true,
+      webpack / version := "4.44.2",
+      startWebpackDevServer / version := "3.11.2"
     )
