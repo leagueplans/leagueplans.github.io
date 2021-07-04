@@ -2,7 +2,7 @@ package ddm.scraper.core
 
 import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 import java.time.Clock
 import java.util.logging.{Level, Logger}
 import scala.util.Using
@@ -13,7 +13,16 @@ trait Scraper {
       .getLogger("com.gargoylesoftware.htmlunit")
       .setLevel(Level.OFF)
 
-    Using.resource(createFetcher())(run)
+    val targetDirectory = args match {
+      case Array(directoryName) => Paths.get(directoryName)
+      case _ => throw new IllegalArgumentException(
+        "Unexpected or missing arguments. Expected usage: \n" +
+          "  run <targetDirectoryName>\n" +
+          "where <targetDirectoryName> is the relative location to create scraped files in"
+      )
+    }
+
+    Using.resource(createFetcher())(run(_, targetDirectory))
   }
 
   private def createFetcher(): PageFetcher[HtmlUnitBrowser] = {
@@ -26,5 +35,5 @@ trait Scraper {
     )(_.closeAll())
   }
 
-  def run(pageFetcher: PageFetcher[HtmlUnitBrowser]): Unit
+  def run(pageFetcher: PageFetcher[HtmlUnitBrowser], targetDirectory: Path): Unit
 }
