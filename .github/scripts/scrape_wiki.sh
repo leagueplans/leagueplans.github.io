@@ -19,7 +19,7 @@ readonly relativeTarget="${params[1]}"
 readonly tmpTarget="${TMP}/${relativeTarget}"
 
 mkdir --verbose --parents "${tmpTarget}"
-sbt "runMain ${mainClass} ${tmpTarget}"
+sbt "wikiScraper/runMain ${mainClass} ${tmpTarget}"
 rsync --verbose \
       --recursive \
       --inplace \
