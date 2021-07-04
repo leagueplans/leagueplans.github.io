@@ -15,12 +15,14 @@ jobs:
           base: ${{ github.ref }}
           filters: |
             ui-sources:
+              - '.github/**'
               - 'ui/src/main/scala/**'
               - 'package.json'
               - 'package-lock.json'
               - 'project/**'
               - 'build.sbt'
             ui-resources:
+              - '.github/**'
               - 'ui/src/main/resources/**'
 
       - name: Bundle javascript
