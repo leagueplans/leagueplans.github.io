@@ -13,7 +13,7 @@ readonly INDEX='index.html'
 sbt ui/fullOptJS/webpack
 mv --verbose ui/target/scala-2.13/scalajs-bundler/main/ui-opt-bundle.js "${RESOURCES}"/main.js
 mv --verbose "${RESOURCES}/${INDEX_DEV}" "${RESOURCES}/${INDEX}"
-sed --in-place 's/src=".*"/src="main\.js"/g' "${DOCS}/${INDEX}"
+sed --in-place 's/src=".*"/src="main\.js"/g' "${RESOURCES}/${INDEX}"
 
 # Update the docs directory
 if [[ ! -d "${DOCS}" ]]; then
