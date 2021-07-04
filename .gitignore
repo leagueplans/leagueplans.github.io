@@ -8,4 +8,8 @@ target/
 # npm
 node_modules
 
+# Created when running a scraper
 /logs
+
+# Created by the scrape_wiki.sh script
+/tmp
