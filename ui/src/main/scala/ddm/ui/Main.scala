@@ -1,5 +1,6 @@
 package ddm.ui
 
+import ddm.ui.component.PlanComponent
 import org.scalajs.dom.{Event, document}
 
 object Main extends App {
@@ -9,6 +10,7 @@ object Main extends App {
     // Creating a container, since react raises a warning if we render
     // directly into the document body.
     val container = document.createElement("div")
+    PlanComponent().renderIntoDOM(container)
     document.body.appendChild(container)
   }
 }

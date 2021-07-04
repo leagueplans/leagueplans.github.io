@@ -17,9 +17,9 @@ jobs:
             ui:
               - 'package.json'
               - 'package-lock.json'
-              - 'ui/index-dev.html'
               - 'ui/src/**'
               - 'project/**'
+              - 'build.sbt'
 
       - name: Run UI tests
         if: steps.identify-changes.outputs.ui == 'true'

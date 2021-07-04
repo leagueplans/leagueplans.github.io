@@ -1,0 +1,65 @@
+@font-face {
+  font-family: osrs-font;
+  src: url('font/osrs.eot?') format('eot'),
+       url('font/osrs.ttf') format('truetype'),
+       url('font/osrs.woff') format('woff'),
+       url('font/osrs.svg#osrs') format('svg');
+}
+
+body {
+  font-family: osrs-font;
+}
+
+p {
+  color: white;
+  margin: 0px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* TODO Consider removal */
+.plan {}
+
+.step-box {
+  border: 1px solid rgba(255, 253, 214, 0.5);
+  border-radius: 3px;
+  display: flex;
+  margin-top: 3px;
+}
+
+.step-box.light {
+  background-color: #3d4b59;
+}
+
+.step-box.dark {
+  background-color: #2f363d;
+}
+
+.step-content {
+  padding: 5px;
+  flex-grow: 1;
+}
+
+.step-visibility {
+  background-color: rgba(255,255,255,0.2);
+  border: none;
+  padding: 0px;
+  width: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-visibility:hover {
+  background-color: #323a42;
+}
+
+.step-visibility:active {
+  background-color: #4f5a66;
+}
+
+.step-visibility-icon {
+  color: white;
+  width: 100%;
+}
