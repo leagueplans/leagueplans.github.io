@@ -2,20 +2,28 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-# Pushes updated versions of main.js and index.html to
-# the docs folder, for use as github-pages.
+# Updates the docs folder, for use with github-pages
 
-sbt ui/fullLinkJS
+readonly DOCS='docs'
+readonly RESOURCES='ui/src/main/resources'
+readonly INDEX_DEV='index-dev.html'
+readonly INDEX='index.html'
 
-if [ ! -d docs ]; then
-  mkdir --verbose --parents docs
+# Set up the resources directory to how we want the docs directory to look
+sbt ui/fullOptJS/webpack
+mv --verbose ui/target/scala-2.13/scalajs-bundler/main/ui-opt-bundle.js "${RESOURCES}"/main.js
+mv --verbose "${RESOURCES}/${INDEX_DEV}" "${RESOURCES}/${INDEX}"
+sed --in-place 's/src=".*"/src="main\.js"/g' "${RESOURCES}/${INDEX}"
+
+# Update the docs directory
+if [[ ! -d "${DOCS}" ]]; then
+  mkdir --verbose --parents "${DOCS}"
 fi
-cp --verbose ui/index-dev.html docs/index.html
-mv --verbose ui/target/scala-3.0.0/ui-opt/main.js docs/main.js
-sed --in-place 's/src=".*"/src="main\.js"/g' docs/index.html
+rsync --verbose --recursive --inplace --delete --times "${RESOURCES}/" "${DOCS}"
 
+# Push any changes
 git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git config --local user.name 'github-actions[bot]'
-git add docs
+git add "${DOCS}"
 git commit --message='Publish github-pages'
 git push
