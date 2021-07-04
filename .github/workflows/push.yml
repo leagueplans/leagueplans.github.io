@@ -34,7 +34,7 @@ jobs:
         run: ./.github/scripts/sync_docs.sh
 
       - name: Commit docs
-        if: ${{ (github.ref == 'refs/heads/#5') && (
+        if: ${{ (github.ref == 'refs/heads/master') && (
                   (steps.bundle-js.outcome == 'success') ||
                   (steps.sync-docs.outcome == 'success')
                 )
