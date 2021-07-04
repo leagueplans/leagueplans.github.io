@@ -22,6 +22,7 @@ jobs:
         with:
           name: logs
           path: logs/
+          retention-days: 7
 
       - name: Sync docs with resources
         run: ./.github/scripts/sync_docs.sh
