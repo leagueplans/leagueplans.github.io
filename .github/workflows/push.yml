@@ -14,19 +14,30 @@ jobs:
         with:
           base: ${{ github.ref }}
           filters: |
-            ui:
+            ui-sources:
+              - 'ui/src/main/scala/**'
               - 'package.json'
               - 'package-lock.json'
-              - 'ui/src/**'
               - 'project/**'
               - 'build.sbt'
+            ui-resources:
+              - 'ui/src/main/resources/**'
 
-      - name: Run UI tests
-        if: steps.identify-changes.outputs.ui == 'true'
-        run: |
-          npm ci
-          sbt test
+      - name: Bundle javascript
+        id: bundle-js
+        if: steps.identify-changes.outputs.ui-sources == 'true'
+        run: ./.github/scripts/bundle_js.sh
 
-      - name: Publish UI
-        if: ${{ (steps.identify-changes.outputs.ui == 'true') && (github.ref == 'refs/heads/master') }}
-        run: ./.github/scripts/publish_ui.sh
+      - name: Sync docs with resources
+        id: sync-docs
+        if: steps.identify-changes.outputs.ui-resources == 'true'
+        run: ./.github/scripts/sync_docs.sh
+
+      - name: Commit docs
+        if: ${{
+          (github.ref == 'refs/heads/master') && (
+            (steps.bundle-js.outcome == 'success') ||
+            (steps.sync-docs.outcome == 'success')
+          )
+        }}
+        run: ./.github/scripts/commit_docs.sh

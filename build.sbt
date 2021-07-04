@@ -4,7 +4,17 @@ ThisBuild / scalaVersion := "2.13.6"
 
 lazy val root =
   (project in file("."))
-    .aggregate(ui)
+    .aggregate(wikiScraper, ui)
+
+lazy val wikiScraper =
+  (project in file("scraper"))
+    .settings(
+      libraryDependencies ++= List(
+        "net.ruippeixotog" %% "scala-scraper" % "2.2.1",
+        "ch.qos.logback" % "logback-classic" % "1.2.3",
+        "org.log4s" %% "log4s" % "1.8.2"
+      )
+    )
 
 lazy val ui =
   (project in file("ui"))

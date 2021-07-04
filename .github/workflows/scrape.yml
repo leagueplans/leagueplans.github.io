@@ -1,0 +1,29 @@
+on:
+  workflow_dispatch:
+    inputs:
+      resource:
+        description: 'Key for the resource to scrape. See the scrape_wiki.sh script for possible values.'
+        required: true
+
+jobs:
+  scrape:
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Run scraper
+        run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
+
+      - name: Upload logs as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs/
+
+      - name: Sync docs with resources
+        run: ./.github/scripts/sync_docs.sh
+
+      - name: Commit docs
+        run: ./.github/scripts/commit_docs.sh
