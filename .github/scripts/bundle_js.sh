@@ -3,6 +3,12 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+readonly DOCS='docs'
+
 npm ci
 sbt test ui/fullOptJS/webpack
-mv --verbose ui/target/scala-2.13/scalajs-bundler/main/ui-opt-bundle.js docs/main.js
+
+if [[ ! -d "${DOCS}" ]]; then
+  mkdir --verbose --parents "${DOCS}"
+fi
+mv --verbose ui/target/scala-2.13/scalajs-bundler/main/ui-opt-bundle.js "${DOCS}"/main.js

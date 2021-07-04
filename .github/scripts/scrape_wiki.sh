@@ -17,12 +17,17 @@ readonly -a params=(${argMap[$1]})
 readonly mainClass="${params[0]}"
 readonly relativeTarget="${params[1]}"
 readonly tmpTarget="${TMP}/${relativeTarget}"
+readonly target="${RESOURCES}/${relativeTarget}"
 
 mkdir --verbose --parents "${tmpTarget}"
+if [[ ! -d "${target}" ]]; then
+  mkdir --verbose --parents "${target}"
+fi
+
 sbt "wikiScraper/runMain ${mainClass} ${tmpTarget}"
 rsync --verbose \
       --recursive \
       --inplace \
       --times \
       --delete \
-      "${tmpTarget}/" "${RESOURCES}/${relativeTarget}"
+      "${tmpTarget}/" "${target}"
