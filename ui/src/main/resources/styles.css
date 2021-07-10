@@ -61,3 +61,59 @@ p {
   color: white;
   width: 100%;
 }
+
+.stat-pane {
+  border-spacing: 0px;
+  border: solid;
+  border-radius: 5px;
+  overflow: hidden;
+  height: fit-content;
+}
+
+.stat-pane-cell {
+  position: relative;
+  padding: 0px;
+}
+
+.stat {
+  width: 60px;
+  height: 30px; /* 50% width */
+}
+
+.stat-background {
+  width: 100%;
+}
+
+.stat-icon {
+  position: absolute;
+  width: 40%;
+  top: 10%;
+  left: 8%;
+}
+
+.stat-text {
+  position: absolute;
+  color: yellow;
+  width: 100%;
+  height: 100%;
+  text-shadow: 1px 1px black;
+  font-size: 14px;
+}
+
+.stat-text.numerator {
+  top: 15%;
+  right: 28%;
+  text-align: right;
+}
+
+.stat-text.denominator {
+  top: 55%;
+  right: 8%;
+  text-align: right;
+}
+
+.stat-text.total-level {
+  top: 21%;
+  text-align: center;
+  line-height: 75%;
+}
