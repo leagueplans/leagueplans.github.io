@@ -1,0 +1,23 @@
+<configuration>
+    <appender name="HTML request history" class="ch.qos.logback.core.FileAppender">
+        <file>logs/requests.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>[%X{wiki-path}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ddm.scraper.core.PageLogger">
+        <appender-ref ref="HTML request history" />
+    </logger>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%date][%thread][%logger{36}][%-5level] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

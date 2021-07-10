@@ -1,0 +1,34 @@
+on:
+  workflow_dispatch:
+    inputs:
+      resource:
+        description: 'Key for the resource to scrape. See the scrape_wiki.sh script for possible values.'
+        required: true
+
+jobs:
+  scrape:
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Run scraper
+        run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
+
+      - name: Upload logs as artifact
+        uses: actions/upload-artifact@v2
+        if: ${{ always() }}
+        with:
+          name: logs
+          path: logs/
+          retention-days: 7
+
+      - name: Raise PR for any changes
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: Update ${{ github.event.inputs.resource }}
+          branch: scraper/${{ github.event.inputs.resource }}
+          delete-branch: true
+          title: Update ${{ github.event.inputs.resource }}
+          body: Triggered by workflow [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
