@@ -1,9 +1,7 @@
 @font-face {
+  /* Obtained from https://github.com/RuneStar/fonts */
   font-family: osrs-font;
-  src: url('font/osrs.eot?') format('eot'),
-       url('font/osrs.ttf') format('truetype'),
-       url('font/osrs.woff') format('woff'),
-       url('font/osrs.svg#osrs') format('svg');
+  src: url('font/osrs.ttf') format('truetype');
 }
 
 body {
