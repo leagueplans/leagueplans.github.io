@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="ddm.scraper.core.HtmlLogger">
+    <logger name="ddm.scraper.core.PageLogger">
         <appender-ref ref="HTML request history" />
     </logger>
 

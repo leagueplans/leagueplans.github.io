@@ -12,7 +12,12 @@ lazy val wikiScraper =
       libraryDependencies ++= List(
         "net.ruippeixotog" %% "scala-scraper" % "2.2.1",
         "ch.qos.logback" % "logback-classic" % "1.2.3",
-        "org.log4s" %% "log4s" % "1.8.2"
+        "org.log4s" %% "log4s" % "1.8.2",
+        "com.typesafe.akka" %% "akka-actor-typed" % "2.6.8",
+        "com.typesafe.akka" %% "akka-stream" % "2.6.8",
+        "com.typesafe.akka" %% "akka-http" % "10.2.4",
+        "com.sksamuel.scrimage" % "scrimage-core" % "4.0.20",
+        "com.sksamuel.scrimage" %% "scrimage-scala" % "4.0.20"
       )
     )
 

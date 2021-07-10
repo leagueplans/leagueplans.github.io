@@ -10,7 +10,7 @@ readonly RESOURCES='ui/src/main/resources'
 readonly ROOT_PACKAGE='ddm.scraper'
 
 readonly -A argMap=(
-  ['skill-icons']="${ROOT_PACKAGE}.skillicons.Main images/skill-icons"
+  ['skill-icons']="${ROOT_PACKAGE}.skillicons.SkillIconsScraper images/skill-icons"
 )
 
 readonly -a params=(${argMap[$1]})
