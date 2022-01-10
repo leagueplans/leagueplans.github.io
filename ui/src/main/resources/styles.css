@@ -9,7 +9,6 @@ body {
 }
 
 p {
-  color: white;
   margin: 0px;
 }
 
@@ -25,6 +24,10 @@ p {
   border-radius: 3px;
   display: flex;
   margin-top: 3px;
+}
+
+.step-box p {
+  color: white;
 }
 
 .step-box.light {

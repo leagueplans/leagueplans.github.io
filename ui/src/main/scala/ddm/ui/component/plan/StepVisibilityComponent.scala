@@ -1,4 +1,4 @@
-package ddm.ui.component
+package ddm.ui.component.plan
 
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._

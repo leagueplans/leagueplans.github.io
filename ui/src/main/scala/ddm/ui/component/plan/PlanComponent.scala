@@ -1,4 +1,4 @@
-package ddm.ui.component
+package ddm.ui.component.plan
 
 import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.ScalaComponent
