@@ -60,4 +60,10 @@ final case class Stats(
       .map(apply)
       .map(Level.of(_).raw)
       .sum
+
+  lazy val totalExp: Exp =
+    Skill
+      .all
+      .map(apply)
+      .reduce(_ + _)
 }

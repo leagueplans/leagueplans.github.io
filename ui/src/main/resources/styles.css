@@ -66,7 +66,6 @@ p {
   border-spacing: 0px;
   border: solid;
   border-radius: 5px;
-  overflow: hidden;
   height: fit-content;
 }
 
@@ -89,6 +88,31 @@ p {
   width: 40%;
   top: 10%;
   left: 8%;
+}
+
+.stat-tooltip {
+  visibility: hidden;
+  position: absolute;
+  z-index: 1;
+  background-color: #e8e895;
+  padding: 2px;
+  white-space: nowrap;
+}
+
+.stat-tooltip-text p {
+  color: black;
+}
+
+.stat-tooltip-text.left {
+  text-align: left;
+}
+
+.stat-tooltip-text.right {
+  text-align: right;
+}
+
+.stat:hover .stat-tooltip {
+  visibility: visible;
 }
 
 .stat-text {
