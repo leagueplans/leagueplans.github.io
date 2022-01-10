@@ -1,6 +1,6 @@
 package ddm.scraper.core.pages
 
-import ddm.scraper.core.WikiFetcher
+import ddm.scraper.core.WikiBrowser
 import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
@@ -8,7 +8,7 @@ import org.log4s.{Logger, getLogger}
 
 object CategoryPage {
   def apply[B <: Browser](
-    pageFetcher: WikiFetcher[B],
+    pageFetcher: WikiBrowser[B],
     categoryName: String
   ): CategoryPage[B] =
     new CategoryPage(
@@ -17,7 +17,7 @@ object CategoryPage {
     )
 }
 
-final class CategoryPage[B <: Browser](pageFetcher: WikiFetcher[B], currentPage: B#DocumentType) {
+final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], currentPage: B#DocumentType) {
   private val logger: Logger = getLogger
 
   def fetchFilePages(): List[FilePage[B]] =
@@ -36,7 +36,7 @@ final class CategoryPage[B <: Browser](pageFetcher: WikiFetcher[B], currentPage:
 
         val filePages =
           pageLinks.map(path =>
-            new FilePage(pageFetcher, pageFetcher.fetchHtml(path))
+            new FilePage(wikiBrowser, wikiBrowser.fetchHtml(path))
           )
 
         val maybeNextCategoryPage =
@@ -48,7 +48,7 @@ final class CategoryPage[B <: Browser](pageFetcher: WikiFetcher[B], currentPage:
             .toList
             .flatMap { link =>
               val path = link.attr("href")
-              new CategoryPage(pageFetcher, pageFetcher.fetchHtml(path)).fetchFilePages()
+              new CategoryPage(wikiBrowser, wikiBrowser.fetchHtml(path)).fetchFilePages()
             }
 
         filePages ++ subsequentFilePages
@@ -66,7 +66,7 @@ final class CategoryPage[B <: Browser](pageFetcher: WikiFetcher[B], currentPage:
 
         // TODO We're currently not handling cases where subcategories are given over multiple pages
         pageLinks.map(path =>
-          new CategoryPage(pageFetcher, pageFetcher.fetchHtml(path))
+          new CategoryPage(wikiBrowser, wikiBrowser.fetchHtml(path))
         )
       }
 }
