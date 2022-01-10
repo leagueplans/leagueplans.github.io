@@ -43,7 +43,7 @@ object StatPaneComponent {
           <.tbody(
             orderedSkills
               .map(skill => StatComponent(Stat(skill, p(skill))))
-              .appended(TotalLevelComponent(p.totalLevel))
+              .appended(TotalLevelComponent(p.totalLevel, p.totalExp))
               .sliding(size = 3, step = 3)
               .toTagMod(row =>
                 <.tr(

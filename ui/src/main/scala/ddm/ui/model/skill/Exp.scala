@@ -21,6 +21,6 @@ sealed abstract case class Exp(raw: Int) {
   override def toString: String = {
     val unit = raw / 10
     val tenth = raw % 10
-    s"$unit.${tenth}xp"
+    s"${String.format("%,d", unit)}.$tenth"
   }
 }

@@ -1,14 +1,15 @@
 package ddm.ui.component
 
+import ddm.ui.model.skill.Exp
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object TotalLevelComponent {
-  def apply(total: Int): Unmounted[Int, Unit, Unit] =
+  def apply(totalLevel: Int, totalExp: Exp): Unmounted[(Int, Exp), Unit, Unit] =
     ScalaComponent
-      .builder[Int]
-      .render_P(t =>
+      .builder[(Int, Exp)]
+      .render_P { case (tLevel, tExp) =>
         <.div(
           ^.className := "stat",
           <.img(
@@ -20,10 +21,14 @@ object TotalLevelComponent {
             ^.className := "stat-text total-level",
             "Total level:",
             <.br,
-            t
+            tLevel
+          ),
+          <.div(
+            ^.className := "stat-tooltip stat-tooltip-text",
+            <.p(s"Total XP: $tExp")
           )
         )
-      )
+      }
       .build
-      .apply(total)
+      .apply(totalLevel, totalExp)
 }

@@ -29,7 +29,32 @@ object StatComponent {
           <.p(
             ^.className := "stat-text denominator",
             s.level.raw
-          )
+          ),
+          s.level.next match {
+            case Some(next) =>
+              <.tbody(
+                ^.className := "stat-tooltip",
+                <.tr(
+                  <.td(
+                    ^.className := "stat-tooltip-text left",
+                    <.p(s"${s.skill.toString} XP:"),
+                    <.p("Next level at:"),
+                    <.p("Remaining XP:"),
+                  ),
+                  <.td(
+                    ^.className := "stat-tooltip-text right",
+                    <.p(s.exp.toString),
+                    <.p(next.bound.toString),
+                    <.p((next.bound - s.exp).toString)
+                  )
+                )
+              )
+            case None =>
+              <.div(
+                ^.className := "stat-tooltip stat-tooltip-text",
+                <.p(s"${s.skill.toString} XP: ${s.exp}")
+              )
+          }
         )
       )
       .build
