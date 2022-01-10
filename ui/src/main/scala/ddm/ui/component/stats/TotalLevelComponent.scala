@@ -1,4 +1,4 @@
-package ddm.ui.component
+package ddm.ui.component.stats
 
 import ddm.ui.model.skill.Exp
 import japgolly.scalajs.react.ScalaComponent

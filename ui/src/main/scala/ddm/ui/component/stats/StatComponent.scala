@@ -1,5 +1,6 @@
-package ddm.ui.component
+package ddm.ui.component.stats
 
+import ddm.ui.component.SkillIconPath
 import ddm.ui.model.skill.Stat
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted

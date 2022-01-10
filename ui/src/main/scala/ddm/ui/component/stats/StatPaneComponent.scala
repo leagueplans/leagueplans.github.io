@@ -1,10 +1,10 @@
-package ddm.ui.component
+package ddm.ui.component.stats
 
+import ddm.ui.model.skill.Skill._
 import ddm.ui.model.skill.{Skill, Stat, Stats}
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import ddm.ui.model.skill.Skill._
 
 object StatPaneComponent {
   private val orderedSkills: List[Skill] =

@@ -1,4 +1,4 @@
-package ddm.ui.component
+package ddm.ui.component.plan
 
 sealed trait Visibility {
   val isHidden: Boolean
