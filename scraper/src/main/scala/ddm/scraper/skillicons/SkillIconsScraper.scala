@@ -3,14 +3,14 @@ package ddm.scraper.skillicons
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import ddm.scraper.core.pages.CategoryPage
-import ddm.scraper.core.{Scraper, WikiFetcher}
+import ddm.scraper.core.{Scraper, WikiBrowser}
 import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
 
 import java.nio.file.Path
 
 object SkillIconsScraper extends Scraper {
   def run(
-    pageFetcher: WikiFetcher[HtmlUnitBrowser],
+    pageFetcher: WikiBrowser[HtmlUnitBrowser],
     targetDirectory: Path
   ): Unit = {
     val imageLoader = ImmutableImage.loader()

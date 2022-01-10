@@ -1,51 +1,29 @@
 package ddm.scraper.core
 
-import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model.HttpRequest
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import net.ruippeixotog.scalascraper.browser.Browser
-import org.log4s.MDC
 
-import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.util.Using.Releasable
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.chaining.scalaUtilChainingOps
 
 object WikiFetcher {
   private val baseUrl: String = "https://oldschool.runescape.wiki"
 }
 
-final class WikiFetcher[B <: Browser](
-  browser: B,
-  http: HttpExt,
-  pageLogger: PageLogger
-)(implicit releasable: Releasable[B], materializer: Materializer) extends AutoCloseable {
-  def fetchHtml(wikiPath: String): B#DocumentType =
-    MDC.withCtx("wiki-path" -> wikiPath) {
-      pageLogger.recoverHtml(wikiPath) match {
-        case Some(rawHtml) =>
-          browser.parseString(rawHtml)
+final class WikiFetcher(client: ThrottledWebClient, store: FileStore)(
+  implicit ec: ExecutionContext
+) {
+  def fetch(wikiPath: String): Array[Byte] =
+    Future(store.recover(wikiPath))
+      .flatMap {
+        case Some(data) => Future.successful(data)
         case None =>
-          val doc = browser.get(resolve(wikiPath))
-          pageLogger.logHtml(wikiPath, doc.toHtml)
-          doc
+          val fData = client.queue(HttpRequest(uri = resolve(wikiPath)))
+          fData.foreach(store.persist(wikiPath, _))
+          fData
       }
-    }
-
-  def fetchFile(wikiPath: String): Array[Byte] =
-    Source
-      .single(HttpRequest(uri = resolve(wikiPath)))
-      .mapAsync(parallelism = 1)(http.singleRequest(_))
-      .flatMapConcat(_.entity.dataBytes)
-      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-      .pipe(Await.result(_, 4.seconds))
-      .toArray
+      .pipe(Await.result(_, 1.minute)) // It's a hobby project. I don't want to bother with Futures
 
   private def resolve(wikiPath: String): String =
     s"${WikiFetcher.baseUrl}$wikiPath"
-
-  def close(): Unit =
-    releasable.release(browser)
 }

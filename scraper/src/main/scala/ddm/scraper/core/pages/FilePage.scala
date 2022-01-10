@@ -1,12 +1,12 @@
 package ddm.scraper.core.pages
 
-import ddm.scraper.core.WikiFetcher
+import ddm.scraper.core.WikiBrowser
 import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 
 final class FilePage[B <: Browser](
-  pageFetcher: WikiFetcher[B],
+  pageFetcher: WikiBrowser[B],
   currentPage: B#DocumentType,
 ) {
   def fetchImage(): (String, Array[Byte]) = {
