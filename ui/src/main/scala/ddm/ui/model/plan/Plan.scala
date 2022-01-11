@@ -1,29 +1,17 @@
-package ddm.ui.component.plan
+package ddm.ui.model.plan
 
-import ddm.ui.model.plan.Step
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.{BackendScope, Unmounted}
-import japgolly.scalajs.react.vdom.html_<^._
+import ddm.ui.model.player.item.Item
+import ddm.ui.model.player.skill.{Exp, Skill}
 
-object PlanComponent {
-  final class Backend(scope: BackendScope[Unit, List[Step]]) {
-    def render(s: List[Step]): VdomElement =
-      <.div(
-        ^.className := "plan",
-        s.toTagMod(step =>
-          StepComponent(step, StepComponent.Theme.Dark)
-        )
-      )
-  }
-
-  private val testSteps =
+object Plan {
+  val test: Step =
     Step(
       "Complete Cook's Assistant",
       List.empty,
       List(
         Step(
           "Start the quest",
-          List((), ()),
+          List(),
           List(
             Step(
               "Talk to the Cook in Lumbridge Castle",
@@ -32,7 +20,7 @@ object PlanComponent {
             ),
             Step(
               "Grab the pot from the table",
-              List.empty,
+              List(Effect.GainItem(Item("Pot", stackable = false), count = 1, target = "Inventory")),
               List.empty
             ),
             Step(
@@ -42,14 +30,14 @@ object PlanComponent {
             ),
             Step(
               "Grab the bucket from by the sink",
-              List.empty,
+              List(Effect.GainItem(Item("Bucket", stackable = false), count = 1, target = "Inventory")),
               List.empty
             )
           )
         ),
         Step(
           "Obtain the supplies",
-          List(()),
+          List(),
           List(
             Step(
               "Obtain the egg",
@@ -62,7 +50,7 @@ object PlanComponent {
                 ),
                 Step(
                   "Pick up an egg",
-                  List.empty,
+                  List(Effect.GainItem(Item("Egg", stackable = false), count = 1, target = "Inventory")),
                   List.empty
                 )
               )
@@ -78,7 +66,7 @@ object PlanComponent {
                 ),
                 Step(
                   "Pick some grain",
-                  List.empty,
+                  List(Effect.GainItem(Item("Grain", stackable = false), count = 1, target = "Inventory")),
                   List.empty
                 ),
                 Step(
@@ -92,7 +80,7 @@ object PlanComponent {
                     ),
                     Step(
                       "Use the grain on the hopper",
-                      List.empty,
+                      List(Effect.DestroyItem(Item("Grain", stackable = false), count = 1, source = "Inventory")),
                       List.empty
                     ),
                     Step(
@@ -107,7 +95,10 @@ object PlanComponent {
                     ),
                     Step(
                       "Use the pot on the flour bin",
-                      List.empty,
+                      List(
+                        Effect.DestroyItem(Item("Pot", stackable = false), count = 1, source = "Inventory"),
+                        Effect.GainItem(Item("Pot of flour", stackable = false), count = 1, target = "Inventory")
+                      ),
                       List.empty
                     )
                   )
@@ -125,7 +116,10 @@ object PlanComponent {
                 ),
                 Step(
                   "Use the bucket of the dairy cow",
-                  List.empty,
+                  List(
+                    Effect.DestroyItem(Item("Bucket", stackable = false), count = 1, source = "Inventory"),
+                    Effect.GainItem(Item("Bucket of milk", stackable = false), count = 1, target = "Inventory")
+                  ),
                   List.empty
                 )
               )
@@ -143,19 +137,17 @@ object PlanComponent {
             ),
             Step(
               "Speak to the Cook",
-              List.empty,
+              List(
+                Effect.DestroyItem(Item("Egg", stackable = false), count = 1, source = "Inventory"),
+                Effect.DestroyItem(Item("Bucket of milk", stackable = false), count = 1, source = "Inventory"),
+                Effect.DestroyItem(Item("Pot of flour", stackable = false), count = 1, source = "Inventory"),
+                Effect.GainExp(Skill.Cooking, Exp(300)),
+                Effect.GainQuestPoints(1)
+              ),
               List.empty
             )
           )
         )
       )
     )
-
-  def apply(): Unmounted[Unit, List[Step], Backend] =
-    ScalaComponent
-      .builder[Unit]
-      .initialState[List[Step]](List(testSteps))
-      .renderBackend[Backend]
-      .build
-      .apply()
 }

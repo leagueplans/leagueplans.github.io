@@ -1,4 +1,4 @@
-package ddm.ui.model.skill
+package ddm.ui.model.player.skill
 
 import scala.math.Ordering.Implicits.infixOrderingOps
 

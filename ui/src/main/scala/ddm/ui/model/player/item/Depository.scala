@@ -1,9 +1,8 @@
-package ddm.ui.model.item
+package ddm.ui.model.player.item
 
 object Depository {
   val bank: Depository =
     Depository(
-      "Bank",
       capacity = 820,
       stackLimit = Int.MaxValue,
       stackAll = true,
@@ -14,7 +13,6 @@ object Depository {
 
   val inventory: Depository =
     Depository(
-      "Inventory",
       capacity = 28,
       stackLimit = Int.MaxValue,
       stackAll = false,
@@ -40,9 +38,8 @@ object Depository {
       )
     )
 
-  def equipmentSlot(name: String): Depository =
+  val equipmentSlot: Depository =
     Depository(
-      name,
       capacity = 1,
       stackLimit = Int.MaxValue,
       stackAll = false,
@@ -51,7 +48,6 @@ object Depository {
 }
 
 final case class Depository(
-  name: String,
   capacity: Int,
   stackLimit: Int,
   stackAll: Boolean,

@@ -1,6 +1,6 @@
-package ddm.ui.component.stats
+package ddm.ui.component.player.stats
 
-import ddm.ui.model.skill.Exp
+import ddm.ui.model.player.skill.Exp
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._

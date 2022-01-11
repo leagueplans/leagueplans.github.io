@@ -1,4 +1,4 @@
-package ddm.ui.model.skill
+package ddm.ui.model.player.skill
 
 final case class Stat(skill: Skill, exp: Exp) {
   lazy val level: Level =

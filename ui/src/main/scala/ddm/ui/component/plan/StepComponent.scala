@@ -35,9 +35,6 @@ object StepComponent {
           <.p(p.step.description),
           <.div(
             ^.classSet(visibility.cssClassSetter),
-            p.step.effects.toTagMod(_ =>
-              <.p("effect")
-            ),
             p.step.substeps.toTagMod(substep =>
               StepComponent(substep, p.theme.other)
             )
