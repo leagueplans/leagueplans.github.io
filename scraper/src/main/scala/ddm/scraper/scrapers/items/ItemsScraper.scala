@@ -23,7 +23,7 @@ object ItemsScraper extends Scraper {
 
     val items =
       CategoryPage(pageFetcher, "Items")
-        .fetchPages((browser, path) => new ItemPage(browser, browser.fetchHtml(path)))
+        .fetchPages((browser, path) => new ItemPage(browser, path))
         .flatMap(_.fetchItem())
 
     val itemsToImages = items.map(item => item -> imageLoader.fromBytes(item.image))

@@ -10,16 +10,13 @@ import scala.annotation.tailrec
 
 object CategoryPage {
   def apply[B <: Browser](
-    pageFetcher: WikiBrowser[B],
+    wikiBrowser: WikiBrowser[B],
     categoryName: String
   ): CategoryPage[B] =
-    new CategoryPage(
-      pageFetcher,
-      pageFetcher.fetchHtml(s"/w/Category:$categoryName")
-    )
+    new CategoryPage(wikiBrowser, s"/w/Category:$categoryName")
 }
 
-final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], private val currentPage: B#DocumentType) {
+final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], private val wikiPath: String) {
   def recurse[T](f: CategoryPage[B] => List[T]): List[T] =
     recurseHelper(acc = List.empty, remaining = List(this))(f)
 
@@ -46,13 +43,13 @@ final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], private val 
     for {
       section <- childSections("#mw-category-media")
       path    <- (section >> elementList(".gallerytext")).map(_ >> attr("href")("a"))
-    } yield new FilePage(wikiBrowser, wikiBrowser.fetchHtml(path))
+    } yield new FilePage(wikiBrowser, path)
 
   private def fetchSubcategories(): List[CategoryPage[B]] =
     for {
       section <- childSections("#mw-subcategories")
       path <- (section >> element(".mw-content-ltr") >> elementList("li")).map(_ >> attr("href")("a"))
-    } yield new CategoryPage(wikiBrowser, wikiBrowser.fetchHtml(path))
+    } yield new CategoryPage(wikiBrowser, path)
 
   private def childSections(query: String): List[Element] =
     childSectionsHelper(acc = List.empty, remaining = List(this))(query)
@@ -62,12 +59,12 @@ final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], private val 
     remaining match {
       case Nil => acc
       case categoryPage :: t =>
-        val maybeSection = categoryPage.currentPage >?> element(query)
+        val maybeSection = wikiBrowser.fetchHtml(categoryPage.wikiPath) >?> element(query)
         val maybeNextPage =
           maybeSection
             .map(_ >> elementList("a"))
             .flatMap(_.find(_.text.contains("next page")))
-            .map(link => new CategoryPage(wikiBrowser, wikiBrowser.fetchHtml(link.attr("href"))))
+            .map(link => new CategoryPage(wikiBrowser, link.attr("href")))
 
         childSectionsHelper(acc = acc ++ maybeSection, remaining = t ++ maybeNextPage)(query)
     }

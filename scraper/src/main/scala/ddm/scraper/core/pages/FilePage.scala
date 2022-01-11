@@ -5,14 +5,11 @@ import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 
-final class FilePage[B <: Browser](
-  pageFetcher: WikiBrowser[B],
-  currentPage: B#DocumentType,
-) {
+final class FilePage[B <: Browser](wikiBrowser: WikiBrowser[B], wikiPath: String) {
   def fetchImage(): (String, Array[Byte]) = {
-    val imgElement = currentPage >> element("#file") >> element("img")
-    val wikiPath = imgElement.attr("src")
+    val imgElement = wikiBrowser.fetchHtml(wikiPath) >> element("#file") >> element("img")
+    val imagePath = imgElement.attr("src")
     val name = imgElement.attr("alt").replaceFirst("^File\\:", "")
-    (name, pageFetcher.fetchFile(wikiPath))
+    (name, wikiBrowser.fetchFile(imagePath))
   }
 }

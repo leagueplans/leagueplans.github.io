@@ -8,14 +8,14 @@ import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.model.Element
 import org.log4s.{Logger, getLogger}
 
-final class ItemPage[B <: Browser](wikiBrowser: WikiBrowser[B], currentPage: B#DocumentType) {
+final class ItemPage[B <: Browser](wikiBrowser: WikiBrowser[B], wikiPath: String) {
   private val logger: Logger = getLogger
 
   def fetchItem(): Option[Item] = {
-    val infobox = currentPage >> element(".infobox-item")
+    val infobox = wikiBrowser.fetchHtml(wikiPath) >> element(".infobox-item")
     val name = (infobox >> element(".infobox-header")).text
     val filePath = (infobox >> element(".inventory-image") >> elementList(".image")).last.attr("href")
-    val (_, image) = new FilePage(wikiBrowser, wikiBrowser.fetchHtml(filePath)).fetchImage()
+    val (_, image) = new FilePage(wikiBrowser, filePath).fetchImage()
 
     val maybeItemId = findRow(infobox, "Item ID")
     val maybeStackable = findRow(infobox, "Stackable")
