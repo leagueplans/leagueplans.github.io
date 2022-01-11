@@ -1,4 +1,4 @@
-package ddm.ui.model.skill
+package ddm.ui.model.player.skill
 
 object Exp {
   def apply(i: Int): Exp =
@@ -17,6 +17,9 @@ sealed abstract case class Exp(raw: Int) {
 
   def -(other: Exp): Exp =
     new Exp(raw - other.raw) {}
+
+  def *(multiplier: Int): Exp =
+    new Exp(raw * multiplier) {}
 
   override def toString: String = {
     val unit = raw / 10

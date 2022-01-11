@@ -1,6 +1,6 @@
 package ddm.ui.component
 
-import ddm.ui.model.skill.Skill
+import ddm.ui.model.player.skill.Skill
 
 object SkillIconPath {
   def apply(skill: Skill): String =

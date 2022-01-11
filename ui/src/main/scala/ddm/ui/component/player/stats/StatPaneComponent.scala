@@ -1,7 +1,7 @@
-package ddm.ui.component.stats
+package ddm.ui.component.player.stats
 
-import ddm.ui.model.skill.Skill._
-import ddm.ui.model.skill.{Skill, Stat, Stats}
+import ddm.ui.model.player.skill.Skill._
+import ddm.ui.model.player.skill.{Skill, Stat, Stats}
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._

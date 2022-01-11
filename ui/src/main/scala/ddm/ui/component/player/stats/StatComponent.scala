@@ -1,7 +1,7 @@
-package ddm.ui.component.stats
+package ddm.ui.component.player.stats
 
 import ddm.ui.component.SkillIconPath
-import ddm.ui.model.skill.Stat
+import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
