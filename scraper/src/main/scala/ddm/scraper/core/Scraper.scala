@@ -3,20 +3,15 @@ package ddm.scraper.core
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
-import net.ruippeixotog.scalascraper.browser.{Browser, HtmlUnitBrowser}
+import net.ruippeixotog.scalascraper.browser.{Browser, JsoupBrowser}
 
 import java.nio.file.{Files, Path, Paths}
-import java.util.logging.{Level, Logger}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
 
 trait Scraper {
   final def main(args: Array[String]): Unit = {
-    Logger
-      .getLogger("com.gargoylesoftware.htmlunit")
-      .setLevel(Level.OFF)
-
     implicit val actorSystem: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "scraper")
     import actorSystem.executionContext
 
@@ -39,14 +34,14 @@ trait Scraper {
     result.get
   }
 
-  private def createBrowser(actorSystem: ActorSystem[_]): WikiBrowser[HtmlUnitBrowser] =
-    new WikiBrowser[HtmlUnitBrowser](
-      new HtmlUnitBrowser(),
+  private def createBrowser(actorSystem: ActorSystem[_]): WikiBrowser[JsoupBrowser] =
+    new WikiBrowser[JsoupBrowser](
+      new JsoupBrowser(),
       new WikiFetcher(
         new ThrottledWebClient(elements = 5, per = 1.second)(actorSystem),
         FileStore.prepare(directory = Paths.get("logs/data"))
       )(actorSystem.executionContext)
-    )(_.closeAll())
+    )(_ => ())
 
   def run[B <: Browser](
     browser: WikiBrowser[B],
