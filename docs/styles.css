@@ -16,9 +16,6 @@ p {
   display: none;
 }
 
-/* TODO Consider removal */
-.plan {}
-
 .step-box {
   border: 1px solid rgba(255, 253, 214, 0.5);
   border-radius: 3px;
