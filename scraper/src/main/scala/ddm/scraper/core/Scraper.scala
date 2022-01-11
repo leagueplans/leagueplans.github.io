@@ -2,11 +2,13 @@ package ddm.scraper.core
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
+import akka.stream.Materializer
+import net.ruippeixotog.scalascraper.browser.{Browser, HtmlUnitBrowser}
 
 import java.nio.file.{Files, Path, Paths}
 import java.util.logging.{Level, Logger}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
 
 trait Scraper {
@@ -15,7 +17,8 @@ trait Scraper {
       .getLogger("com.gargoylesoftware.htmlunit")
       .setLevel(Level.OFF)
 
-    val actorSystem = ActorSystem(Behaviors.empty, "scraper")
+    implicit val actorSystem: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "scraper")
+    import actorSystem.executionContext
 
     val targetDirectory = args match {
       case Array(directoryName) => Paths.get(directoryName)
@@ -29,7 +32,7 @@ trait Scraper {
     val result =
       Using(createBrowser(actorSystem)) {
         Files.createDirectories(targetDirectory)
-        run(_, targetDirectory)
+        browser => Await.result(run(browser, targetDirectory), 6.hours) // GitHub runner timeout
       }
 
     actorSystem.terminate()
@@ -45,8 +48,8 @@ trait Scraper {
       )(actorSystem.executionContext)
     )(_.closeAll())
 
-  def run(
-    browser: WikiBrowser[HtmlUnitBrowser],
+  def run[B <: Browser](
+    browser: WikiBrowser[B],
     targetDirectory: Path
-  ): Unit
+  )(implicit mat: Materializer, ec: ExecutionContext): Future[Unit]
 }

@@ -1,12 +1,11 @@
 package ddm.scraper.core.pages
 
+import akka.stream.scaladsl.Source
 import ddm.scraper.core.WikiBrowser
 import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.model.Element
-
-import scala.annotation.tailrec
 
 object CategoryPage {
   def apply[B <: Browser](
@@ -17,55 +16,42 @@ object CategoryPage {
 }
 
 final class CategoryPage[B <: Browser](wikiBrowser: WikiBrowser[B], private val wikiPath: String) {
-  def recurse[T](f: CategoryPage[B] => List[T]): List[T] =
-    recurseHelper(acc = List.empty, remaining = List(this))(f)
+  def recurse[T](f: CategoryPage[B] => Source[T, _]): Source[T, _] =
+    f(this).concat(
+      fetchSubcategories().flatMapConcat(_.recurse(f))
+    )
 
-  @tailrec
-  private def recurseHelper[T](acc: List[T], remaining: List[CategoryPage[B]])(
-    f: CategoryPage[B] => List[T]
-  ): List[T] =
-    remaining match {
-      case Nil => acc
-      case h :: t =>
-        recurseHelper(
-          acc = acc ++ f(h),
-          remaining = t ++ h.fetchSubcategories()
-        )(f)
-    }
+  def fetchPages[T](f: (WikiBrowser[B], String) => T): Source[T, _] =
+    childSections("#mw-pages")
+      .mapConcat(_ >> element(".mw-content-ltr") >> elementList("li"))
+      .map(_ >> attr("href")("a"))
+      .map(path => f(wikiBrowser, path))
 
-  def fetchPages[T](f: (WikiBrowser[B], String) => T): List[T] =
-    for {
-      section <- childSections("#mw-pages")
-      path    <- (section >> element(".mw-content-ltr") >> elementList("li")).map(_ >> attr("href")("a"))
-    } yield f(wikiBrowser, path)
+  def fetchFilePages(): Source[FilePage[B], _] =
+    childSections("#mw-category-media")
+      .mapConcat(_ >> elementList(".gallerytext"))
+      .map(_ >> attr("href")("a"))
+      .map(path => new FilePage(wikiBrowser, path))
 
-  def fetchFilePages(): List[FilePage[B]] =
-    for {
-      section <- childSections("#mw-category-media")
-      path    <- (section >> elementList(".gallerytext")).map(_ >> attr("href")("a"))
-    } yield new FilePage(wikiBrowser, path)
+  private def fetchSubcategories(): Source[CategoryPage[B], _] =
+    childSections("#mw-subcategories")
+      .mapConcat(_ >> element(".mw-content-ltr") >> elementList("li"))
+      .map(_ >> attr("href")("a"))
+      .map(path => new CategoryPage(wikiBrowser, path))
 
-  private def fetchSubcategories(): List[CategoryPage[B]] =
-    for {
-      section <- childSections("#mw-subcategories")
-      path <- (section >> element(".mw-content-ltr") >> elementList("li")).map(_ >> attr("href")("a"))
-    } yield new CategoryPage(wikiBrowser, path)
+  private def childSections(query: String): Source[Element, _] =
+    Source
+      .unfold(List(this)) {
+        case Nil => None
+        case h :: t =>
+          val maybeSection = wikiBrowser.fetchHtml(h.wikiPath) >?> element(query)
+          val maybeNextPage =
+            maybeSection
+              .map(_ >> elementList("a"))
+              .flatMap(_.find(_.text.contains("next page")))
+              .map(link => new CategoryPage(wikiBrowser, link.attr("href")))
 
-  private def childSections(query: String): List[Element] =
-    childSectionsHelper(acc = List.empty, remaining = List(this))(query)
-
-  @tailrec
-  private def childSectionsHelper(acc: List[Element], remaining: List[CategoryPage[B]])(query: String): List[Element] =
-    remaining match {
-      case Nil => acc
-      case categoryPage :: t =>
-        val maybeSection = wikiBrowser.fetchHtml(categoryPage.wikiPath) >?> element(query)
-        val maybeNextPage =
-          maybeSection
-            .map(_ >> elementList("a"))
-            .flatMap(_.find(_.text.contains("next page")))
-            .map(link => new CategoryPage(wikiBrowser, link.attr("href")))
-
-        childSectionsHelper(acc = acc ++ maybeSection, remaining = t ++ maybeNextPage)(query)
-    }
+          Some((t ++ maybeNextPage, maybeSection))
+      }
+      .collect { case Some(element) => element }
 }

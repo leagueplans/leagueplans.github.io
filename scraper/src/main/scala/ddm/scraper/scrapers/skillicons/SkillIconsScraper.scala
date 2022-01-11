@@ -1,32 +1,41 @@
 package ddm.scraper.scrapers.skillicons
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.Sink
 import com.sksamuel.scrimage.ImmutableImage
+import com.sksamuel.scrimage.nio.PngWriter
 import ddm.scraper.core.pages.CategoryPage
 import ddm.scraper.core.{Scraper, WikiBrowser}
-import ddm.scraper.scrapers.utils.ImagePrinter
-import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
+import ddm.scraper.scrapers.utils.ImageStandardiser
+import net.ruippeixotog.scalascraper.browser.Browser
 
 import java.nio.file.Path
+import scala.concurrent.{ExecutionContext, Future}
 
 object SkillIconsScraper extends Scraper {
-  def run(
-    pageFetcher: WikiBrowser[HtmlUnitBrowser],
+  def run[B <: Browser](
+    wikiBrowser: WikiBrowser[B],
     targetDirectory: Path
-  ): Unit = {
+  )(implicit mat: Materializer, ec: ExecutionContext): Future[Unit] = {
     val imageLoader = ImmutableImage.loader()
 
-    val files =
-      CategoryPage(pageFetcher, "Skill_icons")
-        .recurse(_.fetchFilePages())
-        .map { page =>
-          val (name, bytes) = page.fetchImage()
-          (name, imageLoader.fromBytes(bytes))
-        }
+    val fMaxDimensions =
+      CategoryPage(wikiBrowser, "Skill_icons")
+        .fetchFilePages()
+        .map(_.fetchImage())
         .filter { case (name, _) => name.contains("icon") }
+        .runWith(Sink.fold((0, 0)) { case ((accMaxWidth, accMaxHeight), (name, rawImage)) =>
+          val image = imageLoader.fromBytes(rawImage)
+          val dimensions = image.dimensions()
 
-    ImagePrinter.print(files) { case (_, image) => image } { case (name, _) =>
-      val simplifiedName = name.replaceFirst(" icon", "")
-      targetDirectory.resolve(simplifiedName)
+          val simplifiedName = name.replaceFirst(" icon", "")
+          image.output(PngWriter.NoCompression, targetDirectory.resolve(simplifiedName))
+
+          (Math.max(accMaxWidth, dimensions.getX), Math.max(accMaxHeight, dimensions.getY))
+        })
+
+    fMaxDimensions.map { case (maxWidth, maxHeight) =>
+      ImageStandardiser.resizeAll(targetDirectory, imageLoader, maxWidth, maxHeight)
     }
   }
 }
