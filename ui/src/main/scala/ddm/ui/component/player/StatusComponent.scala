@@ -28,7 +28,8 @@ object StatusComponent {
               EquipmentComponent(p.equipment)
             ),
             <.td(
-              <.p(s"Quest points: ${p.questPoints}")
+              <.p(s"Quest points: ${p.questPoints}"),
+              <.p(s"Combat level: ${String.format("%.2f", p.stats.combatLevel)}")
             ),
             <.td(
               LeagueComponent(p.leagueStatus)
