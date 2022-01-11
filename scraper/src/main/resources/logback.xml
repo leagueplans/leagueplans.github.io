@@ -17,7 +17,16 @@
         </encoder>
     </appender>
 
-    <root level="debug">
+    <appender name="run.log" class="ch.qos.logback.core.FileAppender">
+        <file>logs/run.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>[%date][%thread][%logger{36}][%-5level] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="run.log" />
     </root>
 </configuration>
