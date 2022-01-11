@@ -28,7 +28,7 @@ final class ItemPage[B <: Browser](wikiBrowser: WikiBrowser[B], wikiPath: String
       rawStackable <- maybeStackable
       stackable <- parseStackable(rawStackable)
       examine <- maybeExamine
-    } yield (Item(itemId, name, stackable, examine), image)).orElse {
+    } yield (Item(parseItemId(itemId), name, stackable, examine), image)).orElse {
       logger.error(
         s"Failed to parse item: [$name], [ID = $maybeItemId]," +
           s" [stackable = $maybeStackable], [examine = $maybeExamine], [image = ${maybeImageNameAndImage.isDefined}]"
@@ -53,4 +53,7 @@ final class ItemPage[B <: Browser](wikiBrowser: WikiBrowser[B], wikiPath: String
       case "No" => Some(false)
       case _ => None
     }
+
+  private def parseItemId(raw: String): String =
+    raw.takeWhile(_ != ',')
 }
