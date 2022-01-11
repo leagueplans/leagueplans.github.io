@@ -39,7 +39,7 @@ trait Scraper {
       new JsoupBrowser(),
       new WikiFetcher(
         new ThrottledWebClient(elements = 5, per = 1.second)(actorSystem),
-        FileStore.prepare(directory = Paths.get("logs/data"))
+        maybeStore = None
       )(actorSystem.executionContext)
     )(_ => ())
 
