@@ -1,9 +1,9 @@
-package ddm.scraper.skillicons
+package ddm.scraper.scrapers.skillicons
 
 import com.sksamuel.scrimage.ImmutableImage
-import com.sksamuel.scrimage.nio.PngWriter
 import ddm.scraper.core.pages.CategoryPage
 import ddm.scraper.core.{Scraper, WikiBrowser}
+import ddm.scraper.scrapers.utils.ImagePrinter
 import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
 
 import java.nio.file.Path
@@ -17,28 +17,16 @@ object SkillIconsScraper extends Scraper {
 
     val files =
       CategoryPage(pageFetcher, "Skill_icons")
-        .fetchFilePages()
+        .recurse(_.fetchFilePages())
         .map { page =>
           val (name, bytes) = page.fetchImage()
           (name, imageLoader.fromBytes(bytes))
         }
         .filter { case (name, _) => name.contains("icon") }
 
-    val (_, images) = files.unzip
-    val (maxWidth, maxHeight) = findMaxDimensions(images)
-
-    files.foreach { case (name, image) =>
+    ImagePrinter.print(files) { case (_, image) => image } { case (name, _) =>
       val simplifiedName = name.replaceFirst(" icon", "")
-
-      image
-        .resizeTo(maxWidth, maxHeight)
-        .output(PngWriter.NoCompression, targetDirectory.resolve(simplifiedName))
+      targetDirectory.resolve(simplifiedName)
     }
   }
-
-  private def findMaxDimensions(images: List[ImmutableImage]): (Int, Int) =
-    images.foldLeft((0, 0)) { case ((widthAcc, heightAcc), image) =>
-      val dimensions = image.dimensions()
-      (Math.max(widthAcc, dimensions.getX), Math.max(heightAcc, dimensions.getY))
-    }
 }
