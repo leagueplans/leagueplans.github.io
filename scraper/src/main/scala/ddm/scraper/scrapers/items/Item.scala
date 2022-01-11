@@ -4,6 +4,5 @@ final case class Item(
   id: String,
   name: String,
   stackable: Boolean,
-  examine: String,
-  image: Array[Byte]
+  examine: String
 )
