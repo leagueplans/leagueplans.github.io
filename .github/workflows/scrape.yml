@@ -2,8 +2,11 @@ on:
   workflow_dispatch:
     inputs:
       resource:
-        description: 'Key for the resource to scrape. See the scrape_wiki.sh script for possible values.'
-        required: true
+        type: choice
+        description: 'Key for the resource to scrape'
+        options:
+        - items
+        - skill-icons
 
 jobs:
   scrape:

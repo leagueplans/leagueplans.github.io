@@ -6,6 +6,8 @@ lazy val root =
   (project in file("."))
     .aggregate(wikiScraper, ui)
 
+val circeVersion = "0.14.1"
+
 lazy val wikiScraper =
   (project in file("scraper"))
     .settings(
@@ -17,7 +19,8 @@ lazy val wikiScraper =
         "com.typesafe.akka" %% "akka-stream" % "2.6.8",
         "com.typesafe.akka" %% "akka-http" % "10.2.4",
         "com.sksamuel.scrimage" % "scrimage-core" % "4.0.20",
-        "com.sksamuel.scrimage" %% "scrimage-scala" % "4.0.20"
+        "com.sksamuel.scrimage" %% "scrimage-scala" % "4.0.20",
+        "io.circe" %% "circe-core" % circeVersion,
       )
     )
 
