@@ -1,6 +1,6 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.component.ResourcePaths
+import ddm.ui.ResourcePaths
 import ddm.ui.component.player.TooltipComponent
 import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.ScalaComponent

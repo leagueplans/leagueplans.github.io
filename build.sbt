@@ -32,6 +32,7 @@ lazy val ui =
         "org.scala-js" %%% "scalajs-dom" % "1.1.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "1.7.7",
         "io.circe" %%% "circe-core" % circeVersion,
+        "io.circe" %%% "circe-generic" % circeVersion,
         "io.circe" %%% "circe-parser" % circeVersion
       ),
       Compile / npmDependencies ++= List(

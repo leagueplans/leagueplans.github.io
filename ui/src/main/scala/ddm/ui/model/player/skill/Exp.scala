@@ -1,5 +1,7 @@
 package ddm.ui.model.player.skill
 
+import io.circe.{Decoder, Encoder}
+
 object Exp {
   def apply(i: Int): Exp =
     new Exp(i * 10) {}
@@ -9,6 +11,9 @@ object Exp {
 
   implicit val ordering: Ordering[Exp] =
     Ordering.by(_.raw)
+
+  implicit val encoder: Encoder[Exp] = Encoder[Int].contramap(_.raw)
+  implicit val decoder: Decoder[Exp] = Decoder[Int].map(new Exp(_) {})
 }
 
 sealed abstract case class Exp(raw: Int) {

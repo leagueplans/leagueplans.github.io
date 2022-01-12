@@ -1,5 +1,7 @@
 package ddm.ui.model.player.skill
 
+import io.circe.{Decoder, Encoder}
+
 sealed trait Skill
 
 object Skill {
@@ -53,4 +55,14 @@ object Skill {
       Thieving,
       Woodcutting
     )
+
+  private val nameToSkill: Map[String, Skill] =
+    all.map(s => s.toString -> s).toMap
+
+  implicit val encoder: Encoder[Skill] = Encoder[String].contramap(_.toString)
+  implicit val decoder: Decoder[Skill] = Decoder[String].emap(s =>
+    nameToSkill
+      .get(s)
+      .toRight(left = s"Unknown skill name: [$s]")
+  )
 }

@@ -1,4 +1,4 @@
-package ddm.ui.component
+package ddm.ui
 
 import ddm.ui.model.player.item.Item
 import ddm.ui.model.player.skill.Skill
@@ -12,4 +12,7 @@ object ResourcePaths {
 
   val itemsJson: String =
     "data/items.json"
+
+  val planJson: String =
+    "data/plan.json"
 }
