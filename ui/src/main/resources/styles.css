@@ -90,28 +90,33 @@ p {
   left: 8%;
 }
 
-.stat:hover .tooltip {
-  visibility: visible;
-}
-
 .tooltip {
   visibility: hidden;
   position: absolute;
   z-index: 1;
   background-color: #e8e895;
   padding: 2px;
-  white-space: nowrap;
+  transition: 0s visibility;
 }
 
-.tooltip-text p {
+.tooltip p {
   color: black;
 }
 
-.tooltip-text.left {
+.element-with-tooltip:hover .tooltip {
+  visibility: visible;
+  transition-delay: 250ms;
+}
+
+.text-based-table {
+  white-space: nowrap;
+}
+
+.text-based-table.left {
   text-align: left;
 }
 
-.tooltip-text.right {
+.text-based-table.right {
   text-align: right;
 }
 
@@ -160,8 +165,4 @@ p {
 .item-quantity {
   position: absolute;
   top: 0px;
-}
-
-.depository-cell:hover .tooltip {
-  visibility: visible;
 }

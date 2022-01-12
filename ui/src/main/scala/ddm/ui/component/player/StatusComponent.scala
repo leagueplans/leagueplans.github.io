@@ -1,5 +1,6 @@
 package ddm.ui.component.player
 
+import ddm.ui.component.common.TextBasedTable
 import ddm.ui.component.player.stats.StatPaneComponent
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Item
@@ -39,8 +40,10 @@ object StatusComponent {
             EquipmentComponent(props.player.equipment, props.itemCache)
           ),
           <.td(
-            <.p(s"Quest points: ${props.player.questPoints}"),
-            <.p(s"Combat level: ${String.format("%.2f", props.player.stats.combatLevel)}")
+            TextBasedTable(
+              "Quest points:" -> props.player.questPoints.toString,
+              "Combat level:" -> String.format("%.2f", props.player.stats.combatLevel)
+            )
           ),
           <.td(
             LeagueComponent(props.player.leagueStatus)

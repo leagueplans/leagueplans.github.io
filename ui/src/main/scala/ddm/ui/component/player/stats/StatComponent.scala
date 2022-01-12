@@ -1,51 +1,59 @@
 package ddm.ui.component.player.stats
 
 import ddm.ui.ResourcePaths
-import ddm.ui.component.player.TooltipComponent
+import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object StatComponent {
-  def apply(stat: Stat): Unmounted[Stat, Unit, Unit] =
+  def apply(stat: Stat): Unmounted[Props, Unit, Unit] =
     ScalaComponent
-      .builder[Stat]
-      .render_P(s =>
-        <.div(
-          ^.className := "stat",
-          <.img(
-            ^.className := "stat-icon",
-            ^.src := ResourcePaths.skillIcon(s.skill),
-            ^.alt := s"${s.skill} icon"
-          ),
-          <.img(
-            ^.className := "stat-background",
-            ^.src := "images/stat-pane/stat-background.png",
-            ^.alt := s"${s.skill} level"
-          ),
-          <.p(
-            ^.className := "stat-text numerator",
-            s.level.raw
-          ),
-          <.p(
-            ^.className := "stat-text denominator",
-            s.level.raw
-          ),
-          s.level.next match {
-            case Some(next) =>
-              TooltipComponent(
-                s"${s.skill.toString} XP:" -> s.exp.toString,
-                "Next level at:" -> next.bound.toString,
-                "Remaining XP:" -> (next.bound - s.exp).toString
-              )
-            case None =>
-              TooltipComponent(
-                s"${s.skill.toString} XP:" -> s.exp.toString
-              )
-          }
-        )
-      )
+      .builder[Props]
+      .render_P(render)
       .build
-      .apply(stat)
+      .apply(Props(stat))
+
+  final case class Props(stat: Stat)
+
+  private def render(props: Props): VdomNode =
+    ElementWithTooltipComponent(
+      element = renderCell(props.stat),
+      tooltip = props.stat.level.next match {
+        case Some(next) =>
+          TextBasedTable(
+            s"${props.stat.skill.toString} XP:" -> props.stat.exp.toString,
+            "Next level at:" -> next.bound.toString,
+            "Remaining XP:" -> (next.bound - props.stat.exp).toString
+          )
+        case None =>
+          TextBasedTable(
+            s"${props.stat.skill.toString} XP:" -> props.stat.exp.toString
+          )
+      }
+    )
+
+  private def renderCell(stat: Stat): VdomNode =
+    <.div(
+      ^.className := "stat",
+      <.img(
+        ^.className := "stat-icon",
+        ^.src := ResourcePaths.skillIcon(stat.skill),
+        ^.alt := s"${stat.skill} icon"
+      ),
+      <.img(
+        ^.className := "stat-background",
+        ^.src := "images/stat-pane/stat-background.png",
+        ^.alt := s"${stat.skill} level"
+      ),
+      <.p(
+        ^.className := "stat-text numerator",
+        stat.level.raw
+      ),
+      <.p(
+        ^.className := "stat-text denominator",
+        stat.level.raw
+      )
+    )
 }
