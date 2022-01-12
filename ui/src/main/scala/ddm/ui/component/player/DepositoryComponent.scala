@@ -6,28 +6,28 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object DepositoryComponent {
-  def apply(
-    depository: Depository,
-    itemCache: Map[Item.ID, Item]
-  ): Unmounted[Depository, Unit, Unit] =
+  def apply(depository: Depository, itemCache: Map[Item.ID, Item]): Unmounted[Props, Unit, Unit] =
     ScalaComponent
-      .builder[Depository]
-      .render_P(d =>
-        <.table(
-          ^.className := "depository",
-          <.tbody(
-            splitIntoRows(itemCache, d).toTagMod(row =>
-              <.tr(
-                row.toTagMod(contents =>
-                  <.td(DepositoryCellComponent(contents))
-                )
-              )
+      .builder[Props]
+      .render_P(render)
+      .build
+      .apply(Props(depository, itemCache))
+
+  final case class Props(depository: Depository, itemCache: Map[Item.ID, Item])
+
+  private def render(props: Props): VdomNode =
+    <.table(
+      ^.className := "depository",
+      <.tbody(
+        splitIntoRows(props.itemCache, props.depository).toTagMod(row =>
+          <.tr(
+            row.toTagMod(contents =>
+              <.td(DepositoryCellComponent(contents))
             )
           )
         )
       )
-      .build
-      .apply(depository)
+    )
 
   private def splitIntoRows(itemCache: Map[Item.ID, Item], depository: Depository): Iterator[List[Option[(Item, Int)]]] = {
     val cells = destack(itemCache, depository)

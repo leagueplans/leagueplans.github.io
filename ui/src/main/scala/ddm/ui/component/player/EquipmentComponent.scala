@@ -6,18 +6,23 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object EquipmentComponent {
-  def apply(equipment: Equipment, itemCache: Map[Item.ID, Item]): Unmounted[Equipment, Unit, Unit] =
+  def apply(equipment: Equipment, itemCache: Map[Item.ID, Item]): Unmounted[Props, Unit, Unit] =
     ScalaComponent
-      .builder[Equipment]
-      .render_P(e =>
-        <.div(
-          e.raw
-            .values
-            .toList
-            .sortBy(_.id.raw)
-            .toTagMod(DepositoryComponent(_, itemCache))
-        )
-      )
+      .builder[Props]
+      .render_P(render)
       .build
-      .apply(equipment)
+      .apply(Props(equipment, itemCache))
+
+  final case class Props(equipment: Equipment, itemCache: Map[Item.ID, Item])
+
+  private def render(props: Props): VdomNode =
+    <.div(
+      props
+        .equipment
+        .raw
+        .values
+        .toList
+        .sortBy(_.id.raw)
+        .toTagMod(DepositoryComponent(_, props.itemCache))
+    )
 }

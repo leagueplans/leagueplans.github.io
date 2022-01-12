@@ -2,8 +2,7 @@ package ddm.ui.component.plan
 
 import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.VdomNode
-import japgolly.scalajs.react.vdom.html_<^.{^, _}
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import java.util.UUID

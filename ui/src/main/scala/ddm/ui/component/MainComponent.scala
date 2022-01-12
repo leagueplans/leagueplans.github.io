@@ -14,6 +14,14 @@ import java.util.UUID
 import scala.annotation.tailrec
 
 object MainComponent {
+  def apply(plan: Step, itemCache: Map[Item.ID, Item]): Unmounted[Props, State, Backend] =
+    ScalaComponent
+      .builder[Props]
+      .initialState[State](State(focusedStep = None, hiddenSteps = Set.empty))
+      .renderBackend[Backend]
+      .build
+      .apply(Props(plan, itemCache))
+
   final case class Props(plan: Step, itemCache: Map[Item.ID, Item])
   final case class State(focusedStep: Option[UUID], hiddenSteps: Set[UUID])
 
@@ -69,12 +77,4 @@ object MainComponent {
         case h :: t => flatten(acc = acc :+ h, remaining = h.substeps ++ t)
       }
   }
-
-  def apply(plan: Step, itemCache: Map[Item.ID, Item]): Unmounted[Props, State, Backend] =
-    ScalaComponent
-      .builder[Props]
-      .initialState[State](State(focusedStep = None, hiddenSteps = Set.empty))
-      .renderBackend[Backend]
-      .build
-      .apply(Props(plan, itemCache))
 }
