@@ -1,10 +1,10 @@
-package ddm.ui.component.player
+package ddm.ui.component.common
 
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
-object TooltipComponent {
+object TextBasedTable {
   def apply(rows: (String, String)*): Unmounted[Props, Unit, Unit] =
     ScalaComponent
       .builder[Props]
@@ -16,15 +16,15 @@ object TooltipComponent {
 
   private def render(props: Props): VdomNode =
     <.table(
+      ^.className := "text-based-table",
       <.tbody(
-        ^.className := "tooltip",
         <.tr(
           <.td(
-            ^.className := "tooltip-text left",
+            ^.className := "text-based-table left",
             props.rows.toTagMod { case (key, _) => <.p(key) },
           ),
           <.td(
-            ^.className := "tooltip-text right",
+            ^.className := "text-based-table right",
             props.rows.toTagMod { case (_, value) => <.p(value) },
           )
         )

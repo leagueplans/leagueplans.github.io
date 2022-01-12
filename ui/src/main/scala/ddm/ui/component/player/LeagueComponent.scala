@@ -1,5 +1,6 @@
 package ddm.ui.component.player
 
+import ddm.ui.component.common.TextBasedTable
 import ddm.ui.model.player.league.LeagueStatus
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -16,9 +17,9 @@ object LeagueComponent {
   final case class Props(leagueStatus: LeagueStatus)
 
   private def render(props: Props): VdomNode =
-    <.div(
-      <.p(s"Multiplier: ${props.leagueStatus.multiplier}"),
-      <.p(s"League points: ${props.leagueStatus.leaguePoints}"),
-      <.p(s"Expected renown: ${props.leagueStatus.expectedRenown}")
+    TextBasedTable(
+      "Multiplier:" -> props.leagueStatus.multiplier.toString,
+      "League points:" -> props.leagueStatus.leaguePoints.toString,
+      "Expected renown:" -> props.leagueStatus.expectedRenown.toString
     )
 }

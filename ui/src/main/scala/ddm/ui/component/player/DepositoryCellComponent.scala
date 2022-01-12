@@ -1,6 +1,7 @@
 package ddm.ui.component.player
 
 import ddm.ui.ResourcePaths
+import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.item.Item
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -23,20 +24,25 @@ object DepositoryCellComponent {
         <.div(^.className := "depository-cell")
 
       case Some((item, count)) =>
-        <.div(
-          ^.className := "depository-cell",
-          <.img(
-            ^.src := ResourcePaths.itemIcon(item.id),
-            ^.alt := s"${item.name} icon"
-          ),
-          TooltipComponent(
+        ElementWithTooltipComponent(
+          element = filledCell(item, count),
+          tooltip = TextBasedTable(
             "Name:" -> item.name,
             "ID:" -> item.id.raw,
             "Quantity:" -> count.toString,
-          ),
-          quantityAnnotation(count)
+          )
         )
     }
+
+  private def filledCell(item: Item, count: Int): VdomNode =
+    <.div(
+      ^.className := "depository-cell",
+      <.img(
+        ^.src := ResourcePaths.itemIcon(item.id),
+        ^.alt := s"${item.name} icon"
+      ),
+      quantityAnnotation(count)
+    )
 
   private def quantityAnnotation(quantity: Int): Option[VdomTagOf[Paragraph]] = {
     val maybeColorAndText =

@@ -1,6 +1,6 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.component.player.TooltipComponent
+import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.skill.Exp
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -17,21 +17,21 @@ object TotalLevelComponent {
   final case class Props(totalLevel: Int, totalExp: Exp)
 
   private def render(props: Props): VdomNode =
-    <.div(
-      ^.className := "stat",
-      <.img(
-        ^.className := "stat-background",
-        ^.src := "images/stat-pane/total-level-background.png",
-        ^.alt := "Total level",
+    ElementWithTooltipComponent(
+      element = <.div(
+        ^.className := "stat",
+        <.img(
+          ^.className := "stat-background",
+          ^.src := "images/stat-pane/total-level-background.png",
+          ^.alt := "Total level",
+        ),
+        <.p(
+          ^.className := "stat-text total-level",
+          "Total level:",
+          <.br,
+          props.totalLevel
+        ),
       ),
-      <.p(
-        ^.className := "stat-text total-level",
-        "Total level:",
-        <.br,
-        props.totalLevel
-      ),
-      TooltipComponent(
-        "Total XP:" -> props.totalExp.toString
-      )
+      tooltip = TextBasedTable("Total XP:" -> props.totalExp.toString)
     )
 }
