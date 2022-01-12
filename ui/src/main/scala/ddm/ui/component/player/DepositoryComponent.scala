@@ -6,14 +6,18 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object DepositoryComponent {
-  def apply(name: String, depository: Depository): Unmounted[Depository, Unit, Unit] =
+  def apply(
+    id: Depository.ID,
+    depository: Depository,
+    itemCache: Map[Item.ID, Item]
+  ): Unmounted[Depository, Unit, Unit] =
     ScalaComponent
       .builder[Depository]
       .render_P(d =>
         <.div(
-          <.p(name),
+          <.p(id.toString),
           <.div(
-            destack(d)
+            destack(itemCache, d)
               .sortBy { case (item, _) => item.name }
               .zipWithIndex
               .toTagMod { case ((item, count), index) =>
@@ -26,11 +30,15 @@ object DepositoryComponent {
       .build
       .apply(depository)
 
-  private def destack(depository: Depository): List[(Item, Int)] =
-    depository.contents.toList.flatMap {
-      case (item, count) if item.stackable || depository.stackAll =>
-        List((item, count))
-      case (item, count) =>
-        List.fill(count)((item, 1))
-    }
+  private def destack(itemCache: Map[Item.ID, Item], depository: Depository): List[(Item, Int)] =
+    depository
+      .contents
+      .toList
+      .map { case (id, count) => (itemCache(id), count) }
+      .flatMap {
+        case (item, count) if item.stackable || depository.stackAll =>
+          List((item, count))
+        case (item, count) =>
+          List.fill(count)((item, 1))
+      }
 }

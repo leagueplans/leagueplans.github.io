@@ -36,17 +36,11 @@ object ItemsScraper extends Scraper {
         .runWith(Sink.fold((0, 0)) { case ((accMaxWidth, accMaxHeight), (item, rawImage)) =>
           val image = imageLoader.fromBytes(rawImage)
           val dimensions = image.dimensions()
-          val itemData = JsonObject(
-            "id" -> item.id.asJson,
-            "name" -> item.name.asJson,
-            "examine" -> item.examine.asJson,
-            "stackable" -> item.stackable.asJson
-          ).asJson
 
           image.output(PngWriter.NoCompression, imagePath.resolve(s"${item.id}.png"))
           Files.write(
             dataPath.resolve("items"),
-            itemData.noSpaces.getBytes(),
+            item.asJson.noSpaces.getBytes(),
             StandardOpenOption.CREATE,
             StandardOpenOption.APPEND
           )
