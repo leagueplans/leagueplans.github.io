@@ -20,7 +20,7 @@ lazy val wikiScraper =
         "com.typesafe.akka" %% "akka-http" % "10.2.4",
         "com.sksamuel.scrimage" % "scrimage-core" % "4.0.20",
         "com.sksamuel.scrimage" %% "scrimage-scala" % "4.0.20",
-        "io.circe" %% "circe-core" % circeVersion,
+        "io.circe" %% "circe-core" % circeVersion
       )
     )
 
@@ -30,7 +30,9 @@ lazy val ui =
     .settings(
       libraryDependencies ++= List(
         "org.scala-js" %%% "scalajs-dom" % "1.1.0",
-        "com.github.japgolly.scalajs-react" %%% "core" % "1.7.7"
+        "com.github.japgolly.scalajs-react" %%% "core" % "1.7.7",
+        "io.circe" %%% "circe-core" % circeVersion,
+        "io.circe" %%% "circe-parser" % circeVersion
       ),
       Compile / npmDependencies ++= List(
         "react" -> "17.0.2",
@@ -40,5 +42,7 @@ lazy val ui =
       jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
       Test / requireJsDomEnv := true,
       webpack / version := "4.44.2",
-      startWebpackDevServer / version := "3.11.2"
+      startWebpackDevServer / version := "3.11.2",
+      (Compile / fastOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) },
+      (Compile / fullOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) }
     )
