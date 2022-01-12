@@ -7,6 +7,15 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object StatPaneComponent {
+  def apply(stats: Stats): Unmounted[Props, Unit, Unit] =
+    ScalaComponent
+      .builder[Props]
+      .render_P(render)
+      .build
+      .apply(Props(stats))
+
+  final case class Props(stats: Stats)
+
   private val orderedSkills: List[Skill] =
     List(
       Attack,
@@ -34,30 +43,24 @@ object StatPaneComponent {
       Hunter
     )
 
-  def apply(stats: Stats): Unmounted[Stats, Unit, Unit] =
-    ScalaComponent
-      .builder[Stats]
-      .render_P(p =>
-        <.table(
-          ^.className := "stat-pane",
-          <.tbody(
-            orderedSkills
-              .map(skill => StatComponent(Stat(skill, p(skill))))
-              .appended(TotalLevelComponent(p.totalLevel, p.totalExp))
-              .sliding(size = 3, step = 3)
-              .toTagMod(row =>
-                <.tr(
-                  row.toTagMod(component =>
-                    <.td(
-                      ^.className := "stat-pane-cell",
-                      component
-                    )
-                  )
+  private def render(props: Props): VdomNode =
+    <.table(
+      ^.className := "stat-pane",
+      <.tbody(
+        orderedSkills
+          .map(skill => StatComponent(Stat(skill, props.stats(skill))))
+          .appended(TotalLevelComponent(props.stats.totalLevel, props.stats.totalExp))
+          .sliding(size = 3, step = 3)
+          .toTagMod(row =>
+            <.tr(
+              row.toTagMod(component =>
+                <.td(
+                  ^.className := "stat-pane-cell",
+                  component
                 )
               )
+            )
           )
-        )
       )
-      .build
-      .apply(stats)
+    )
 }

@@ -1,9 +1,11 @@
 package ddm.ui.component.plan
 
 import ddm.ui.model.plan.Step
-import japgolly.scalajs.react.component.Scala.{BackendScope, Unmounted}
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
+
+import java.util.UUID
 
 object StepComponent {
   sealed trait Theme {
@@ -23,34 +25,70 @@ object StepComponent {
     }
   }
 
-  final case class Props(step: Step, theme: Theme)
+  def apply(
+    step: Step,
+    theme: Theme,
+    hiddenSteps: Set[UUID],
+    setFocusedStep: UUID => Callback,
+    toggleVisibility: UUID => Callback
+  ): Unmounted[Props, Unit, Unit] =
+    ScalaComponent
+      .builder[Props]
+      .render_P(render)
+      .build
+      .apply(
+        Props(
+          step,
+          theme,
+          hiddenSteps,
+          setFocusedStep,
+          toggleVisibility
+        )
+      )
 
-  final class Backend(scope: BackendScope[Props, Visibility]) {
-    def render(p: Props, visibility: Visibility): VdomElement =
+  final case class Props(
+    step: Step,
+    theme: Theme,
+    hiddenSteps: Set[UUID],
+    setFocusedStep: UUID => Callback,
+    toggleVisibility: UUID => Callback
+  ) {
+    def toggleThisStepVisibility(event: ^.onClick.Event): Callback = {
+      event.stopPropagation()
+      toggleVisibility(step.id)
+    }
+  }
+
+  private def render(props: Props): VdomNode = {
+    val visibility =
+      if (props.hiddenSteps.contains(props.step.id))
+        Visibility.Hidden
+      else
+        Visibility.Visible
+
+    <.div(
+      ^.className := s"step-box row ${props.theme.cssClass}",
+      StepVisibilityComponent(visibility, props.toggleThisStepVisibility),
       <.div(
-        ^.className := s"step-box row ${p.theme.cssClass}",
-        StepVisibilityComponent(visibility, toggleVisibility),
+        ^.className := "step-content",
+        ^.onClick ==> { event =>
+          event.stopPropagation()
+          props.setFocusedStep(props.step.id)
+        },
+        <.p(props.step.description),
         <.div(
-          ^.className := "step-content",
-          <.p(p.step.description),
-          <.div(
-            ^.classSet(visibility.cssClassSetter),
-            p.step.substeps.toTagMod(substep =>
-              StepComponent(substep, p.theme.other)
+          ^.classSet(visibility.cssClassSetter),
+          props.step.substeps.toTagMod(substep =>
+            StepComponent(
+              substep,
+              props.theme.other,
+              props.hiddenSteps,
+              props.setFocusedStep,
+              props.toggleVisibility
             )
           )
         )
       )
-
-    def toggleVisibility: Callback =
-      scope.modState(_.other)
+    )
   }
-
-  def apply(step: Step, theme: Theme): Unmounted[Props, Visibility, Backend] =
-    ScalaComponent
-      .builder[Props]
-      .initialState[Visibility](Visibility.Visible)
-      .renderBackend[Backend]
-      .build
-      .apply(Props(step, theme))
 }

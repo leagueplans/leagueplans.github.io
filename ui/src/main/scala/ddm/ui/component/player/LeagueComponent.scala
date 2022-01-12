@@ -6,16 +6,19 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object LeagueComponent {
-  def apply(leagueStatus: LeagueStatus): Unmounted[LeagueStatus, Unit, Unit] =
+  def apply(leagueStatus: LeagueStatus): Unmounted[Props, Unit, Unit] =
     ScalaComponent
-      .builder[LeagueStatus]
-      .render_P(ls =>
-        <.div(
-          <.p(s"Multiplier: ${ls.multiplier}"),
-          <.p(s"League points: ${ls.leaguePoints}"),
-          <.p(s"Expected renown: ${ls.expectedRenown}")
-        )
-      )
+      .builder[Props]
+      .render_P(render)
       .build
-      .apply(leagueStatus)
+      .apply(Props(leagueStatus))
+
+  final case class Props(leagueStatus: LeagueStatus)
+
+  private def render(props: Props): VdomNode =
+    <.div(
+      <.p(s"Multiplier: ${props.leagueStatus.multiplier}"),
+      <.p(s"League points: ${props.leagueStatus.leaguePoints}"),
+      <.p(s"Expected renown: ${props.leagueStatus.expectedRenown}")
+    )
 }

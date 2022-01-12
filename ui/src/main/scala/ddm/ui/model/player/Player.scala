@@ -1,8 +1,8 @@
 package ddm.ui.model.player
 
 import ddm.ui.model.player.item.{Depository, Equipment}
+import ddm.ui.model.player.league.LeagueStatus
 import ddm.ui.model.player.skill.Stats
-import ddm.ui.model.player.league.{LeagueStatus, Task}
 
 object Player {
   def initial: Player =
