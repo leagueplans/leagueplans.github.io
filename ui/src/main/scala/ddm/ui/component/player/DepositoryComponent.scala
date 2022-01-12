@@ -7,7 +7,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 
 object DepositoryComponent {
   def apply(
-    id: Depository.ID,
     depository: Depository,
     itemCache: Map[Item.ID, Item]
   ): Unmounted[Depository, Unit, Unit] =

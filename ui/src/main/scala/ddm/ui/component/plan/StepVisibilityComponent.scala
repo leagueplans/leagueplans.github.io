@@ -5,14 +5,14 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 object StepVisibilityComponent {
-  final case class Props(visibility: Visibility, onClick: Callback)
+  final case class Props(visibility: Visibility, onClick: ^.onClick.Event => Callback)
 
-  def apply(visibility: Visibility, onClick: Callback): Unmounted[Props, Unit, Unit] =
+  def apply(visibility: Visibility, onClick: ^.onClick.Event => Callback): Unmounted[Props, Unit, Unit] =
     ScalaComponent
       .builder[Props]
       .render_P(p =>
         <.button(
-          ^.onClick --> p.onClick,
+          ^.onClick ==> p.onClick,
           ^.className := "step-visibility",
           <.p(
             ^.className := "step-visibility-icon",

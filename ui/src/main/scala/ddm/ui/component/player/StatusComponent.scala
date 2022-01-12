@@ -19,13 +19,14 @@ object StatusComponent {
                 StatPaneComponent(p.stats)
               ),
               p.depositories
+                .values
                 .toList
-                .sortBy { case (name, _) => name.toString }
-                .toTagMod { case (name, depository) =>
+                .sortBy(_.id.raw)
+                .toTagMod(depository =>
                   <.td(
-                    DepositoryComponent(name, depository, itemCache)
+                    DepositoryComponent(depository, itemCache)
                   )
-                },
+                ),
               <.td(
                 EquipmentComponent(p.equipment, itemCache)
               ),

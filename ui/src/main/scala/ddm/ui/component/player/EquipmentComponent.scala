@@ -12,11 +12,10 @@ object EquipmentComponent {
       .render_P(e =>
         <.div(
           e.raw
+            .values
             .toList
-            .sortBy { case (slot, _) => slot.toString }
-            .toTagMod { case (slot, depository) =>
-              DepositoryComponent(slot, depository, itemCache)
-            }
+            .sortBy(_.id.raw)
+            .toTagMod(DepositoryComponent(_, itemCache))
         )
       )
       .build
