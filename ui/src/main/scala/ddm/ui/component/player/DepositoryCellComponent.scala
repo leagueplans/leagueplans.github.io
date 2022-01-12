@@ -1,6 +1,6 @@
 package ddm.ui.component.player
 
-import ddm.ui.component.ResourcePaths
+import ddm.ui.ResourcePaths
 import ddm.ui.model.player.item.Item
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted

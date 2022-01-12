@@ -1,12 +1,12 @@
 package ddm.ui
 
-import ddm.ui.component.ResourcePaths
 import ddm.ui.component.plan.StepComponent
 import ddm.ui.component.player.StatusComponent
 import ddm.ui.model.EffectResolver
-import ddm.ui.model.plan.Plan
+import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Item
+import io.circe.Decoder
 import io.circe.parser.decode
 import japgolly.scalajs.react.vdom.TagOf
 import japgolly.scalajs.react.vdom.html_<^._
@@ -21,31 +21,28 @@ object Main extends App {
   document.addEventListener[Event]("DOMContentLoaded", _ => setupUI())
 
   private def setupUI(): Unit =
-    withItemCache { itemCache =>
-      // Creating a container, since react raises a warning if we render
-      // directly into the document body.
-      val container = document.createElement("div")
-      html(itemCache).renderIntoDOM(container)
-      document.body.appendChild(container)
-    }
+    withResource[List[Item]](ResourcePaths.itemsJson)(items =>
+      withResource[Step](ResourcePaths.planJson) { plan =>
+        val itemCache = items.map(i => i.id -> i).toMap
+        // Creating a container, since react raises a warning if we render
+        // directly into the document body.
+        val container = document.createElement("div")
+        html(itemCache, plan).renderIntoDOM(container)
+        document.body.appendChild(container)
+      }
+    )
 
-  private def withItemCache(f: Map[Item.ID, Item] => Unit): Unit =
+  private def withResource[T : Decoder](path: String)(f: T => Unit): Unit =
     Fetch
-      .fetch(ResourcePaths.itemsJson)
+      .fetch(path)
       .toFuture
       .flatMap(_.text().toFuture)
-      .map(rawJson =>
-        decode[List[Item]](rawJson).map(items =>
-          items.map(i => i.id -> i).toMap
-        )
-      )
+      .map(decode[T])
       .map(_.toTry)
       .flatMap(Future.fromTry)
       .foreach(f)
 
-  private def html(itemCache: Map[Item.ID, Item]): TagOf[HTMLElement] = {
-    val plan = Plan.test
-
+  private def html(itemCache: Map[Item.ID, Item], plan: Step): TagOf[HTMLElement] =
     <.table(
       <.tbody(
         <.tr(
@@ -61,5 +58,4 @@ object Main extends App {
         )
       )
     )
-  }
 }

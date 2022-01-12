@@ -1,14 +1,10 @@
 package ddm.ui.model.player.skill
 
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 
 sealed trait Skill
 
 object Skill {
-  implicit val encoder: Encoder[Skill] = deriveEncoder[Skill]
-  implicit val decoder: Decoder[Skill] = deriveDecoder[Skill]
-
   case object Agility extends Skill
   case object Attack extends Skill
   case object Construction extends Skill
@@ -59,4 +55,14 @@ object Skill {
       Thieving,
       Woodcutting
     )
+
+  private val nameToSkill: Map[String, Skill] =
+    all.map(s => s.toString -> s).toMap
+
+  implicit val encoder: Encoder[Skill] = Encoder[String].contramap(_.toString)
+  implicit val decoder: Decoder[Skill] = Decoder[String].emap(s =>
+    nameToSkill
+      .get(s)
+      .toRight(left = s"Unknown skill name: [$s]")
+  )
 }

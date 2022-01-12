@@ -1,35 +1,18 @@
 package ddm.ui.model.player.item
 
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 
 object Depository {
-  sealed trait ID
+  final case class ID(raw: String)
 
   object ID {
-    case object Inventory extends ID
-    case object Bank extends ID
-
-    sealed trait EquipmentSlot extends ID
-    case object HeadSlot extends EquipmentSlot
-    case object CapeSlot extends EquipmentSlot
-    case object NeckSlot extends EquipmentSlot
-    case object AmmunitionSlot extends EquipmentSlot
-    case object WeaponSlot extends EquipmentSlot
-    case object ShieldSlot extends EquipmentSlot
-    case object BodySlot extends EquipmentSlot
-    case object LegsSlot extends EquipmentSlot
-    case object HandsSlot extends EquipmentSlot
-    case object FeetSlot extends EquipmentSlot
-    case object RingSlot extends EquipmentSlot
-
-    implicit val encoder: Encoder[ID] = deriveEncoder[ID]
-    implicit val decoder: Decoder[ID] = deriveDecoder[ID]
+    implicit val encoder: Encoder[ID] = Encoder[String].contramap(_.raw)
+    implicit val decoder: Decoder[ID] = Decoder[String].map(ID.apply)
   }
 
   val bank: Depository =
     Depository(
-      Depository.ID.Bank,
+      Depository.ID("Bank"),
       capacity = 820,
       stackLimit = Int.MaxValue,
       stackAll = true,
@@ -42,7 +25,7 @@ object Depository {
 
   val inventory: Depository =
     Depository(
-      Depository.ID.Inventory,
+      Depository.ID("Inventory"),
       capacity = 28,
       stackLimit = Int.MaxValue,
       stackAll = false,
@@ -70,7 +53,7 @@ object Depository {
       minRows = 7
     )
 
-  def equipmentSlot(id: ID.EquipmentSlot): Depository =
+  def equipmentSlot(id: ID): Depository =
     Depository(
       id,
       capacity = 1,
