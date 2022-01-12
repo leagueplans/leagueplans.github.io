@@ -90,7 +90,11 @@ p {
   left: 8%;
 }
 
-.stat-tooltip {
+.stat:hover .tooltip {
+  visibility: visible;
+}
+
+.tooltip {
   visibility: hidden;
   position: absolute;
   z-index: 1;
@@ -99,20 +103,16 @@ p {
   white-space: nowrap;
 }
 
-.stat-tooltip-text p {
+.tooltip-text p {
   color: black;
 }
 
-.stat-tooltip-text.left {
+.tooltip-text.left {
   text-align: left;
 }
 
-.stat-tooltip-text.right {
+.tooltip-text.right {
   text-align: right;
-}
-
-.stat:hover .stat-tooltip {
-  visibility: visible;
 }
 
 .stat-text {
@@ -140,4 +140,28 @@ p {
   top: 21%;
   text-align: center;
   line-height: 75%;
+}
+
+.depository {
+  border-spacing: 0px;
+  border: solid;
+  border-radius: 5px;
+  height: fit-content;
+  background-color: #494034;
+}
+
+.depository-cell {
+  height: 36px;
+  width: 36px;
+  padding: 0px;
+  position: relative;
+}
+
+.item-quantity {
+  position: absolute;
+  top: 0px;
+}
+
+.depository-cell:hover .tooltip {
+  visibility: visible;
 }

@@ -1,5 +1,6 @@
 package ddm.ui
 
+import ddm.ui.component.ResourcePaths
 import ddm.ui.component.plan.StepComponent
 import ddm.ui.component.player.StatusComponent
 import ddm.ui.model.EffectResolver
@@ -30,7 +31,7 @@ object Main extends App {
 
   private def withItemCache(f: Map[Item.ID, Item] => Unit): Unit =
     Fetch
-      .fetch("data/items.json")
+      .fetch(ResourcePaths.itemsJson)
       .toFuture
       .flatMap(_.text().toFuture)
       .map(rawJson =>

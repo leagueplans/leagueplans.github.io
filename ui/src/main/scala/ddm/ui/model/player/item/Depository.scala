@@ -29,7 +29,9 @@ object Depository {
       stackAll = true,
       contents = Map(
         Item.ID("995") -> 25 // Coins
-      )
+      ),
+      columns = 8,
+      minRows = 6
     )
 
   val inventory: Depository =
@@ -57,7 +59,9 @@ object Depository {
         Item.ID("555") -> 6, // Water rune
         Item.ID("557") -> 4, // Earth rune
         Item.ID("559") -> 2 // Body rune
-      )
+      ),
+      columns = 4,
+      minRows = 7
     )
 
   def equipmentSlot(id: ID.EquipmentSlot): Depository =
@@ -66,7 +70,9 @@ object Depository {
       capacity = 1,
       stackLimit = Int.MaxValue,
       stackAll = false,
-      contents = Map.empty
+      contents = Map.empty,
+      columns = 1,
+      minRows = 1
     )
 }
 
@@ -75,5 +81,7 @@ final case class Depository(
   capacity: Int,
   stackLimit: Int,
   stackAll: Boolean,
-  contents: Map[Item.ID, Int]
+  contents: Map[Item.ID, Int],
+  columns: Int,
+  minRows: Int
 )

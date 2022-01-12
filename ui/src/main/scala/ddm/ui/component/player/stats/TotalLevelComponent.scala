@@ -1,5 +1,6 @@
 package ddm.ui.component.player.stats
 
+import ddm.ui.component.player.TooltipComponent
 import ddm.ui.model.player.skill.Exp
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -23,9 +24,8 @@ object TotalLevelComponent {
             <.br,
             tLevel
           ),
-          <.div(
-            ^.className := "stat-tooltip stat-tooltip-text",
-            <.p(s"Total XP: $tExp")
+          TooltipComponent(
+            "Total XP:" -> tExp.toString
           )
         )
       }

@@ -1,6 +1,7 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.component.SkillIconPath
+import ddm.ui.component.ResourcePaths
+import ddm.ui.component.player.TooltipComponent
 import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -15,7 +16,7 @@ object StatComponent {
           ^.className := "stat",
           <.img(
             ^.className := "stat-icon",
-            ^.src := SkillIconPath(s.skill),
+            ^.src := ResourcePaths.skillIcon(s.skill),
             ^.alt := s"${s.skill} icon"
           ),
           <.img(
@@ -33,29 +34,14 @@ object StatComponent {
           ),
           s.level.next match {
             case Some(next) =>
-              <.table(
-                <.tbody(
-                  ^.className := "stat-tooltip",
-                  <.tr(
-                    <.td(
-                      ^.className := "stat-tooltip-text left",
-                      <.p(s"${s.skill.toString} XP:"),
-                      <.p("Next level at:"),
-                      <.p("Remaining XP:"),
-                    ),
-                    <.td(
-                      ^.className := "stat-tooltip-text right",
-                      <.p(s.exp.toString),
-                      <.p(next.bound.toString),
-                      <.p((next.bound - s.exp).toString)
-                    )
-                  )
-                )
+              TooltipComponent(
+                s"${s.skill.toString} XP:" -> s.exp.toString,
+                "Next level at:" -> next.bound.toString,
+                "Remaining XP:" -> (next.bound - s.exp).toString
               )
             case None =>
-              <.div(
-                ^.className := "stat-tooltip stat-tooltip-text",
-                <.p(s"${s.skill.toString} XP: ${s.exp}")
+              TooltipComponent(
+                s"${s.skill.toString} XP:" -> s.exp.toString
               )
           }
         )
