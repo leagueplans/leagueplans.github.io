@@ -3,10 +3,15 @@ package ddm.ui.model.plan
 import ddm.ui.model.player.item.{Depository, Item}
 import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.{Exp, Skill}
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 sealed trait Effect
 
 object Effect {
+  implicit val encoder: Encoder[Effect] = deriveEncoder[Effect]
+  implicit val decoder: Decoder[Effect] = deriveDecoder[Effect]
+
   final case class GainExp(skill: Skill, baseExp: Exp) extends Effect
 
   final case class GainItem(item: Item.ID, count: Int, target: Depository.ID) extends Effect

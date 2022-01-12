@@ -5,7 +5,7 @@ import io.circe.{Encoder, JsonObject}
 
 object Item {
   implicit val encoder: Encoder[Item] =
-    Encoder.encodeJsonObject.contramap(item =>
+    Encoder[JsonObject].contramap(item =>
       JsonObject(
         "id" -> item.id.asJson,
         "name" -> item.name.asJson,

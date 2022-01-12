@@ -1,8 +1,14 @@
 package ddm.ui.model.player.skill
 
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
+
 sealed trait Skill
 
 object Skill {
+  implicit val encoder: Encoder[Skill] = deriveEncoder[Skill]
+  implicit val decoder: Decoder[Skill] = deriveDecoder[Skill]
+
   case object Agility extends Skill
   case object Attack extends Skill
   case object Construction extends Skill

@@ -7,7 +7,7 @@ import ddm.ui.model.EffectResolver
 import ddm.ui.model.plan.Plan
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Item
-import io.circe.parser.parse
+import io.circe.parser.decode
 import japgolly.scalajs.react.vdom.TagOf
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.experimental.Fetch
@@ -35,10 +35,9 @@ object Main extends App {
       .toFuture
       .flatMap(_.text().toFuture)
       .map(rawJson =>
-        for {
-          json <- parse(rawJson)
-          items <- json.as[List[Item]]
-        } yield items.map(i => i.id -> i).toMap
+        decode[List[Item]](rawJson).map(items =>
+          items.map(i => i.id -> i).toMap
+        )
       )
       .map(_.toTry)
       .flatMap(Future.fromTry)

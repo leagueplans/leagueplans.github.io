@@ -1,5 +1,8 @@
 package ddm.ui.model.player.item
 
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
+
 object Depository {
   sealed trait ID
 
@@ -19,6 +22,9 @@ object Depository {
     case object HandsSlot extends EquipmentSlot
     case object FeetSlot extends EquipmentSlot
     case object RingSlot extends EquipmentSlot
+
+    implicit val encoder: Encoder[ID] = deriveEncoder[ID]
+    implicit val decoder: Decoder[ID] = deriveDecoder[ID]
   }
 
   val bank: Depository =
