@@ -42,5 +42,7 @@ lazy val ui =
       jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
       Test / requireJsDomEnv := true,
       webpack / version := "4.44.2",
-      startWebpackDevServer / version := "3.11.2"
+      startWebpackDevServer / version := "3.11.2",
+      (Compile / fastOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) },
+      (Compile / fullOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) }
     )
