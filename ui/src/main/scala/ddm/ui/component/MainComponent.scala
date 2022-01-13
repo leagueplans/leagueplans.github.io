@@ -8,61 +8,62 @@ import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
-import japgolly.scalajs.react.component.Scala.{BackendScope, Unmounted}
+import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
 
 import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
 
 object MainComponent {
-  def apply(plan: Step, itemCache: ItemCache): Unmounted[Props, State, Backend] =
+  val build: Component[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .initialState[State](State(focusedStep = None, hiddenSteps = Set.empty))
       .renderBackend[Backend]
       .build
-      .apply(Props(plan, itemCache))
 
-  final case class Props(plan: Step, itemCache: ItemCache)
+  type Props = (Step, ItemCache)
   final case class State(focusedStep: Option[UUID], hiddenSteps: Set[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomElement = {
+      val (plan, itemCache) = props
+
       val progressedSteps = state.focusedStep match {
-        case Some(id) => props.plan.takeUntil(id)
-        case None => props.plan.flattened
+        case Some(id) => plan.takeUntil(id)
+        case None => plan.flattened
       }
 
       <.table(
         <.tbody(
           <.tr(
             <.td(
-              StepComponent(
-                props.plan,
+              StepComponent.build((
+                plan,
                 StepComponent.Theme.Dark,
                 state.focusedStep,
                 state.hiddenSteps,
                 setFocusedStep,
                 toggleVisibility
-              )
+              ))
             ),
             <.td(
-              StatusComponent(
+              StatusComponent.build((
                 EffectResolver.resolve(Player.initial, progressedSteps.flatMap(_.directEffects): _*),
-                props.itemCache
-              )
+                itemCache
+              ))
             )
           ),
           <.tr(
             <.td(
-              ConsoleComponent(progressedSteps, Player.initial, props.itemCache)
+              ConsoleComponent.build((progressedSteps, Player.initial, itemCache))
             ),
             <.td(
               ItemSearchComponent.build(
                 new Fuse(
-                  props.itemCache.raw.values.toSet,
+                  itemCache.raw.values.toSet,
                   new FuseOptions {
                     override val keys: UndefOr[js.Array[String]] =
                       js.defined(js.Array("name"))

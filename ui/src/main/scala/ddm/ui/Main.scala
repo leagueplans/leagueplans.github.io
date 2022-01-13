@@ -20,7 +20,7 @@ object Main extends App {
         // Creating a container, since react raises a warning if we render
         // directly into the document body.
         val container = document.createElement("div")
-        MainComponent(plan, ItemCache(items)).renderIntoDOM(container)
+        MainComponent.build((plan, ItemCache(items))).renderIntoDOM(container)
         document.body.appendChild(container)
       }
     )

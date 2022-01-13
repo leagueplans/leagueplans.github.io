@@ -3,35 +3,34 @@ package ddm.ui.component.player
 import ddm.ui.ResourcePaths
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.item.Item
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 import org.scalajs.dom.html.Paragraph
 
 object DepositoryCellComponent {
-  def apply(contents: Option[(Item, Int)]): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P (render)
+      .render_P(render)
       .build
-      .apply(Props(contents))
 
-  final case class Props(contents: Option[(Item, Int)])
+  type Props = Option[(Item, Int)]
 
-  private def render(props: Props): VdomNode =
-    props.contents match {
+  private def render(contents: Option[(Item, Int)]): VdomNode =
+    contents match {
       case None =>
         <.div(^.className := "depository-cell")
 
       case Some((item, count)) =>
-        ElementWithTooltipComponent(
-          element = filledCell(item, count),
-          tooltip = TextBasedTable(
+        ElementWithTooltipComponent.build((
+          filledCell(item, count),
+          TextBasedTable.build(List(
             "Name:" -> item.name,
             "ID:" -> item.id.raw,
             "Quantity:" -> count.toString,
-          )
-        )
+          ))
+        ))
     }
 
   private def filledCell(item: Item, count: Int): VdomNode =

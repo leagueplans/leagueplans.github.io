@@ -5,27 +5,18 @@ import ddm.ui.model.EffectValidator
 import ddm.ui.model.plan.{Effect, Step}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object ConsoleComponent {
-  def apply(
-    progressedSteps: List[Step],
-    initialPlayer: Player,
-    itemCache: ItemCache
-  ): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .render_P((render _).tupled)
       .build
-      .apply(Props(progressedSteps, initialPlayer, itemCache))
 
-  final case class Props(
-    progressedSteps: List[Step],
-    initialPlayer: Player,
-    itemCache: ItemCache
-  )
+  type Props = (List[Step], Player, ItemCache)
 
   private final case class Section(
     description: String,
@@ -33,8 +24,12 @@ object ConsoleComponent {
     errors: List[String]
   )
 
-  private def render(props: Props): VdomNode = {
-    val sections = toSections(props.progressedSteps, props.initialPlayer, props.itemCache)
+  private def render(
+    progressedSteps: List[Step],
+    initialPlayer: Player,
+    itemCache: ItemCache
+  ): VdomNode = {
+    val sections = toSections(progressedSteps, initialPlayer, itemCache)
     val nErrors = sections.map(_.errors.size).sum
 
     val sectionsElement =
@@ -47,7 +42,7 @@ object ConsoleComponent {
         ^.className := "console",
         <.div(
           ^.className := "console-warning",
-          <.p(s"WARNING: Route may not be sound. $nErrors errors found.")
+          <.p(s"WARNING: Route may not be sound. $nErrors error(s) found.")
         ),
         sectionsElement
       )
@@ -126,10 +121,7 @@ object ConsoleComponent {
     )
 
     if (section.errors.nonEmpty)
-      ElementWithTooltipComponent(
-        element = baseElement,
-        tooltip = <.div(section.errors.toTagMod(<.p(_)))
-      )
+      ElementWithTooltipComponent.build((baseElement, <.div(section.errors.toTagMod(<.p(_)))))
     else
       baseElement
   }

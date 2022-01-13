@@ -16,9 +16,9 @@ object TotalLevelComponent {
 
   final case class Props(totalLevel: Int, totalExp: Exp)
 
-  private def render(props: Props): VdomNode =
-    ElementWithTooltipComponent(
-      element = <.div(
+  private def render(props: Props): VdomNode = {
+    val element =
+      <.div(
         ^.className := "stat",
         <.img(
           ^.className := "stat-background",
@@ -31,7 +31,9 @@ object TotalLevelComponent {
           <.br,
           props.totalLevel
         ),
-      ),
-      tooltip = TextBasedTable("Total XP:" -> props.totalExp.toString)
-    )
+      )
+
+    val tooltip = TextBasedTable.build(List("Total XP:" -> props.totalExp.toString))
+    ElementWithTooltipComponent.build((element, tooltip))
+  }
 }
