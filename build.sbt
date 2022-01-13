@@ -36,6 +36,7 @@ lazy val ui =
         "io.circe" %%% "circe-parser" % circeVersion
       ),
       Compile / npmDependencies ++= List(
+        "jsdom" -> "16.6.0",
         "react" -> "17.0.2",
         "react-dom" -> "17.0.2"
       ),
