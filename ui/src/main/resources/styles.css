@@ -35,6 +35,10 @@ p {
   background-color: #2f363d;
 }
 
+.step-box.focused {
+  background-color: #595604;
+}
+
 .step-content {
   padding: 5px;
   flex-grow: 1;

@@ -23,11 +23,17 @@ object StepComponent {
       val other: Light.type = Light
       val cssClass: String = "dark"
     }
+
+    final case class Focused(normalTheme: Theme) extends Theme {
+      val other: Theme = normalTheme.other
+      val cssClass: String = "focused"
+    }
   }
 
   def apply(
     step: Step,
     theme: Theme,
+    focusedStep: Option[UUID],
     hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
     toggleVisibility: UUID => Callback
@@ -40,6 +46,7 @@ object StepComponent {
         Props(
           step,
           theme,
+          focusedStep,
           hiddenSteps,
           setFocusedStep,
           toggleVisibility
@@ -49,6 +56,7 @@ object StepComponent {
   final case class Props(
     step: Step,
     theme: Theme,
+    focusedStep: Option[UUID],
     hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
     toggleVisibility: UUID => Callback
@@ -66,8 +74,14 @@ object StepComponent {
       else
         Visibility.Visible
 
+    val theme =
+      if (props.focusedStep.contains(props.step.id))
+        Theme.Focused(props.theme)
+      else
+        props.theme
+
     <.div(
-      ^.className := s"step-box row ${props.theme.cssClass}",
+      ^.className := s"step-box row ${theme.cssClass}",
       StepVisibilityComponent(visibility, props.toggleThisStepVisibility),
       <.div(
         ^.className := "step-content",
@@ -82,6 +96,7 @@ object StepComponent {
             StepComponent(
               substep,
               props.theme.other,
+              props.focusedStep,
               props.hiddenSteps,
               props.setFocusedStep,
               props.toggleVisibility
