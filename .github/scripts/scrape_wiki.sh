@@ -12,6 +12,7 @@ readonly ROOT_PACKAGE='ddm.scraper'
 readonly -A argMap=(
   ['items']="${ROOT_PACKAGE}.scrapers.items.ItemsScraper ."
   ['skill-icons']="${ROOT_PACKAGE}.scrapers.skillicons.SkillIconsScraper images/skill-icons"
+  ['equipment-icons']="${ROOT_PACKAGE}.scrapers.equipmenticons.EquipmentIconsScraper images/equipment-icons"
 )
 
 readonly -a params=(${argMap[$1]})
