@@ -38,6 +38,7 @@ object MainComponent {
               StepComponent(
                 props.plan,
                 StepComponent.Theme.Dark,
+                state.focusedStep,
                 state.hiddenSteps,
                 setFocusedStep,
                 toggleVisibility
@@ -60,7 +61,11 @@ object MainComponent {
     }
 
     private def setFocusedStep(step: UUID): Callback =
-      scope.modState(_.copy(focusedStep = Some(step)))
+      scope.modState(currentState =>
+        currentState.copy(focusedStep =
+          Option.when(!currentState.focusedStep.contains(step))(step)
+        )
+      )
 
     private def toggleVisibility(step: UUID): Callback =
       scope.modState { current =>
