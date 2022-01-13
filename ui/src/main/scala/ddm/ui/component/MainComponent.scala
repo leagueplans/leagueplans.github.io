@@ -1,16 +1,20 @@
 package ddm.ui.component
 
 import ddm.ui.component.plan.{ConsoleComponent, StepComponent}
-import ddm.ui.component.player.StatusComponent
+import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
+import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
+import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.{BackendScope, Unmounted}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import java.util.UUID
+import scala.scalajs.js
+import scala.scalajs.js.UndefOr
 
 object MainComponent {
   def apply(plan: Step, itemCache: ItemCache): Unmounted[Props, State, Backend] =
@@ -54,6 +58,17 @@ object MainComponent {
           <.tr(
             <.td(
               ConsoleComponent(progressedSteps, Player.initial, props.itemCache)
+            ),
+            <.td(
+              ItemSearchComponent.build(
+                new Fuse(
+                  props.itemCache.raw.values.toSet,
+                  new FuseOptions {
+                    override val keys: UndefOr[js.Array[String]] =
+                      js.defined(js.Array("name"))
+                  }
+                )
+              )
             )
           )
         )
