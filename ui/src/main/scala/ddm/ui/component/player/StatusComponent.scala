@@ -3,20 +3,20 @@ package ddm.ui.component.player
 import ddm.ui.component.common.TextBasedTable
 import ddm.ui.component.player.stats.StatPaneComponent
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.Item
+import ddm.ui.model.player.item.ItemCache
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object StatusComponent {
-  def apply(player: Player, itemCache: Map[Item.ID, Item]): Unmounted[Props, Unit, Unit] =
+  def apply(player: Player, itemCache: ItemCache): Unmounted[Props, Unit, Unit] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
       .apply(Props(player, itemCache))
 
-  final case class Props(player: Player, itemCache: Map[Item.ID, Item])
+  final case class Props(player: Player, itemCache: ItemCache)
 
   private def render(props: Props): VdomNode =
     <.table(

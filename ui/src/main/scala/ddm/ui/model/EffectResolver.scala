@@ -31,10 +31,10 @@ object EffectResolver {
         resolve(
           player,
           Effect.GainItem(item, count, target),
-          Effect.DestroyItem(item, count, source)
+          Effect.DropItem(item, count, source)
         )
 
-      case Effect.DestroyItem(item, count, source) =>
+      case Effect.DropItem(item, count, source) =>
         player.depositories.get(source) match {
           case None => player
           case Some(depository) =>

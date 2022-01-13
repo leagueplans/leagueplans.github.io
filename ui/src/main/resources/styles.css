@@ -166,3 +166,37 @@ p {
   position: absolute;
   top: 0px;
 }
+
+.console {
+  background-color: black;
+}
+
+.console p {
+  color: white;
+}
+
+.console-warning {
+  background-color: #e8e895;
+  padding: 10px;
+}
+
+.console-warning p {
+  font-size: 20px;
+  color: black;
+}
+
+.console .tooltip p {
+  color: black;
+}
+
+.console-section {
+  padding: 10px;
+}
+
+.console-section.error {
+  background-color: #3b0b08;
+}
+
+.console-section-title {
+  font-size: 18px;
+}
