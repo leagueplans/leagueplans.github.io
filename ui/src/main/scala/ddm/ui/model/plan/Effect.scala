@@ -16,7 +16,7 @@ object Effect {
 
   final case class GainItem(item: Item.ID, count: Int, target: Depository.ID) extends Effect
   final case class MoveItem(item: Item.ID, count: Int, source: Depository.ID, target: Depository.ID) extends Effect
-  final case class DestroyItem(item: Item.ID, count: Int, source: Depository.ID) extends Effect
+  final case class DropItem(item: Item.ID, count: Int, source: Depository.ID) extends Effect
 
   final case class GainQuestPoints(count: Int) extends Effect
 

@@ -1,19 +1,19 @@
 package ddm.ui.component.player
 
-import ddm.ui.model.player.item.{Depository, Item}
+import ddm.ui.model.player.item.{Depository, Item, ItemCache}
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object DepositoryComponent {
-  def apply(depository: Depository, itemCache: Map[Item.ID, Item]): Unmounted[Props, Unit, Unit] =
+  def apply(depository: Depository, itemCache: ItemCache): Unmounted[Props, Unit, Unit] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
       .apply(Props(depository, itemCache))
 
-  final case class Props(depository: Depository, itemCache: Map[Item.ID, Item])
+  final case class Props(depository: Depository, itemCache: ItemCache)
 
   private def render(props: Props): VdomNode =
     <.table(
@@ -29,25 +29,12 @@ object DepositoryComponent {
       )
     )
 
-  private def splitIntoRows(itemCache: Map[Item.ID, Item], depository: Depository): Iterator[List[Option[(Item, Int)]]] = {
-    val cells = destack(itemCache, depository)
+  private def splitIntoRows(itemCache: ItemCache, depository: Depository): Iterator[List[Option[(Item, Int)]]] = {
+    val cells = itemCache.itemise(depository)
     val minDepositorySize = depository.columns * depository.minRows
     val emptyCellCount = Math.max(0, minDepositorySize - cells.size)
 
     (cells.map(Some.apply) ++ List.fill(emptyCellCount)(None))
       .sliding(size = depository.columns, step = depository.columns)
   }
-
-  private def destack(itemCache: Map[Item.ID, Item], depository: Depository): List[(Item, Int)] =
-    depository
-      .contents
-      .toList
-      .map { case (id, count) => (itemCache(id), count) }
-      .flatMap {
-        case (item, count) if item.stackable || depository.stackAll =>
-          List((item, count))
-        case (item, count) =>
-          List.fill(count)((item, 1))
-      }
-      .sortBy { case (item, _) => item.name }
 }
