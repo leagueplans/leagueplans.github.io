@@ -1,28 +1,26 @@
 package ddm.ui.component.player
 
 import ddm.ui.model.player.item.{Equipment, ItemCache}
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object EquipmentComponent {
-  def apply(equipment: Equipment, itemCache: ItemCache): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .render_P((render _).tupled)
       .build
-      .apply(Props(equipment, itemCache))
 
-  final case class Props(equipment: Equipment, itemCache: ItemCache)
+  type Props = (Equipment, ItemCache)
 
-  private def render(props: Props): VdomNode =
+  private def render(equipment: Equipment, itemCache: ItemCache): VdomNode =
     <.div(
-      props
-        .equipment
+      equipment
         .raw
         .values
         .toList
         .sortBy(_.id.raw)
-        .toTagMod(DepositoryComponent(_, props.itemCache))
+        .toTagMod(d => DepositoryComponent.build((d, itemCache)))
     )
 }

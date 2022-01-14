@@ -5,7 +5,6 @@ set -o pipefail
 
 readonly DOCS='docs'
 
-npm ci
 sbt test ui/fullOptJS/webpack
 
 if [[ ! -d "${DOCS}" ]]; then

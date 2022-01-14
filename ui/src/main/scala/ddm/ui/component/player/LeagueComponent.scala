@@ -2,24 +2,23 @@ package ddm.ui.component.player
 
 import ddm.ui.component.common.TextBasedTable
 import ddm.ui.model.player.league.LeagueStatus
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object LeagueComponent {
-  def apply(leagueStatus: LeagueStatus): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
-      .apply(Props(leagueStatus))
 
-  final case class Props(leagueStatus: LeagueStatus)
+  type Props = LeagueStatus
 
-  private def render(props: Props): VdomNode =
-    TextBasedTable(
-      "Multiplier:" -> props.leagueStatus.multiplier.toString,
-      "League points:" -> props.leagueStatus.leaguePoints.toString,
-      "Expected renown:" -> props.leagueStatus.expectedRenown.toString
-    )
+  private def render(leagueStatus: LeagueStatus): VdomNode =
+    TextBasedTable.build(List(
+      "Multiplier:" -> leagueStatus.multiplier.toString,
+      "League points:" -> leagueStatus.leaguePoints.toString,
+      "Expected renown:" -> leagueStatus.expectedRenown.toString
+    ))
 }

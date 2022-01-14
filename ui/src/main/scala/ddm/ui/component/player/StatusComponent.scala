@@ -4,49 +4,47 @@ import ddm.ui.component.common.TextBasedTable
 import ddm.ui.component.player.stats.StatPaneComponent
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object StatusComponent {
-  def apply(player: Player, itemCache: ItemCache): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .render_P((render _).tupled)
       .build
-      .apply(Props(player, itemCache))
 
-  final case class Props(player: Player, itemCache: ItemCache)
+  type Props = (Player, ItemCache)
 
-  private def render(props: Props): VdomNode =
+  private def render(player: Player, itemCache: ItemCache): VdomNode =
     <.table(
       <.tbody(
         <.tr(
           <.td(
-            StatPaneComponent(props.player.stats)
+            StatPaneComponent(player.stats)
           ),
-          props
-            .player
+          player
             .depositories
             .values
             .toList
             .sortBy(_.id.raw)
             .toTagMod(depository =>
               <.td(
-                DepositoryComponent(depository, props.itemCache)
+                DepositoryComponent.build((depository, itemCache))
               )
             ),
           <.td(
-            EquipmentComponent(props.player.equipment, props.itemCache)
+            EquipmentComponent.build((player.equipment, itemCache))
           ),
           <.td(
-            TextBasedTable(
-              "Quest points:" -> props.player.questPoints.toString,
-              "Combat level:" -> String.format("%.2f", props.player.stats.combatLevel)
-            )
+            TextBasedTable.build(List(
+              "Quest points:" -> player.questPoints.toString,
+              "Combat level:" -> String.format("%.2f", player.stats.combatLevel)
+            ))
           ),
           <.td(
-            LeagueComponent(props.player.leagueStatus)
+            LeagueComponent.build(player.leagueStatus)
           )
         )
       )

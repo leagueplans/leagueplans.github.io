@@ -17,22 +17,23 @@ object StatComponent {
 
   final case class Props(stat: Stat)
 
-  private def render(props: Props): VdomNode =
-    ElementWithTooltipComponent(
-      element = renderCell(props.stat),
-      tooltip = props.stat.level.next match {
+  private def render(props: Props): VdomNode = {
+    val tooltip =
+      props.stat.level.next match {
         case Some(next) =>
-          TextBasedTable(
+          TextBasedTable.build(List(
             s"${props.stat.skill.toString} XP:" -> props.stat.exp.toString,
             "Next level at:" -> next.bound.toString,
             "Remaining XP:" -> (next.bound - props.stat.exp).toString
-          )
+          ))
         case None =>
-          TextBasedTable(
+          TextBasedTable.build(List(
             s"${props.stat.skill.toString} XP:" -> props.stat.exp.toString
-          )
+          ))
       }
-    )
+
+    ElementWithTooltipComponent.build((renderCell(props.stat), tooltip))
+  }
 
   private def renderCell(stat: Stat): VdomNode =
     <.div(

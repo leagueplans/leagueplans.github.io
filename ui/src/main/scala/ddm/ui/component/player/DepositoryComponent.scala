@@ -1,28 +1,27 @@
 package ddm.ui.component.player
 
 import ddm.ui.model.player.item.{Depository, Item, ItemCache}
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object DepositoryComponent {
-  def apply(depository: Depository, itemCache: ItemCache): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .render_P((render _).tupled)
       .build
-      .apply(Props(depository, itemCache))
 
-  final case class Props(depository: Depository, itemCache: ItemCache)
+  type Props = (Depository, ItemCache)
 
-  private def render(props: Props): VdomNode =
+  private def render(depository: Depository, itemCache: ItemCache): VdomNode =
     <.table(
       ^.className := "depository",
       <.tbody(
-        splitIntoRows(props.itemCache, props.depository).toTagMod(row =>
+        splitIntoRows(itemCache, depository).toTagMod(row =>
           <.tr(
             row.toTagMod(contents =>
-              <.td(DepositoryCellComponent(contents))
+              <.td(DepositoryCellComponent.build(contents))
             )
           )
         )

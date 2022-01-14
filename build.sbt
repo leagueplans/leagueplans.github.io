@@ -33,11 +33,14 @@ lazy val ui =
         "com.github.japgolly.scalajs-react" %%% "core" % "1.7.7",
         "io.circe" %%% "circe-core" % circeVersion,
         "io.circe" %%% "circe-generic" % circeVersion,
-        "io.circe" %%% "circe-parser" % circeVersion
+        "io.circe" %%% "circe-parser" % circeVersion,
+        "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       Compile / npmDependencies ++= List(
+        "jsdom" -> "16.6.0",
         "react" -> "17.0.2",
-        "react-dom" -> "17.0.2"
+        "react-dom" -> "17.0.2",
+        "fuse.js" -> "6.5.3"
       ),
       scalaJSUseMainModuleInitializer := true,
       jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),

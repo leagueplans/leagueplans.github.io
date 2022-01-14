@@ -1,5 +1,6 @@
 package ddm.ui.model.player.item
 
+import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, JsonObject}
 
 object Item {
@@ -9,6 +10,16 @@ object Item {
   }
 
   final case class ID(raw: String)
+
+  implicit val encoder: Encoder[Item] =
+    Encoder[JsonObject].contramap(item =>
+      JsonObject(
+        "id" -> item.id.asJson,
+        "name" -> item.name.asJson,
+        "examine" -> item.examine.asJson,
+        "stackable" -> item.stackable.asJson
+      )
+    )
 
   implicit val decoder: Decoder[Item] =
     Decoder[JsonObject].emap(obj =>
