@@ -1,6 +1,5 @@
 package ddm.ui.component.player
 
-import ddm.ui.ResourcePaths
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.item.Item
 import japgolly.scalajs.react.component.Scala.Component
@@ -36,10 +35,7 @@ object DepositoryCellComponent {
   private def filledCell(item: Item, count: Int): VdomNode =
     <.div(
       ^.className := "depository-cell",
-      <.img(
-        ^.src := ResourcePaths.itemIcon(item.id),
-        ^.alt := s"${item.name} icon"
-      ),
+      ItemIconComponent.build(item),
       quantityAnnotation(count)
     )
 

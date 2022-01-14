@@ -1,6 +1,6 @@
 package ddm.ui.component.player
 
-import ddm.ui.component.common.SearchBoxComponent
+import ddm.ui.component.common.{ElementWithTooltipComponent, SearchBoxComponent, TextBasedTable}
 import ddm.ui.model.player.item.Item
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
@@ -25,11 +25,28 @@ object ItemSearchComponent {
         <.ul(
           itemFuse
             .search(state.query, limit = 10)
-            .toTagMod(i => <.li(i.name))
+            .toTagMod(item =>
+              <.li(
+                ^.key := item.id.raw,
+                renderItem(item)
+              )
+            )
         )
       )
 
     private def updateQuery(query: String): Callback =
       scope.modState(_.copy(query = query))
+
+    private def renderItem(item: Item): VdomElement =
+      ElementWithTooltipComponent.build(
+        <.div(
+          ItemIconComponent.build(item),
+          <.span(item.name)
+        ),
+        TextBasedTable.build(List(
+          "ID:" -> item.id.raw,
+          "Examine:" -> item.examine
+        ))
+      )
   }
 }
