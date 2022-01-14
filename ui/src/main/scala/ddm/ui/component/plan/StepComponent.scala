@@ -64,7 +64,7 @@ object StepComponent {
     }
 
     <.div(
-      ^.className := s"step-box row ${theme.cssClass}",
+      ^.className := s"step ${theme.cssClass}",
       StepVisibilityComponent.build((visibility, toggleThisStepVisibility)),
       <.div(
         ^.className := "step-content",
@@ -73,18 +73,15 @@ object StepComponent {
           setFocusedStep(step.id)
         },
         <.p(step.description),
-        <.div(
-          ^.classSet(visibility.cssClassSetter),
-          step.substeps.toTagMod(substep =>
-            StepComponent.build((
-              substep,
-              theme.other,
-              focusedStep,
-              hiddenSteps,
-              setFocusedStep,
-              toggleVisibility
-            ))
-          )
+        Option.when(visibility == Visibility.Visible)(
+          StepListComponent.build((
+            step.substeps,
+            theme.other,
+            focusedStep,
+            hiddenSteps,
+            setFocusedStep,
+            toggleVisibility
+          ))
         )
       )
     )
