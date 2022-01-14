@@ -4,6 +4,7 @@ import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
+import ddm.ui.model.plan.Plan.PlanOps
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
@@ -20,20 +21,27 @@ object MainComponent {
   val build: Component[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .initialState[State](State(focusedStep = None, hiddenSteps = Set.empty))
+      .initialStateFromProps[State] { case (plan, _) =>
+        State(plan = List(plan), focusedStep = None, hiddenSteps = Set.empty)
+      }
       .renderBackend[Backend]
       .build
 
   type Props = (Step, ItemCache)
-  final case class State(focusedStep: Option[UUID], hiddenSteps: Set[UUID])
+
+  final case class State(
+    plan: List[Step],
+    focusedStep: Option[UUID],
+    hiddenSteps: Set[UUID]
+  )
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomElement = {
-      val (plan, itemCache) = props
+      val (_, itemCache) = props
 
       val progressedSteps = state.focusedStep match {
-        case Some(id) => plan.takeUntil(id)
-        case None => plan.flattened
+        case Some(id) => state.plan.takeUntil(id)
+        case None => state.plan.flattenSteps
       }
 
       <.table(
@@ -41,10 +49,11 @@ object MainComponent {
           <.tr(
             <.td(
               PlanComponent.build((
-                List(plan),
+                state.plan,
                 state.focusedStep,
                 state.hiddenSteps,
                 setFocusedStep,
+                setPlan,
                 toggleVisibility
               ))
             ),
@@ -81,6 +90,9 @@ object MainComponent {
           Option.when(!currentState.focusedStep.contains(step))(step)
         )
       )
+
+    private def setPlan(plan: List[Step]): Callback =
+      scope.modState(_.copy(plan = plan))
 
     private def toggleVisibility(step: UUID): Callback =
       scope.modState { current =>

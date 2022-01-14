@@ -14,13 +14,21 @@ object PlanComponent {
       .render_P((render _).tupled)
       .build
 
-  type Props = (List[Step], Option[UUID], Set[UUID], UUID => Callback, UUID => Callback)
+  type Props = (
+    List[Step],
+    Option[UUID],
+    Set[UUID],
+    UUID => Callback,
+    List[Step] => Callback,
+    UUID => Callback
+  )
 
   private def render(
     steps: List[Step],
     focusedStep: Option[UUID],
     hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
+    setPlan: List[Step] => Callback,
     toggleVisibility: UUID => Callback
   ): VdomNode =
     StepListComponent.build((
@@ -29,6 +37,7 @@ object PlanComponent {
       focusedStep,
       hiddenSteps,
       setFocusedStep,
+      setPlan,
       toggleVisibility
     ))
 }

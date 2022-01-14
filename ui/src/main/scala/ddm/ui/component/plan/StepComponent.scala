@@ -36,7 +36,15 @@ object StepComponent {
       .render_P((render _).tupled)
       .build
 
-  type Props = (Step, Theme, Option[UUID], Set[UUID], UUID => Callback, UUID => Callback)
+  type Props = (
+    Step,
+    Theme,
+    Option[UUID],
+    Set[UUID],
+    UUID => Callback,
+    Step => Callback,
+    UUID => Callback
+  )
 
   private def render(
     step: Step,
@@ -44,6 +52,7 @@ object StepComponent {
     focusedStep: Option[UUID],
     hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
+    editStep: Step => Callback,
     toggleVisibility: UUID => Callback
   ): VdomNode = {
     val visibility =
@@ -80,6 +89,7 @@ object StepComponent {
             focusedStep,
             hiddenSteps,
             setFocusedStep,
+            substeps => editStep(step.copy(substeps = substeps)),
             toggleVisibility
           ))
         )
