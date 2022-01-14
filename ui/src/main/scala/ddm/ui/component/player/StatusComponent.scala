@@ -9,13 +9,13 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object StatusComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: Component[Props2, Unit, Unit, CtorType.Props] =
     ScalaComponent
-      .builder[Props]
+      .builder[Props2]
       .render_P((render _).tupled)
       .build
 
-  type Props = (Player, ItemCache)
+  type Props2 = (Player, ItemCache)
 
   private def render(player: Player, itemCache: ItemCache): VdomNode =
     <.table(
