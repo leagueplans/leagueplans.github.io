@@ -1,6 +1,6 @@
 package ddm.ui.component
 
-import ddm.ui.component.plan.{ConsoleComponent, StepComponent}
+import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
@@ -40,9 +40,8 @@ object MainComponent {
         <.tbody(
           <.tr(
             <.td(
-              StepComponent.build((
-                plan,
-                StepComponent.Theme.Dark,
+              PlanComponent.build((
+                List(plan),
                 state.focusedStep,
                 state.hiddenSteps,
                 setFocusedStep,
