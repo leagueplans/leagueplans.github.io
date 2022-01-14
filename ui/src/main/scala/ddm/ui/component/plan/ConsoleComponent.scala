@@ -102,15 +102,12 @@ object ConsoleComponent {
     }
 
   private def renderSection(section: Section): VdomNode = {
-    val className =
-      if (section.errors.nonEmpty)
-        "console-section error"
-      else
-        "console-section"
-
     val baseElement = <.dt(
       ^.key := section.id.toString,
-      ^.className := className,
+      ^.classSet(
+        "console-section" -> true,
+        "error" -> section.errors.nonEmpty
+      ),
       section.description,
       section.effects.toTagMod(<.dd(_))
     )
