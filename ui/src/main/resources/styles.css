@@ -23,7 +23,7 @@ p {
   margin-block-end: 0px;
 }
 
-.step {
+.step .toggle-controlled {
   border: 1px solid rgba(255, 253, 214, 0.5);
   border-radius: 3px;
   color: white;
@@ -43,12 +43,12 @@ p {
   background-color: #595604;
 }
 
-.step-content {
+.step .content {
   padding: 5px;
   flex-grow: 1;
 }
 
-.step-visibility-toggle {
+.step .toggle-button {
   background-color: rgba(255,255,255,0.2);
   border: none;
   padding: 0px;
@@ -57,15 +57,15 @@ p {
   flex-direction: column;
 }
 
-.step-visibility-toggle:hover {
+.step .toggle-button:hover {
   background-color: #323a42;
 }
 
-.step-visibility-toggle:active {
+.step .toggle-button:active {
   background-color: #4f5a66;
 }
 
-.step-visibility-toggle-icon {
+.step .visibility-icon {
   color: white;
   width: 100%;
 }

@@ -19,10 +19,8 @@ object StepListComponent {
     List[Step],
     StepComponent.Theme,
     Option[UUID],
-    Set[UUID],
     UUID => Callback,
-    List[Step] => Callback,
-    UUID => Callback
+    List[Step] => Callback
   )
 
   private val dragSortableComponent = DragSortableComponent.build[Step]
@@ -31,10 +29,8 @@ object StepListComponent {
     steps: List[Step],
     theme: StepComponent.Theme,
     focusedStep: Option[UUID],
-    hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
-    setSteps: List[Step] => Callback,
-    toggleVisibility: UUID => Callback
+    setSteps: List[Step] => Callback
   ): VdomNode =
     dragSortableComponent((
       steps,
@@ -49,13 +45,11 @@ object StepListComponent {
               step,
               theme,
               focusedStep,
-              hiddenSteps,
               setFocusedStep,
               editedStep => setSteps(steps.map {
                 case s if s.id == editedStep.id => editedStep
                 case s => s
-              }),
-              toggleVisibility
+              })
             ))
           )
         }
