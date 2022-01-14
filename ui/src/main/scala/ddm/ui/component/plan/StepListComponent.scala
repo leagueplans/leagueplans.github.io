@@ -1,10 +1,10 @@
 package ddm.ui.component.plan
 
-import ddm.ui.component.common.DragSortableListComponent
+import ddm.ui.component.common.DragSortableComponent
 import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CtorType, Key, ScalaComponent}
+import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
 
 import java.util.UUID
 
@@ -25,6 +25,8 @@ object StepListComponent {
     UUID => Callback
   )
 
+  private val dragSortableComponent = DragSortableComponent.build[Step]
+
   private def render(
     steps: List[Step],
     theme: StepComponent.Theme,
@@ -33,37 +35,30 @@ object StepListComponent {
     setFocusedStep: UUID => Callback,
     setSteps: List[Step] => Callback,
     toggleVisibility: UUID => Callback
-  ): VdomNode = {
-    val keysAndSteps =
-      steps.map(step => toKey(step) -> step)
-
-    val listEntries =
-      keysAndSteps.map[(Key, VdomNode)] { case (key, step) =>
-        key -> StepComponent.build((
-          step,
-          theme,
-          focusedStep,
-          hiddenSteps,
-          setFocusedStep,
-          editedStep => setSteps(steps.map {
-            case s if s.id == editedStep.id => editedStep
-            case s => s
-          }),
-          toggleVisibility
-        ))
-      }
-
-    val keyToStepMap = keysAndSteps.toMap
-
-    <.div(
-      ^.className := "step-list",
-      DragSortableListComponent.build((
-        listEntries,
-        keys => setSteps(keys.map(keyToStepMap(_)))
-      ))
-    )
-  }
-
-  private def toKey(step: Step): Key =
-    step.id.toString
+  ): VdomNode =
+    dragSortableComponent((
+      steps,
+      setSteps,
+      stepTagPairs => <.ol(
+        ^.className := "step-list",
+        stepTagPairs.toTagMod { case (step, dragControlTag) =>
+          <.li(
+            ^.key := step.id.toString,
+            dragControlTag,
+            StepComponent.build((
+              step,
+              theme,
+              focusedStep,
+              hiddenSteps,
+              setFocusedStep,
+              editedStep => setSteps(steps.map {
+                case s if s.id == editedStep.id => editedStep
+                case s => s
+              }),
+              toggleVisibility
+            ))
+          )
+        }
+      )
+    ))
 }
