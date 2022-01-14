@@ -9,6 +9,8 @@ import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
+import java.util.UUID
+
 object ConsoleComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
@@ -19,6 +21,7 @@ object ConsoleComponent {
   type Props = (List[Step], Player, ItemCache)
 
   private final case class Section(
+    id: UUID,
     description: String,
     effects: List[String],
     errors: List[String]
@@ -33,9 +36,7 @@ object ConsoleComponent {
     val nErrors = sections.map(_.errors.size).sum
 
     val sectionsElement =
-      sections
-        .zipWithIndex
-        .toTagMod { case (section, index) => renderSection(section, index) }
+      <.dl(sections.toTagMod(renderSection))
 
     if (nErrors > 0)
       <.div(
@@ -74,7 +75,7 @@ object ConsoleComponent {
               )
             }
 
-        (postStepPlayer, sectionAcc :+ Section(step.description, encodedEffects, stepErrors))
+        (postStepPlayer, sectionAcc :+ Section(step.id, step.description, encodedEffects, stepErrors))
       }
 
     sections
@@ -104,20 +105,18 @@ object ConsoleComponent {
         s"Task completed: ${task.description}"
     }
 
-  private def renderSection(section: Section, index: Int): VdomNode = {
+  private def renderSection(section: Section): VdomNode = {
     val className =
       if (section.errors.nonEmpty)
         "console-section error"
       else
         "console-section"
 
-    val baseElement = <.div(
+    val baseElement = <.dt(
+      ^.key := section.id.toString,
       ^.className := className,
-      <.p(
-        ^.className := "console-section-title",
-        s"$index. ${section.description}"
-      ),
-      section.effects.toTagMod(<.p(_))
+      section.description,
+      section.effects.toTagMod(<.dd(_))
     )
 
     if (section.errors.nonEmpty)
