@@ -34,8 +34,9 @@ object ItemSearchComponent {
   final class Backend(scope: BackendScope[Props, State]) {
     def render(itemFuse: Fuse[Item], state: State): VdomElement =
       <.div(
+        ^.className := "item-search",
         SearchBoxComponent.build((state.searchInput, updateInput)),
-        <.ul(
+        <.ol(
           itemFuse
             .search(state.fuseQuery, limit = 10)
             .toTagMod(item =>
@@ -68,6 +69,7 @@ object ItemSearchComponent {
     private def renderItem(item: Item): VdomElement =
       ElementWithTooltipComponent.build(
         <.div(
+          ^.className := "item",
           ItemIconComponent.build(item),
           <.span(item.name)
         ),
