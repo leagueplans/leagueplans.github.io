@@ -16,8 +16,6 @@ jobs:
           filters: |
             ui-sources:
               - 'ui/src/main/scala/**'
-              - 'package.json'
-              - 'package-lock.json'
               - 'project/**'
               - 'build.sbt'
             ui-resources:
