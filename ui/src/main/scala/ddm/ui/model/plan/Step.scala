@@ -4,7 +4,6 @@ import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, JsonObject}
 
 import java.util.UUID
-import scala.annotation.tailrec
 
 object Step {
   def apply(
@@ -48,19 +47,4 @@ final case class Step(
   description: String,
   directEffects: List[Effect],
   substeps: List[Step]
-) {
-  lazy val flattened: List[Step] =
-    flatten(acc = List.empty, remaining = List(this))
-
-  def takeUntil(lastID: UUID): List[Step] = {
-    val (lhs, rhs) = flattened.span(_.id != lastID)
-    lhs ++ rhs.headOption
-  }
-
-  @tailrec
-  private def flatten(acc: List[Step], remaining: List[Step]): List[Step] =
-    remaining match {
-      case Nil => acc
-      case h :: t => flatten(acc = acc :+ h, remaining = h.substeps ++ t)
-    }
-}
+)

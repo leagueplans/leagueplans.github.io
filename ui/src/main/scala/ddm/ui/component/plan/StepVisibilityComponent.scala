@@ -16,9 +16,9 @@ object StepVisibilityComponent {
   private def render(visibility: Visibility, onClick: ^.onClick.Event => Callback): VdomNode =
     <.button(
       ^.onClick ==> onClick,
-      ^.className := "step-visibility",
+      ^.className := "step-visibility-toggle",
       <.p(
-        ^.className := "step-visibility-icon",
+        ^.className := "step-visibility-toggle-icon",
         s"[${if (visibility.isHidden) '+' else '-'}]"
       )
     )

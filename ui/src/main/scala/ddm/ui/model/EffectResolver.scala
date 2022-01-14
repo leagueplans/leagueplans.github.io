@@ -40,7 +40,7 @@ object EffectResolver {
           case Some(depository) =>
             val updatedCount = depository.contents.getOrElse(item, 0) - count
             val updatedContents =
-              if (count <= 0)
+              if (updatedCount <= 0)
                 depository.contents - item
               else
                 depository.contents + (item -> updatedCount)

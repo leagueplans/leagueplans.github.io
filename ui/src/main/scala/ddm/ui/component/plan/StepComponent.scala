@@ -36,7 +36,15 @@ object StepComponent {
       .render_P((render _).tupled)
       .build
 
-  type Props = (Step, Theme, Option[UUID], Set[UUID], UUID => Callback, UUID => Callback)
+  type Props = (
+    Step,
+    Theme,
+    Option[UUID],
+    Set[UUID],
+    UUID => Callback,
+    Step => Callback,
+    UUID => Callback
+  )
 
   private def render(
     step: Step,
@@ -44,6 +52,7 @@ object StepComponent {
     focusedStep: Option[UUID],
     hiddenSteps: Set[UUID],
     setFocusedStep: UUID => Callback,
+    editStep: Step => Callback,
     toggleVisibility: UUID => Callback
   ): VdomNode = {
     val visibility =
@@ -64,7 +73,7 @@ object StepComponent {
     }
 
     <.div(
-      ^.className := s"step-box row ${theme.cssClass}",
+      ^.className := s"step ${theme.cssClass}",
       StepVisibilityComponent.build((visibility, toggleThisStepVisibility)),
       <.div(
         ^.className := "step-content",
@@ -73,18 +82,16 @@ object StepComponent {
           setFocusedStep(step.id)
         },
         <.p(step.description),
-        <.div(
-          ^.classSet(visibility.cssClassSetter),
-          step.substeps.toTagMod(substep =>
-            StepComponent.build((
-              substep,
-              theme.other,
-              focusedStep,
-              hiddenSteps,
-              setFocusedStep,
-              toggleVisibility
-            ))
-          )
+        Option.when(visibility == Visibility.Visible)(
+          StepListComponent.build((
+            step.substeps,
+            theme.other,
+            focusedStep,
+            hiddenSteps,
+            setFocusedStep,
+            substeps => editStep(step.copy(substeps = substeps)),
+            toggleVisibility
+          ))
         )
       )
     )

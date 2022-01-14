@@ -38,20 +38,16 @@ object ConsoleComponent {
     val sectionsElement =
       <.dl(sections.toTagMod(renderSection))
 
-    if (nErrors > 0)
-      <.div(
-        ^.className := "console",
+    <.div(
+      ^.className := "console",
+      Option.when(nErrors > 0)(
         <.div(
           ^.className := "console-warning",
           <.p(s"WARNING: Route may not be sound. $nErrors error(s) found.")
-        ),
-        sectionsElement
-      )
-    else
-      <.div(
-        ^.className := "console",
-        sectionsElement
-      )
+        )
+      ),
+      sectionsElement
+    )
   }
 
   private def toSections(
@@ -106,15 +102,12 @@ object ConsoleComponent {
     }
 
   private def renderSection(section: Section): VdomNode = {
-    val className =
-      if (section.errors.nonEmpty)
-        "console-section error"
-      else
-        "console-section"
-
     val baseElement = <.dt(
       ^.key := section.id.toString,
-      ^.className := className,
+      ^.classSet(
+        "console-section" -> true,
+        "error" -> section.errors.nonEmpty
+      ),
       section.description,
       section.effects.toTagMod(<.dd(_))
     )
