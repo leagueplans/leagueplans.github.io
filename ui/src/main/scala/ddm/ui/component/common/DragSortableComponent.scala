@@ -12,7 +12,11 @@ object DragSortableComponent {
       .renderBackend[Backend[T]]
       .build
 
-  type Props[T] = (List[T], List[T] => Callback, List[(T, TagMod)] => VdomNode)
+  final case class Props[T](
+    upstreamOrder: List[T],
+    setOrder: List[T] => Callback,
+    toNode: List[(T, TagMod)] => VdomNode
+  )
 
   sealed trait State[+T]
 
@@ -23,20 +27,18 @@ object DragSortableComponent {
 
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
-      val (upstreamOrder, setOrder, toNode) = props
-
       val downstreamOrder = state match {
         case d: State.Dragging[T @unchecked] => d.tmpOrder
-        case State.Idle => upstreamOrder
+        case State.Idle => props.upstreamOrder
       }
 
-      toNode(
+      props.toNode(
         downstreamOrder.map(target =>
           target -> createDragTags(
             target,
             state,
-            upstreamOrder,
-            setOrder
+            props.upstreamOrder,
+            props.setOrder
           )
         )
       )

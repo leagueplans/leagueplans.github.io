@@ -4,8 +4,8 @@ import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
-import ddm.ui.model.plan.Plan.PlanOps
-import ddm.ui.model.plan.Step
+import ddm.ui.model.common.Tree
+import ddm.ui.model.plan.StepDescription
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
@@ -22,28 +22,35 @@ object MainComponent {
     ScalaComponent
       .builder[Props]
       .initialStateFromProps[State] { case (plan, _) =>
-        State(plan = List(plan), focusedStep = None)
+        State(plan = plan, focusedStep = None)
       }
       .renderBackend[Backend]
       .build
 
-  type Props = (Step, ItemCache)
+  type Props = (Tree[StepDescription], ItemCache)
 
-  final case class State(plan: List[Step], focusedStep: Option[UUID])
+  final case class State(plan: Tree[StepDescription], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomElement = {
       val (_, itemCache) = props
 
+      val allSteps = state.plan.flatten
+
       val progressedSteps = state.focusedStep match {
-        case Some(id) => state.plan.takeUntil(id)
-        case None => state.plan.flattenSteps
+        case Some(id) =>
+          val (lhs, rhs) = allSteps.span(_.id != id)
+          lhs ++ rhs.headOption
+
+        case None =>
+          allSteps
       }
 
       <.table(
         <.tbody(
           <.tr(
             <.td(
+              ^.className := "plan",
               PlanComponent.build(PlanComponent.Props(
                 state.plan,
                 state.focusedStep,
@@ -85,7 +92,7 @@ object MainComponent {
         )
       )
 
-    private def setPlan(plan: List[Step]): Callback =
+    private def setPlan(plan: Tree[StepDescription]): Callback =
       scope.modState(_.copy(plan = plan))
   }
 }
