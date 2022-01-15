@@ -18,12 +18,12 @@ object DragSortableComponent {
       .build
 
   final case class Props[S[_], T](
-    state: S[T],//
-    showPreview: Boolean,//
-    setState: S[T] => Callback,//
-    toElements: S[T] => List[T],
+    state: S[T],
+    showPreview: Boolean,
+    setState: S[T] => Callback,
     toNode: S[(T, TagMod)] => VdomNode,
-    transform: (Hover[T], S[T]) => S[T]//
+    transform: (Hover[T], S[T]) => S[T],
+    isViableTarget: Hover[T] => Boolean
   )
 
   final case class State[S[_], T](dragging: Option[T], previewState: S[T])
@@ -65,23 +65,26 @@ object DragSortableComponent {
 
         case Some(`target`) =>
           TagMod(
+            onEnd,
             Option.when(props.showPreview)(
               onDrop(props.setState, previewState)
             ).whenDefined,
-            onEnd
           )
 
         case Some(dragged) =>
-          def transformedState: S[T] =
-            props.transform(Hover(dragged, target), previewState)
+          val hover = Hover(dragged, target)
 
-          val transformers =
-            if (props.showPreview)
-              ^.onDragEnter --> scope.modState(_.copy(previewState = transformedState))
-            else
-              onDrop(props.setState, transformedState)
-
-          TagMod(transformers, onEnd)
+          TagMod(
+            onEnd,
+            Option.when(props.isViableTarget(hover))(
+              if (props.showPreview)
+                ^.onDragEnter --> scope.modState(_.copy(previewState =
+                  props.transform(hover, previewState)
+                ))
+              else
+                onDrop(props.setState, props.transform(hover, previewState))
+            ).whenDefined
+          )
       }
     }
 
