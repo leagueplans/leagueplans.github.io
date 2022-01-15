@@ -6,24 +6,14 @@ import io.circe.{Decoder, Encoder, JsonObject}
 import java.util.UUID
 
 object Step {
-  def apply(
-    description: String,
-    directEffects: List[Effect],
-    substeps: List[Step]
-  ): Step =
-    Step(
-      UUID.randomUUID(),
-      description,
-      directEffects,
-      substeps
-    )
+  def apply(description: String, directEffects: List[Effect]): Step =
+    Step(UUID.randomUUID(), description, directEffects)
 
   implicit val encoder: Encoder[Step] =
     Encoder[JsonObject].contramap(step =>
       JsonObject(
         "description" -> step.description.asJson,
-        "directEffects" -> step.directEffects.asJson,
-        "substeps" -> step.substeps.asJson
+        "directEffects" -> step.directEffects.asJson
       )
     )
 
@@ -32,8 +22,7 @@ object Step {
       for {
         description <- decodeField[String](obj, "description")
         directEffects <- decodeField[List[Effect]](obj, "directEffects")
-        substeps <- decodeField[List[Step]](obj, "substeps")
-      } yield Step(description, directEffects, substeps)
+      } yield Step(description, directEffects)
     )
 
   private def decodeField[T : Decoder](obj: JsonObject, key: String): Either[String, T] =
@@ -45,6 +34,5 @@ object Step {
 final case class Step(
   id: UUID,
   description: String,
-  directEffects: List[Effect],
-  substeps: List[Step]
+  directEffects: List[Effect]
 )

@@ -1,7 +1,7 @@
 package ddm.ui.component.plan
 
 import ddm.ui.component.common.ToggleButtonComponent
-import ddm.ui.model.plan.StepDescription
+import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -40,7 +40,7 @@ object StepComponent {
       .build
 
   final case class Props(
-    step: StepDescription,
+    step: Step,
     theme: Theme,
     setFocusedStep: UUID => Callback,
     subSteps: VdomNode

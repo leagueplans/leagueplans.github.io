@@ -2,7 +2,7 @@ package ddm.ui
 
 import ddm.ui.component.MainComponent
 import ddm.ui.model.common.Tree
-import ddm.ui.model.plan.{Step, StepDescription}
+import ddm.ui.model.plan.Step
 import ddm.ui.model.player.item.{Item, ItemCache}
 import io.circe.Decoder
 import io.circe.parser.decode
@@ -17,11 +17,11 @@ object Main extends App {
 
   private def setupUI(): Unit =
     withResource[Set[Item]](ResourcePaths.itemsJson)(items =>
-      withResource[Step](ResourcePaths.planJson) { plan =>
+      withResource[Tree[Step]](ResourcePaths.planJson) { plan =>
         // Creating a container, since react raises a warning if we render
         // directly into the document body.
         val container = document.createElement("div")
-        MainComponent.build((toTree(plan), ItemCache(items))).renderIntoDOM(container)
+        MainComponent.build((plan, ItemCache(items))).renderIntoDOM(container)
         document.body.appendChild(container)
       }
     )
@@ -35,11 +35,4 @@ object Main extends App {
       .map(_.toTry)
       .flatMap(Future.fromTry)
       .foreach(f)
-
-  //TODO Remove
-  private def toTree(step: Step): Tree[StepDescription] =
-    Tree(
-      StepDescription(step.id, step.description, step.directEffects),
-      step.substeps.map(toTree)
-    )
 }

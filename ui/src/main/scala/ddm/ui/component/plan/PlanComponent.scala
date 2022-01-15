@@ -2,7 +2,7 @@ package ddm.ui.component.plan
 
 import ddm.ui.component.common.{ToggleButtonComponent, TreeComponent}
 import ddm.ui.model.common.Tree
-import ddm.ui.model.plan.StepDescription
+import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -17,14 +17,14 @@ object PlanComponent {
       .build
 
   final case class Props(
-    plan: Tree[StepDescription],
+    plan: Tree[Step],
     focusedStep: Option[UUID],
     setFocusedStep: UUID => Callback,
-    setPlan: Tree[StepDescription] => Callback
+    setPlan: Tree[Step] => Callback
   )
 
   private val editingToggle = ToggleButtonComponent.build[Boolean]
-  private val treeComponent = new TreeComponent[(StepDescription, StepComponent.Theme)].build
+  private val treeComponent = new TreeComponent[(Step, StepComponent.Theme)].build
 
   private def render(props: Props): VdomNode =
     editingToggle(ToggleButtonComponent.Props(
@@ -55,10 +55,10 @@ object PlanComponent {
   }
 
   private def addTheme(
-    plan: Tree[StepDescription],
+    plan: Tree[Step],
     focusedStep: Option[UUID],
     baseTheme: StepComponent.Theme.Base
-  ): Tree[(StepDescription, StepComponent.Theme)] = {
+  ): Tree[(Step, StepComponent.Theme)] = {
     val isFocused = focusedStep.contains(plan.root.id)
 
     Tree(
@@ -68,7 +68,7 @@ object PlanComponent {
   }
 
   private def renderStep(
-    stepTheme: (StepDescription, StepComponent.Theme),
+    stepTheme: (Step, StepComponent.Theme),
     setFocusedStep: UUID => Callback,
     substeps: VdomNode
   ): VdomNode = {

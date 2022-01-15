@@ -5,7 +5,7 @@ import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.Tree
-import ddm.ui.model.plan.StepDescription
+import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
@@ -27,9 +27,9 @@ object MainComponent {
       .renderBackend[Backend]
       .build
 
-  type Props = (Tree[StepDescription], ItemCache)
+  type Props = (Tree[Step], ItemCache)
 
-  final case class State(plan: Tree[StepDescription], focusedStep: Option[UUID])
+  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomElement = {
@@ -92,7 +92,7 @@ object MainComponent {
         )
       )
 
-    private def setPlan(plan: Tree[StepDescription]): Callback =
+    private def setPlan(plan: Tree[Step]): Callback =
       scope.modState(_.copy(plan = plan))
   }
 }

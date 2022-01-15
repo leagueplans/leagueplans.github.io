@@ -2,7 +2,7 @@ package ddm.ui.component.plan
 
 import ddm.ui.component.common.ElementWithTooltipComponent
 import ddm.ui.model.EffectValidator
-import ddm.ui.model.plan.{Effect, StepDescription}
+import ddm.ui.model.plan.{Effect, Step}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import japgolly.scalajs.react.component.Scala.Component
@@ -18,7 +18,7 @@ object ConsoleComponent {
       .render_P((render _).tupled)
       .build
 
-  type Props = (List[StepDescription], Player, ItemCache)
+  type Props = (List[Step], Player, ItemCache)
 
   private final case class Section(
     id: UUID,
@@ -28,7 +28,7 @@ object ConsoleComponent {
   )
 
   private def render(
-    progressedSteps: List[StepDescription],
+    progressedSteps: List[Step],
     initialPlayer: Player,
     itemCache: ItemCache
   ): VdomNode = {
@@ -51,7 +51,7 @@ object ConsoleComponent {
   }
 
   private def toSections(
-    progressedSteps: List[StepDescription],
+    progressedSteps: List[Step],
     initialPlayer: Player,
     itemCache: ItemCache
   ): List[Section] = {
