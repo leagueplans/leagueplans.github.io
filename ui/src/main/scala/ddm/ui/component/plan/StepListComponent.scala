@@ -12,47 +12,46 @@ object StepListComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P((render _).tupled)
+      .render_P(render)
       .build
 
-  type Props = (
-    List[Step],
-    StepComponent.Theme,
-    Option[UUID],
-    UUID => Callback,
-    List[Step] => Callback
-  )
-
-  private val dragSortableComponent = DragSortableComponent.build[Step]
-
-  private def render(
+  final case class Props(
     steps: List[Step],
     theme: StepComponent.Theme,
     focusedStep: Option[UUID],
     setFocusedStep: UUID => Callback,
-    setSteps: List[Step] => Callback
-  ): VdomNode =
+    setSteps: List[Step] => Callback,
+    editingEnabled: Boolean
+  )
+
+  private val dragSortableComponent = DragSortableComponent.build[Step]
+
+  private def render(props: Props): VdomNode =
     dragSortableComponent((
-      steps,
-      setSteps,
-      stepTagPairs => <.ol(
-        ^.className := "step-list",
-        stepTagPairs.toTagMod { case (step, dragControlTag) =>
-          <.li(
-            ^.key := step.id.toString,
-            dragControlTag,
-            StepComponent.build((
-              step,
-              theme,
-              focusedStep,
-              setFocusedStep,
-              editedStep => setSteps(steps.map {
-                case s if s.id == editedStep.id => editedStep
-                case s => s
-              })
-            ))
-          )
-        }
-      )
+      props.steps,
+      props.setSteps,
+      renderList(props, _)
     ))
+
+  private def renderList(props: Props, stepTagPairs: List[(Step, TagMod)]): VdomNode =
+    <.ol(
+      ^.className := "step-list",
+      stepTagPairs.toTagMod { case (step, dragControlTag) =>
+        <.li(
+          ^.key := step.id.toString,
+          Option.when(props.editingEnabled)(dragControlTag).whenDefined,
+          StepComponent.build(StepComponent.Props(
+            step,
+            props.theme,
+            props.focusedStep,
+            props.setFocusedStep,
+            editedStep => props.setSteps(props.steps.map {
+              case s if s.id == editedStep.id => editedStep
+              case s => s
+            }),
+            props.editingEnabled
+          ))
+        )
+      }
+    )
 }

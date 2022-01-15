@@ -44,7 +44,7 @@ object MainComponent {
         <.tbody(
           <.tr(
             <.td(
-              PlanComponent.build((
+              PlanComponent.build(PlanComponent.Props(
                 state.plan,
                 state.focusedStep,
                 setFocusedStep,
