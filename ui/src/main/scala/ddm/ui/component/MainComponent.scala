@@ -22,18 +22,14 @@ object MainComponent {
     ScalaComponent
       .builder[Props]
       .initialStateFromProps[State] { case (plan, _) =>
-        State(plan = List(plan), focusedStep = None, hiddenSteps = Set.empty)
+        State(plan = List(plan), focusedStep = None)
       }
       .renderBackend[Backend]
       .build
 
   type Props = (Step, ItemCache)
 
-  final case class State(
-    plan: List[Step],
-    focusedStep: Option[UUID],
-    hiddenSteps: Set[UUID]
-  )
+  final case class State(plan: List[Step], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomElement = {
@@ -48,13 +44,11 @@ object MainComponent {
         <.tbody(
           <.tr(
             <.td(
-              PlanComponent.build((
+              PlanComponent.build(PlanComponent.Props(
                 state.plan,
                 state.focusedStep,
-                state.hiddenSteps,
                 setFocusedStep,
-                setPlan,
-                toggleVisibility
+                setPlan
               ))
             ),
             <.td(
@@ -93,15 +87,5 @@ object MainComponent {
 
     private def setPlan(plan: List[Step]): Callback =
       scope.modState(_.copy(plan = plan))
-
-    private def toggleVisibility(step: UUID): Callback =
-      scope.modState { current =>
-        current.copy(hiddenSteps =
-          if (current.hiddenSteps.contains(step))
-              current.hiddenSteps - step
-            else
-              current.hiddenSteps + step
-        )
-      }
   }
 }
