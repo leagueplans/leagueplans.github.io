@@ -25,10 +25,11 @@ final class DragSortableListComponent[T] {
   private def render(props: Props[T]): VdomNode =
     underlying(DragSortableComponent.Props(
       props.upstreamOrder,
+      showPreview = true,
       props.setOrder,
       toElements = identity,
       props.toNode,
-      hoverPreview = shuffle
+      transform = shuffle
     ))
 
   private def shuffle(hover: DragSortableComponent.Hover[T], tmpOrder: List[T]): List[T] = {
