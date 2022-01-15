@@ -1,44 +1,52 @@
 package ddm.ui.component.common
 
+import cats.Functor
+import cats.syntax.functor._
 import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.vdom.{TagMod, VdomNode}
 import japgolly.scalajs.react.{Callback, CtorType, ReactDragEvent, ScalaComponent}
 
 object DragSortableComponent {
-  def build[T]: Component[Props[T], State[T], Backend[T], CtorType.Props] =
+  def build[S[_] : Functor, T]: Component[Props[S, T], State[S, T], Backend[S, T], CtorType.Props] =
     ScalaComponent
-      .builder[Props[T]]
-      .initialState[State[T]](State.Idle)
-      .renderBackend[Backend[T]]
+      .builder[Props[S, T]]
+      .initialState[State[S, T]](State.Idle)
+      .renderBackend[Backend[S, T]]
       .build
 
-  final case class Props[T](
-    upstreamOrder: List[T],
-    setOrder: List[T] => Callback,
-    toNode: List[(T, TagMod)] => VdomNode
+  final case class Props[S[_], T](
+    upstreamState: S[T],
+    setState: S[T] => Callback,
+    toElements: S[T] => List[T],
+    toNode: S[(T, TagMod)] => VdomNode,
+    hoverPreview: (Hover[T], S[T]) => S[T]
   )
 
-  sealed trait State[+T]
+  sealed trait State[+S[_], +T]
 
   object State {
-    final case class Dragging[+T](held: T, tmpOrder: List[T]) extends State[T]
-    case object Idle extends State[Nothing]
+    final case class Dragging[S[_], T](held: T, preview: S[T]) extends State[S, T]
+    case object Idle extends State[Nothing, Nothing]
   }
 
-  final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
-    def render(props: Props[T], state: State[T]): VdomNode = {
-      val downstreamOrder = state match {
-        case d: State.Dragging[T @unchecked] => d.tmpOrder
-        case State.Idle => props.upstreamOrder
+  final case class Hover[T](dragged: T, hovered: T)
+
+  final class Backend[S[_] : Functor, T](scope: BackendScope[Props[S, T], State[S, T]]) {
+    def render(props: Props[S, T], state: State[S, T]): VdomNode = {
+      val downstreamState = state match {
+        case State.Dragging(_, tmpState) => tmpState
+        case State.Idle => props.upstreamState
       }
 
       props.toNode(
-        downstreamOrder.map(target =>
+        downstreamState.map(target =>
           target -> createDragTags(
             target,
             state,
-            props.upstreamOrder,
-            props.setOrder
+            props.upstreamState,
+            props.setState,
+            props.hoverPreview
           )
         )
       )
@@ -46,57 +54,39 @@ object DragSortableComponent {
 
     private def createDragTags(
       target: T,
-      state: State[T],
-      upstreamOrder: List[T],
-      setOrder: List[T] => Callback,
+      dragState: State[S, T],
+      upstreamState: S[T],
+      setUpstreamState: S[T] => Callback,
+      hoverPreview: (Hover[T], S[T]) => S[T]
     ): TagMod = {
       val onEnd = ^.onDragEnd --> scope.setState(State.Idle)
 
-      state match {
+      dragState match {
         case State.Idle =>
           TagMod(
             ^.draggable := true,
             ^.onDragStart ==> { e: ReactDragEvent =>
               e.stopPropagation()
-              scope.setState(State.Dragging(target, upstreamOrder))
+              scope.setState(State.Dragging(target, upstreamState))
             }
           )
 
-        case State.Dragging(`target`, tmpOrder) =>
+        case State.Dragging(`target`, tmpState) =>
           TagMod(
             ^.onDragEnter ==> { e: ReactDragEvent => Callback(e.preventDefault()) },
             ^.onDragOver ==> { e: ReactDragEvent => Callback(e.preventDefault()) },
-            ^.onDrop --> setOrder(tmpOrder),
+            ^.onDrop --> setUpstreamState(tmpState),
             onEnd
           )
 
-        case d: State.Dragging[T @unchecked] =>
+        case d @ State.Dragging(held, tmpState) =>
           TagMod(
-            ^.onDragEnter --> scope.setState(d.copy(tmpOrder =
-              shuffle(d.held, target, d.tmpOrder))
+            ^.onDragEnter --> scope.setState(d.copy(preview =
+              hoverPreview(Hover(held, target), tmpState))
             ),
             onEnd
           )
       }
     }
-
-    private def shuffle(held: T, target: T, tmpOrder: List[T]): List[T] =
-      if (held == target)
-        tmpOrder
-      else
-        tmpOrder.span(k => k != held && k != target) match {
-          case (stableHead, `held` :: t) =>
-            val (shiftedLeft, _ :: stableTail) = t.span(_ != target)
-            (stableHead ++ shiftedLeft :+ target :+ held) ++ stableTail
-
-          case (stableHead, `target` :: t) =>
-            val (shiftedRight, _ :: stableTail) = t.span(_ != held)
-            (stableHead :+ held :+ target) ++ shiftedRight ++ stableTail
-
-          case result =>
-            throw new RuntimeException(
-              s"Invalid shuffle result: [held = $held][target = $target][split = $result]"
-            )
-        }
   }
 }

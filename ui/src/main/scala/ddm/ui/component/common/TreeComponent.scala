@@ -25,13 +25,13 @@ final class TreeComponent[T] {
       .render_P(render)
       .build
 
-  private val dragSortableComponent = DragSortableComponent.build[Key]
+  private val dragSortableComponent = new DragSortableListComponent[Key].build
 
   private def render(props: Props[T]): VdomNode = {
     val keyToChild = props.tree.children.map(t => props.toKey(t) -> t).toMap
 
     val subTrees =
-      dragSortableComponent(DragSortableComponent.Props(
+      dragSortableComponent(DragSortableListComponent.Props(
         props.tree.children.map(props.toKey),
         _.map(keyToChild).pipe(newOrder => props.editTree(props.tree.copy(children = newOrder))),
         renderChildren(props, keyToChild, _)
