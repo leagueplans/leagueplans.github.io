@@ -86,7 +86,9 @@ object MainComponent {
           ),
           <.tr(
             <.td(
-              ConsoleComponent.build((progressedSteps, Player.initial, itemCache))
+              ConsoleComponent.build(ConsoleComponent.Props(
+                progressedSteps, Player.initial, itemCache
+              ))
             ),
             <.td(
               ItemSearchComponent.build(

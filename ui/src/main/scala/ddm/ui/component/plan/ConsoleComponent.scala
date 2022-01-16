@@ -15,24 +15,24 @@ object ConsoleComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P((render _).tupled)
+      .render_P(render)
       .build
 
-  type Props = (List[Step], Player, ItemCache)
+  final case class Props(
+    progressedSteps: List[Step],
+    initialPlayer: Player,
+    itemCache: ItemCache
+  )
 
   private final case class Section(
     id: UUID,
     description: String,
-    effects: List[String],
+    effects: List[VdomNode],
     errors: List[String]
   )
 
-  private def render(
-    progressedSteps: List[Step],
-    initialPlayer: Player,
-    itemCache: ItemCache
-  ): VdomNode = {
-    val sections = toSections(progressedSteps, initialPlayer, itemCache)
+  private def render(props: Props): VdomNode = {
+    val sections = toSections(props)
     val nErrors = sections.map(_.errors.size).sum
 
     val sectionsElement =
@@ -48,56 +48,37 @@ object ConsoleComponent {
     )
   }
 
-  private def toSections(
-    progressedSteps: List[Step],
-    initialPlayer: Player,
-    itemCache: ItemCache
-  ): List[Section] = {
+  private def toSections(props: Props): List[Section] = {
     val (_, sections) =
-      progressedSteps.foldLeft((initialPlayer, List.empty[Section])) { case ((preStepPlayer, sectionAcc), step) =>
-        val (postStepPlayer, encodedEffects, stepErrors) =
-          step
-            .directEffects
-            .foldLeft((preStepPlayer, List.empty[String], List.empty[String])) { case ((preEffectPlayer, effectAcc, errorAcc), effect) =>
-              val (effectErrors, postEffectPlayer) =
-                EffectValidator.validate(effect)(preEffectPlayer, itemCache)
+      props.progressedSteps.foldLeft((props.initialPlayer, List.empty[Section])) {
+        case ((preStepPlayer, sectionAcc), step) =>
+          val (postStepPlayer, encodedEffects, stepErrors) =
+            step
+              .directEffects
+              .foldLeft((preStepPlayer, List.empty[VdomNode], List.empty[String])) {
+                case ((preEffectPlayer, effectAcc, errorAcc), effect) =>
+                  val (effectErrors, postEffectPlayer) =
+                    EffectValidator.validate(effect)(preEffectPlayer, props.itemCache)
 
-              (
-                postEffectPlayer,
-                effectAcc :+ encode(effect, preEffectPlayer.leagueStatus.multiplier, itemCache),
-                errorAcc ++ effectErrors
-              )
-            }
+                  (
+                    postEffectPlayer,
+                    effectAcc :+ renderEffect(effect, preEffectPlayer, props.itemCache),
+                    errorAcc ++ effectErrors
+                  )
+              }
 
-        (postStepPlayer, sectionAcc :+ Section(step.id, step.description, encodedEffects, stepErrors))
+          (postStepPlayer, sectionAcc :+ Section(step.id, step.description, encodedEffects, stepErrors))
       }
 
     sections
   }
 
-  private def encode(effect: Effect, currentMultiplier: Int, itemCache: ItemCache): String =
-    effect match {
-      case Effect.GainExp(skill, baseExp) =>
-        s"+${baseExp * currentMultiplier} $skill XP"
-
-      case Effect.GainItem(item, count, target) =>
-        s"+$count ${itemCache(item).name} (${target.raw})"
-
-      case Effect.MoveItem(item, count, source, target) =>
-        s"$count ${itemCache(item).name}: ${source.raw} -> ${target.raw}"
-
-      case Effect.DropItem(item, count, source) =>
-        s"-$count ${itemCache(item).name} (${source.raw})"
-
-      case Effect.GainQuestPoints(count) =>
-        s"+$count quest points"
-
-      case Effect.SetMultiplier(multiplier) =>
-        s"League multiplier set to ${multiplier}x"
-
-      case Effect.CompleteTask(task) =>
-        s"Task completed: ${task.description}"
-    }
+  private def renderEffect(effect: Effect, player: Player, itemCache: ItemCache): VdomNode =
+    EffectDescriptionComponent.build(EffectDescriptionComponent.Props(
+      effect,
+      player,
+      itemCache
+    ))
 
   private def renderSection(section: Section): VdomNode = {
     val baseElement = <.dt(
