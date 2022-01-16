@@ -48,6 +48,12 @@ object Tree {
 }
 
 final case class Tree[T](node: T, children: List[Tree[T]]) {
+  lazy val nodeToTree: Map[T, Tree[T]] =
+    recurse(tree => List(tree.node -> tree)).toMap
+
+  lazy val childNodeToParentNode: Map[T, T] =
+    recurse(tree => tree.children.map(_.node -> tree.node)).toMap
+
   def map[S](f: T => S): Tree[S] =
     new Tree(f(node), children.map(_.map(f)))
 
@@ -57,8 +63,32 @@ final case class Tree[T](node: T, children: List[Tree[T]]) {
   def removeChild(tree: Tree[T]): Tree[T] =
     copy(children = children.filterNot(_ == tree))
 
-  def flatten: List[T] =
-    recurse(tree => List(tree.node))
+  def update[K](updatedDescendant: Tree[T])(toKey: T => K): Tree[T] = {
+    if (toKey(node) == toKey(updatedDescendant.node))
+      updatedDescendant
+    else
+      ancestors(updatedDescendant.node)(toKey) match {
+        case Nil => this
+        case ancestors =>
+          ancestors.foldLeft(updatedDescendant) { (child, parent) =>
+            parent.copy(children = parent.children.map {
+              case Tree(node, _) if toKey(node) == toKey(child.node) => child
+              case other => other
+            })
+          }
+      }
+  }
+
+  private def ancestors[K](child: T)(toKey: T => K): List[Tree[T]] = {
+    val keyToParentNode =
+      childNodeToParentNode.map { case (k, v) => toKey(k) -> v }
+
+    List.unfold(child)(node =>
+      keyToParentNode
+        .get(toKey(node))
+        .map(parent => (parent, parent))
+    ).map(nodeToTree)
+  }
 
   def recurse[Acc : Monoid](f: Tree[T] => Acc): Acc =
     recursionHelper(acc = Monoid[Acc].empty, remaining = List(this))(f)

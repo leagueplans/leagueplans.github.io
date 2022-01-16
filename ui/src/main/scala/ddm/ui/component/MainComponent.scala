@@ -49,24 +49,27 @@ object MainComponent {
       itemCache: ItemCache,
       plan: Tree[Step],
       setPlan: Tree[Step] => Callback,
-      focusedStep: Option[UUID]
+      focusedStepId: Option[UUID]
     ): VdomElement = {
-      val allSteps = plan.flatten
+      val allTrees = plan.recurse(List(_))
 
-      val progressedSteps = focusedStep match {
-        case Some(id) =>
-          val (lhs, rhs) = allSteps.span(_.id != id)
-          lhs ++ rhs.headOption
+      val (progressedStepsAsTrees, focusedStep) =
+        focusedStepId match {
+          case Some(id) =>
+            val (lhs, rhs) = allTrees.span(_.node.id != id)
+            val focused = rhs.headOption
+            (lhs ++ focused, focused)
 
-        case None =>
-          allSteps
-      }
+          case None =>
+            (allTrees, None)
+        }
+
+      val progressedSteps = progressedStepsAsTrees.map(_.node)
 
       <.table(
         <.tbody(
           <.tr(
             <.td(
-              ^.className := "plan",
               PlanComponent.build(PlanComponent.Props(
                 plan,
                 focusedStep,

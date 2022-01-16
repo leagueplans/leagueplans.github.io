@@ -14,7 +14,7 @@ object SearchBoxComponent {
   type Props = (String, String => Callback)
 
   private def render(currentValue: String, onChange: String => Callback): VdomNode =
-    <.input.text(
+    <.input.search(
       ^.placeholder := "Search...",
       ^.value := currentValue,
       ^.onChange ==> { event: ReactEventFromInput =>

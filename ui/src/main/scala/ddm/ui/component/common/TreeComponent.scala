@@ -54,7 +54,7 @@ final class TreeComponent[T] {
 
         <.li(
           ^.key := key,
-          Option.when(props.editingEnabled)(dragControlTag).whenDefined,
+          dragControlTag.when(props.editingEnabled),
           build(Props(
             tree,
             props.toKey,

@@ -1,8 +1,7 @@
 package ddm.ui.component.plan
 
-import cats.data.NonEmptyList
-import ddm.ui.component.common.DragSortableTreeComponent.EditingMode
-import ddm.ui.component.common.{DragSortableTreeComponent, RadioButtonComponent, ToggleButtonComponent}
+import ddm.ui.component.common.DragSortableTreeComponent
+import ddm.ui.component.plan.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
@@ -20,54 +19,37 @@ object PlanComponent {
 
   final case class Props(
     plan: Tree[Step],
-    focusedStep: Option[UUID],
+    focusedStep: Option[Tree[Step]],
     setFocusedStep: UUID => Callback,
     setPlan: Tree[Step] => Callback
   )
 
-  private val editingToggle = ToggleButtonComponent.build[Boolean]
-  private val dragModeSelection = RadioButtonComponent.build[Boolean]
   private val treeComponent = new DragSortableTreeComponent[(Step, StepComponent.Theme)].build
 
   private def render(props: Props): VdomNode =
-    editingToggle(ToggleButtonComponent.Props(
-      initialT = false,
-      initialButtonStyle = <.span("Edit"),
-      alternativeT = true,
-      alternativeButtonStyle = <.span("Lock"),
-      renderWithEditingToggle(props, _, _)
+    EditingManagementComponent.build(EditingManagementComponent.Props(
+      props.focusedStep.map(step =>
+        (step, updateStep(props.plan, props.setPlan))
+      ),
+      renderWithEditingManagement(props, _, _)
     ))
 
-  private def renderWithEditingToggle(
-    props: Props,
-    editingEnabled: Boolean,
-    editingToggle: VdomNode
-  ): VdomNode =
-    dragModeSelection(RadioButtonComponent.Props(
-      name = "dragModeSelection",
-      NonEmptyList.of("Order" -> true, "Heirarchy" -> false),
-      (modifyOrder, editingModeSelect) => {
-        val editingMode =
-          if (editingEnabled && modifyOrder) EditingMode.ModifyOrder
-          else if (editingEnabled) EditingMode.ModifyHierarchy
-          else EditingMode.Locked
+  private def updateStep(
+    plan: Tree[Step],
+    setPlan: Tree[Step] => Callback
+  ): Tree[Step] => Callback =
+    updatedStep => setPlan(plan.update(updatedStep)(toKey = _.id))
 
-        renderWithEditingTools(props, editingMode, editingToggle, editingModeSelect)
-      }
-    ))
-
-  private def renderWithEditingTools(
+  private def renderWithEditingManagement(
     props: Props,
     editingMode: EditingMode,
-    editingToggle: VdomNode,
-    editingModeSelect: VdomNode
+    editingManagement: VdomNode
   ): VdomNode =
     <.div(
-      editingToggle,
-      Option.when(editingMode != EditingMode.Locked)(editingModeSelect),
+      ^.className := "plan",
+      editingManagement,
       renderTree(props, editingMode)
     )
-
 
   private def renderTree(
     props: Props,
@@ -75,7 +57,7 @@ object PlanComponent {
   ): VdomNode = {
     val themedPlan = addTheme(
       props.plan,
-      props.focusedStep,
+      props.focusedStep.map(_.node),
       baseTheme = StepComponent.Theme.Dark
     )
 
@@ -92,15 +74,15 @@ object PlanComponent {
   }
 
   private def addTheme(
-    plan: Tree[Step],
-    focusedStep: Option[UUID],
+    step: Tree[Step],
+    focusedStep: Option[Step],
     baseTheme: StepComponent.Theme.Base
   ): Tree[(Step, StepComponent.Theme)] = {
-    val isFocused = focusedStep.contains(plan.node.id)
+    val isFocused = focusedStep.contains(step.node)
 
     Tree(
-      (plan.node, if (isFocused) StepComponent.Theme.Focused else baseTheme),
-      plan.children.map(addTheme(_, focusedStep, baseTheme.other))
+      (step.node, if (isFocused) StepComponent.Theme.Focused else baseTheme),
+      step.children.map(addTheme(_, focusedStep, baseTheme.other))
     )
   }
 

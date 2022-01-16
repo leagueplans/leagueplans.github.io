@@ -3,7 +3,7 @@ package ddm.ui.component.common
 import cats.data.NonEmptyList
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object RadioButtonComponent {
   def build[T]: Component[Props[T], State[T], Backend[T], CtorType.Props] =
