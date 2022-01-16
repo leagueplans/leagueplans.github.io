@@ -13,6 +13,9 @@ object ResourcePaths {
   val itemsJson: String =
     "data/items.json"
 
-  val planJson: String =
+  val defaultPlanJson: String =
     "data/plan.json"
+
+  val planStorageKey: String =
+    "plan"
 }
