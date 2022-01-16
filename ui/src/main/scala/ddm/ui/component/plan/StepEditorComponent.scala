@@ -6,6 +6,7 @@ import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
+import org.scalajs.dom.window
 
 object StepEditorComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
@@ -19,7 +20,8 @@ object StepEditorComponent {
   private def render(props: Props): VdomNode =
     <.div(
       ^.className := "step-editor",
-      addSubstep(props)
+      addSubstep(props),
+      removeSubstep(props)
     )
 
   private def addSubstep(props: Props): VdomNode =
@@ -36,4 +38,26 @@ object StepEditorComponent {
         )
       )
     ))
+
+  private def removeSubstep(props: Props): VdomNode =
+    <.ol(
+      props.step.children.toTagMod(substep =>
+        <.li(
+          <.input.button(
+            ^.onClick ==> { event: ^.onClick.Event =>
+              event.stopPropagation()
+              props
+                .editStep(props.step.removeChild(substep))
+                .when_(confirmDeletion())
+            }
+          ),
+          <.span(substep.node.description)
+        )
+      )
+    )
+
+  private def confirmDeletion(): Boolean =
+    window.confirm(
+      "Are you sure you want to delete this step? This will also delete any substeps."
+    )
 }
