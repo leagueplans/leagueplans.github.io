@@ -1,5 +1,7 @@
 package ddm.ui.component
 
+import ddm.ui.StorageManager
+import ddm.ui.component.common.StorageComponent
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
 import ddm.ui.facades.fusejs.FuseOptions
@@ -21,23 +23,37 @@ object MainComponent {
   val build: Component[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .initialStateFromProps[State] { case (plan, _) =>
-        State(plan = plan, focusedStep = None)
-      }
+      .initialState[State](State(focusedStep = None))
       .renderBackend[Backend]
       .build
 
-  type Props = (Tree[Step], ItemCache)
+  final case class Props(
+    storageManager: StorageManager[Tree[Step]],
+    defaultPlan: Tree[Step],
+    itemCache: ItemCache
+  )
 
-  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
+  final case class State(focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
-    def render(props: Props, state: State): VdomElement = {
-      val (_, itemCache) = props
+    private val planStorageComponent = StorageComponent.build[Tree[Step]]
 
-      val allSteps = state.plan.flatten
+    def render(props: Props, state: State): VdomElement =
+      planStorageComponent(StorageComponent.Props(
+        props.storageManager,
+        props.defaultPlan,
+        renderWithPlan(props.itemCache, _, _, state.focusedStep)
+      ))
 
-      val progressedSteps = state.focusedStep match {
+    private def renderWithPlan(
+      itemCache: ItemCache,
+      plan: Tree[Step],
+      setPlan: Tree[Step] => Callback,
+      focusedStep: Option[UUID]
+    ): VdomElement = {
+      val allSteps = plan.flatten
+
+      val progressedSteps = focusedStep match {
         case Some(id) =>
           val (lhs, rhs) = allSteps.span(_.id != id)
           lhs ++ rhs.headOption
@@ -52,8 +68,8 @@ object MainComponent {
             <.td(
               ^.className := "plan",
               PlanComponent.build(PlanComponent.Props(
-                state.plan,
-                state.focusedStep,
+                plan,
+                focusedStep,
                 setFocusedStep,
                 setPlan
               ))
@@ -91,8 +107,5 @@ object MainComponent {
           Option.when(!currentState.focusedStep.contains(step))(step)
         )
       )
-
-    private def setPlan(plan: Tree[Step]): Callback =
-      scope.modState(_.copy(plan = plan))
   }
 }
