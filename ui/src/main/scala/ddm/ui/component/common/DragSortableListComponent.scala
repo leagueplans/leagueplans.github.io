@@ -26,10 +26,10 @@ final class DragSortableListComponent[T] {
     underlying(DragSortableComponent.Props(
       props.upstreamOrder,
       showPreview = true,
-      props.setOrder,
-      props.toNode,
+      isViableTarget = _ => true,
       transform = shuffle,
-      isViableTarget = _ => true
+      props.setOrder,
+      props.toNode
     ))
 
   private def shuffle(hover: DragSortableComponent.Hover[T], tmpOrder: List[T]): List[T] = {

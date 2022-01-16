@@ -46,20 +46,16 @@ object StepComponent {
     subSteps: VdomNode
   )
 
-  private val substepsToggle = ToggleButtonComponent.build[Boolean]
+  private val substepsToggler = ToggleButtonComponent.build[Boolean]
 
-  private def render(props: Props): VdomNode = {
-    <.div(
-      ^.className := s"step ${props.theme.cssClass}",
-      substepsToggle(ToggleButtonComponent.Props(
-        initialT = true,
-        initialButtonStyle = toggleButtonStyle('-'),
-        alternativeT = false,
-        alternativeButtonStyle = toggleButtonStyle('+'),
-        renderContent(props, _)
-      ))
-    )
-  }
+  private def render(props: Props): VdomNode =
+    substepsToggler(ToggleButtonComponent.Props(
+      initialT = true,
+      initialButtonStyle = toggleButtonStyle('-'),
+      alternativeT = false,
+      alternativeButtonStyle = toggleButtonStyle('+'),
+      renderWithSubstepsToggle(props, _, _)
+    ))
 
   private def toggleButtonStyle(c: Char): VdomNode =
     <.span(
@@ -67,14 +63,18 @@ object StepComponent {
       s"[$c]"
     )
 
-  private def renderContent(props: Props, showSubsteps: Boolean): VdomNode =
+  private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: VdomNode): VdomNode =
     <.div(
-      ^.className := s"content",
-      ^.onClick ==> { event =>
-        event.stopPropagation()
-        props.setFocusedStep(props.step.id)
-      },
-      <.p(props.step.description),
-      Option.when(showSubsteps)(props.subSteps)
+      ^.className := s"step ${props.theme.cssClass}",
+      substepsToggle,
+      <.div(
+        ^.className := "content",
+        ^.onClick ==> { event =>
+          event.stopPropagation()
+          props.setFocusedStep(props.step.id)
+        },
+        <.p(props.step.description),
+        Option.when(showSubsteps)(props.subSteps)
+      )
     )
 }

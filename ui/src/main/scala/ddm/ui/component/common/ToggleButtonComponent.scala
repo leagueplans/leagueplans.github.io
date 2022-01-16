@@ -17,7 +17,7 @@ object ToggleButtonComponent {
     initialButtonStyle: TagMod,
     alternativeT: T,
     alternativeButtonStyle: TagMod,
-    toNode: T => VdomNode
+    toNode: (T, VdomNode) => VdomNode
   )
 
   final case class State[T](isInitial: Boolean) {
@@ -32,8 +32,7 @@ object ToggleButtonComponent {
         else
           (props.alternativeT, "alternative", props.alternativeButtonStyle)
 
-      <.div(
-        ^.className := "toggle-controlled",
+      val button =
         <.button(
           ^.className := s"toggle-button $stateClassName",
           ^.onClick ==> { event: ^.onClick.Event =>
@@ -41,9 +40,9 @@ object ToggleButtonComponent {
             scope.modState(_.toggle)
           },
           buttonStyle
-        ),
-        props.toNode(t)
-      )
+        )
+
+      props.toNode(t, button)
     }
   }
 }
