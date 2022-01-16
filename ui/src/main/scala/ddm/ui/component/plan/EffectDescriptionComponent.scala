@@ -29,7 +29,7 @@ object EffectDescriptionComponent {
   private def encode(effect: Effect, currentMultiplier: Int, itemCache: ItemCache): String =
     effect match {
       case Effect.GainExp(skill, baseExp) =>
-        s"+${baseExp * currentMultiplier} $skill XP"
+        s"+${baseExp * currentMultiplier} $skill XP ($baseExp XP pre-multiplier)"
 
       case Effect.GainItem(item, count, target) =>
         s"+$count ${itemCache(item).name} (${target.raw})"
