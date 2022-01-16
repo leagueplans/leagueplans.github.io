@@ -20,9 +20,22 @@ object StepEditorComponent {
   private def render(props: Props): VdomNode =
     <.div(
       ^.className := "step-editor",
+      editDescription(props),
       addSubstep(props),
       removeSubstep(props)
     )
+
+  private def editDescription(props: Props): VdomNode =
+    TextSubmitComponent.build(TextSubmitComponent.Props(
+      placeholder = props.step.node.description,
+      id = s"edit-step-description-${props.step.node.id}",
+      label = "Edit description",
+      onSubmit = description => props.editStep(
+        props.step.copy(node =
+          props.step.node.copy(description = description)
+        )
+      )
+    ))
 
   private def addSubstep(props: Props): VdomNode =
     TextSubmitComponent.build(TextSubmitComponent.Props(
