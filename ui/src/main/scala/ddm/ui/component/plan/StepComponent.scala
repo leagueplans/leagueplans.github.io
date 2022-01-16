@@ -10,23 +10,25 @@ import java.util.UUID
 
 object StepComponent {
   sealed trait Theme {
-    val other: Theme
     val cssClass: String
   }
 
   object Theme {
-    case object Light extends Theme {
+    sealed trait Base extends Theme {
+      val other: Base
+    }
+
+    case object Light extends Base {
       val other: Dark.type = Dark
       val cssClass: String = "light"
     }
 
-    case object Dark extends Theme {
+    case object Dark extends Base {
       val other: Light.type = Light
       val cssClass: String = "dark"
     }
 
-    final case class Focused(normalTheme: Theme) extends Theme {
-      val other: Theme = normalTheme.other
+    case object Focused extends Theme {
       val cssClass: String = "focused"
     }
   }
@@ -39,33 +41,21 @@ object StepComponent {
 
   final case class Props(
     step: Step,
-    normalTheme: Theme,
-    focusedStep: Option[UUID],
+    theme: Theme,
     setFocusedStep: UUID => Callback,
-    editStep: Step => Callback,
-    editingEnabled: Boolean
+    subSteps: VdomNode
   )
 
-  private val substepsToggle = ToggleButtonComponent.build[Boolean]
+  private val substepsToggler = ToggleButtonComponent.build[Boolean]
 
-  private def render(props: Props): VdomNode = {
-    val theme =
-      if (props.focusedStep.contains(props.step.id))
-        Theme.Focused(props.normalTheme)
-      else
-        props.normalTheme
-
-    <.div(
-      ^.className := s"step ${theme.cssClass}",
-      substepsToggle(ToggleButtonComponent.Props(
-        initialT = true,
-        initialButtonStyle = toggleButtonStyle('-'),
-        alternativeT = false,
-        alternativeButtonStyle = toggleButtonStyle('+'),
-        renderContent(props, theme, _)
-      ))
-    )
-  }
+  private def render(props: Props): VdomNode =
+    substepsToggler(ToggleButtonComponent.Props(
+      initialT = true,
+      initialButtonStyle = toggleButtonStyle('-'),
+      alternativeT = false,
+      alternativeButtonStyle = toggleButtonStyle('+'),
+      renderWithSubstepsToggle(props, _, _)
+    ))
 
   private def toggleButtonStyle(c: Char): VdomNode =
     <.span(
@@ -73,24 +63,18 @@ object StepComponent {
       s"[$c]"
     )
 
-  private def renderContent(props: Props, theme: Theme, showSubsteps: Boolean): VdomNode =
+  private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: VdomNode): VdomNode =
     <.div(
-      ^.className := s"content ${theme.cssClass}",
-      ^.onClick ==> { event =>
-        event.stopPropagation()
-        props.setFocusedStep(props.step.id)
-      },
-      <.p(props.step.description),
-      Option.when(showSubsteps)(
-        StepListComponent.build(StepListComponent.Props(
-          props.step.substeps,
-          theme.other,
-          props.focusedStep,
-          props.setFocusedStep,
-          substeps => props.editStep(props.step.copy(substeps = substeps)),
-          props.editingEnabled
-        ))
+      ^.className := s"step ${props.theme.cssClass}",
+      substepsToggle,
+      <.div(
+        ^.className := "content",
+        ^.onClick ==> { event =>
+          event.stopPropagation()
+          props.setFocusedStep(props.step.id)
+        },
+        <.p(props.step.description),
+        Option.when(showSubsteps)(props.subSteps)
       )
     )
-
 }

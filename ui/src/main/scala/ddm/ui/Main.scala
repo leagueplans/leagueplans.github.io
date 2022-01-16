@@ -1,6 +1,7 @@
 package ddm.ui
 
 import ddm.ui.component.MainComponent
+import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.item.{Item, ItemCache}
 import io.circe.Decoder
@@ -16,7 +17,7 @@ object Main extends App {
 
   private def setupUI(): Unit =
     withResource[Set[Item]](ResourcePaths.itemsJson)(items =>
-      withResource[Step](ResourcePaths.planJson) { plan =>
+      withResource[Tree[Step]](ResourcePaths.planJson) { plan =>
         // Creating a container, since react raises a warning if we render
         // directly into the document body.
         val container = document.createElement("div")

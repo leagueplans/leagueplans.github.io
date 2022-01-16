@@ -1,100 +1,117 @@
 package ddm.ui.component.common
 
+import cats.Functor
+import cats.syntax.functor._
 import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.vdom.{TagMod, VdomNode}
 import japgolly.scalajs.react.{Callback, CtorType, ReactDragEvent, ScalaComponent}
 
 object DragSortableComponent {
-  def build[T]: Component[Props[T], State[T], Backend[T], CtorType.Props] =
+  def build[S[_] : Functor, T]: Component[Props[S, T], State[S, T], Backend[S, T], CtorType.Props] =
     ScalaComponent
-      .builder[Props[T]]
-      .initialState[State[T]](State.Idle)
-      .renderBackend[Backend[T]]
+      .builder[Props[S, T]]
+      .getDerivedStateFromPropsAndState[State[S, T]] {
+        case (props, Some(state)) if props.state == state.propsState =>
+          state
+
+        case (props, _) =>
+          State(dragging = None, previewState = props.state, propsState = props.state)
+      }
+      .renderBackend[Backend[S, T]]
       .build
 
-  type Props[T] = (List[T], List[T] => Callback, List[(T, TagMod)] => VdomNode)
+  final case class Props[S[_], T](
+    state: S[T],
+    showPreview: Boolean,
+    isViableTarget: Hover[T] => Boolean,
+    transform: (Hover[T], S[T]) => S[T],
+    setState: S[T] => Callback,
+    toNode: S[(T, TagMod)] => VdomNode
+  )
 
-  sealed trait State[+T]
-
-  object State {
-    final case class Dragging[+T](held: T, tmpOrder: List[T]) extends State[T]
-    case object Idle extends State[Nothing]
+  final case class State[S[_], T](dragging: Option[T], previewState: S[T], propsState: S[T]) {
+    def toIdle: State[S, T] =
+      copy(dragging = None, previewState = propsState)
   }
 
-  final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
-    def render(props: Props[T], state: State[T]): VdomNode = {
-      val (upstreamOrder, setOrder, toNode) = props
+  final case class Hover[T](dragged: T, hovered: T)
 
-      val downstreamOrder = state match {
-        case d: State.Dragging[T @unchecked] => d.tmpOrder
-        case State.Idle => upstreamOrder
-      }
-
-      toNode(
-        downstreamOrder.map(target =>
+  final class Backend[S[_] : Functor, T](scope: BackendScope[Props[S, T], State[S, T]]) {
+    def render(props: Props[S, T], state: State[S, T]): VdomNode =
+      props.toNode(
+        state.previewState.map(target =>
           target -> createDragTags(
             target,
-            state,
-            upstreamOrder,
-            setOrder
+            state.dragging,
+            state.previewState,
+            props
           )
         )
       )
-    }
 
     private def createDragTags(
       target: T,
-      state: State[T],
-      upstreamOrder: List[T],
-      setOrder: List[T] => Callback,
-    ): TagMod = {
-      val onEnd = ^.onDragEnd --> scope.setState(State.Idle)
-
-      state match {
-        case State.Idle =>
+      maybeDragged: Option[T],
+      previewState: S[T],
+      props: Props[S, T]
+    ): TagMod =
+      maybeDragged match {
+        case None =>
           TagMod(
             ^.draggable := true,
-            ^.onDragStart ==> { e: ReactDragEvent =>
-              e.stopPropagation()
-              scope.setState(State.Dragging(target, upstreamOrder))
-            }
+            ^.onDragStart ==> stopPropagation(_ => scope.modState(_.copy(dragging = Some(target))))
           )
 
-        case State.Dragging(`target`, tmpOrder) =>
-          TagMod(
-            ^.onDragEnter ==> { e: ReactDragEvent => Callback(e.preventDefault()) },
-            ^.onDragOver ==> { e: ReactDragEvent => Callback(e.preventDefault()) },
-            ^.onDrop --> setOrder(tmpOrder),
-            onEnd
-          )
-
-        case d: State.Dragging[T @unchecked] =>
-          TagMod(
-            ^.onDragEnter --> scope.setState(d.copy(tmpOrder =
-              shuffle(d.held, target, d.tmpOrder))
-            ),
-            onEnd
-          )
-      }
-    }
-
-    private def shuffle(held: T, target: T, tmpOrder: List[T]): List[T] =
-      if (held == target)
-        tmpOrder
-      else
-        tmpOrder.span(k => k != held && k != target) match {
-          case (stableHead, `held` :: t) =>
-            val (shiftedLeft, _ :: stableTail) = t.span(_ != target)
-            (stableHead ++ shiftedLeft :+ target :+ held) ++ stableTail
-
-          case (stableHead, `target` :: t) =>
-            val (shiftedRight, _ :: stableTail) = t.span(_ != held)
-            (stableHead :+ held :+ target) ++ shiftedRight ++ stableTail
-
-          case result =>
-            throw new RuntimeException(
-              s"Invalid shuffle result: [held = $held][target = $target][split = $result]"
+        case Some(`target`) =>
+          if (props.showPreview)
+            dragControlTags(
+              onEnter = e => Callback(e.preventDefault()),
+              onDrop = _ => props.setState(previewState),
+              onEnd = _ => scope.modState(_.toIdle)
             )
-        }
+          else
+            dragControlTags(
+              onEnd = _ => scope.modState(_.toIdle)
+            )
+
+        case Some(dragged) =>
+          val hover = Hover(dragged, target)
+          val viableTarget = props.isViableTarget(hover)
+
+          if (viableTarget && props.showPreview)
+            dragControlTags(
+              onEnter = _ => scope.modState(_.copy(previewState = props.transform(hover, previewState)))
+            )
+          else if (viableTarget)
+            dragControlTags(
+              onEnter = e => Callback(e.preventDefault()),
+              onDrop = _ => props.setState(props.transform(hover, previewState))
+            )
+          else
+            dragControlTags(
+              onEnd = _ => scope.modState(_.toIdle)
+            )
+      }
+
+    private def dragControlTags(
+      onStart: ReactDragEvent => Callback = _ => Callback.empty,
+      onEnter: ReactDragEvent => Callback = _ => Callback.empty,
+      onDrop: ReactDragEvent => Callback = _ => Callback.empty,
+      onEnd: ReactDragEvent => Callback = _ => Callback.empty
+    ): TagMod =
+      TagMod(
+        ^.onDragStart ==> stopPropagation(onStart),
+        ^.onDragEnter ==> stopPropagation(onEnter),
+        ^.onDragOver ==> stopPropagation(e => Callback(e.preventDefault())),
+        ^.onDrop ==> stopPropagation(onDrop),
+        ^.onDragEnd ==> stopPropagation(onEnd)
+      )
+
+    private def stopPropagation(callback: ReactDragEvent => Callback): ReactDragEvent => Callback =
+      e => {
+        e.stopPropagation()
+        callback(e)
+      }
   }
 }
