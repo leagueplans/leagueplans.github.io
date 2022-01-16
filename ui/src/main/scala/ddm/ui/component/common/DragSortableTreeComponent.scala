@@ -7,6 +7,7 @@ import ddm.ui.model.common.Tree
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, Key, ScalaComponent}
+import scala.util.chaining.scalaUtilChainingOps
 
 object DragSortableTreeComponent {
   final case class Props[T](
@@ -28,28 +29,15 @@ final class DragSortableTreeComponent[T] {
   private val sortComponent = DragSortableComponent.build[Tree, T]
   private val treeComponent = new TreeComponent[(T, TagMod)].build
 
-  private def render(props: Props[T]): VdomNode = {
-    val nodeToTree =
-      props.tree.recurse(tree =>
-        List(tree.node -> tree)
-      ).toMap
-
-    val childNodeToParentNode =
-      props.tree.recurse(tree =>
-        tree.children.map(_.node -> tree.node)
-      ).toMap
-
+  private def render(props: Props[T]): VdomNode =
     sortComponent(DragSortableComponent.Props(
       props.tree,
       showPreview = false,
-      isViableTarget(_, childNodeToParentNode),
-      // Disabled previews, so we're only ever transforming the initial state,
-      // for which we've pre-generated some maps for above
-      (hover, _) => transform(hover, nodeToTree, childNodeToParentNode),
+      isViableTarget(_, props.tree.childNodeToParentNode),
+      transform,
       props.editTree,
       render(_, props)
     ))
-  }
 
   private def render(tree: Tree[(T, TagMod)], props: Props[T]): VdomNode =
     treeComponent(TreeComponent.Props[(T, TagMod)](
@@ -88,80 +76,20 @@ final class DragSortableTreeComponent[T] {
       )
     )
 
-  private def transform(
-    hover: DragSortableComponent.Hover[T],
-    nodeToTree: Map[T, Tree[T]],
-    childNodeToParentNode: Map[T, T]
-  ): Tree[T] = {
-    val nodeHoveredAncestryLine @ NonEmptyList(nodeHovered, _ ) =
-      ancestryLine(hover.hovered, childNodeToParentNode)
+  private def transform(hover: DragSortableComponent.Hover[T], tree: Tree[T]): Tree[T] = {
+    val dragged =
+      tree.nodeToTree(hover.dragged)
 
-    // Suppose nodeDraggedAncestors was empty
-    // therefore nodeDragged is the root node
-    // but a root node cannot be dragged anywhere, since all nodes are its children which would cause a loop
-    // therefore nodeDraggedAncestors cannot be empty
-    val NonEmptyList(nodeDragged, nodeDraggedAncestors @ nodeParentOfDragged :: _) =
-      ancestryLine(hover.dragged, childNodeToParentNode)
+    val parentOfDragged =
+      tree.childNodeToParentNode(hover.dragged)
+        .pipe(tree.nodeToTree)
 
-    // nodesDraggedAncestors cannot be empty as above
-    // neither can the nodeHoveredAncestryLine
-    // therefore there's at least one common node
-    val (nodeFirstCommonAncestor :: nodeSubsequentCommonAncestors, _) =
-      nodeDraggedAncestors
-        .reverse
-        .zip(nodeHoveredAncestryLine.toList.reverse)
-        .takeWhile { case (a, b) => a == b }
-        .reverse
-        .unzip
+    val treeWithDraggedRemoved =
+      tree.update(parentOfDragged.removeChild(dragged))
 
-    // the hover target may be the firstCommonAncestor, so prune it afterwards
-    val nodeHoveredUniqueAncestors =
-      nodeHoveredAncestryLine
-        .toList
-        .takeWhile(_ != nodeFirstCommonAncestor)
-        .dropWhile(_ == nodeHoveredAncestryLine.head)
+    val hovered =
+      treeWithDraggedRemoved.nodeToTree(hover.hovered)
 
-    // the parentOfDragged may be the firstCommonAncestor, so prune it afterwards
-    val nodeParentOfDraggedUniqueAncestors =
-      nodeDraggedAncestors
-        .takeWhile(_ != nodeFirstCommonAncestor)
-        .dropWhile(_ == nodeParentOfDragged)
-
-    val treeDragged = nodeToTree(nodeDragged)
-    val treeUpdatedParentOfDragged = nodeToTree(nodeParentOfDragged).removeChild(treeDragged)
-    val treeUpdatedHovered = nodeToTree(nodeHovered).addChild(treeDragged)
-
-    val treeFirstCommonAncestorWithBothUpdates =
-      nodeFirstCommonAncestor match {
-        case `nodeHovered` =>
-          Tree.updateRoot(
-            treeUpdatedParentOfDragged,
-            nodeParentOfDraggedUniqueAncestors.map(nodeToTree) :+ treeUpdatedHovered
-          )
-
-        case `nodeParentOfDragged` =>
-          Tree.updateRoot(
-            treeUpdatedHovered,
-            nodeHoveredUniqueAncestors.map(nodeToTree) :+ treeUpdatedParentOfDragged
-          )
-
-        case _ =>
-          val treeFirstCommonAncestorWithFirstUpdate =
-            Tree.updateRoot(
-              treeUpdatedParentOfDragged,
-              (nodeParentOfDraggedUniqueAncestors :+ nodeFirstCommonAncestor).map(nodeToTree)
-            )
-
-          Tree.updateRoot(
-            treeUpdatedHovered,
-            nodeHoveredUniqueAncestors.map(nodeToTree) :+ treeFirstCommonAncestorWithFirstUpdate
-          )
-      }
-
-    // with both updates applied, we can now safely update the common ancestors
-    Tree.updateRoot(
-      treeFirstCommonAncestorWithBothUpdates,
-      nodeSubsequentCommonAncestors.map(nodeToTree)
-    )
+    treeWithDraggedRemoved.update(hovered.addChild(dragged))
   }
 }

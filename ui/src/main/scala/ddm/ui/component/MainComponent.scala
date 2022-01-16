@@ -51,7 +51,7 @@ object MainComponent {
       setPlan: Tree[Step] => Callback,
       focusedStep: Option[UUID]
     ): VdomElement = {
-      val allSteps = plan.flatten
+      val allTrees = plan.recurse(tree => List(tree.node))
 
       val progressedSteps = focusedStep match {
         case Some(id) =>
