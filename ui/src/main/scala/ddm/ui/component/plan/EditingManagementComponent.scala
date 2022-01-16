@@ -4,6 +4,8 @@ import cats.data.NonEmptyList
 import ddm.ui.component.common.{RadioButtonComponent, ToggleButtonComponent}
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
+import ddm.ui.model.player.Player
+import ddm.ui.model.player.item.ItemCache
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -16,6 +18,8 @@ object EditingManagementComponent {
       .build
 
   final case class Props(
+    player: Player,
+    itemCache: ItemCache,
     focusedStep: Option[(Tree[Step], Tree[Step] => Callback)],
     render: (EditingMode, VdomNode) => VdomNode
   )
@@ -64,7 +68,9 @@ object EditingManagementComponent {
               props.focusedStep.map { case (step, editStep) =>
                 StepEditorComponent.build(StepEditorComponent.Props(
                   step,
-                  editStep
+                  editStep,
+                  props.player,
+                  props.itemCache
                 ))
               }
             ).when(editingMode != EditingMode.Locked)

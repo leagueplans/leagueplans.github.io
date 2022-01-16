@@ -3,6 +3,8 @@ package ddm.ui.component.plan
 import ddm.ui.component.common.TextSubmitComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
+import ddm.ui.model.player.Player
+import ddm.ui.model.player.item.ItemCache
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -15,53 +17,55 @@ object StepEditorComponent {
       .render_P(render)
       .build
 
-  final case class Props(step: Tree[Step], editStep: Tree[Step] => Callback)
+  final case class Props(
+    step: Tree[Step],
+    editStep: Tree[Step] => Callback,
+    player: Player,
+    itemCache: ItemCache
+  )
 
   private def render(props: Props): VdomNode =
     <.div(
       ^.className := "step-editor",
-      editDescription(props),
-      addSubstep(props),
-      removeSubstep(props)
+      editDescription(props.step, props.editStep),
+      addSubstep(props.step, props.editStep),
+      removeSubstep(props.step, props.editStep),
+      removeEffect(props)
     )
 
-  private def editDescription(props: Props): VdomNode =
+  private def editDescription(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
     TextSubmitComponent.build(TextSubmitComponent.Props(
-      placeholder = props.step.node.description,
-      id = s"edit-step-description-${props.step.node.id}",
+      placeholder = step.node.description,
+      id = s"edit-step-description-${step.node.id}",
       label = "Edit description",
-      onSubmit = description => props.editStep(
-        props.step.copy(node =
-          props.step.node.copy(description = description)
-        )
+      onSubmit = description => editStep(
+        step.mapNode(_.copy(description = description))
       )
     ))
 
-  private def addSubstep(props: Props): VdomNode =
+  private def addSubstep(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
     TextSubmitComponent.build(TextSubmitComponent.Props(
       placeholder = "Cut five oak logs",
-      id = s"add-substep-${props.step.node.id}",
+      id = s"add-substep-${step.node.id}",
       label = "Add substep",
-      onSubmit = description => props.editStep(
-        props.step.addChild(
+      onSubmit = description => editStep(
+        step.addChild(
           Tree(
-            Step(description, directEffects = List.empty),
+            Step(description, directEffects = Set.empty),
             children = List.empty
           )
         )
       )
     ))
 
-  private def removeSubstep(props: Props): VdomNode =
+  private def removeSubstep(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
     <.ol(
-      props.step.children.toTagMod(substep =>
+      step.children.toTagMod(substep =>
         <.li(
           <.input.button(
             ^.onClick ==> { event: ^.onClick.Event =>
               event.stopPropagation()
-              props
-                .editStep(props.step.removeChild(substep))
-                .when_(confirmDeletion())
+              editStep(step.removeChild(substep)).when_(confirmStepDeletion())
             }
           ),
           <.span(substep.node.description)
@@ -69,8 +73,29 @@ object StepEditorComponent {
       )
     )
 
-  private def confirmDeletion(): Boolean =
+  private def confirmStepDeletion(): Boolean =
     window.confirm(
       "Are you sure you want to delete this step? This will also delete any substeps."
+    )
+
+  private def removeEffect(props: Props): VdomNode =
+    <.ol(
+      props.step.node.directEffects.toTagMod(effect =>
+        <.li(
+          <.input.button(
+            ^.onClick ==> { event: ^.onClick.Event =>
+              event.stopPropagation()
+              props.editStep(props.step.mapNode(s =>
+                s.copy(directEffects = s.directEffects - effect)
+              ))
+            }
+          ),
+          EffectDescriptionComponent.build(EffectDescriptionComponent.Props(
+            effect,
+            props.player,
+            props.itemCache
+          ))
+        )
+      )
     )
 }

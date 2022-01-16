@@ -65,12 +65,18 @@ object MainComponent {
         }
 
       val progressedSteps = progressedStepsAsTrees.map(_.node)
+      val playerAtFocusedStep = EffectResolver.resolve(
+        Player.initial,
+        progressedSteps.flatMap(_.directEffects): _*
+      )
 
       <.table(
         <.tbody(
           <.tr(
             <.td(
               PlanComponent.build(PlanComponent.Props(
+                playerAtFocusedStep,
+                itemCache,
                 plan,
                 focusedStep,
                 setFocusedStep,
@@ -79,14 +85,16 @@ object MainComponent {
             ),
             <.td(
               StatusComponent.build((
-                EffectResolver.resolve(Player.initial, progressedSteps.flatMap(_.directEffects): _*),
+                playerAtFocusedStep,
                 itemCache
               ))
             )
           ),
           <.tr(
             <.td(
-              ConsoleComponent.build((progressedSteps, Player.initial, itemCache))
+              ConsoleComponent.build(ConsoleComponent.Props(
+                progressedSteps, Player.initial, itemCache
+              ))
             ),
             <.td(
               ItemSearchComponent.build(

@@ -54,8 +54,11 @@ final case class Tree[T](node: T, children: List[Tree[T]]) {
   lazy val childNodeToParentNode: Map[T, T] =
     recurse(tree => tree.children.map(_.node -> tree.node)).toMap
 
+  def mapNode(f: T => T): Tree[T] =
+    copy(f(node))
+
   def map[S](f: T => S): Tree[S] =
-    new Tree(f(node), children.map(_.map(f)))
+    Tree(f(node), children.map(_.map(f)))
 
   def addChild(tree: Tree[T]): Tree[T] =
     copy(children = children :+ tree)
