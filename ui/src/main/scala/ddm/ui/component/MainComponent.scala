@@ -66,7 +66,6 @@ object MainComponent {
         <.tbody(
           <.tr(
             <.td(
-              ^.className := "plan",
               PlanComponent.build(PlanComponent.Props(
                 plan,
                 focusedStep,

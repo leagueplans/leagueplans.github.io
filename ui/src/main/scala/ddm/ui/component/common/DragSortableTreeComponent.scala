@@ -1,7 +1,8 @@
 package ddm.ui.component.common
 
 import cats.data.NonEmptyList
-import ddm.ui.component.common.DragSortableTreeComponent.{EditingMode, Props}
+import ddm.ui.component.common.DragSortableTreeComponent.Props
+import ddm.ui.component.plan.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
@@ -15,14 +16,6 @@ object DragSortableTreeComponent {
     editingMode: EditingMode,
     renderT: (T, VdomNode) => VdomNode
   )
-
-  sealed trait EditingMode
-
-  object EditingMode {
-    case object Locked extends EditingMode
-    case object ModifyHierarchy extends EditingMode
-    case object ModifyOrder extends EditingMode
-  }
 }
 
 final class DragSortableTreeComponent[T] {
