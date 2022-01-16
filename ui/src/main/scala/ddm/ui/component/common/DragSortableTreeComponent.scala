@@ -85,11 +85,15 @@ final class DragSortableTreeComponent[T] {
         .pipe(tree.nodeToTree)
 
     val treeWithDraggedRemoved =
-      tree.update(parentOfDragged.removeChild(dragged))
+      tree.update(
+        parentOfDragged.removeChild(dragged)
+      )(toKey = identity)
 
     val hovered =
       treeWithDraggedRemoved.nodeToTree(hover.hovered)
 
-    treeWithDraggedRemoved.update(hovered.addChild(dragged))
+    treeWithDraggedRemoved.update(
+      hovered.addChild(dragged)
+    )(toKey = identity)
   }
 }

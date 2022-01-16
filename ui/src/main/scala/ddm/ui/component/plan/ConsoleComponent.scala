@@ -40,12 +40,10 @@ object ConsoleComponent {
 
     <.div(
       ^.className := "console",
-      Option.when(nErrors > 0)(
-        <.div(
-          ^.className := "console-warning",
-          <.p(s"WARNING: Route may not be sound. $nErrors error(s) found.")
-        )
-      ),
+      <.div(
+        ^.className := "console-warning",
+        <.p(s"WARNING: Route may not be sound. $nErrors error(s) found.")
+      ).when(nErrors > 0),
       sectionsElement
     )
   }

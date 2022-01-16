@@ -2,9 +2,11 @@ package ddm.ui.component.plan
 
 import cats.data.NonEmptyList
 import ddm.ui.component.common.{RadioButtonComponent, ToggleButtonComponent}
+import ddm.ui.model.common.Tree
+import ddm.ui.model.plan.Step
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
 
 object EditingManagementComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
@@ -14,6 +16,7 @@ object EditingManagementComponent {
       .build
 
   final case class Props(
+    focusedStep: Option[(Tree[Step], Tree[Step] => Callback)],
     render: (EditingMode, VdomNode) => VdomNode
   )
 
@@ -56,7 +59,15 @@ object EditingManagementComponent {
           <.div(
             ^.className := "editing-tools",
             editingToggle,
-            Option.when(editingMode != EditingMode.Locked)(editingModeSelect)
+            TagMod(
+              editingModeSelect,
+              props.focusedStep.map { case (step, editStep) =>
+                StepEditorComponent.build(StepEditorComponent.Props(
+                  step,
+                  editStep
+                ))
+              }
+            ).when(editingMode != EditingMode.Locked)
           )
         )
       }

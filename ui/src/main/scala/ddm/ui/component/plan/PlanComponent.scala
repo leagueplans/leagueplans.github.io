@@ -19,7 +19,7 @@ object PlanComponent {
 
   final case class Props(
     plan: Tree[Step],
-    focusedStep: Option[UUID],
+    focusedStep: Option[Tree[Step]],
     setFocusedStep: UUID => Callback,
     setPlan: Tree[Step] => Callback
   )
@@ -28,8 +28,17 @@ object PlanComponent {
 
   private def render(props: Props): VdomNode =
     EditingManagementComponent.build(EditingManagementComponent.Props(
+      props.focusedStep.map(step =>
+        (step, updateStep(props.plan, props.setPlan))
+      ),
       renderWithEditingManagement(props, _, _)
     ))
+
+  private def updateStep(
+    plan: Tree[Step],
+    setPlan: Tree[Step] => Callback
+  ): Tree[Step] => Callback =
+    updatedStep => setPlan(plan.update(updatedStep)(toKey = _.id))
 
   private def renderWithEditingManagement(
     props: Props,
@@ -48,7 +57,7 @@ object PlanComponent {
   ): VdomNode = {
     val themedPlan = addTheme(
       props.plan,
-      props.focusedStep,
+      props.focusedStep.map(_.node),
       baseTheme = StepComponent.Theme.Dark
     )
 
@@ -65,15 +74,15 @@ object PlanComponent {
   }
 
   private def addTheme(
-    plan: Tree[Step],
-    focusedStep: Option[UUID],
+    step: Tree[Step],
+    focusedStep: Option[Step],
     baseTheme: StepComponent.Theme.Base
   ): Tree[(Step, StepComponent.Theme)] = {
-    val isFocused = focusedStep.contains(plan.node.id)
+    val isFocused = focusedStep.contains(step.node)
 
     Tree(
-      (plan.node, if (isFocused) StepComponent.Theme.Focused else baseTheme),
-      plan.children.map(addTheme(_, focusedStep, baseTheme.other))
+      (step.node, if (isFocused) StepComponent.Theme.Focused else baseTheme),
+      step.children.map(addTheme(_, focusedStep, baseTheme.other))
     )
   }
 

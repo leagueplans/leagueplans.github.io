@@ -63,29 +63,32 @@ final case class Tree[T](node: T, children: List[Tree[T]]) {
   def removeChild(tree: Tree[T]): Tree[T] =
     copy(children = children.filterNot(_ == tree))
 
-  def update(updatedDescendant: Tree[T]): Tree[T] = {
-    if (node == updatedDescendant.node)
+  def update[K](updatedDescendant: Tree[T])(toKey: T => K): Tree[T] = {
+    if (toKey(node) == toKey(updatedDescendant.node))
       updatedDescendant
     else
-      ancestors(updatedDescendant.node) match {
+      ancestors(updatedDescendant.node)(toKey) match {
         case Nil => this
         case ancestors =>
           ancestors.foldLeft(updatedDescendant) { (child, parent) =>
-            val node = child.node
             parent.copy(children = parent.children.map {
-              case Tree(`node`, _) => child
+              case Tree(node, _) if toKey(node) == toKey(child.node) => child
               case other => other
             })
           }
       }
   }
 
-  private def ancestors(child: T): List[Tree[T]] =
+  private def ancestors[K](child: T)(toKey: T => K): List[Tree[T]] = {
+    val keyToParentNode =
+      childNodeToParentNode.map { case (k, v) => toKey(k) -> v }
+
     List.unfold(child)(node =>
-      childNodeToParentNode
-        .get(node)
+      keyToParentNode
+        .get(toKey(node))
         .map(parent => (parent, parent))
     ).map(nodeToTree)
+  }
 
   def recurse[Acc : Monoid](f: Tree[T] => Acc): Acc =
     recursionHelper(acc = Monoid[Acc].empty, remaining = List(this))(f)

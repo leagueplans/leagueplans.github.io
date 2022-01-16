@@ -74,7 +74,7 @@ object StepComponent {
           props.setFocusedStep(props.step.id)
         },
         <.p(props.step.description),
-        Option.when(showSubsteps)(props.subSteps)
+        props.subSteps.when(showSubsteps)
       )
     )
 }
