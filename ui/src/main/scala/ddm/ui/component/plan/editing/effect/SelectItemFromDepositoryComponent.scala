@@ -29,7 +29,7 @@ object SelectItemFromDepositoryComponent {
 
   private def withSource(player: Player): With[Depository.ID] =
     render => sourceInput(SelectComponent.Props(
-      id = "target-depository",
+      id = "source-depository",
       options = player.depositories.values.map(d => d.id.raw -> d.id).toList,
       render
     ))
