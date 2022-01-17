@@ -2,21 +2,18 @@ package ddm.ui.component.plan.editing.effect
 
 import ddm.ui.component.With
 import ddm.ui.component.common.form.{FormComponent, NumberInputComponent, SelectComponent}
-import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.GainExp
 import ddm.ui.model.player.skill.{Exp, Skill}
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object GainExpComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: Component[AddEffectComponent.Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
-      .builder[Props]
+      .builder[AddEffectComponent.Props]
       .render_P(render)
       .build
-
-  type Props = Effect => Callback
 
   private val default = GainExp(Skill.all.head, Exp(0))
   private val skillSelect = SelectComponent.build[Skill](default.skill)
@@ -38,11 +35,11 @@ object GainExpComponent {
       render
     ))
 
-  private def render(props: Props): VdomNode =
+  private def render(props: AddEffectComponent.Props): VdomNode =
     withSkillSelect((skill, skillSelect) =>
       withExpInput((exp, expInput) =>
         FormComponent.build(FormComponent.Props(
-          props(GainExp(skill, Exp(exp))).when(exp > 0).void,
+          props.onSubmit(GainExp(skill, Exp(exp))).when(exp > 0).void,
           formContents = TagMod(skillSelect, expInput)
         ))
       )

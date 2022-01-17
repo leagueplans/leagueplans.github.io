@@ -70,6 +70,15 @@ object MainComponent {
         progressedSteps.flatMap(_.directEffects): _*
       )
 
+      val itemFuse =
+        new Fuse(
+          itemCache.raw.values.toSet,
+          new FuseOptions {
+            override val keys: UndefOr[js.Array[String]] =
+              js.defined(js.Array("name"))
+          }
+        )
+
       <.table(
         <.tbody(
           <.tr(
@@ -77,6 +86,7 @@ object MainComponent {
               PlanComponent.build(PlanComponent.Props(
                 playerAtFocusedStep,
                 itemCache,
+                itemFuse,
                 plan,
                 focusedStep,
                 setFocusedStep,
@@ -94,23 +104,6 @@ object MainComponent {
             <.td(
               ConsoleComponent.build(ConsoleComponent.Props(
                 progressedSteps, Player.initial, itemCache
-              ))
-            ),
-            <.td(
-              ItemSearchComponent.build(ItemSearchComponent.Props(
-                new Fuse(
-                  itemCache.raw.values.toSet,
-                  new FuseOptions {
-                    override val keys: UndefOr[js.Array[String]] =
-                      js.defined(js.Array("name"))
-                  }
-                ),
-                (maybeItem, searchBox) => {
-                  <.div(
-                    searchBox,
-                    maybeItem.map(i => <.p(i.name)).whenDefined
-                  )
-                }
               ))
             )
           )
