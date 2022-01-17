@@ -1,6 +1,7 @@
-package ddm.ui.component.plan
+package ddm.ui.component.plan.editing
 
 import cats.data.NonEmptyList
+import ddm.ui.component.Render
 import ddm.ui.component.common.{RadioButtonComponent, ToggleButtonComponent}
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
@@ -21,7 +22,7 @@ object EditingManagementComponent {
     player: Player,
     itemCache: ItemCache,
     focusedStep: Option[(Tree[Step], Tree[Step] => Callback)],
-    render: (EditingMode, VdomNode) => VdomNode
+    render: Render[EditingMode]
   )
 
   sealed trait EditingMode

@@ -1,7 +1,9 @@
 package ddm.ui.component.plan
 
+import ddm.ui.component.With
 import ddm.ui.component.common.DragSortableTreeComponent
-import ddm.ui.component.plan.EditingManagementComponent.EditingMode
+import ddm.ui.component.plan.editing.EditingManagementComponent
+import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
@@ -31,13 +33,22 @@ object PlanComponent {
   private val treeComponent = new DragSortableTreeComponent[(Step, StepComponent.Theme)].build
 
   private def render(props: Props): VdomNode =
-    EditingManagementComponent.build(EditingManagementComponent.Props(
+    withEditingManager(props)((editingMode, editingManager) =>
+      <.div(
+        ^.className := "plan",
+        editingManager,
+        renderTree(props, editingMode)
+      )
+    )
+
+  private def withEditingManager(props: Props): With[EditingMode] =
+    render => EditingManagementComponent.build(EditingManagementComponent.Props(
       props.player,
       props.itemCache,
       props.focusedStep.map(step =>
         (step, updateStep(props.plan, props.setPlan))
       ),
-      renderWithEditingManagement(props, _, _)
+      render
     ))
 
   private def updateStep(
@@ -45,17 +56,6 @@ object PlanComponent {
     setPlan: Tree[Step] => Callback
   ): Tree[Step] => Callback =
     updatedStep => setPlan(plan.update(updatedStep)(toKey = _.id))
-
-  private def renderWithEditingManagement(
-    props: Props,
-    editingMode: EditingMode,
-    editingManagement: VdomNode
-  ): VdomNode =
-    <.div(
-      ^.className := "plan",
-      editingManagement,
-      renderTree(props, editingMode)
-    )
 
   private def renderTree(
     props: Props,

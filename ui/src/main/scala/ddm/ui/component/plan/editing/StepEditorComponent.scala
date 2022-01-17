@@ -1,6 +1,8 @@
-package ddm.ui.component.plan
+package ddm.ui.component.plan.editing
 
-import ddm.ui.component.common.TextSubmitComponent
+import ddm.ui.component.common._
+import ddm.ui.component.plan.EffectDescriptionComponent
+import ddm.ui.component.plan.editing.effect.AddEffectComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
@@ -30,7 +32,8 @@ object StepEditorComponent {
       editDescription(props.step, props.editStep),
       addSubstep(props.step, props.editStep),
       removeSubstep(props.step, props.editStep),
-      removeEffect(props)
+      removeEffect(props),
+      addEffect(props.step, props.editStep)
     )
 
   private def editDescription(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
@@ -98,4 +101,11 @@ object StepEditorComponent {
         )
       )
     )
+
+  private def addEffect(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
+    AddEffectComponent.build(effect => editStep(
+      step.mapNode(step =>
+        step.copy(directEffects = step.directEffects + effect)
+      )
+    ))
 }

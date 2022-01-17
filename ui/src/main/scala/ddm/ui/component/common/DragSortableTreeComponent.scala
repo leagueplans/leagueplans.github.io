@@ -2,7 +2,7 @@ package ddm.ui.component.common
 
 import cats.data.NonEmptyList
 import ddm.ui.component.common.DragSortableTreeComponent.Props
-import ddm.ui.component.plan.EditingManagementComponent.EditingMode
+import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._

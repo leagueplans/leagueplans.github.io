@@ -1,6 +1,7 @@
 package ddm.ui.component.common
 
 import cats.data.NonEmptyList
+import ddm.ui.component.Render
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
@@ -16,7 +17,7 @@ object RadioButtonComponent {
   final case class Props[T](
     name: String,
     labelResultPairs: NonEmptyList[(String, T)],
-    render: (T, VdomNode) => VdomNode
+    render: Render[T]
   )
 
   type State[T] = Option[T]
