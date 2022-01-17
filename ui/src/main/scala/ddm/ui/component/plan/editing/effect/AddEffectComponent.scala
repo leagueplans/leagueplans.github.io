@@ -42,6 +42,7 @@ object AddEffectComponent {
       "Drop item" -> DropItemComponent.build,
       "Gain item" -> GainItemComponent.build,
       "Gain XP" -> GainExpComponent.build,
+      "Unlock skill" -> UnlockSkillComponent.build
     ).map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
   private val withEffectSelect: With[Props => VdomNode] =

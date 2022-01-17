@@ -43,6 +43,9 @@ object EffectDescriptionComponent {
       case Effect.CompleteQuest(quest) =>
         s"Quest completed: ${quest.name}, +${quest.points} quest points"
 
+      case Effect.UnlockSkill(skill) =>
+        s"$skill unlocked!"
+
       case Effect.SetMultiplier(multiplier) =>
         s"League multiplier set to ${multiplier}x"
 
