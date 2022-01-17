@@ -5,7 +5,7 @@ import ddm.ui.component.With
 import ddm.ui.component.common.RadioButtonComponent
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.Item
+import ddm.ui.model.player.item.{Item, ItemCache}
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
@@ -22,6 +22,7 @@ object AddEffectComponent {
 
   final case class Props(
     fuse: Fuse[Item],
+    itemCache: ItemCache,
     player: Player,
     onSubmit: Submit
   )
@@ -37,6 +38,7 @@ object AddEffectComponent {
   private val effects: NonEmptyList[(String, Props => VdomNode)] =
     NonEmptyList.of(
       "Complete quest" -> CompleteQuestComponent.build,
+      "Drop item" -> DropItemComponent.build,
       "Gain item" -> GainItemComponent.build,
       "Gain XP" -> GainExpComponent.build,
     ).map( { case (k, builder) => k -> { p: Props => builder(p) }})

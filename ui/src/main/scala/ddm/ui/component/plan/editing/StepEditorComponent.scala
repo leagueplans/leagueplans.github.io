@@ -87,6 +87,7 @@ object StepEditorComponent {
   private def addEffect(props: Props): VdomNode =
     AddEffectComponent.build(AddEffectComponent.Props(
       props.fuse,
+      props.itemCache,
       props.player,
       effect => props.editStep(
         props.step.mapNode(step =>
