@@ -30,10 +30,11 @@ object RadioButtonComponent {
       val radios =
         <.div(
           ^.className := "radios",
-          props.labelResultPairs.toList.zipWithIndex.flatMap { case ((label, result), index) =>
+          props.labelResultPairs.toList.zipWithIndex.map { case ((label, result), index) =>
             val id = s"${props.name}-choice-$index"
 
-            List(
+            <.span(
+              ^.whiteSpace.nowrap,
               <.input.radio(
                 ^.id := id,
                 ^.name := props.name,
