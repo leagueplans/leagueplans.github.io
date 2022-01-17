@@ -9,16 +9,31 @@ object DepositoryComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P((render _).tupled)
+      .render_P(render)
       .build
 
-  type Props = (Depository, ItemCache)
+  object Props {
+    def apply(depository: Depository, itemCache: ItemCache): Props =
+      Props(
+        depository.id.raw,
+        itemCache.itemise(depository),
+        depository.columns,
+        depository.minRows
+      )
+  }
 
-  private def render(depository: Depository, itemCache: ItemCache): VdomNode =
+  final case class Props(
+    name: String,
+    contents: List[(Item, Int)],
+    columns: Int,
+    rows: Int
+  )
+
+  private def render(props: Props): VdomNode =
     <.table(
-      ^.className := "depository",
+      ^.className := s"depository ${props.name}",
       <.tbody(
-        splitIntoRows(itemCache, depository).toTagMod(row =>
+        splitIntoRows(props.contents, props.columns, props.rows).toTagMod(row =>
           <.tr(
             row.toTagMod(contents =>
               <.td(DepositoryCellComponent.build(contents))
@@ -28,12 +43,14 @@ object DepositoryComponent {
       )
     )
 
-  private def splitIntoRows(itemCache: ItemCache, depository: Depository): Iterator[List[Option[(Item, Int)]]] = {
-    val cells = itemCache.itemise(depository)
-    val minDepositorySize = depository.columns * depository.minRows
-    val emptyCellCount = Math.max(0, minDepositorySize - cells.size)
+  private def splitIntoRows(
+    contents: List[(Item, Int)],
+    columns: Int,
+    rows: Int
+  ): Iterator[List[Option[(Item, Int)]]] = {
+    val emptyCellCount = Math.max(0, columns * rows - contents.size)
 
-    (cells.map(Some.apply) ++ List.fill(emptyCellCount)(None))
-      .sliding(size = depository.columns, step = depository.columns)
+    (contents.map(Some.apply) ++ List.fill(emptyCellCount)(None))
+      .sliding(size = columns, step = columns)
   }
 }

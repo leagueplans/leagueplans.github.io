@@ -31,7 +31,7 @@ object StatusComponent {
           .sortBy(_.id.raw)
           .toTagMod(depository =>
             <.td(
-              DepositoryComponent.build((depository, itemCache))
+              DepositoryComponent.build(DepositoryComponent.Props(depository, itemCache))
             )
           )
       ),

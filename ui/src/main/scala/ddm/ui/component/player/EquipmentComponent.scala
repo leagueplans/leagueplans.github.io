@@ -22,6 +22,6 @@ object EquipmentComponent {
         .values
         .toList
         .sortBy(_.id.raw)
-        .toTagMod(d => DepositoryComponent.build((d, itemCache)))
+        .toTagMod(d => DepositoryComponent.build(DepositoryComponent.Props(d, itemCache)))
     )
 }
