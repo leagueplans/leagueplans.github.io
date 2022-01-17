@@ -50,9 +50,9 @@ object EffectResolver {
             )
         }
 
-      case Effect.GainQuestPoints(count: Int) =>
-        player.copy(questPoints =
-          player.questPoints + count
+      case Effect.CompleteQuest(quest) =>
+        player.copy(completedQuests =
+          player.completedQuests + quest
         )
 
       case Effect.SetMultiplier(multiplier) =>

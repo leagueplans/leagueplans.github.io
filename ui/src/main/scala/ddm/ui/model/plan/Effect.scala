@@ -1,5 +1,6 @@
 package ddm.ui.model.plan
 
+import ddm.ui.model.player.Quest
 import ddm.ui.model.player.item.{Depository, Item}
 import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.{Exp, Skill}
@@ -18,9 +19,8 @@ object Effect {
   final case class MoveItem(item: Item.ID, count: Int, source: Depository.ID, target: Depository.ID) extends Effect
   final case class DropItem(item: Item.ID, count: Int, source: Depository.ID) extends Effect
 
-  final case class GainQuestPoints(count: Int) extends Effect
-
   final case class SetMultiplier(multiplier: Int) extends Effect
 
+  final case class CompleteQuest(quest: Quest) extends Effect
   final case class CompleteTask(task: Task) extends Effect
 }

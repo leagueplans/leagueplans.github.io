@@ -13,7 +13,7 @@ object Player {
         Depository.bank
       ).map(d => d.id -> d).toMap,
       Equipment.initial,
-      questPoints = 0,
+      completedQuests = Set.empty,
       leagueStatus = LeagueStatus.initial
     )
 }
@@ -22,6 +22,9 @@ final case class Player(
   stats: Stats,
   depositories: Map[Depository.ID, Depository],
   equipment: Equipment,
-  questPoints: Int,
+  completedQuests: Set[Quest],
   leagueStatus: LeagueStatus
-)
+) {
+  val questPoints: Int =
+    completedQuests.toList.map(_.points).sum
+}
