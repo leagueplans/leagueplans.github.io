@@ -37,7 +37,9 @@ object StatusComponent {
       ),
       <.div(
         ^.display.flex,
-        EquipmentComponent.build((player.equipment, itemCache)),
+        EquipmentComponent.build((player.equipment, itemCache))
+      ),
+      <.div(
         TextBasedTable.build(List(
           "Quest points:" -> player.questPoints.toString,
           "Combat level:" -> String.format("%.2f", player.stats.combatLevel)
