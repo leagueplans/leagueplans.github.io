@@ -12,7 +12,6 @@ object Player {
         Depository.inventory,
         Depository.bank
       ).map(d => d.id -> d).toMap,
-      Equipment.initial,
       completedQuests = Set.empty,
       leagueStatus = LeagueStatus.initial
     )
@@ -21,7 +20,6 @@ object Player {
 final case class Player(
   stats: Stats,
   depositories: Map[Depository.ID, Depository],
-  equipment: Equipment,
   completedQuests: Set[Quest],
   leagueStatus: LeagueStatus
 ) {

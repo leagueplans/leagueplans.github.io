@@ -19,6 +19,7 @@ object Effect {
   final case class MoveItem(item: Item.ID, count: Int, source: Depository.ID, target: Depository.ID) extends Effect
   final case class DropItem(item: Item.ID, count: Int, source: Depository.ID) extends Effect
 
+  final case class UnlockSkill(skill: Skill) extends Effect
   final case class SetMultiplier(multiplier: Int) extends Effect
 
   final case class CompleteQuest(quest: Quest) extends Effect

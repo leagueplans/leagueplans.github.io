@@ -66,6 +66,13 @@ object EffectResolver {
             player.leagueStatus.tasksCompleted + task
           )
         )
+
+      case Effect.UnlockSkill(skill) =>
+        player.copy(leagueStatus =
+          player.leagueStatus.copy(skillsUnlocked =
+            player.leagueStatus.skillsUnlocked + skill
+          )
+        )
     }
 
   def resolve(player: Player, effects: Effect*): Player =

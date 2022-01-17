@@ -21,7 +21,7 @@ object StatusComponent {
     <.div(
       <.div(
         ^.display.flex,
-        StatPaneComponent(player.stats),
+        StatPaneComponent.build(StatPaneComponent.Props(player.stats, player.leagueStatus.skillsUnlocked)),
         player
           .depositories
           .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
@@ -37,7 +37,7 @@ object StatusComponent {
       ),
       <.div(
         ^.display.flex,
-        EquipmentComponent.build((player.equipment, itemCache))
+        EquipmentComponent.build((player, itemCache))
       ),
       <.div(
         TextBasedTable.build(List(

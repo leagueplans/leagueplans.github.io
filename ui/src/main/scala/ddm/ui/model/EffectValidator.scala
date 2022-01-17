@@ -1,7 +1,7 @@
 package ddm.ui.model
 
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.plan.Effect.{CompleteTask, DropItem, GainExp, GainItem, CompleteQuest, MoveItem, SetMultiplier}
+import ddm.ui.model.plan.Effect.{CompleteQuest, CompleteTask, DropItem, GainExp, GainItem, MoveItem, SetMultiplier, UnlockSkill}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, Item, ItemCache}
 import ddm.ui.model.player.skill.Skill
@@ -17,6 +17,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: GainItem => gainItemValidator.validate(e)(player, itemCache)
       case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
       case e: DropItem => dropItemValidator.validate(e)(player, itemCache)
+      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, itemCache)
       case e: CompleteQuest => empty.validate(e)(player, itemCache)
       case e: SetMultiplier => empty.validate(e)(player, itemCache)
       case e: CompleteTask => empty.validate(e)(player, itemCache)
@@ -47,6 +48,12 @@ object EffectValidator extends EffectValidator[Effect] {
     from(
       pre = drop => List(Validator.hasItem(drop.source, drop.item, drop.count)),
       post = _ => List.empty
+    )
+
+  private val unlockSkillValidator: EffectValidator[UnlockSkill] =
+    from(
+      pre = _ => List.empty,
+      post = _ => List(Validator.hasPositiveRenown)
     )
 
   private def from[E <: Effect](
@@ -103,6 +110,15 @@ object EffectValidator extends EffectValidator[Effect] {
           player.leagueStatus.skillsUnlocked.contains(skill),
           right = (),
           left = s"$skill has not been unlocked yet"
+        )
+      )
+
+    val hasPositiveRenown: Validator =
+      Validator(
+        (player, _) => Either.cond(
+          player.leagueStatus.expectedRenown >= 0,
+          right = (),
+          left = s"Not enough renown to make that purchase"
         )
       )
   }
