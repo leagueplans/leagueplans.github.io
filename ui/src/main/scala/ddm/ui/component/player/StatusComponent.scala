@@ -37,7 +37,7 @@ object StatusComponent {
       ),
       <.div(
         ^.display.flex,
-        EquipmentComponent.build((player.equipment, itemCache))
+        EquipmentComponent.build((player, itemCache))
       ),
       <.div(
         TextBasedTable.build(List(

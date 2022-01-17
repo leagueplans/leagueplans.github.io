@@ -1,5 +1,6 @@
 package ddm.ui.component.player
 
+import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Equipment, ItemCache}
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
@@ -12,14 +13,16 @@ object EquipmentComponent {
       .render_P((render _).tupled)
       .build
 
-  type Props = (Equipment, ItemCache)
+  type Props = (Player, ItemCache)
 
-  private def render(equipment: Equipment, itemCache: ItemCache): VdomNode =
+  private def render(player: Player, itemCache: ItemCache): VdomNode =
     <.div(
       ^.display.flex,
-      equipment
+      Equipment
+        .initial
         .raw
-        .values
+        .keys
+        .map(player.depositories)
         .toList
         .sortBy(_.id.raw)
         .toTagMod(d => DepositoryComponent.build(DepositoryComponent.Props(d, itemCache)))
