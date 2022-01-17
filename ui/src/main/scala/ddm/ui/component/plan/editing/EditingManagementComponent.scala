@@ -6,7 +6,8 @@ import ddm.ui.component.common.{RadioButtonComponent, ToggleButtonComponent}
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -21,6 +22,7 @@ object EditingManagementComponent {
   final case class Props(
     player: Player,
     itemCache: ItemCache,
+    fuse: Fuse[Item],
     focusedStep: Option[(Tree[Step], Tree[Step] => Callback)],
     render: Render[EditingMode]
   )
@@ -71,7 +73,8 @@ object EditingManagementComponent {
                   step,
                   editStep,
                   props.player,
-                  props.itemCache
+                  props.itemCache,
+                  props.fuse
                 ))
               }
             ).when(editingMode != EditingMode.Locked)

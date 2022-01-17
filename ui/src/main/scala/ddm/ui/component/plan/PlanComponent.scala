@@ -7,7 +7,8 @@ import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -24,6 +25,7 @@ object PlanComponent {
   final case class Props(
     player: Player,
     itemCache: ItemCache,
+    fuse: Fuse[Item],
     plan: Tree[Step],
     focusedStep: Option[Tree[Step]],
     setFocusedStep: UUID => Callback,
@@ -45,6 +47,7 @@ object PlanComponent {
     render => EditingManagementComponent.build(EditingManagementComponent.Props(
       props.player,
       props.itemCache,
+      props.fuse,
       props.focusedStep.map(step =>
         (step, updateStep(props.plan, props.setPlan))
       ),

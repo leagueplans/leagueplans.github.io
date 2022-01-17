@@ -4,6 +4,9 @@ import cats.data.NonEmptyList
 import ddm.ui.component.With
 import ddm.ui.component.common.RadioButtonComponent
 import ddm.ui.model.plan.Effect
+import ddm.ui.model.player.Player
+import ddm.ui.model.player.item.Item
+import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -15,7 +18,13 @@ object AddEffectComponent {
       .render_P(render)
       .build
 
-  type Props = Effect => Callback
+  type Submit = Effect => Callback
+
+  final case class Props(
+    fuse: Fuse[Item],
+    player: Player,
+    onSubmit: Submit
+  )
 
   // Here be dragons
   // I initially tried to write the below code without the map on the empty list (converting
@@ -26,9 +35,10 @@ object AddEffectComponent {
   // because there were some monstrously long types created from implicit resolution
   private val effectSelectComponent = RadioButtonComponent.build[Props => VdomNode]
   private val effects: NonEmptyList[(String, Props => VdomNode)] =
-    NonEmptyList
-      .of("Gain XP" -> GainExpComponent.build)
-      .map( { case (k, builder) => k -> { p: Props => builder(p) }})
+    NonEmptyList.of(
+      "Gain XP" -> GainExpComponent.build,
+      "Gain item" -> GainItemComponent.build
+    ).map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
   private val withEffectSelect: With[Props => VdomNode] =
     render => effectSelectComponent(RadioButtonComponent.Props(

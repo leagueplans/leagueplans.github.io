@@ -6,7 +6,8 @@ import ddm.ui.component.plan.editing.effect.AddEffectComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
@@ -23,7 +24,8 @@ object StepEditorComponent {
     step: Tree[Step],
     editStep: Tree[Step] => Callback,
     player: Player,
-    itemCache: ItemCache
+    itemCache: ItemCache,
+    fuse: Fuse[Item]
   )
 
   private def render(props: Props): VdomNode =
@@ -33,7 +35,7 @@ object StepEditorComponent {
       addSubstep(props.step, props.editStep),
       removeSubstep(props.step, props.editStep),
       removeEffect(props),
-      addEffect(props.step, props.editStep)
+      addEffect(props)
     )
 
   private def editDescription(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
@@ -102,10 +104,14 @@ object StepEditorComponent {
       )
     )
 
-  private def addEffect(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
-    AddEffectComponent.build(effect => editStep(
-      step.mapNode(step =>
-        step.copy(directEffects = step.directEffects + effect)
+  private def addEffect(props: Props): VdomNode =
+    AddEffectComponent.build(AddEffectComponent.Props(
+      props.fuse,
+      props.player,
+      effect => props.editStep(
+        props.step.mapNode(step =>
+          step.copy(directEffects = step.directEffects + effect)
+        )
       )
     ))
 }

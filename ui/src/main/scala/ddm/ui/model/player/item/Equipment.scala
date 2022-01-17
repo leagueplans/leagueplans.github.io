@@ -6,7 +6,7 @@ object Equipment {
       Depository.equipmentSlot(Depository.ID("Head slot")),
       Depository.equipmentSlot(Depository.ID("Cape slot")),
       Depository.equipmentSlot(Depository.ID("Neck slot")),
-      Depository.equipmentSlot(Depository.ID("Ammunition slot")),
+      Depository.equipmentSlot(Depository.ID("Ammo slot")),
       Depository.equipmentSlot(Depository.ID("Weapon slot")),
       Depository.equipmentSlot(Depository.ID("Shield slot")),
       Depository.equipmentSlot(Depository.ID("Body slot")),

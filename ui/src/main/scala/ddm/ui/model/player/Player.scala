@@ -8,9 +8,10 @@ object Player {
   def initial: Player =
     Player(
       Stats.initial,
-      List(Depository.inventory, Depository.bank)
-        .map(d => d.id -> d)
-        .toMap,
+      Equipment.initial.raw ++ List(
+        Depository.inventory,
+        Depository.bank
+      ).map(d => d.id -> d).toMap,
       Equipment.initial,
       questPoints = 0,
       leagueStatus = LeagueStatus.initial

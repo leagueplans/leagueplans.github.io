@@ -16,6 +16,7 @@ object EquipmentComponent {
 
   private def render(equipment: Equipment, itemCache: ItemCache): VdomNode =
     <.div(
+      ^.display.flex,
       equipment
         .raw
         .values
