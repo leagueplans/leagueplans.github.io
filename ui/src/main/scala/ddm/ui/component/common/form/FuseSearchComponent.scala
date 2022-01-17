@@ -16,7 +16,12 @@ object FuseSearchComponent {
       .render_P(render)
       .build
 
-  final case class Props[T](fuse: Fuse[T], limit: Int, render: Render[List[T]])
+  final case class Props[T](
+    fuse: Fuse[T],
+    limit: Int,
+    defaultResults: List[T],
+    render: Render[List[T]]
+  )
 
   private val withSearchBox: With[String] = SearchBoxComponent.build(_)
   private val throttler = ThrottleComponent.build[String]("")
@@ -24,7 +29,12 @@ object FuseSearchComponent {
   private def render[T](props: Props[T]): VdomNode =
     withSearchBox((searchBoxValue, searchBox) =>
       withThrottler(searchBoxValue) { fuseQuery =>
-        val results = props.fuse.search(fuseQuery, props.limit)
+        val results =
+          if (searchBoxValue.isEmpty)
+            props.defaultResults
+          else
+            props.fuse.search(fuseQuery, props.limit)
+
         props.render(results, searchBox)
       }
     )
