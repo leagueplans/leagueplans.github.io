@@ -17,39 +17,33 @@ object StatusComponent {
 
   type Props = (Player, ItemCache)
 
-  private def render(player: Player, itemCache: ItemCache): VdomNode =
-    <.table(
-      <.tbody(
-        <.tr(
-          <.td(
-            StatPaneComponent(player.stats)
-          ),
-          player
-            .depositories
-            .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
-              depository
-            }
-            .toList
-            .sortBy(_.id.raw)
-            .toTagMod(depository =>
-              <.td(
-                DepositoryComponent.build((depository, itemCache))
-              )
-            ),
-          <.td(
-            EquipmentComponent.build((player.equipment, itemCache))
-          ),
-          <.td(
-            TextBasedTable.build(List(
-              "Quest points:" -> player.questPoints.toString,
-              "Combat level:" -> String.format("%.2f", player.stats.combatLevel)
-            ))
-          ),
-          <.td(
-            LeagueComponent.build(player.leagueStatus)
+  private def render(player: Player, itemCache: ItemCache): VdomNode = {
+    <.div(
+      <.div(
+        ^.display.flex,
+        StatPaneComponent(player.stats),
+        player
+          .depositories
+          .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
+            depository
+          }
+          .toList
+          .sortBy(_.id.raw)
+          .toTagMod(depository =>
+            <.td(
+              DepositoryComponent.build((depository, itemCache))
+            )
           )
-        )
+      ),
+      <.div(
+        ^.display.flex,
+        EquipmentComponent.build((player.equipment, itemCache)),
+        TextBasedTable.build(List(
+          "Quest points:" -> player.questPoints.toString,
+          "Combat level:" -> String.format("%.2f", player.stats.combatLevel)
+        )),
+        LeagueComponent.build(player.leagueStatus)
       )
     )
-
+  }
 }

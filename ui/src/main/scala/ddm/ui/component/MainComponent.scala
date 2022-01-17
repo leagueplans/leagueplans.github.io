@@ -38,11 +38,19 @@ object MainComponent {
   final class Backend(scope: BackendScope[Props, State]) {
     private val planStorageComponent = StorageComponent.build[Tree[Step]]
 
-    def render(props: Props, state: State): VdomElement =
-      planStorageComponent(StorageComponent.Props(
-        props.storageManager,
-        props.defaultPlan,
+    def render(props: Props, state: State): VdomNode =
+      withPlanStorage(props.storageManager, props.defaultPlan)(
         renderWithPlan(props.itemCache, _, _, state.focusedStep)
+      )
+
+    private def withPlanStorage(
+      storageManager: StorageManager[Tree[Step]],
+      defaultPlan: Tree[Step]
+    ): ((Tree[Step], Tree[Step] => Callback) => VdomNode) => VdomNode =
+      render => planStorageComponent(StorageComponent.Props(
+        storageManager,
+        defaultPlan,
+        render
       ))
 
     private def renderWithPlan(
@@ -79,35 +87,24 @@ object MainComponent {
           }
         )
 
-      <.table(
-        <.tbody(
-          <.tr(
-            <.td(
-              PlanComponent.build(PlanComponent.Props(
-                playerAtFocusedStep,
-                itemCache,
-                itemFuse,
-                plan,
-                focusedStep,
-                setFocusedStep,
-                setPlan
-              ))
-            ),
-            <.td(
-              StatusComponent.build((
-                playerAtFocusedStep,
-                itemCache
-              ))
-            )
-          ),
-          <.tr(
-            <.td(
-              ConsoleComponent.build(ConsoleComponent.Props(
-                progressedSteps, Player.initial, itemCache
-              ))
-            )
-          )
-        )
+      <.div(
+        ^.display.flex,
+        PlanComponent.build(PlanComponent.Props(
+          playerAtFocusedStep,
+          itemCache,
+          itemFuse,
+          plan,
+          focusedStep,
+          setFocusedStep,
+          setPlan
+        )),
+        StatusComponent.build((
+          playerAtFocusedStep,
+          itemCache
+        )),
+        ConsoleComponent.build(ConsoleComponent.Props(
+          progressedSteps, Player.initial, itemCache
+        )),
       )
     }
 
