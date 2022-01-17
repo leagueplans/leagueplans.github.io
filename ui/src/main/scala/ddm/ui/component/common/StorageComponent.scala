@@ -19,12 +19,11 @@ object StorageComponent {
       .renderBackend[Backend[T]]
       .componentDidUpdate(update =>
         Callback(
-          if (update.currentState != update.prevState)
-            update
-              .currentProps
-              .storageManager
-              .save(update.currentState)
-        )
+          update
+            .currentProps
+            .storageManager
+            .save(update.currentState)
+        ).when(update.currentState != update.prevState).void
       )
       .build
 
