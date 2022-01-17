@@ -2,17 +2,16 @@ package ddm.ui.component.player.stats
 
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.skill.Exp
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.component.Scala.{Component, Unmounted}
 import japgolly.scalajs.react.vdom.html_<^._
 
 object TotalLevelComponent {
-  def apply(totalLevel: Int, totalExp: Exp): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
-      .apply(Props(totalLevel, totalExp))
 
   final case class Props(totalLevel: Int, totalExp: Exp)
 

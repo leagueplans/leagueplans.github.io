@@ -3,19 +3,18 @@ package ddm.ui.component.player.stats
 import ddm.ui.ResourcePaths
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.skill.Stat
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object StatComponent {
-  def apply(stat: Stat): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
-      .apply(Props(stat))
 
-  final case class Props(stat: Stat)
+  final case class Props(stat: Stat, unlocked: Boolean)
 
   private def render(props: Props): VdomNode = {
     val tooltip =
@@ -32,14 +31,20 @@ object StatComponent {
           ))
       }
 
-    ElementWithTooltipComponent.build((renderCell(props.stat), tooltip))
+    ElementWithTooltipComponent.build((
+      renderCell(props.stat, props.unlocked),
+      tooltip
+    ))
   }
 
-  private def renderCell(stat: Stat): VdomNode =
+  private def renderCell(stat: Stat, unlocked: Boolean): VdomNode =
     <.div(
       ^.className := "stat",
       <.img(
-        ^.className := "stat-icon",
+        ^.classSet(
+          "stat-icon" -> true,
+          "locked" -> !unlocked
+        ),
         ^.src := ResourcePaths.skillIcon(stat.skill),
         ^.alt := s"${stat.skill} icon"
       ),

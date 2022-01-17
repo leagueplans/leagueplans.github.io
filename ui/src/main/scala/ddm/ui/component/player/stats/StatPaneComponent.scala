@@ -2,19 +2,18 @@ package ddm.ui.component.player.stats
 
 import ddm.ui.model.player.skill.Skill._
 import ddm.ui.model.player.skill.{Skill, Stat, Stats}
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object StatPaneComponent {
-  def apply(stats: Stats): Unmounted[Props, Unit, Unit] =
+  val build: Component[Props, Unit, Unit, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .render_P(render)
       .build
-      .apply(Props(stats))
 
-  final case class Props(stats: Stats)
+  final case class Props(stats: Stats, unlockedSkills: Set[Skill])
 
   private val orderedSkills: List[Skill] =
     List(
@@ -48,8 +47,12 @@ object StatPaneComponent {
       ^.className := "stat-pane",
       <.tbody(
         orderedSkills
-          .map(skill => StatComponent(Stat(skill, props.stats(skill))))
-          .appended(TotalLevelComponent(props.stats.totalLevel, props.stats.totalExp))
+          .map(renderStat(_, props))
+          .appended[VdomNode](
+            TotalLevelComponent.build(TotalLevelComponent.Props(
+              props.stats.totalLevel, props.stats.totalExp
+            ))
+          )
           .sliding(size = 3, step = 3)
           .toTagMod(row =>
             <.tr(
@@ -63,4 +66,10 @@ object StatPaneComponent {
           )
       )
     )
+
+  private def renderStat(skill: Skill, props: Props): VdomNode =
+    StatComponent.build(StatComponent.Props(
+      Stat(skill, props.stats(skill)),
+      props.unlockedSkills.contains(skill)
+    ))
 }
