@@ -206,26 +206,30 @@ p {
   background-color: #3b0b08;
 }
 
-.item-search ol {
+.fuse-item-search ol {
   list-style-type: none;
   padding-inline-start: 0px;
 }
 
-.item-search li:first-child {
+li.fuse-item-search-result:first-child {
   border: 1px solid;
 }
 
-.item-search li {
+li.fuse-item-search-result {
   border-bottom: 1px solid;
   border-left: 1px solid;
   border-right: 1px solid;
 }
 
-.item-search li:hover {
+li.fuse-item-search-result.selected {
+  background-color: #c0f0c5;
+}
+
+li.fuse-item-search-result:hover {
   background-color: #dfe7f5;
 }
 
-.item-search .item {
+.fuse-item-search-result .item {
   display: flex;
   align-items: center;
 }
