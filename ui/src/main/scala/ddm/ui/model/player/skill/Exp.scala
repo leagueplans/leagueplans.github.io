@@ -7,7 +7,7 @@ object Exp {
     new Exp(i * 10) {}
 
   def apply(d: Double): Exp =
-    Exp((d * 10).toInt)
+    new Exp((d * 10).toInt) {}
 
   implicit val ordering: Ordering[Exp] =
     Ordering.by(_.raw)
@@ -17,6 +17,9 @@ object Exp {
 }
 
 sealed abstract case class Exp(raw: Int) {
+  def toDouble: Double =
+    raw.toDouble / 10
+
   def +(other: Exp): Exp =
     new Exp(raw + other.raw) {}
 
