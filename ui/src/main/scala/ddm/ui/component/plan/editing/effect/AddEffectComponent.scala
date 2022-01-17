@@ -17,11 +17,20 @@ object AddEffectComponent {
 
   type Props = Effect => Callback
 
-  private type EffectComponent = Component[Effect => Callback, Unit, Unit, CtorType.Props]
-  private val effectSelectComponent = RadioButtonComponent.build[EffectComponent]
-  private val effects = NonEmptyList.of("Gain XP" -> GainExpComponent.build)
+  // Here be dragons
+  // I initially tried to write the below code without the map on the empty list (converting
+  // the components to (Props => VdomNode)s), but that resulted in compilation errors stating
+  // "UTF8 string too large".
+  //
+  // My best guess from a bit of digging is that some sort of implicit search is failing,
+  // because there were some monstrously long types created from implicit resolution
+  private val effectSelectComponent = RadioButtonComponent.build[Props => VdomNode]
+  private val effects: NonEmptyList[(String, Props => VdomNode)] =
+    NonEmptyList
+      .of("Gain XP" -> GainExpComponent.build)
+      .map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
-  private val withEffectSelect: With[EffectComponent] =
+  private val withEffectSelect: With[Props => VdomNode] =
     render => effectSelectComponent(RadioButtonComponent.Props(
       name = "effect-select",
       effects,
@@ -29,11 +38,11 @@ object AddEffectComponent {
     ))
 
   private def render(props: Props): VdomNode =
-    withEffectSelect((component, effectSelect) =>
+    withEffectSelect((componentBuilder, effectSelect) =>
       <.div(
         ^.className := "add-effect",
         effectSelect,
-        component(props)
+        componentBuilder(props)
       )
     )
 }
