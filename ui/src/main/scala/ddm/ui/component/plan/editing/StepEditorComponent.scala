@@ -1,6 +1,5 @@
 package ddm.ui.component.plan.editing
 
-import ddm.ui.component.common._
 import ddm.ui.component.plan.EffectDescriptionComponent
 import ddm.ui.component.plan.editing.effect.AddEffectComponent
 import ddm.ui.model.common.Tree
@@ -39,29 +38,10 @@ object StepEditorComponent {
     )
 
   private def editDescription(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
-    TextSubmitComponent.build(TextSubmitComponent.Props(
-      placeholder = step.node.description,
-      id = s"edit-step-description-${step.node.id}",
-      label = "Edit description",
-      onSubmit = description => editStep(
-        step.mapNode(_.copy(description = description))
-      )
-    ))
+    EditDescriptionComponent.build(EditDescriptionComponent.Props(step, editStep))
 
   private def addSubstep(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
-    TextSubmitComponent.build(TextSubmitComponent.Props(
-      placeholder = "Cut five oak logs",
-      id = s"add-substep-${step.node.id}",
-      label = "Add substep",
-      onSubmit = description => editStep(
-        step.addChild(
-          Tree(
-            Step(description, directEffects = Set.empty),
-            children = List.empty
-          )
-        )
-      )
-    ))
+    AddSubstepComponent.build(AddSubstepComponent.Props(step, editStep))
 
   private def removeSubstep(step: Tree[Step], editStep: Tree[Step] => Callback): VdomNode =
     <.ol(
