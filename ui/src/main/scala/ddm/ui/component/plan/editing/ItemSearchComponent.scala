@@ -1,7 +1,8 @@
-package ddm.ui.component.player
+package ddm.ui.component.plan.editing
 
 import ddm.ui.component.common.form.FuseSearchComponent
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
+import ddm.ui.component.player.ItemIconComponent
 import ddm.ui.component.{Render, With}
 import ddm.ui.model.player.item.Item
 import ddm.ui.wrappers.fusejs.Fuse
@@ -30,7 +31,12 @@ object ItemSearchComponent {
       )
 
     private def withSearch(fuse: Fuse[Item]): With[List[Item]] =
-      render => fuseSearch(FuseSearchComponent.Props(fuse, limit = 10, render))
+      render => fuseSearch(FuseSearchComponent.Props(
+        fuse,
+        limit = 10,
+        defaultResults = List.empty,
+        render
+      ))
 
     private def renderSearch(
       results: List[Item],

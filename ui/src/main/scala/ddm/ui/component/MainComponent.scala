@@ -3,7 +3,7 @@ package ddm.ui.component
 import ddm.ui.StorageManager
 import ddm.ui.component.common.StorageComponent
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
-import ddm.ui.component.player.{ItemSearchComponent, StatusComponent}
+import ddm.ui.component.player.StatusComponent
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.Tree
@@ -80,7 +80,7 @@ object MainComponent {
 
       val itemFuse =
         new Fuse(
-          itemCache.raw.values.toSet,
+          itemCache.raw.values.toList,
           new FuseOptions {
             override val keys: UndefOr[js.Array[String]] =
               js.defined(js.Array("name"))

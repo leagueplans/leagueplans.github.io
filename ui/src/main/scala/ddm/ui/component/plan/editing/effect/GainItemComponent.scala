@@ -2,7 +2,7 @@ package ddm.ui.component.plan.editing.effect
 
 import ddm.ui.component.With
 import ddm.ui.component.common.form.{FormComponent, NumberInputComponent, SelectComponent}
-import ddm.ui.component.player.ItemSearchComponent
+import ddm.ui.component.plan.editing.ItemSearchComponent
 import ddm.ui.model.plan.Effect.GainItem
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, Item}
@@ -47,7 +47,7 @@ object GainItemComponent {
           val maybeEffect = maybeItem.map(item => GainItem(item.id, count, target))
 
           FormComponent.build(FormComponent.Props(
-            maybeEffect.map(props.onSubmit).getOrEmpty,
+            maybeEffect.map(props.onSubmit).getOrEmpty.when(count > 0).void,
             formContents = TagMod(countInput, targetInput, itemSearch)
           ))
         }
