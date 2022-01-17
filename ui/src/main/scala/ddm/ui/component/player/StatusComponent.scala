@@ -3,7 +3,7 @@ package ddm.ui.component.player
 import ddm.ui.component.common.TextBasedTable
 import ddm.ui.component.player.stats.StatPaneComponent
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{Depository, ItemCache}
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CtorType, ScalaComponent}
@@ -26,7 +26,9 @@ object StatusComponent {
           ),
           player
             .depositories
-            .values
+            .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
+              depository
+            }
             .toList
             .sortBy(_.id.raw)
             .toTagMod(depository =>
