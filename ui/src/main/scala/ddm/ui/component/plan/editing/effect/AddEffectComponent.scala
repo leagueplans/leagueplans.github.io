@@ -38,6 +38,7 @@ object AddEffectComponent {
   private val effects: NonEmptyList[(String, Props => VdomNode)] =
     NonEmptyList.of(
       "Complete quest" -> CompleteQuestComponent.build,
+      "Complete task" -> CompleteTaskComponent.build,
       "Drop item" -> DropItemComponent.build,
       "Gain item" -> GainItemComponent.build,
       "Gain XP" -> GainExpComponent.build,

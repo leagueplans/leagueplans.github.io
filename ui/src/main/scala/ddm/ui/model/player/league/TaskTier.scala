@@ -34,6 +34,9 @@ object TaskTier {
     val expectedRenown: Int = 5
   }
 
+  val all: Set[TaskTier] =
+    Set(Easy, Medium, Hard, Elite, Master)
+
   implicit val encoder: Encoder[TaskTier] = deriveEncoder[TaskTier]
   implicit val decoder: Decoder[TaskTier] = deriveDecoder[TaskTier]
 }

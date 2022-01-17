@@ -8,4 +8,4 @@ object Task {
   implicit val decoder: Decoder[Task] = deriveDecoder[Task]
 }
 
-final case class Task(tier: TaskTier, description: String)
+final case class Task(tier: TaskTier, name: String)
