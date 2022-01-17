@@ -35,7 +35,9 @@ object NumberInputComponent {
           ^.step := props.step.toString,
           ^.onChange ==> { event: ReactEventFromInput =>
             scope.setState(
-              Numeric[N].parseString(event.target.value).get
+              Numeric[N]
+                .parseString(event.target.value)
+                .getOrElse(Numeric[N].zero)
             )
           }
         )
