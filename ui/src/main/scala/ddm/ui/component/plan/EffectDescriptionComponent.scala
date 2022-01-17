@@ -47,6 +47,6 @@ object EffectDescriptionComponent {
         s"League multiplier set to ${multiplier}x"
 
       case Effect.CompleteTask(task) =>
-        s"Task completed: ${task.description}"
+        s"Task completed: ${task.name}"
     }
 }
