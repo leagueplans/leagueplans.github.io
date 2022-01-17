@@ -36,8 +36,9 @@ object AddEffectComponent {
   private val effectSelectComponent = RadioButtonComponent.build[Props => VdomNode]
   private val effects: NonEmptyList[(String, Props => VdomNode)] =
     NonEmptyList.of(
+      "Complete quest" -> CompleteQuestComponent.build,
+      "Gain item" -> GainItemComponent.build,
       "Gain XP" -> GainExpComponent.build,
-      "Gain item" -> GainItemComponent.build
     ).map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
   private val withEffectSelect: With[Props => VdomNode] =

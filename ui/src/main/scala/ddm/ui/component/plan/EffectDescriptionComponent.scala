@@ -40,8 +40,8 @@ object EffectDescriptionComponent {
       case Effect.DropItem(item, count, source) =>
         s"-$count ${itemCache(item).name} (${source.raw})"
 
-      case Effect.GainQuestPoints(count) =>
-        s"+$count quest points"
+      case Effect.CompleteQuest(quest) =>
+        s"Quest completed: ${quest.name}, +${quest.points} quest points"
 
       case Effect.SetMultiplier(multiplier) =>
         s"League multiplier set to ${multiplier}x"

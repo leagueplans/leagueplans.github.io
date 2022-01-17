@@ -1,7 +1,7 @@
 package ddm.ui.model
 
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.plan.Effect.{CompleteTask, DropItem, GainExp, GainItem, GainQuestPoints, MoveItem, SetMultiplier}
+import ddm.ui.model.plan.Effect.{CompleteTask, DropItem, GainExp, GainItem, CompleteQuest, MoveItem, SetMultiplier}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, Item, ItemCache}
 import ddm.ui.model.player.skill.Skill
@@ -17,7 +17,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: GainItem => gainItemValidator.validate(e)(player, itemCache)
       case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
       case e: DropItem => dropItemValidator.validate(e)(player, itemCache)
-      case e: GainQuestPoints => empty.validate(e)(player, itemCache)
+      case e: CompleteQuest => empty.validate(e)(player, itemCache)
       case e: SetMultiplier => empty.validate(e)(player, itemCache)
       case e: CompleteTask => empty.validate(e)(player, itemCache)
     }
