@@ -41,7 +41,7 @@ object ItemSearchComponent {
     private def renderSearch(
       results: List[Item],
       selected: Option[Item],
-      searchBox: VdomNode
+      searchBox: TagMod
     ): VdomNode =
       <.div(
         ^.className := "fuse-item-search",
@@ -60,7 +60,7 @@ object ItemSearchComponent {
           "fuse-item-search-result" -> true,
           "selected" -> isSelected
         ),
-        ElementWithTooltipComponent.build(
+        ElementWithTooltipComponent.build((
           <.div(
             ^.className := "item",
             ItemIconComponent.build(item),
@@ -74,7 +74,7 @@ object ItemSearchComponent {
             "ID:" -> item.id.raw,
             "Examine:" -> item.examine
           ))
-        )
+        ))
       )
   }
 }

@@ -50,7 +50,7 @@ object EditingManagementComponent {
   private def renderWithEditingToggle(
     props: Props,
     editingEnabled: Boolean,
-    editingToggle: VdomNode
+    editingToggle: TagMod
   ): VdomNode =
     dragModeSelection(RadioButtonComponent.Props(
       name = "dragModeSelection",

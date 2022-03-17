@@ -46,7 +46,7 @@ object DepositoryCellComponent {
       else if (quantity >= 100000)
         Some((^.color.white, s"${quantity / 1000}K"))
       else if (quantity > 1)
-        Some(^.color.yellow, quantity.toString)
+        Some((^.color.yellow, quantity.toString))
       else
         None
 

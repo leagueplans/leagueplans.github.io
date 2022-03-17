@@ -98,7 +98,7 @@ object PlanComponent {
   private def renderStep(
     stepTheme: (Step, StepComponent.Theme),
     setFocusedStep: UUID => Callback,
-    substeps: VdomNode
+    substeps: TagMod
   ): VdomNode = {
     val (step, theme) = stepTheme
 

@@ -1,5 +1,6 @@
 package ddm.ui.component.common
 
+import ddm.ui.component.Render
 import ddm.ui.component.common.TreeComponent.Props
 import ddm.ui.model.common.Tree
 import japgolly.scalajs.react.component.Scala.Component
@@ -14,7 +15,7 @@ object TreeComponent {
     toKey: Tree[T] => Key,
     editTree: Tree[T] => Callback,
     editingEnabled: Boolean,
-    renderT: (T, VdomNode) => VdomNode
+    renderT: Render[T]
   )
 }
 

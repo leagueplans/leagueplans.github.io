@@ -1,12 +1,14 @@
 package ddm.ui.component.common
 
 import cats.data.NonEmptyList
+import ddm.ui.component.Render
 import ddm.ui.component.common.DragSortableTreeComponent.Props
 import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CtorType, Key, ScalaComponent}
+
 import scala.util.chaining.scalaUtilChainingOps
 
 object DragSortableTreeComponent {
@@ -15,7 +17,7 @@ object DragSortableTreeComponent {
     toKey: Tree[T] => Key,
     editTree: Tree[T] => Callback,
     editingMode: EditingMode,
-    renderT: (T, VdomNode) => VdomNode
+    renderT: Render[T]
   )
 }
 

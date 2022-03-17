@@ -1,5 +1,6 @@
 package ddm.ui
 
+import japgolly.scalajs.react.vdom.TagMod
 import japgolly.scalajs.react.vdom.html_<^.VdomNode
 
 package object component {
@@ -13,14 +14,14 @@ package object component {
    * In my world, state lives in the component responsible for modifying the
    * state. That component takes, as part of its props, an instance of type
    * ===================
-   * (T, VdomNode) => VdomNode
+   * (T, TagMod) => VdomNode
    * ===================
    * where
    * - the argument T corresponds to the public state
-   * - the argument VdomNode corresponds to any dom elements created by the
+   * - the argument TagMod corresponds to any dom elements created by the
    *   component
    *
-   * This render function of the component will then look like
+   * The render function of the component will then look like
    * ===================
    * def render(props: Props, state: State): VdomNode = {
    *   val content = <.div(...)
@@ -51,6 +52,6 @@ package object component {
    * to do state management, or for the state management to be
    * reimplemented when new dependencies on the state are introduced.
    */
-  type Render[T] = (T, VdomNode) => VdomNode
+  type Render[T] = (T, TagMod) => VdomNode
   type With[T] = Render[T] => VdomNode
 }

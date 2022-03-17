@@ -1,5 +1,6 @@
 package ddm.ui.component.plan.editing.effect
 
+import ddm.ui.component.With
 import ddm.ui.component.common.form.FormComponent
 import ddm.ui.component.plan.editing.effect.SelectItemFromDepositoryComponent.SelectedItem
 import ddm.ui.model.plan.Effect.DropItem
@@ -31,7 +32,7 @@ object DropItemComponent {
 
   private def withItemSelection(
     player: Player, itemCache: ItemCache
-  ): ((Option[SelectedItem], TagMod) => VdomNode) => VdomNode =
+  ): With[Option[SelectedItem]] =
     render => SelectItemFromDepositoryComponent.build(SelectItemFromDepositoryComponent.Props(
       player,
       itemCache,

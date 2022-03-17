@@ -38,6 +38,6 @@ final case class Stats(raw: Map[Skill, Exp]) {
     val range = ranged * 3.0 / 2.0
     val mage = magic * 3.0 / 2.0
 
-    base + (13.0 / 40.0 * Math.max(Math.max(melee, range), mage))
+    base + (13.0 / 40.0 * Math.max(Math.max(melee.toDouble, range), mage))
   }
 }
