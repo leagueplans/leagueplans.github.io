@@ -1,5 +1,6 @@
 package ddm.ui.component.common
 
+import ddm.ui.component.Render
 import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CtorType, ScalaComponent}
@@ -17,7 +18,7 @@ object ToggleButtonComponent {
     initialButtonStyle: TagMod,
     alternativeT: T,
     alternativeButtonStyle: TagMod,
-    toNode: (T, VdomNode) => VdomNode
+    toNode: Render[T]
   )
 
   final case class State[T](isInitial: Boolean) {

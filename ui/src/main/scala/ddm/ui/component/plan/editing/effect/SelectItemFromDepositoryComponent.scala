@@ -1,6 +1,6 @@
 package ddm.ui.component.plan.editing.effect
 
-import ddm.ui.component.With
+import ddm.ui.component.{Render, With}
 import ddm.ui.component.common.form.{NumberInputComponent, SelectComponent}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, Item, ItemCache}
@@ -22,7 +22,7 @@ object SelectItemFromDepositoryComponent {
   final case class Props(
     player: Player,
     itemCache: ItemCache,
-    render: (Option[SelectedItem], TagMod) => VdomNode
+    render: Render[Option[SelectedItem]]
   )
 
   final case class SelectedItem(item: Item.ID, count: Int, source: Depository.ID)

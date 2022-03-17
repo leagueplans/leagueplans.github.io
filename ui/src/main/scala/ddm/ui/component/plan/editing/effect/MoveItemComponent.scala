@@ -35,7 +35,7 @@ object MoveItemComponent {
 
   private def withItemSelection(
     player: Player, itemCache: ItemCache
-  ): ((Option[SelectedItem], TagMod) => VdomNode) => VdomNode =
+  ): With[Option[SelectedItem]] =
     render => SelectItemFromDepositoryComponent.build(SelectItemFromDepositoryComponent.Props(
       player,
       itemCache,

@@ -41,7 +41,7 @@ object ItemSearchComponent {
     private def renderSearch(
       results: List[Item],
       selected: Option[Item],
-      searchBox: VdomNode
+      searchBox: TagMod
     ): VdomNode =
       <.div(
         ^.className := "fuse-item-search",

@@ -43,7 +43,7 @@ object StepComponent {
     step: Step,
     theme: Theme,
     setFocusedStep: UUID => Callback,
-    subSteps: VdomNode
+    subSteps: TagMod
   )
 
   private val substepsToggler = ToggleButtonComponent.build[Boolean]
@@ -63,7 +63,7 @@ object StepComponent {
       s"[$c]"
     )
 
-  private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: VdomNode): VdomNode =
+  private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: TagMod): VdomNode =
     <.div(
       ^.className := s"step ${props.theme.cssClass}",
       substepsToggle,
