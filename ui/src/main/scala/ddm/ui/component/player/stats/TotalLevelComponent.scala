@@ -2,9 +2,9 @@ package ddm.ui.component.player.stats
 
 import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
 import ddm.ui.model.player.skill.Exp
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
-import japgolly.scalajs.react.component.Scala.{Component, Unmounted}
+import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
 
 object TotalLevelComponent {
   val build: Component[Props, Unit, Unit, CtorType.Props] =

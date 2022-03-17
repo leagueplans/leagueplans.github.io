@@ -60,7 +60,7 @@ object ItemSearchComponent {
           "fuse-item-search-result" -> true,
           "selected" -> isSelected
         ),
-        ElementWithTooltipComponent.build(
+        ElementWithTooltipComponent.build((
           <.div(
             ^.className := "item",
             ItemIconComponent.build(item),
@@ -74,7 +74,7 @@ object ItemSearchComponent {
             "ID:" -> item.id.raw,
             "Examine:" -> item.examine
           ))
-        )
+        ))
       )
   }
 }

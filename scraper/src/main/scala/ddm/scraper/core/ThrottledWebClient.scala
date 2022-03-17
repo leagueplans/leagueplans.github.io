@@ -44,7 +44,7 @@ final class ThrottledWebClient(
       .run()
 
   def queue(request: HttpRequest): Future[Array[Byte]] = {
-    val pResponse = Promise[HttpResponse]
+    val pResponse = Promise[HttpResponse]()
     for {
       _ <- requestExecutor
              .offer((request, pResponse))

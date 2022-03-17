@@ -6,10 +6,10 @@ import ddm.ui.model.plan.Step
 import ddm.ui.model.player.item.{Item, ItemCache}
 import io.circe.Decoder
 import io.circe.parser.decode
-import org.scalajs.dom.experimental.Fetch
-import org.scalajs.dom.{Event, document, window}
+import org.scalajs.dom.{Event, document, fetch, window}
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.annotation.nowarn
 import scala.concurrent.Future
 
 object Main extends App {
@@ -29,13 +29,12 @@ object Main extends App {
         )
         ).renderIntoDOM(container)
 
-        document.body.appendChild(container)
+        document.body.appendChild(container): @nowarn("msg=discarded non-Unit value")
       }
     }
 
   private def withResource[T : Decoder](path: String)(f: T => Unit): Unit =
-    Fetch
-      .fetch(path)
+    fetch(path)
       .toFuture
       .flatMap(_.text().toFuture)
       .map(decode[T])

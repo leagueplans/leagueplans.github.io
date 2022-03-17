@@ -7,7 +7,6 @@ import com.sksamuel.scrimage.nio.PngWriter
 import ddm.scraper.core.pages.{CategoryPage, ItemPage}
 import ddm.scraper.core.{Scraper, WikiBrowser}
 import ddm.scraper.scrapers.utils.ImageStandardiser
-import io.circe.JsonObject
 import io.circe.syntax._
 import net.ruippeixotog.scalascraper.browser.Browser
 import org.log4s.{Logger, getLogger}
