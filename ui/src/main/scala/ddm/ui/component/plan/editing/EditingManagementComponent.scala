@@ -2,21 +2,21 @@ package ddm.ui.component.plan.editing
 
 import cats.data.NonEmptyList
 import ddm.ui.component.Render
-import ddm.ui.component.common.{RadioButtonComponent, ToggleButtonComponent}
+import ddm.ui.component.common.ToggleButtonComponent
+import ddm.ui.component.common.form.RadioButtonComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Item, ItemCache}
 import ddm.ui.wrappers.fusejs.Fuse
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
 object EditingManagementComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .renderBackend[Backend]
       .build
 
   final case class Props(
@@ -35,51 +35,57 @@ object EditingManagementComponent {
     case object ModifyOrder extends EditingMode
   }
 
-  private val editingToggle = ToggleButtonComponent.build[Boolean]
-  private val dragModeSelection = RadioButtonComponent.build[Boolean]
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    private val toggleButtonComponent = ToggleButtonComponent.build[Boolean]
+    private val radioButtonComponent = RadioButtonComponent.build[Boolean]
+    private val stepEditorComponent = StepEditorComponent.build
 
-  private def render(props: Props): VdomNode =
-    editingToggle(ToggleButtonComponent.Props(
-      initialT = false,
-      initialButtonStyle = <.span("Edit"),
-      alternativeT = true,
-      alternativeButtonStyle = <.span("Lock"),
-      renderWithEditingToggle(props, _, _)
-    ))
+    def render(props: Props): VdomNode =
+      toggleButtonComponent(ToggleButtonComponent.Props(
+        initial = false,
+        initialContent = <.span("Edit"),
+        alternative = true,
+        alternativeContent = <.span("Lock"),
+        renderWithEditingToggle(props, _, _)
+      ))
 
-  private def renderWithEditingToggle(
-    props: Props,
-    editingEnabled: Boolean,
-    editingToggle: TagMod
-  ): VdomNode =
-    dragModeSelection(RadioButtonComponent.Props(
-      name = "dragModeSelection",
-      NonEmptyList.of("Order" -> true, "Heirarchy" -> false),
-      (modifyOrder, editingModeSelect) => {
-        val editingMode =
-          if (editingEnabled && modifyOrder) EditingMode.ModifyOrder
-          else if (editingEnabled) EditingMode.ModifyHierarchy
-               else EditingMode.Locked
+    private def renderWithEditingToggle(
+      props: Props,
+      editingEnabled: Boolean,
+      editingToggle: TagMod
+    ): VdomNode =
+      radioButtonComponent(RadioButtonComponent.Props(
+        name = "dragModeSelection",
+        NonEmptyList.of("Order" -> true, "Heirarchy" -> false),
+        (modifyOrder, editingModeSelect) => {
+          val editingMode =
+            if (editingEnabled && modifyOrder)
+              EditingMode.ModifyOrder
+            else if (editingEnabled)
+              EditingMode.ModifyHierarchy
+            else
+              EditingMode.Locked
 
-        props.render(
-          editingMode,
-          <.div(
-            ^.className := "editing-tools",
-            editingToggle,
-            TagMod(
-              editingModeSelect,
-              props.focusedStep.map { case (step, editStep) =>
-                StepEditorComponent.build(StepEditorComponent.Props(
-                  step,
-                  editStep,
-                  props.player,
-                  props.itemCache,
-                  props.fuse
-                ))
-              }
-            ).when(editingMode != EditingMode.Locked)
+          props.render(
+            editingMode,
+            <.div(
+              ^.className := "editing-tools",
+              editingToggle,
+              TagMod(
+                editingModeSelect,
+                props.focusedStep.map { case (step, editStep) =>
+                  stepEditorComponent(StepEditorComponent.Props(
+                    step,
+                    editStep,
+                    props.player,
+                    props.itemCache,
+                    props.fuse
+                  ))
+                }
+              ).when(editingMode != EditingMode.Locked)
+            )
           )
-        )
-      }
-    ))
+        }
+      ))
+  }
 }

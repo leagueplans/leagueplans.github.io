@@ -1,6 +1,5 @@
 package ddm.ui.component.common
 
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentDidUpdate
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
@@ -10,7 +9,7 @@ import scala.scalajs.js.timers
 import scala.scalajs.js.timers.SetTimeoutHandle
 
 object ThrottleComponent {
-  def build[T](initial: T): Component[Props[T], State[T], Backend[T], CtorType.Props] =
+  def build[T](initial: T): ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
     ScalaComponent
       .builder[Props[T]]
       .initialState[State[T]](State(initial, timer = None))
@@ -20,18 +19,17 @@ object ThrottleComponent {
           update.currentProps.upstream != update.prevProps.upstream
         ).void
       )
+      .componentWillUnmount(update => cancelTimer(update.state))
       .build
 
   private def updateTimer[T](
     update: ComponentDidUpdate[Props[T], State[T], Backend[T], _]
   ): Callback =
-    cancelTimer(update) >>
+    cancelTimer(update.currentState) >>
       update.modState(_.copy(timer = Some(setTimer(update))))
 
-  private def cancelTimer[T](
-    update: ComponentDidUpdate[Props[T], State[T], Backend[T], _]
-  ): Callback =
-    Callback(update.currentState.timer.foreach(timers.clearTimeout))
+  private def cancelTimer[T](state: State[T]): Callback =
+    Callback(state.timer.foreach(timers.clearTimeout))
 
   private def setTimer[T](
     update: ComponentDidUpdate[Props[T], State[T], Backend[T], _]

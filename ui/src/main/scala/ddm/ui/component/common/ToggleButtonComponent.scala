@@ -1,12 +1,11 @@
 package ddm.ui.component.common
 
 import ddm.ui.component.Render
-import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object ToggleButtonComponent {
-  def build[T]: Component[Props[T], State[T], Backend[T], CtorType.Props] =
+  def build[T]: ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
     ScalaComponent
       .builder[Props[T]]
       .initialState[State[T]](State(isInitial = true))
@@ -14,11 +13,11 @@ object ToggleButtonComponent {
       .build
 
   final case class Props[T](
-    initialT: T,
-    initialButtonStyle: TagMod,
-    alternativeT: T,
-    alternativeButtonStyle: TagMod,
-    toNode: Render[T]
+    initial: T,
+    initialContent: TagMod,
+    alternative: T,
+    alternativeContent: TagMod,
+    render: Render[T]
   )
 
   final case class State[T](isInitial: Boolean) {
@@ -27,11 +26,11 @@ object ToggleButtonComponent {
 
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
-      val (t, stateClassName, buttonStyle) =
+      val (t, stateClassName, content) =
         if (state.isInitial)
-          (props.initialT, "initial", props.initialButtonStyle)
+          (props.initial, "initial", props.initialContent)
         else
-          (props.alternativeT, "alternative", props.alternativeButtonStyle)
+          (props.alternative, "alternative", props.alternativeContent)
 
       val button =
         <.button(
@@ -40,10 +39,10 @@ object ToggleButtonComponent {
             event.stopPropagation()
             scope.modState(_.toggle)
           },
-          buttonStyle
+          content
         )
 
-      props.toNode(t, button)
+      props.render(t, button)
     }
   }
 }

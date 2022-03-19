@@ -108,6 +108,7 @@ p {
 .tooltip {
   visibility: hidden;
   position: absolute;
+  top: 75%;
   z-index: 1;
   background-color: #e8e895;
   padding: 2px;
@@ -118,29 +119,31 @@ p {
   color: black;
 }
 
+.element-with-tooltip {
+  position: relative;
+}
+
 .element-with-tooltip:hover .tooltip {
   visibility: visible;
   transition-delay: 250ms;
 }
 
-.text-based-table {
+.dual-column-list {
   white-space: nowrap;
   height: fit-content;
 }
 
-.text-based-table.left {
+.dual-column-list.left {
   text-align: left;
 }
 
-.text-based-table.right {
+.dual-column-list.right {
   text-align: right;
 }
 
 .stat-text {
   position: absolute;
   color: yellow;
-  width: 100%;
-  height: 100%;
   text-shadow: 1px 1px black;
   font-size: 14px;
 }

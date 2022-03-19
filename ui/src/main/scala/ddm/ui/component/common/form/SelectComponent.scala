@@ -1,12 +1,11 @@
 package ddm.ui.component.common.form
 
 import ddm.ui.component.Render
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ReactEventFromInput, ScalaComponent}
 
 object SelectComponent {
-  def build[T](initial: T): Component[Props[T], State[T], Backend[T], CtorType.Props] =
+  def build[T](initial: T): ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
     ScalaComponent
       .builder[Props[T]]
       .initialState[State[T]](initial)
@@ -15,6 +14,7 @@ object SelectComponent {
 
   final case class Props[T](
     id: String,
+    label: String,
     options: List[(String, T)],
     render: Render[T]
   )
@@ -23,22 +23,25 @@ object SelectComponent {
 
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
-      val toT = props.options.toMap
+      val decode = props.options.toMap
 
       val select =
-        <.select(
-          ^.id := props.id,
-          ^.name := props.id,
-          props.options.toTagMod { case (value, t) =>
-            <.option(
-              ^.value := value,
-              (^.selected := true).when(t == state),
-              value
-            )
-          },
-          ^.onChange ==> { event: ReactEventFromInput =>
-            scope.setState(toT(event.target.value))
-          }
+        TagMod(
+          <.label(^.`for` := props.id, props.label),
+          <.select(
+            ^.id := props.id,
+            ^.name := props.id,
+            props.options.toTagMod { case (value, t) =>
+              <.option(
+                ^.value := value,
+                (^.selected := true).when(t == state),
+                value
+              )
+            },
+            ^.onChange ==> { event: ReactEventFromInput =>
+              scope.setState(decode(event.target.value))
+            }
+          )
         )
 
       props.render(state, select)

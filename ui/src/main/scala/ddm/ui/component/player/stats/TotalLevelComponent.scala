@@ -1,24 +1,33 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.component.common.{ElementWithTooltipComponent, TextBasedTable}
+import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
 import ddm.ui.model.player.skill.Exp
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object TotalLevelComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .renderBackend[Backend]
       .build
 
   final case class Props(totalLevel: Int, totalExp: Exp)
 
-  private def render(props: Props): VdomNode = {
-    val element =
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    private val elementWithTooltipComponent = ElementWithTooltipComponent.build
+    private val dualColumnListComponent = DualColumnListComponent.build
+
+    def render(props: Props): VdomNode =
+      elementWithTooltipComponent(ElementWithTooltipComponent.Props(
+        renderElement(props.totalLevel, _),
+        renderTooltip(props.totalExp, _)
+      ))
+
+    private def renderElement(totalLevel: Int, tooltipTags: TagMod): VdomNode =
       <.div(
         ^.className := "stat",
+        tooltipTags,
         <.img(
           ^.className := "stat-background",
           ^.src := "images/stat-pane/total-level-background.png",
@@ -28,11 +37,15 @@ object TotalLevelComponent {
           ^.className := "stat-text total-level",
           "Total level:",
           <.br,
-          props.totalLevel
-        ),
+          totalLevel
+        )
       )
 
-    val tooltip = TextBasedTable.build(List("Total XP:" -> props.totalExp.toString))
-    ElementWithTooltipComponent.build((element, tooltip))
+    // I'm not really sure what to do about this - but here we are
+    private def renderTooltip(totalExp: Exp, tags: TagMod): VdomNode =
+      <.div(
+        tags,
+        dualColumnListComponent(List(("Total XP:", totalExp.toString)))
+      )
   }
 }

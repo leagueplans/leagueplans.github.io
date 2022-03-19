@@ -1,15 +1,14 @@
 package ddm.ui.component.player
 
 import ddm.ui.model.player.item.{Depository, Item, ItemCache}
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object DepositoryComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .renderBackend[Backend]
       .build
 
   object Props {
@@ -29,28 +28,32 @@ object DepositoryComponent {
     rows: Int
   )
 
-  private def render(props: Props): VdomNode =
-    <.table(
-      ^.className := s"depository ${props.name}",
-      <.tbody(
-        splitIntoRows(props.contents, props.columns, props.rows).toTagMod(row =>
-          <.tr(
-            row.toTagMod(contents =>
-              <.td(DepositoryCellComponent.build(contents))
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    private val depositoryCellComponent = DepositoryCellComponent.build
+
+    def render(props: Props): VdomNode =
+      <.table(
+        ^.className := s"depository ${props.name}",
+        <.tbody(
+          splitIntoRows(props.contents, props.columns, props.rows).toTagMod(row =>
+            <.tr(
+              row.toTagMod(contents =>
+                <.td(depositoryCellComponent(contents))
+              )
             )
           )
         )
       )
-    )
 
-  private def splitIntoRows(
-    contents: List[(Item, Int)],
-    columns: Int,
-    rows: Int
-  ): Iterator[List[Option[(Item, Int)]]] = {
-    val emptyCellCount = Math.max(0, columns * rows - contents.size)
+    private def splitIntoRows(
+      contents: List[(Item, Int)],
+      columns: Int,
+      rows: Int
+    ): Iterator[List[Option[(Item, Int)]]] = {
+      val emptyCellCount = Math.max(0, columns * rows - contents.size)
 
-    (contents.map(Some.apply) ++ List.fill(emptyCellCount)(None))
-      .sliding(size = columns, step = columns)
+      (contents.map(Some.apply) ++ List.fill(emptyCellCount)(None))
+        .sliding(size = columns, step = columns)
+    }
   }
 }

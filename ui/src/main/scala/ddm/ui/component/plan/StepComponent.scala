@@ -2,9 +2,8 @@ package ddm.ui.component.plan
 
 import ddm.ui.component.common.ToggleButtonComponent
 import ddm.ui.model.plan.Step
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
 import java.util.UUID
 
@@ -33,10 +32,10 @@ object StepComponent {
     }
   }
 
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P(render)
+      .renderBackend[Backend]
       .build
 
   final case class Props(
@@ -46,35 +45,37 @@ object StepComponent {
     subSteps: TagMod
   )
 
-  private val substepsToggler = ToggleButtonComponent.build[Boolean]
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    private val toggleButtonComponent = ToggleButtonComponent.build[Boolean]
 
-  private def render(props: Props): VdomNode =
-    substepsToggler(ToggleButtonComponent.Props(
-      initialT = true,
-      initialButtonStyle = toggleButtonStyle('-'),
-      alternativeT = false,
-      alternativeButtonStyle = toggleButtonStyle('+'),
-      renderWithSubstepsToggle(props, _, _)
-    ))
+    def render(props: Props): VdomNode =
+      toggleButtonComponent(ToggleButtonComponent.Props(
+        initial = true,
+        initialContent = toggleButtonStyle('-'),
+        alternative = false,
+        alternativeContent = toggleButtonStyle('+'),
+        renderWithSubstepsToggle(props, _, _)
+      ))
 
-  private def toggleButtonStyle(c: Char): VdomNode =
-    <.span(
-      ^.className := "visibility-icon",
-      s"[$c]"
-    )
-
-  private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: TagMod): VdomNode =
-    <.div(
-      ^.className := s"step ${props.theme.cssClass}",
-      substepsToggle,
-      <.div(
-        ^.className := "content",
-        ^.onClick ==> { event =>
-          event.stopPropagation()
-          props.setFocusedStep(props.step.id)
-        },
-        <.p(props.step.description),
-        props.subSteps.when(showSubsteps)
+    private def toggleButtonStyle(c: Char): VdomNode =
+      <.span(
+        ^.className := "visibility-icon",
+        s"[$c]"
       )
-    )
+
+    private def renderWithSubstepsToggle(props: Props, showSubsteps: Boolean, substepsToggle: TagMod): VdomNode =
+      <.div(
+        ^.className := s"step ${props.theme.cssClass}",
+        substepsToggle,
+        <.div(
+          ^.className := "content",
+          ^.onClick ==> { event =>
+            event.stopPropagation()
+            props.setFocusedStep(props.step.id)
+          },
+          <.p(props.step.description),
+          props.subSteps.when(showSubsteps)
+        )
+      )
+  }
 }
