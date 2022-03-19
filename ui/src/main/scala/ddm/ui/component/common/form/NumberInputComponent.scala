@@ -1,12 +1,11 @@
 package ddm.ui.component.common.form
 
 import ddm.ui.component.Render
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ReactEventFromInput, ScalaComponent}
 
 object NumberInputComponent {
-  def build[N : Numeric](initial: N): Component[Props[N], State[N], Backend[N], CtorType.Props] =
+  def build[N : Numeric](initial: N): ScalaComponent[Props[N], State[N], Backend[N], CtorType.Props] =
     ScalaComponent
       .builder[Props[N]]
       .initialState[State[N]](initial)
@@ -15,6 +14,7 @@ object NumberInputComponent {
 
   final case class Props[N](
     id: String,
+    label: String,
     min: N,
     max: N,
     step: N,
@@ -26,20 +26,23 @@ object NumberInputComponent {
   final class Backend[N : Numeric](scope: BackendScope[Props[N], State[N]]) {
     def render(props: Props[N], state: State[N]): VdomNode = {
       val input =
-        <.input.number(
-          ^.id := props.id,
-          ^.name := props.id,
-          ^.min := props.min.toString,
-          ^.max := props.max.toString,
-          ^.value := state.toString,
-          ^.step := props.step.toString,
-          ^.onChange ==> { event: ReactEventFromInput =>
-            scope.setState(
-              Numeric[N]
-                .parseString(event.target.value)
-                .getOrElse(Numeric[N].zero)
-            )
-          }
+        TagMod(
+          <.label(^.`for` := props.id, props.label),
+          <.input.number(
+            ^.id := props.id,
+            ^.name := props.id,
+            ^.min := props.min.toString,
+            ^.max := props.max.toString,
+            ^.value := state.toString,
+            ^.step := props.step.toString,
+            ^.onChange ==> { event: ReactEventFromInput =>
+              scope.setState(
+                Numeric[N]
+                  .parseString(event.target.value)
+                  .getOrElse(Numeric[N].zero)
+              )
+            }
+          )
         )
 
       props.render(state, input)

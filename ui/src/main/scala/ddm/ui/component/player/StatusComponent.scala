@@ -1,51 +1,63 @@
 package ddm.ui.component.player
 
-import ddm.ui.component.common.TextBasedTable
+import ddm.ui.component.common.DualColumnListComponent
 import ddm.ui.component.player.stats.StatPaneComponent
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, ItemCache}
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object StatusComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P((render _).tupled)
+      .renderBackend[Backend]
       .build
 
-  type Props = (Player, ItemCache)
+  final case class Props(player: Player, itemCache: ItemCache)
 
-  private def render(player: Player, itemCache: ItemCache): VdomNode = {
-    <.div(
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    private val statPaneComponent = StatPaneComponent.build
+    private val depositoryComponent = DepositoryComponent.build
+    private val equipmentComponent = EquipmentComponent.build
+    private val dualColumnListComponent = DualColumnListComponent.build
+    private val leagueComponent = LeagueComponent.build
+
+    def render(props: Props): VdomNode = {
       <.div(
-        ^.display.flex,
-        StatPaneComponent.build(StatPaneComponent.Props(player.stats, player.leagueStatus.skillsUnlocked)),
-        player
-          .depositories
-          .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
-            depository
-          }
-          .toList
-          .sortBy(_.id.raw)
-          .toTagMod(depository =>
-            <.td(
-              DepositoryComponent.build(DepositoryComponent.Props(depository, itemCache))
+        <.div(
+          ^.display.flex,
+          statPaneComponent(StatPaneComponent.Props(
+            props.player.stats,
+            props.player.leagueStatus.skillsUnlocked
+          )),
+          props.player
+            .depositories
+            .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
+              depository
+            }
+            .toList
+            .sortBy(_.id.raw)
+            .toTagMod(depository =>
+              <.td(
+                depositoryComponent(DepositoryComponent.Props(depository, props.itemCache))
+              )
             )
-          )
-      ),
-      <.div(
-        ^.display.flex,
-        EquipmentComponent.build((player, itemCache))
-      ),
-      <.div(
-        TextBasedTable.build(List(
-          "Quest points:" -> player.questPoints.toString,
-          "Combat level:" -> String.format("%.2f", player.stats.combatLevel)
-        )),
-        LeagueComponent.build(player.leagueStatus)
+        ),
+        <.div(
+          ^.display.flex,
+          equipmentComponent(EquipmentComponent.Props(
+            props.player, props.itemCache
+          ))
+        ),
+        <.div(
+          dualColumnListComponent(List(
+            ("Quest points:", props.player.questPoints),
+            ("Combat level:", String.format("%.2f", props.player.stats.combatLevel))
+          )),
+          leagueComponent(props.player.leagueStatus)
+        )
       )
-    )
+    }
   }
 }

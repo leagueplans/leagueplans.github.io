@@ -1,7 +1,6 @@
 package ddm.ui
 
-import japgolly.scalajs.react.vdom.TagMod
-import japgolly.scalajs.react.vdom.html_<^.VdomNode
+import japgolly.scalajs.react.vdom.{TagMod, VdomNode}
 
 package object component {
   /* Typically with react, state is managed by the first common ancestor of

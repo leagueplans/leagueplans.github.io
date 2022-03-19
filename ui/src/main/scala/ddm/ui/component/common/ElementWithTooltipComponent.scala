@@ -1,25 +1,25 @@
 package ddm.ui.component.common
 
-import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object ElementWithTooltipComponent {
-  val build: Component[Props, Unit, Unit, CtorType.Props] =
+  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .render_P((render _).tupled)
+      .renderBackend[Backend]
       .build
 
-  type Props = (VdomNode, VdomNode)
+  final case class Props(
+    renderElement: TagMod => VdomNode,
+    renderTooltip: TagMod => VdomNode
+  )
 
-  private def render(element: VdomNode, tooltip: VdomNode): VdomNode =
-    <.div(
-      ^.className := "element-with-tooltip",
-      element,
-      <.div(
-        ^.className := "tooltip",
-        tooltip
-      )
-    )
+  final class Backend(scope: BackendScope[Props, Unit]) {
+    def render(props: Props): VdomNode =
+      props.renderElement(TagMod(
+        ^.className := "element-with-tooltip",
+        props.renderTooltip(^.className := "tooltip")
+      ))
+  }
 }

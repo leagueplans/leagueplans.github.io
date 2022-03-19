@@ -2,13 +2,12 @@ package ddm.ui.component.common
 
 import cats.Functor
 import cats.syntax.functor._
-import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.vdom.{TagMod, VdomNode}
-import japgolly.scalajs.react.{Callback, CtorType, ReactDragEvent, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ReactDragEvent, ScalaComponent}
 
 object DragSortableComponent {
-  def build[S[_] : Functor, T]: Component[Props[S, T], State[S, T], Backend[S, T], CtorType.Props] =
+  def build[S[_] : Functor, T]: ScalaComponent[Props[S, T], State[S, T], Backend[S, T], CtorType.Props] =
     ScalaComponent
       .builder[Props[S, T]]
       .getDerivedStateFromPropsAndState[State[S, T]] {
@@ -27,7 +26,7 @@ object DragSortableComponent {
     isViableTarget: Hover[T] => Boolean,
     transform: (Hover[T], S[T]) => S[T],
     setState: S[T] => Callback,
-    toNode: S[(T, TagMod)] => VdomNode
+    render: S[(T, TagMod)] => VdomNode
   )
 
   final case class State[S[_], T](dragging: Option[T], previewState: S[T], propsState: S[T]) {
@@ -39,7 +38,7 @@ object DragSortableComponent {
 
   final class Backend[S[_] : Functor, T](scope: BackendScope[Props[S, T], State[S, T]]) {
     def render(props: Props[S, T], state: State[S, T]): VdomNode =
-      props.toNode(
+      props.render(
         state.previewState.map(target =>
           target -> createDragTags(
             target,

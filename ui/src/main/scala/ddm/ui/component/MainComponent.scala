@@ -1,7 +1,6 @@
 package ddm.ui.component
 
 import ddm.ui.StorageManager
-import ddm.ui.component.common.StorageComponent
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.StatusComponent
 import ddm.ui.facades.fusejs.FuseOptions
@@ -11,21 +10,43 @@ import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
-import japgolly.scalajs.react.component.Scala.{BackendScope, Component}
+import japgolly.scalajs.react.component.builder.Lifecycle.ComponentDidUpdate
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
 import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
+import scala.util.{Failure, Success}
 
 object MainComponent {
-  val build: Component[Props, State, Backend, CtorType.Props] =
+  val build: ScalaComponent[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .initialState[State](State(focusedStep = None))
+      .initialStateFromProps[State](props =>
+        State(loadPlan(props), focusedStep = None)
+      )
       .renderBackend[Backend]
+      .componentDidUpdate(savePlan)
       .build
+
+  private def loadPlan(props: Props): Tree[Step] =
+    props.storageManager.load() match {
+      case None =>
+        props.defaultPlan
+      case Some(Success(savedPlan)) =>
+        savedPlan
+      case Some(Failure(ex)) =>
+        throw new RuntimeException(s"Failure when trying to load plan", ex)
+    }
+
+  private def savePlan(update: ComponentDidUpdate[Props, State, _, _]): Callback =
+    Callback(
+      update
+        .currentProps
+        .storageManager
+        .save(update.currentState.plan)
+    ).when(update.currentState.plan != update.prevState.plan).void
 
   final case class Props(
     storageManager: StorageManager[Tree[Step]],
@@ -33,36 +54,18 @@ object MainComponent {
     itemCache: ItemCache
   )
 
-  final case class State(focusedStep: Option[UUID])
+  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
-    private val planStorageComponent = StorageComponent.build[Tree[Step]]
+    private val planComponent = PlanComponent.build
+    private val statusComponent = StatusComponent.build
+    private val consoleComponent = ConsoleComponent.build
 
-    def render(props: Props, state: State): VdomNode =
-      withPlanStorage(props.storageManager, props.defaultPlan)(
-        renderWithPlan(props.itemCache, _, _, state.focusedStep)
-      )
-
-    private def withPlanStorage(
-      storageManager: StorageManager[Tree[Step]],
-      defaultPlan: Tree[Step]
-    ): ((Tree[Step], Tree[Step] => Callback) => VdomNode) => VdomNode =
-      render => planStorageComponent(StorageComponent.Props(
-        storageManager,
-        defaultPlan,
-        render
-      ))
-
-    private def renderWithPlan(
-      itemCache: ItemCache,
-      plan: Tree[Step],
-      setPlan: Tree[Step] => Callback,
-      focusedStepId: Option[UUID]
-    ): VdomElement = {
-      val allTrees = plan.recurse(List(_))
+    def render(props: Props, state: State): VdomNode = {
+      val allTrees = state.plan.recurse(List(_))
 
       val (progressedStepsAsTrees, focusedStep) =
-        focusedStepId match {
+        state.focusedStep match {
           case Some(id) =>
             val (lhs, rhs) = allTrees.span(_.node.id != id)
             val focused = rhs.headOption
@@ -80,7 +83,7 @@ object MainComponent {
 
       val itemFuse =
         new Fuse(
-          itemCache.raw.values.toList,
+          props.itemCache.raw.values.toList,
           new FuseOptions {
             override val keys: UndefOr[js.Array[String]] =
               js.defined(js.Array("name"))
@@ -89,24 +92,29 @@ object MainComponent {
 
       <.div(
         ^.display.flex,
-        PlanComponent.build(PlanComponent.Props(
+        planComponent(PlanComponent.Props(
           playerAtFocusedStep,
-          itemCache,
+          props.itemCache,
           itemFuse,
-          plan,
+          state.plan,
           focusedStep,
           setFocusedStep,
           setPlan
         )),
-        StatusComponent.build((
+        statusComponent(StatusComponent.Props(
           playerAtFocusedStep,
-          itemCache
+          props.itemCache
         )),
-        ConsoleComponent.build(ConsoleComponent.Props(
-          progressedSteps, Player.initial, itemCache
-        )),
+        consoleComponent(ConsoleComponent.Props(
+          progressedSteps, Player.initial, props.itemCache
+        ))
       )
     }
+
+    private def setPlan(plan: Tree[Step]): Callback =
+      scope.modState(currentState =>
+        currentState.copy(plan = plan)
+      )
 
     private def setFocusedStep(step: UUID): Callback =
       scope.modState(currentState =>
