@@ -1,4 +1,4 @@
-package ddm.scraper.core
+package ddm.scraper.http
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
@@ -13,9 +13,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
 import scala.util.Success
 
-final class ThrottledWebClient(
+final class ThrottledHttpClient(
   elements: Int,
-  per: FiniteDuration
+  per: FiniteDuration,
+  parallelism: Int
 )(implicit actorSystem: ActorSystem[_]) {
   private val http = Http()
   import actorSystem.executionContext
@@ -30,7 +31,7 @@ final class ThrottledWebClient(
       )
       .throttle(elements, per)
       .zipWithIndex
-      .mapAsync(parallelism = 4) { case ((request, pResponse), requestId) =>
+      .mapAsync(parallelism) { case ((request, pResponse), requestId) =>
         logger.debug(s"Executing [$requestId]: [$request]")
         pResponse
           .completeWith(http.singleRequest(request))

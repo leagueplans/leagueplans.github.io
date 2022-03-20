@@ -1,4 +1,4 @@
-package ddm.scraper.core
+package ddm.scraper.wiki
 
 import net.ruippeixotog.scalascraper.browser.Browser
 

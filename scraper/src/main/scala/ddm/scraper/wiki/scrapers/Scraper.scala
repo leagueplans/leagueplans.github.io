@@ -1,8 +1,10 @@
-package ddm.scraper.core
+package ddm.scraper.wiki.scrapers
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
+import ddm.scraper.http.ThrottledHttpClient
+import ddm.scraper.wiki.{WikiBrowser, WikiFetcher}
 import net.ruippeixotog.scalascraper.browser.{Browser, JsoupBrowser}
 
 import java.nio.file.{Files, Path, Paths}
@@ -38,7 +40,11 @@ trait Scraper {
     new WikiBrowser[JsoupBrowser](
       new JsoupBrowser(),
       new WikiFetcher(
-        new ThrottledWebClient(elements = 5, per = 1.second)(actorSystem),
+        new ThrottledHttpClient(
+          elements = 5,
+          per = 1.second,
+          parallelism = 4
+        )(actorSystem),
         maybeStore = None
       )(actorSystem.executionContext)
     )(_ => ())

@@ -7,7 +7,7 @@ set -o pipefail
 
 readonly TMP='tmp'
 readonly RESOURCES='ui/src/main/resources'
-readonly ROOT_PACKAGE='ddm.scraper'
+readonly ROOT_PACKAGE='ddm.scraper.wiki'
 
 readonly -A argMap=(
   ['items']="${ROOT_PACKAGE}.scrapers.items.ItemsScraper ."

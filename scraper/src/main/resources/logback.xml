@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="ddm.scraper.core.FileStore">
+    <logger name="ddm.scraper.wiki.FileStore">
         <appender-ref ref="Request history" />
     </logger>
 

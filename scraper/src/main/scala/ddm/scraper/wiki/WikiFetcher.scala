@@ -1,6 +1,7 @@
-package ddm.scraper.core
+package ddm.scraper.wiki
 
 import akka.http.scaladsl.model.HttpRequest
+import ddm.scraper.http.ThrottledHttpClient
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -10,7 +11,7 @@ object WikiFetcher {
   private val baseUrl: String = "https://oldschool.runescape.wiki"
 }
 
-final class WikiFetcher(client: ThrottledWebClient, maybeStore: Option[FileStore])(
+final class WikiFetcher(client: ThrottledHttpClient, maybeStore: Option[FileStore])(
   implicit ec: ExecutionContext
 ) {
   def fetch(wikiPath: String): Array[Byte] =

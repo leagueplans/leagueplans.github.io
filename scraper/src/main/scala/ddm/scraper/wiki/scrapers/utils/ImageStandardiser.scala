@@ -1,4 +1,4 @@
-package ddm.scraper.scrapers.utils
+package ddm.scraper.wiki.scrapers.utils
 
 import com.sksamuel.scrimage.nio.{ImmutableImageLoader, PngWriter}
 

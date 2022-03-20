@@ -1,4 +1,4 @@
-package ddm.scraper.core
+package ddm.scraper.wiki
 
 import org.log4s.{Logger, getLogger}
 

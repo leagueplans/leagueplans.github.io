@@ -1,7 +1,7 @@
-package ddm.scraper.core.pages
+package ddm.scraper.wiki.pages
 
 import ddm.common.model.Item
-import ddm.scraper.core.WikiBrowser
+import ddm.scraper.wiki.WikiBrowser
 import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
