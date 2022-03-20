@@ -1,6 +1,6 @@
 package ddm.ui
 
-import ddm.ui.model.player.item.Item
+import ddm.common.model.Item
 import ddm.ui.model.player.skill.Skill
 
 object ResourcePaths {

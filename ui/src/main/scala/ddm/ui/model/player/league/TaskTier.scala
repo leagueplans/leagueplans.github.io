@@ -1,7 +1,7 @@
 package ddm.ui.model.player.league
 
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
 sealed trait TaskTier {
   def points: Int
@@ -37,6 +37,5 @@ object TaskTier {
   val all: Set[TaskTier] =
     Set(Easy, Medium, Hard, Elite, Master)
 
-  implicit val encoder: Encoder[TaskTier] = deriveEncoder[TaskTier]
-  implicit val decoder: Decoder[TaskTier] = deriveDecoder[TaskTier]
+  implicit val codec: Codec[TaskTier] = deriveCodec[TaskTier]
 }

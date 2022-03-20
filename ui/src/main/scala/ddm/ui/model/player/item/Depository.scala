@@ -1,5 +1,6 @@
 package ddm.ui.model.player.item
 
+import ddm.common.model.Item
 import io.circe.{Decoder, Encoder}
 
 object Depository {

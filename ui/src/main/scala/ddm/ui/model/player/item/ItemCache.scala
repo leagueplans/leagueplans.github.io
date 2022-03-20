@@ -1,5 +1,7 @@
 package ddm.ui.model.player.item
 
+import ddm.common.model.Item
+
 object ItemCache {
   def apply(items: Set[Item]): ItemCache =
     ItemCache(items.map(item => item.id -> item).toMap)

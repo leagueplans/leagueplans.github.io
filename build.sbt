@@ -31,19 +31,30 @@ ThisBuild / scalacOptions ++= List(
   "-Xlint:poly-implicit-overload",     // Parameterized overloaded implicit methods are not visible as view bounds.
   "-Xlint:private-shadow",             // A private field (or class parameter) shadows a superclass field.
   "-Xlint:stars-align",                // Pattern sequence wildcard must align with sequence component.
-  "-Xlint:type-parameter-shadow",      // A local type parameter shadows a type already in scope.
+  "-Xlint:type-parameter-shadow"       // A local type parameter shadows a type already in scope.
 )
 
 lazy val root =
   (project in file("."))
-    .aggregate(wikiScraper, ui)
+    .aggregate(common.jvm, common.js, wikiScraper, ui)
+
+val circeVersion = "0.14.1"
+
+lazy val common =
+  crossProject(JVMPlatform, JSPlatform).in(file("common"))
+    .settings(
+      libraryDependencies ++= List(
+        "io.circe" %%% "circe-core" % circeVersion,
+        "io.circe" %%% "circe-generic" % circeVersion,
+        "io.circe" %%% "circe-parser" % circeVersion
+      )
+    )
 
 val akkaVersion = "2.6.18"
-val circeVersion = "0.14.1"
 val scrimageVersion = "4.0.31"
 
 lazy val wikiScraper =
-  (project in file("scraper"))
+  project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
         "net.ruippeixotog" %% "scala-scraper" % "2.2.1",
@@ -53,24 +64,21 @@ lazy val wikiScraper =
         "com.typesafe.akka" %% "akka-stream" % akkaVersion,
         "com.typesafe.akka" %% "akka-http" % "10.2.9",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
-        "com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion,
-        "io.circe" %% "circe-core" % circeVersion
+        "com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion
       )
     )
+    .dependsOn(common.jvm)
 
 val reactVersion = "17.0.2"
 
 lazy val ui =
-  (project in file("ui"))
+  project.in(file("ui"))
     .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
     .settings(
       libraryDependencies ++= List(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         "org.scala-js" %%% "scalajs-dom" % "2.1.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
-        "io.circe" %%% "circe-core" % circeVersion,
-        "io.circe" %%% "circe-generic" % circeVersion,
-        "io.circe" %%% "circe-parser" % circeVersion,
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       Compile / npmDependencies ++= List(
@@ -87,3 +95,4 @@ lazy val ui =
       (Compile / fastOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) },
       (Compile / fullOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) }
     )
+    .dependsOn(common.js)

@@ -1,5 +1,6 @@
 package ddm.ui.component.plan
 
+import ddm.common.model.Item
 import ddm.ui.component.With
 import ddm.ui.component.common.DragSortableTreeComponent
 import ddm.ui.component.plan.editing.EditingManagementComponent
@@ -7,7 +8,7 @@ import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
