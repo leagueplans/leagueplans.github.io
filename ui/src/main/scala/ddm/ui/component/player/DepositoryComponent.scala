@@ -1,6 +1,7 @@
 package ddm.ui.component.player
 
-import ddm.ui.model.player.item.{Depository, Item, ItemCache}
+import ddm.common.model.Item
+import ddm.ui.model.player.item.{Depository, ItemCache}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 

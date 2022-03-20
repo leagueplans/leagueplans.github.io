@@ -1,8 +1,8 @@
 package ddm.ui.model.common
 
 import cats.{Functor, Monoid}
-import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, JsonObject}
+import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Decoder, Encoder}
 
 import scala.annotation.tailrec
 
@@ -25,26 +25,8 @@ object Tree {
         fa.map(f)
     }
 
-  implicit def encoder[T : Encoder]: Encoder[Tree[T]] =
-    Encoder[JsonObject].contramap(tree =>
-      JsonObject(
-        "node" -> tree.node.asJson,
-        "children" -> tree.children.asJson
-      )
-    )
-
-  implicit def decoder[T : Decoder]: Decoder[Tree[T]] =
-    Decoder[JsonObject].emap(obj =>
-      for {
-        node <- decodeField[T](obj, "node")
-        children <- decodeField[List[Tree[T]]](obj, "children")
-      } yield Tree(node, children)
-    )
-
-  private def decodeField[T : Decoder](obj: JsonObject, key: String): Either[String, T] =
-    obj(key)
-      .toRight(left = s"Missing key: [$key]")
-      .flatMap(_.as[T].left.map(_.message))
+  implicit def codec[T : Encoder : Decoder]: Codec[Tree[T]] =
+    deriveCodec[Tree[T]]
 }
 
 final case class Tree[T](node: T, children: List[Tree[T]]) {

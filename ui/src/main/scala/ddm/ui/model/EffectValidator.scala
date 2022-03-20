@@ -1,9 +1,10 @@
 package ddm.ui.model
 
+import ddm.common.model.Item
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.{CompleteQuest, CompleteTask, DropItem, GainExp, GainItem, MoveItem, SetMultiplier, UnlockSkill}
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Depository, Item, ItemCache}
+import ddm.ui.model.player.item.{Depository, ItemCache}
 import ddm.ui.model.player.skill.Skill
 
 sealed trait EffectValidator[E <: Effect] {

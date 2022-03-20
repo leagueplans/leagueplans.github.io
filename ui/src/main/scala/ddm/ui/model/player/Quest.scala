@@ -1,11 +1,10 @@
 package ddm.ui.model.player
 
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
 object Quest {
-  implicit val encoder: Encoder[Quest] = deriveEncoder[Quest]
-  implicit val decoder: Decoder[Quest] = deriveDecoder[Quest]
+  implicit val codec: Codec[Quest] = deriveCodec[Quest]
 }
 
 final case class Quest(name: String, points: Int)

@@ -1,10 +1,10 @@
 package ddm.ui.component.plan.editing
 
+import ddm.common.model.Item
 import ddm.ui.component.common.form.FuseSearchComponent
 import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
 import ddm.ui.component.player.ItemIconComponent
 import ddm.ui.component.{Render, With}
-import ddm.ui.model.player.item.Item
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}

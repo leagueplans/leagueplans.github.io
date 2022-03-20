@@ -1,12 +1,13 @@
 package ddm.ui.component.plan.editing.effect
 
+import ddm.common.model.Item
 import ddm.ui.component.With
 import ddm.ui.component.common.form.{FormComponent, NumberInputComponent, SelectComponent}
 import ddm.ui.component.plan.editing.ItemSearchComponent
 import ddm.ui.component.plan.editing.effect.AddEffectComponent.Props
 import ddm.ui.model.plan.Effect.GainItem
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Depository, Item}
+import ddm.ui.model.player.item.Depository
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}

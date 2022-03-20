@@ -1,13 +1,14 @@
 package ddm.ui.component.plan.editing
 
 import cats.data.NonEmptyList
+import ddm.common.model.Item
 import ddm.ui.component.Render
 import ddm.ui.component.common.ToggleButtonComponent
 import ddm.ui.component.common.form.RadioButtonComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}

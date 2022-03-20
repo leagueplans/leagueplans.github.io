@@ -1,7 +1,7 @@
 package ddm.ui.component.player
 
+import ddm.common.model.Item
 import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
-import ddm.ui.model.player.item.Item
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 import org.scalajs.dom.html.Paragraph

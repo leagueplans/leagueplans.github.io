@@ -1,9 +1,10 @@
 package ddm.ui
 
+import ddm.common.model.Item
 import ddm.ui.component.MainComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
-import ddm.ui.model.player.item.{Item, ItemCache}
+import ddm.ui.model.player.item.ItemCache
 import io.circe.Decoder
 import io.circe.parser.decode
 import org.scalajs.dom.{Event, document, fetch, window}

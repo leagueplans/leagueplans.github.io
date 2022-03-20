@@ -1,7 +1,7 @@
 package ddm.scraper.core.pages
 
+import ddm.common.model.Item
 import ddm.scraper.core.WikiBrowser
-import ddm.scraper.scrapers.items.Item
 import net.ruippeixotog.scalascraper.browser.Browser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
@@ -54,6 +54,6 @@ final class ItemPage[B <: Browser](wikiBrowser: WikiBrowser[B], wikiPath: String
       case _ => None
     }
 
-  private def parseItemId(raw: String): String =
-    raw.takeWhile(_ != ',')
+  private def parseItemId(raw: String): Item.ID =
+    Item.ID(raw.takeWhile(_ != ','))
 }
