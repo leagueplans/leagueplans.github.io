@@ -16,6 +16,7 @@ import scala.util.Success
 final class ThrottledHttpClient(
   elements: Int,
   per: FiniteDuration,
+  bufferSize: Int,
   parallelism: Int
 )(implicit actorSystem: ActorSystem[_]) {
   private val http = Http()
@@ -26,7 +27,7 @@ final class ThrottledHttpClient(
   private val requestExecutor =
     Source
       .queue[(HttpRequest, Promise[HttpResponse])](
-        bufferSize = Int.MaxValue,
+        bufferSize,
         overflowStrategy = OverflowStrategy.dropNew
       )
       .throttle(elements, per)

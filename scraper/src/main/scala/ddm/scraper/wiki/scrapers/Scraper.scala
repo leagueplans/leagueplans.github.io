@@ -43,6 +43,7 @@ trait Scraper {
         new ThrottledHttpClient(
           elements = 5,
           per = 1.second,
+          bufferSize = Int.MaxValue,
           parallelism = 4
         )(actorSystem),
         maybeStore = None
