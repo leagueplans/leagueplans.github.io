@@ -15,7 +15,7 @@ fi
 
 run () {
   local EXTRA_ARGS=$1
-  sbt "wikiScraper/run 'scraper=${SCRAPER}' 'user-agent=${USER_AGENT}' 'target-directory=${TMP}' ${EXTRA_ARGS}"
+  sbt "wikiScraper/run \"scraper=${SCRAPER}\" \"user-agent=${USER_AGENT}\" \"target-directory=${TMP}\" ${EXTRA_ARGS}"
 }
 
 sync () {
@@ -32,7 +32,7 @@ sync () {
 
 case "${SCRAPER}" in
   "items")
-    run "'id-map=scraper/src/main/resources/id-map.json'"
+    run "\"id-map=scraper/src/main/resources/id-map.json\""
     sync '--include="data/items.json" --include="images/items" exclude="*"'
     ;;
 
