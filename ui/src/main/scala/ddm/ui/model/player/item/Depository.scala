@@ -18,7 +18,7 @@ object Depository {
       stackLimit = Int.MaxValue,
       stackAll = true,
       contents = Map(
-        Item.ID("995") -> 25 // Coins
+        Item.ID(???) -> 25 // Coins
       ),
       columns = 8,
       minRows = 6
@@ -31,24 +31,24 @@ object Depository {
       stackLimit = Int.MaxValue,
       stackAll = false,
       contents = Map(
-        Item.ID("1351") -> 1, // Bronze axe
-        Item.ID("1265") -> 1, // Bronze pickaxe
-        Item.ID("590") -> 1, // Tinderbox
-        Item.ID("303") -> 1, // Small fishing net
-        Item.ID("315") -> 1, // Shrimps
-        Item.ID("1205") -> 1, // Bronze dagger
-        Item.ID("1277") -> 1, // Bronze sword
-        Item.ID("1171") -> 1, // Wooden shield
-        Item.ID("841") -> 1, // Shortbow
-        Item.ID("882") -> 25, // Bronze arrow
-        Item.ID("556") -> 25, // Air rune
-        Item.ID("558") -> 15, // Mind rune
-        Item.ID("1925") -> 1, // Bucket
-        Item.ID("1931") -> 1, // Pot
-        Item.ID("2309") -> 1, // Bread
-        Item.ID("555") -> 6, // Water rune
-        Item.ID("557") -> 4, // Earth rune
-        Item.ID("559") -> 2 // Body rune
+        Item.ID(???) -> 1, // Bronze axe
+        Item.ID(???) -> 1, // Bronze pickaxe
+        Item.ID(???) -> 1, // Tinderbox
+        Item.ID(???) -> 1, // Small fishing net
+        Item.ID(???) -> 1, // Shrimps
+        Item.ID(???) -> 1, // Bronze dagger
+        Item.ID(???) -> 1, // Bronze sword
+        Item.ID(???) -> 1, // Wooden shield
+        Item.ID(???) -> 1, // Shortbow
+        Item.ID(???) -> 25, // Bronze arrow
+        Item.ID(???) -> 25, // Air rune
+        Item.ID(???) -> 15, // Mind rune
+        Item.ID(???) -> 1, // Bucket
+        Item.ID(???) -> 1, // Pot
+        Item.ID(???) -> 1, // Bread
+        Item.ID(???) -> 6, // Water rune
+        Item.ID(???) -> 4, // Earth rune
+        Item.ID(???) -> 2 // Body rune
       ),
       columns = 4,
       minRows = 7

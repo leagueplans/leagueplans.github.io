@@ -33,7 +33,7 @@ object DepositoryCellComponent {
                 _,
                 dualColumnListComponent(List(
                   ("Name:", item.name),
-                  ("ID:", item.id.raw),
+                  ("ID:", item.id.raw.toString),
                   ("Quantity:", count)
                 ))
               )

@@ -2,20 +2,19 @@ package ddm.scraper.http
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCode}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.OverflowStrategy
-import akka.stream.QueueOfferResult._
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.{OverflowStrategy, QueueOfferResult}
 import org.log4s.{Logger, getLogger}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 final class ThrottledHttpClient(
-  elements: Int,
-  per: FiniteDuration,
+  maxThroughput: Int,
+  interval: FiniteDuration,
   bufferSize: Int,
   parallelism: Int
 )(implicit actorSystem: ActorSystem[_]) {
@@ -30,34 +29,41 @@ final class ThrottledHttpClient(
         bufferSize,
         overflowStrategy = OverflowStrategy.dropNew
       )
-      .throttle(elements, per)
+      .throttle(maxThroughput, interval)
       .zipWithIndex
       .mapAsync(parallelism) { case ((request, pResponse), requestId) =>
-        logger.debug(s"Executing [$requestId]: [$request]")
+        logger.info(s"Executing [$requestId]: [${request.method.value} ${request.uri}]")
         pResponse
           .completeWith(http.singleRequest(request))
           .future
-          .transform { response =>
-            logger.debug(s"Response [$requestId]: [$response]")
+          .transform { maybeResponse =>
+            maybeResponse match {
+              case Success(response) if response.status.isSuccess() =>
+                logger.debug(s"Response [$requestId]: [$response]")
+              case Success(response) =>
+                logger.warn(s"Response [$requestId]: [$response]")
+              case Failure(error) =>
+                logger.error(error)(s"Request [$requestId] failed")
+            }
             Success(())
           }
       }
       .toMat(Sink.ignore)(Keep.left)
       .run()
 
-  def queue(request: HttpRequest): Future[Array[Byte]] = {
+  def queue(request: HttpRequest): Future[(StatusCode, Array[Byte])] = {
     val pResponse = Promise[HttpResponse]()
     for {
       _ <- requestExecutor
              .offer((request, pResponse))
              .map {
-               case Enqueued => pResponse
-               case Dropped => pResponse.failure(new RuntimeException("WebClient buffer full"))
-               case QueueClosed => pResponse.failure(new RuntimeException("WebClient stream closed"))
-               case Failure(t) => pResponse.failure(t)
+               case QueueOfferResult.Enqueued => pResponse
+               case QueueOfferResult.Dropped => pResponse.failure(new RuntimeException("WebClient buffer full"))
+               case QueueOfferResult.QueueClosed => pResponse.failure(new RuntimeException("WebClient stream closed"))
+               case QueueOfferResult.Failure(t) => pResponse.failure(t)
              }
       response <- pResponse.future
       bytes    <- Unmarshal(response).to[Array[Byte]]
-    } yield bytes
+    } yield (response.status, bytes)
   }
 }

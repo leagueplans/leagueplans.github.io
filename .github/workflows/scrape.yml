@@ -1,3 +1,4 @@
+name: Scrape
 on:
   workflow_dispatch:
     inputs:
@@ -7,32 +8,35 @@ on:
         options:
         - items
         - skill-icons
-        - equipment-icons
 
 jobs:
   scrape:
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v2
+    - name: Checkout project
+      uses: actions/checkout@v3
 
-      - name: Run scraper
-        run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
+    - uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: '17'
 
-      - name: Upload logs as artifact
-        uses: actions/upload-artifact@v2
-        if: ${{ always() }}
-        with:
-          name: logs
-          path: logs/
-          retention-days: 7
+    - name: Run scraper
+      run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
 
-      - name: Raise PR for any changes
-        uses: peter-evans/create-pull-request@v3
-        with:
-          commit-message: Update ${{ github.event.inputs.resource }}
-          branch: scraper/${{ github.event.inputs.resource }}
-          delete-branch: true
-          title: Update ${{ github.event.inputs.resource }}
-          body: Triggered by workflow [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+    - name: Read report
+      id: read-report
+      run: echo "::set-output name=report::$(cat tmp/report.md)"
+
+    - name: Raise PR for any changes
+      uses: peter-evans/create-pull-request@v4
+      with:
+        commit-message: Update ${{ github.event.inputs.resource }}
+        branch: scraper/${{ github.event.inputs.resource }}
+        delete-branch: true
+        title: Update ${{ github.event.inputs.resource }}
+        body: |
+          Triggered by workflow [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ${{ steps.read-report.outputs.report }}

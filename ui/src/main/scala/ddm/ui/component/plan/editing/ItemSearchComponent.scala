@@ -60,7 +60,7 @@ object ItemSearchComponent {
 
     private def renderResult(item: Item, isSelected: Boolean): TagMod =
       TagMod(
-        ^.key := item.id.raw,
+        ^.key := item.id.raw.toString,
         ^.classSet(
           "fuse-item-search-result" -> true,
           "selected" -> isSelected
@@ -87,7 +87,7 @@ object ItemSearchComponent {
       <.div(
         tags,
         dualColumnListComponent(List(
-          ("ID:", item.id.raw),
+          ("ID:", item.id.raw.toString),
           ("Examine:", item.examine)
         ))
       )
