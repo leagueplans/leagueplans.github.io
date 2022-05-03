@@ -25,9 +25,16 @@ jobs:
     - name: Run scraper
       run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
 
+    # Includes a workaround for multiline strings
+    # https://github.community/t/set-output-truncates-multiline-strings/16852/3
     - name: Read report
       id: read-report
-      run: echo "::set-output name=report::$(cat tmp/report.md)"
+      run: |
+        report=$(cat tmp/report.md)
+        report="${report//'%'/'%25'}"
+        report="${report//$'\n'/'%0A'}"
+        report="${report//$'\r'/'%0D'}"
+        echo "::set-output name=report::$report"
 
     - name: Raise PR for any changes
       uses: peter-evans/create-pull-request@v4

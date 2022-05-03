@@ -21,7 +21,7 @@ run () {
 sync () {
   local INCLUDES=$1
 
-  rsync --verbose \
+  rsync -vvv \
         --recursive \
         --inplace \
         --times \
