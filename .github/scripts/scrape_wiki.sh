@@ -33,11 +33,11 @@ sync () {
 case "${SCRAPER}" in
   "items")
     run "\"id-map=scraper/src/main/resources/id-map.json\""
-    sync '--include="data/items.json" --include="images/items" exclude="*"'
+    sync '--include="data/items.json" --include="images/items"'
     ;;
 
   "skill-icons")
     run ""
-    sync '--include=/images/skill-icons'
+    sync '--include=/images/ --include=/images/skill-icons/***'
     ;;
 esac
