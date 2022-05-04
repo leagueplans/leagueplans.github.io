@@ -33,7 +33,7 @@ object DepositoryCellComponent {
                 _,
                 dualColumnListComponent(List(
                   ("Name:", item.name),
-                  ("ID:", item.id.raw.toString),
+                  ("ID:", item.id.raw),
                   ("Quantity:", count)
                 ))
               )
@@ -44,7 +44,7 @@ object DepositoryCellComponent {
       <.div(
         ^.className := "depository-cell",
         tooltipTags,
-        itemIconComponent(item),
+        itemIconComponent(ItemIconComponent.Props(item, count)),
         quantityAnnotation(count)
       )
 

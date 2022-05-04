@@ -60,7 +60,7 @@ object ItemSearchComponent {
 
     private def renderResult(item: Item, isSelected: Boolean): TagMod =
       TagMod(
-        ^.key := item.id.raw.toString,
+        ^.key := item.id.raw,
         ^.classSet(
           "fuse-item-search-result" -> true,
           "selected" -> isSelected
@@ -75,7 +75,7 @@ object ItemSearchComponent {
       <.div(
         ^.className := "item",
         tooltipTags,
-        itemIconComponent(item),
+        itemIconComponent(ItemIconComponent.Props(item, count = 1)),
         <.span(item.name),
         ^.onClick ==> { e: ^.onClick.Event =>
           e.stopPropagation()
@@ -87,7 +87,7 @@ object ItemSearchComponent {
       <.div(
         tags,
         dualColumnListComponent(List(
-          ("ID:", item.id.raw.toString),
+          ("ID:", item.id.raw),
           ("Examine:", item.examine)
         ))
       )

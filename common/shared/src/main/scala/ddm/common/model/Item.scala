@@ -4,10 +4,8 @@ import cats.data.NonEmptyList
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
-import java.util.UUID
-
 object Item {
-  final case class ID(raw: UUID)
+  final case class ID(raw: String)
 
   object Image {
     final case class Bin(floor: Int)
@@ -32,8 +30,8 @@ object Item {
   }
 
   implicit val idOrdering: Ordering[ID] = Ordering.by(_.raw)
-  implicit val idEncoder: Encoder[ID] = Encoder[UUID].contramap(_.raw)
-  implicit val idDecoder: Decoder[ID] = Decoder[UUID].map(ID)
+  implicit val idEncoder: Encoder[ID] = Encoder[String].contramap(_.raw)
+  implicit val idDecoder: Decoder[ID] = Decoder[String].map(ID)
 
   implicit val ordering: Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
   implicit val codec: Codec[Item] = deriveCodec
@@ -41,7 +39,6 @@ object Item {
 
 final case class Item(
   id: Item.ID,
-  gameID: Int, //TODO Remove
   name: String,
   examine: String,
   images: NonEmptyList[(Item.Image.Bin, Item.Image.Path)],

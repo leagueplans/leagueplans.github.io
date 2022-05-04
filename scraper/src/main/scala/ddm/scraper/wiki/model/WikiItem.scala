@@ -2,20 +2,11 @@ package ddm.scraper.wiki.model
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Decoder, Encoder}
 
 object WikiItem {
   sealed trait GameID
 
   object GameID {
-    //TODO Remove the need for encoding game IDs?
-    implicit val betaCodec: Codec[Beta] = deriveCodec
-    implicit val historicCodec: Codec[Historic] = deriveCodec
-    implicit val liveEncoder: Encoder[Live] = Encoder[Int].contramap(_.raw)
-    implicit val liveDecoder: Decoder[Live] = Decoder[Int].map(Live)
-    implicit val gameIDCodec: Codec[GameID] = deriveCodec
-
     final case class Beta(raw: Int) extends GameID
     final case class Historic(raw: Int) extends GameID
     final case class Live(raw: Int) extends GameID

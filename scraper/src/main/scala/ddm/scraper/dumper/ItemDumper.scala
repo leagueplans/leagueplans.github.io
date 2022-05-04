@@ -22,16 +22,9 @@ object ItemDumper {
     itemWriter: ActorRef[Cache.Message[Item]]
   ): Sink[(Page, WikiItem), Future[_]] =
     Flow[(Page, WikiItem)]
-      .filter { case (_, wikiItem) => //TODO Remove
-        wikiItem.infobox.gameID match {
-          case _: GameID.Beta => false
-          case _: GameID.Historic => false
-          case _: GameID.Live => true
-        }
-      }
       .map { case (page, wikiItem) =>
         val wikiKey = (page.id, wikiItem.infobox.version)
-        val itemID = existingIDMap.getOrElse(wikiKey, Item.ID(UUID.randomUUID()))
+        val itemID = existingIDMap.getOrElse(wikiKey, Item.ID(UUID.randomUUID().toString))
         toOutput(itemID, page.id, wikiItem)
       }
       .toMat(outputSink(idMapWriter, itemWriter, imagesDirectory))(Keep.right)
@@ -45,7 +38,6 @@ object ItemDumper {
   private def toItem(id: Item.ID, wikiItem: WikiItem): Item =
     Item(
       id,
-      wikiItem.infobox.gameID.asInstanceOf[WikiItem.GameID.Live].raw,
       toName(wikiItem.infobox),
       wikiItem.infobox.examine,
       wikiItem.images.map(image => (image.bin, toImagePath(id, image))),
