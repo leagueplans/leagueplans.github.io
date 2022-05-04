@@ -18,8 +18,7 @@ run () {
 }
 
 sync () {
-  rsync --verbose \
-        --archive \
+  rsync --archive \
         --delete \
         "$@" \
         --exclude="*" \

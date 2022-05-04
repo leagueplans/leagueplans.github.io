@@ -22,8 +22,10 @@ object Page {
     def from(wikiName: String): Name =
       wikiName match {
         case s"Category:$raw" => Category(raw)
-        case s"File:$raw.$extension" => File(raw, extension)
         case s"Template:$raw" => Template(raw)
+        case s"File:$full" =>
+          val Array(name, extension) = full.split("(\\.)(?!.*\\.)", /* limit = */ 2)
+          File(name, extension)
         case _ => Other(wikiName)
       }
 
