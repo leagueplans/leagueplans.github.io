@@ -32,7 +32,7 @@ final class ThrottledHttpClient(
       .throttle(maxThroughput, interval)
       .zipWithIndex
       .mapAsync(parallelism) { case ((request, pResponse), requestId) =>
-        logger.info(s"Executing [$requestId]: [${request.method.value} ${request.uri}]")
+        logger.info(s"Executing [$requestId]: ${request.method.value} ${request.uri}")
         pResponse
           .completeWith(http.singleRequest(request))
           .future
