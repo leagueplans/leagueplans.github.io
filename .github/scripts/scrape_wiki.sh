@@ -21,6 +21,13 @@ run () {
 sync () {
   local INCLUDES=$1
 
+  echo -vv \
+       --archive \
+       "${INCLUDES}" '--exclude="*"' \
+       --delete \
+       "${TMP}/dump/" "${RESOURCES}/"
+
+
   rsync -vv \
         --archive \
         "${INCLUDES}" '--exclude="*"' \
