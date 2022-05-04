@@ -3,6 +3,7 @@ package ddm.scraper.dumper
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
+import ddm.scraper.wiki.model.WikiItem.GameID
 import ddm.scraper.wiki.model.{Page, WikiItem}
 import io.circe.Decoder
 import io.circe.parser.decode
@@ -23,6 +24,13 @@ object ItemDumper {
     val idMap = load[Map[WikiKey, Item.ID]](idMapPath, default = Map.empty)
 
     Flow[(Page, WikiItem)]
+      .filter { case (_, wikiItem) => //TODO Remove
+        wikiItem.infobox.gameID match {
+          case _: GameID.Beta => false
+          case _: GameID.Historic => false
+          case _: GameID.Live => true
+        }
+      }
       .map { case (page, wikiItem) =>
         val wikiKey = (page.id, wikiItem.infobox.version)
         val itemID = idMap.getOrElse(wikiKey, Item.ID(UUID.randomUUID()))
