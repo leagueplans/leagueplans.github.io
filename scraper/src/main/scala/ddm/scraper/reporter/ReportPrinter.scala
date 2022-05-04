@@ -1,9 +1,11 @@
 package ddm.scraper.reporter
 
+import ddm.scraper.wiki.model.Page
+
 import scala.util.{Failure, Success, Try}
 
 object ReportPrinter {
-  def print(runStatus: Try[_], failedPages: List[Reporter.Message.Failure], baseURL: String): String =
+  def print(runStatus: Try[_], failedPages: List[(Page, Throwable)], baseURL: String): String =
     s"${printRunStatus(runStatus)}${printFailedPages(failedPages, baseURL)}"
 
   private def printRunStatus(status: Try[_]): String =
@@ -22,20 +24,20 @@ object ReportPrinter {
            |""".stripMargin
     }
 
-  private def printFailedPages(pages: List[Reporter.Message.Failure], baseURL: String): String =
-    if (pages.isEmpty)
+  private def printFailedPages(failures: List[(Page, Throwable)], baseURL: String): String =
+    if (failures.isEmpty)
       ""
     else
       s"""
          |### Failed pages
-         |${pages.map(printFailedPage(_, baseURL)).mkString("\n")}
+         |${failures.map { case (page, error) => printFailedPage(page, error, baseURL) }.mkString("\n")}
          |""".stripMargin
 
-  private def printFailedPage(failure: Reporter.Message.Failure, baseURL: String): String = {
-    val replaced = failure.page.name.wikiName.replace(' ', '_')
-    s"""[${failure.page.name.wikiName}]($baseURL/w/$replaced) (Page ID ${failure.page.id.raw})
+  private def printFailedPage(page: Page, error: Throwable, baseURL: String): String = {
+    val replaced = page.name.wikiName.replace(' ', '_')
+    s"""[${page.name.wikiName}]($baseURL/w/$replaced) (Page ID ${page.id.raw})
        |```
-       |${failure.cause}
+       |$error
        |```
        |""".stripMargin
   }

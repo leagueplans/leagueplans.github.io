@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
+import ddm.scraper.dumper.Cache
 import ddm.scraper.reporter.Reporter
 import ddm.scraper.wiki.decoder.{ItemInfoboxDecoder, RichTemplateObject, RichTerms}
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
@@ -23,7 +24,7 @@ object ItemScraper {
 
   def scrapeAll(
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
     Source
       .future(findPagesToIgnore(client))
@@ -35,7 +36,7 @@ object ItemScraper {
   def scrapeFrom(
     initialPage: Page.Name.Other,
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
     Source
       .future(findPagesToIgnore(client))
@@ -47,7 +48,7 @@ object ItemScraper {
   def scrape(
     pages: List[Page.Name],
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
     client
       .fetch(MediaWikiSelector.Pages(pages), Some(MediaWikiContent.Revisions))
@@ -71,7 +72,7 @@ object ItemScraper {
   private def findItemPages(
     ignoredPages: Set[Page.ID],
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   ): Source[(Page, String), _] =
     client
       .fetch(
@@ -82,7 +83,7 @@ object ItemScraper {
       .via(Reporter.pageFlow(reporter))
 
   private def decodingFlow(
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   ): Flow[(Page, String), (Page, WikiItem.Infobox), _] =
     Flow[(Page, String)]
       .mapConcat { case (page, content) => splitByItem(content).map((page, _)) }
@@ -147,7 +148,7 @@ object ItemScraper {
 
   private def fetchImageFlow(
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   )(implicit ec: ExecutionContext): Flow[(Page, WikiItem.Infobox), (Page, WikiItem), _] =
     Flow[(Page, WikiItem.Infobox)]
       .mapAsync(parallelism = 10) { case (page, infobox) =>

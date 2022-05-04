@@ -2,6 +2,7 @@ package ddm.scraper.wiki.scraper
 
 import akka.actor.typed.ActorRef
 import akka.stream.scaladsl.Source
+import ddm.scraper.dumper.Cache
 import ddm.scraper.reporter.Reporter
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiSelector}
 import ddm.scraper.wiki.model.Page
@@ -12,7 +13,7 @@ import scala.util.Success
 object SkillIconScraper {
   def scrape(
     client: MediaWikiClient,
-    reporter: ActorRef[Reporter.Message.Failure]
+    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   )(implicit ec: ExecutionContext): Source[(String, Array[Byte]), _] =
     client
       .fetch(

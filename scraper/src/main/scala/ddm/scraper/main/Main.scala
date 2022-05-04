@@ -2,9 +2,9 @@ package ddm.scraper.main
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.headers.`User-Agent`
-import ddm.scraper.dumper.{ItemDumper, SkillIconDumper}
+import ddm.scraper.dumper.{Cache, ItemDumper, SkillIconDumper}
 import ddm.scraper.http.ThrottledHttpClient
-import ddm.scraper.reporter.Reporter
+import ddm.scraper.reporter.ReportPrinter
 import ddm.scraper.wiki.http.MediaWikiClient
 import ddm.scraper.wiki.model.Page
 import ddm.scraper.wiki.scraper.{ItemScraper, SkillIconScraper}
@@ -20,15 +20,13 @@ object Main extends App {
   private val dumpDirectory = targetDirectory.resolve("dump")
   private val baseURL = "https://oldschool.runescape.wiki"
 
-  private implicit val system: ActorSystem[Reporter.Message] =
+  private implicit val system: ActorSystem[Cache.Message[(Page, Throwable)]] =
     ActorSystem(
-      Reporter.init(
-        baseURL,
-        data => Files.write(
-          targetDirectory.resolve("report.md"),
-          data.getBytes
-        ): @nowarn("msg=discarded non-Unit value")
-      ),
+      Cache.init[(Page, Throwable)] { (runStatus, failures) =>
+        val report = ReportPrinter.print(runStatus, failures, baseURL)
+        val target = targetDirectory.resolve("report.md")
+        Files.write(target, report.getBytes): @nowarn("msg=discarded non-Unit value")
+      },
       "reporter"
     )
 
@@ -52,7 +50,7 @@ object Main extends App {
     }
 
   fCompletion.onComplete(runStatus =>
-    system ! Reporter.Message.Publish(runStatus)
+    system ! Cache.Message.Complete(runStatus)
   )
 
   private def scrapeItems(): Future[_] = {
