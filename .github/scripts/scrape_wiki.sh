@@ -33,7 +33,7 @@ case "${SCRAPER}" in
     ;;
 
   "skill-icons")
-    run ""
+    run
     sync --include="/images/" --include="/images/skill-icons/***"
     ;;
 esac
