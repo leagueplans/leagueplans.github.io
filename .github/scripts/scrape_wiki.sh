@@ -23,6 +23,7 @@ sync () {
 
   rsync -vv \
         --archive \
+        --inplace \
         --progress \
         "${INCLUDES}" '--exclude="*"' \
         --delete \
