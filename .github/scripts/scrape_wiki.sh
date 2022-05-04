@@ -23,8 +23,6 @@ sync () {
 
   rsync -vv \
         --archive \
-        --inplace \
-        --progress \
         "${INCLUDES}" '--exclude="*"' \
         --delete \
         "${TMP}/dump/" "${RESOURCES}/"
@@ -38,6 +36,6 @@ case "${SCRAPER}" in
 
   "skill-icons")
     run ""
-    sync '--include=/images/ --include=/images/skill-icons/***'
+    sync '--include="/images/" --include="/images/skill-icons/***"'
     ;;
 esac
