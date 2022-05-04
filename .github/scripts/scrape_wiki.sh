@@ -27,7 +27,7 @@ sync () {
         --progress \
         "${INCLUDES}" '--exclude="*"' \
         --delete \
-        "${TMP}/dump/" "${RESOURCES}"
+        "${TMP}/dump/" "${RESOURCES}/"
 }
 
 case "${SCRAPER}" in
@@ -38,6 +38,6 @@ case "${SCRAPER}" in
 
   "skill-icons")
     run ""
-    sync '--include=images/skill-icons'
+    sync '--include=/images/skill-icons'
     ;;
 esac
