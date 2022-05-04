@@ -60,7 +60,7 @@ lazy val wikiScraper =
         "ch.qos.logback" % "logback-classic" % "1.2.11",
         "org.log4s" %% "log4s" % "1.10.0",
         "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-        "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+        "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
         "com.typesafe.akka" %% "akka-http" % "10.2.9",
         "org.parboiled" %% "parboiled" % "2.4.0",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,

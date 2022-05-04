@@ -31,8 +31,11 @@ object Item {
     implicit val bankableCodec: Codec[Bankable] = deriveCodec
   }
 
+  implicit val idOrdering: Ordering[ID] = Ordering.by(_.raw)
   implicit val idEncoder: Encoder[ID] = Encoder[UUID].contramap(_.raw)
   implicit val idDecoder: Decoder[ID] = Decoder[UUID].map(ID)
+
+  implicit val ordering: Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
   implicit val codec: Codec[Item] = deriveCodec
 }
 

@@ -1,6 +1,5 @@
 package ddm.scraper.wiki.http
 
-import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.`User-Agent`
 import akka.http.scaladsl.model.{HttpRequest, Uri}
@@ -14,16 +13,14 @@ import io.circe.Decoder.Result
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import org.log4s.getLogger
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 final class MediaWikiClient(
   httpClient: ThrottledHttpClient,
   userAgent: `User-Agent`,
   baseURL: String
-)(implicit actorSystem: ActorSystem[_]) {
-  import actorSystem.executionContext
-
+)(implicit ec: ExecutionContext) {
   private val apiUrl = Uri(s"$baseURL/api.php")
   private val logger = getLogger
 

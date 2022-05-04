@@ -1,38 +1,26 @@
 package ddm.scraper
 
-import akka.stream.scaladsl.Sink
+import akka.actor.typed.ActorRef
+import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.typed.scaladsl.ActorSink
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import io.circe.Encoder
-import io.circe.syntax.EncoderOps
 
-import java.nio.file.{Files, OpenOption, Path}
+import java.nio.file.{Files, Path}
 import scala.annotation.nowarn
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 package object dumper {
-  def dataSink[T : Encoder](
-    path: Path,
-    options: OpenOption*
-  )(implicit ec: ExecutionContext): Sink[T, Future[_]] =
-    Sink.lazySink { () =>
-      val writer = Files.newOutputStream(path, options: _*)
-
-      Sink
-        .fold[Boolean, T](true) { (isFirstElement, element) =>
-          val data = element.asJson.noSpaces
-
-          if (!isFirstElement)
-            writer.write(s",$data".getBytes)
-          else
-            writer.write(s"[$data".getBytes)
-
-          false
-        }
-        // There's always first element due to lazy creation, so we can always write a `]`
-        .mapMaterializedValue(_.map(_ => writer.write("]".getBytes)))
-        .mapMaterializedValue(_.onComplete(_ => writer.close()))
-    }
+  def dataSink[T : Encoder : Ordering](cache: ActorRef[Cache.Message[T]]): Sink[T, _] =
+    Flow[T]
+      .map(Cache.Message.NewEntry(_))
+      .to(ActorSink.actorRef(
+        cache,
+        onCompleteMessage = Cache.Message.Complete(Success(())),
+        onFailureMessage = cause => Cache.Message.Complete(Failure(cause))
+      ))
 
   def imageSink(
     rootPath: Path,

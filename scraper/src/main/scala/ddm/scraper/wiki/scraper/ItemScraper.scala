@@ -22,39 +22,42 @@ object ItemScraper {
   private val ignoredCategories: Set[Page.Name.Category] =
     Set("Inaccessible items").map(Page.Name.Category)
 
-  def scrapeAll(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
-    Source
-      .future(findPagesToIgnore(client))
-      .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
-      .via(decodingFlow(reporter))
-      .via(fetchImageFlow(client, reporter))
-
-  /** Inclusive of the named page */
-  def scrapeFrom(
-    initialPage: Page.Name.Other,
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
-    Source
-      .future(findPagesToIgnore(client))
-      .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
-      .dropWhile { case (page, _) => page.name != initialPage }
-      .via(decodingFlow(reporter))
-      .via(fetchImageFlow(client, reporter))
+  sealed trait Mode
+  object Mode {
+    /** Inclusive of the named page */
+    final case class From(page: Page.Name.Other) extends Mode
+    final case class Pages(raw: List[Page.Name.Other]) extends Mode
+    case object All extends Mode
+  }
 
   def scrape(
-    pages: List[Page.Name],
+    mode: Mode,
     client: MediaWikiClient,
     reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  )(implicit materializer: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] =
-    client
-      .fetch(MediaWikiSelector.Pages(pages), Some(MediaWikiContent.Revisions))
-      .via(Reporter.pageFlow(reporter))
+  )(implicit mat: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] = {
+    val source =
+      mode match {
+        case Mode.Pages(raw) =>
+          client
+            .fetch(MediaWikiSelector.Pages(raw), Some(MediaWikiContent.Revisions))
+            .via(Reporter.pageFlow(reporter))
+
+        case Mode.From(initialPage) =>
+          Source
+            .future(findPagesToIgnore(client))
+            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
+            .dropWhile { case (page, _) => page.name != initialPage }
+
+        case Mode.All =>
+          Source
+            .future(findPagesToIgnore(client))
+            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
+      }
+
+    source
       .via(decodingFlow(reporter))
       .via(fetchImageFlow(client, reporter))
+  }
 
   private def findPagesToIgnore(
     client: MediaWikiClient

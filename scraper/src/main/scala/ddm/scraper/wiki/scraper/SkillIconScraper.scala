@@ -6,8 +6,9 @@ import ddm.scraper.dumper.Cache
 import ddm.scraper.reporter.Reporter
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiSelector}
 import ddm.scraper.wiki.model.Page
+import ddm.scraper.wiki.model.Page.Name
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 object SkillIconScraper {
@@ -28,7 +29,10 @@ object SkillIconScraper {
         s"$trimmed.${fileName.extension}" -> data
       }
 
-  private def fetchImage(name: Page.Name.File, client: MediaWikiClient)(implicit ec: ExecutionContext) =
+  private def fetchImage(
+    name: Page.Name.File,
+    client: MediaWikiClient
+  )(implicit ec: ExecutionContext): Future[Either[Throwable, (Name.File, Array[Byte])]] =
     client
       .fetchImage(name)
       .transform(result => Success(result.toEither.map((name, _))))
