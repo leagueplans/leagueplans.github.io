@@ -12,13 +12,13 @@ object ItemIconComponent {
       .renderBackend[Backend]
       .build
 
-  type Props = Item
+  final case class Props(item: Item, count: Int)
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     def render(props: Props): VdomNode =
       <.img(
-        ^.src := ResourcePaths.itemIcon(props.id),
-        ^.alt := s"${props.name} icon"
+        ^.src := ResourcePaths.itemIcon(props.item, props.count),
+        ^.alt := s"${props.item.name} icon"
       )
   }
 }

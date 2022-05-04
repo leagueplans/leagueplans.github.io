@@ -1,0 +1,47 @@
+name: Update docs
+on: push
+
+jobs:
+  update-docs:
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v3
+
+    - name: Identify changes
+      uses: dorny/paths-filter@v2
+      id: identify-changes
+      with:
+        base: ${{ github.ref }}
+        filters: |
+          ui-sources:
+            - 'ui/src/main/scala/**'
+            - 'project/**'
+            - 'build.sbt'
+          ui-resources:
+            - 'ui/src/main/resources/**'
+
+    - uses: actions/setup-java@v3
+      if: steps.identify-changes.outputs.ui-sources == 'true'
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Bundle javascript
+      id: bundle-js
+      if: steps.identify-changes.outputs.ui-sources == 'true'
+      run: ./.github/scripts/bundle_js.sh
+
+    - name: Sync docs with resources
+      id: sync-docs
+      if: steps.identify-changes.outputs.ui-resources == 'true'
+      run: ./.github/scripts/sync_docs.sh
+
+    - name: Commit docs
+      if: ${{ (github.ref == 'refs/heads/master') && (
+                (steps.bundle-js.outcome == 'success') ||
+                (steps.sync-docs.outcome == 'success')
+              )
+           }}
+      run: ./.github/scripts/commit_docs.sh

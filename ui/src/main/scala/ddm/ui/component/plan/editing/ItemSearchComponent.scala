@@ -75,7 +75,7 @@ object ItemSearchComponent {
       <.div(
         ^.className := "item",
         tooltipTags,
-        itemIconComponent(item),
+        itemIconComponent(ItemIconComponent.Props(item, count = 1)),
         <.span(item.name),
         ^.onClick ==> { e: ^.onClick.Event =>
           e.stopPropagation()

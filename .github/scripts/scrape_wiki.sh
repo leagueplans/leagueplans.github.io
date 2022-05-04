@@ -2,34 +2,37 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-# Takes a name for a scraper, and runs the corresponding main class
-# associated with that scraper.
+# Takes a name for a scraper, runs it, and then syncs the the UI resources with the produced files
 
+readonly SCRAPER=$1
+readonly USER_AGENT='OSRS planner CI (+https://github.com/DanielMoss/osrs-planner)'
 readonly TMP='tmp'
 readonly RESOURCES='ui/src/main/resources'
-readonly ROOT_PACKAGE='ddm.scraper'
 
-readonly -A argMap=(
-  ['items']="${ROOT_PACKAGE}.scrapers.items.ItemsScraper ."
-  ['skill-icons']="${ROOT_PACKAGE}.scrapers.skillicons.SkillIconsScraper images/skill-icons"
-  ['equipment-icons']="${ROOT_PACKAGE}.scrapers.equipmenticons.EquipmentIconsScraper images/equipment-icons"
-)
-
-readonly -a params=(${argMap[$1]})
-readonly mainClass="${params[0]}"
-readonly relativeTarget="${params[1]}"
-readonly tmpTarget="${TMP}/${relativeTarget}"
-readonly target="${RESOURCES}/${relativeTarget}"
-
-mkdir --verbose --parents "${tmpTarget}"
-if [[ ! -d "${target}" ]]; then
-  mkdir --verbose --parents "${target}"
+if [[ ! -d "${RESOURCES}" ]]; then
+  mkdir --verbose --parents "${RESOURCES}"
 fi
 
-sbt "wikiScraper/runMain ${mainClass} ${tmpTarget}"
-rsync --verbose \
-      --recursive \
-      --inplace \
-      --times \
-      --delete \
-      "${tmpTarget}/" "${target}"
+run () {
+  sbt "wikiScraper/run \"scraper=${SCRAPER}\" \"user-agent=${USER_AGENT}\" \"target-directory=${TMP}\" $*"
+}
+
+sync () {
+  rsync --archive \
+        --delete \
+        "$@" \
+        --exclude="*" \
+        "${TMP}/dump/" "${RESOURCES}/"
+}
+
+case "${SCRAPER}" in
+  "items")
+    run "id-map=scraper/src/main/resources/id-map.json"
+    sync --include="/data/" --include="/data/items.json" --include="/images/" --include="/images/items/***"
+    ;;
+
+  "skill-icons")
+    run
+    sync --include="/images/" --include="/images/skill-icons/***"
+    ;;
+esac

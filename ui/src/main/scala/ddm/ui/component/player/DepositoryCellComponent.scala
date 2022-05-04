@@ -44,7 +44,7 @@ object DepositoryCellComponent {
       <.div(
         ^.className := "depository-cell",
         tooltipTags,
-        itemIconComponent(item),
+        itemIconComponent(ItemIconComponent.Props(item, count)),
         quantityAnnotation(count)
       )
 
