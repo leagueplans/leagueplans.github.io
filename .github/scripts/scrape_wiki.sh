@@ -22,10 +22,9 @@ sync () {
   local INCLUDES=$1
 
   rsync -vvv \
-        --recursive \
-        --inplace \
-        --times \
+        --archive \
         --delete \
+        --progress \
         "${INCLUDES}" '--exclude="*"' \
         "${TMP}/dump/" "${RESOURCES}"
 }
