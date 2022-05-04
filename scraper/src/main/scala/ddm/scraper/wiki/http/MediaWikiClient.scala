@@ -13,6 +13,8 @@ import io.circe.Decoder.Result
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import org.log4s.getLogger
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -34,7 +36,10 @@ final class MediaWikiClient(
       .via(maybeContent.fold[DecodingFlow](noContentDecodingFlow)(decodingFlow))
 
   def fetchImage(fileName: Page.Name.File): Future[Array[Byte]] = {
-    val encoded = encodeFileName(fileName)
+    val encoded = URLEncoder.encode(
+      s"${fileName.raw}.${fileName.extension}".replace(' ', '_'),
+      StandardCharsets.UTF_8
+    )
 
     httpClient
       .queue(buildRequest(s"$baseURL/images/$encoded"))
@@ -164,11 +169,6 @@ final class MediaWikiClient(
       case MediaWikiContent.Revisions =>
         json.decodeNestedField[String]("slots", "main", "content")(List(cursorOp))
     }
-
-  private def encodeFileName(fileName: Page.Name.File): String = {
-    val replaced = fileName.raw.replace(' ', '_')
-    s"$replaced.${fileName.extension}"
-  }
 
   def fetchImageUsingRest(encodedFileName: String): Future[Array[Byte]] =
     for {
