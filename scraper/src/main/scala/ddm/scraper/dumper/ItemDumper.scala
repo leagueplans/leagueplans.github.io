@@ -4,7 +4,6 @@ import akka.actor.typed.ActorRef
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.scraper.wiki.model.WikiItem.GameID
 import ddm.scraper.wiki.model.{Page, WikiItem}
 
 import java.nio.file.Path
@@ -12,7 +11,7 @@ import java.util.UUID
 import scala.concurrent.Future
 
 object ItemDumper {
-  private type WikiKey = (Page.ID, Option[String])
+  private type WikiKey = (Page.ID, WikiItem.Version)
   private type Output = (WikiKey, Item, NonEmptyList[(Item.Image.Path, Array[Byte])])
 
   def dump(
@@ -46,9 +45,9 @@ object ItemDumper {
     )
 
   private def toName(item: WikiItem.Infobox): String =
-    item.version match {
-      case Some(version) => s"${item.wikiName.wikiName} ($version)"
-      case None => item.wikiName.wikiName
+    item.version.raw match {
+      case Nil => item.wikiName.wikiName
+      case path => s"${item.wikiName.wikiName} (${path.mkString(", ")})"
     }
 
   private def toImagePath(id: Item.ID, image: WikiItem.Image): Item.Image.Path =

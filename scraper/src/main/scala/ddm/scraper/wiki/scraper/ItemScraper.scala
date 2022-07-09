@@ -7,13 +7,11 @@ import cats.data.NonEmptyList
 import ddm.common.model.Item
 import ddm.scraper.dumper.Cache
 import ddm.scraper.reporter.Reporter
-import ddm.scraper.wiki.decoder.{ItemInfoboxDecoder, RichTemplateObject, RichTerms}
+import ddm.scraper.wiki.decoder.{ItemInfoboxDecoder, ItemPageDecoder}
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
 import ddm.scraper.wiki.model.{Page, WikiItem}
-import ddm.scraper.wiki.parser.Term.Template
-import ddm.scraper.wiki.parser.{Term, TermParser}
+import ddm.scraper.wiki.parser.TermParser
 
-import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -89,65 +87,12 @@ object ItemScraper {
     reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
   ): Flow[(Page, String), (Page, WikiItem.Infobox), _] =
     Flow[(Page, String)]
-      .mapConcat { case (page, content) => splitByItem(content).map((page, _)) }
+      .map { case (page, content) => (page, TermParser.parse(content)) }
       .via(Reporter.pageFlow(reporter))
-      .map { case (page, obj) => (page, ItemInfoboxDecoder.decode(page, obj)) }
+      .mapConcat { case (page, terms) => ItemPageDecoder.extractItemTemplates(terms).map((page, _)) }
       .via(Reporter.pageFlow(reporter))
-
-  private def splitByItem(content: String): List[Either[Throwable, Template.Object]] =
-    TermParser.parse(content) match {
-      case Left(error) => List(Left(error))
-      case Right(terms) => extractItemTemplates(terms)
-    }
-
-  private val switchInfoboxes =
-    Set("switch infobox", "multi infobox")
-
-  private def extractItemTemplates(terms: List[Term]): List[Either[Throwable, Template.Object]] =
-    terms
-      .collectFirst {
-        case template: Template if template.name.toLowerCase == infobox.toLowerCase =>
-          template.objects.toList.map(Right(_))
-
-        case template: Template if switchInfoboxes.contains(template.name.toLowerCase) =>
-          unwrapSwitchBoxes(template.objects.toList, acc = List.empty)
-      }
-      .getOrElse(List(Left(new RuntimeException("No infobox found"))))
-
-  @tailrec
-  private def unwrapSwitchBoxes(
-    remaining: List[Template.Object],
-    acc: List[Either[Throwable, Template.Object]]
-  ): List[Either[Throwable, Template.Object]] =
-    remaining match {
-      case Nil => acc
-
-      case head :: tail =>
-        head.decode("item")(
-          _.collect { case template: Template => template }.as[Template]
-        ) match {
-          case Left(error) =>
-            unwrapSwitchBoxes(
-              remaining = tail,
-              acc = acc :+ Left(error)
-            )
-
-          case Right(template) if template.name.toLowerCase == infobox.toLowerCase =>
-            unwrapSwitchBoxes(
-              remaining = tail,
-              acc = acc ++ template.objects.toList.map(Right(_))
-            )
-
-          case Right(template) if switchInfoboxes.contains(template.name.toLowerCase) =>
-            unwrapSwitchBoxes(
-              remaining = tail ++ template.objects,
-              acc = acc
-            )
-
-          case Right(_) =>
-            unwrapSwitchBoxes(remaining = tail, acc = acc)
-        }
-    }
+      .map { case (page, (itemVersion, obj)) => (page, ItemInfoboxDecoder.decode(page, itemVersion, obj)) }
+      .via(Reporter.pageFlow(reporter))
 
   private def fetchImageFlow(
     client: MediaWikiClient,

@@ -5,7 +5,7 @@ import ddm.common.model.Item
 import ddm.scraper.dumper.{Cache, CachingWriter, ItemDumper}
 import ddm.scraper.main.CommandLineArgs
 import ddm.scraper.wiki.http.MediaWikiClient
-import ddm.scraper.wiki.model.Page
+import ddm.scraper.wiki.model.{Page, WikiItem}
 import ddm.scraper.wiki.scraper.ItemScraper
 import io.circe.parser.decode
 
@@ -40,11 +40,11 @@ final class ScrapeItemsRunner(
   def run(
     client: MediaWikiClient,
     reporter: ActorRef[Cache.Message[(Page, Throwable)]],
-    spawnIDMapWriter: Spawn[Cache.Message[((Page.ID, Option[String]), Item.ID)]],
+    spawnIDMapWriter: Spawn[Cache.Message[((Page.ID, WikiItem.Version), Item.ID)]],
     spawnItemWriter: Spawn[Cache.Message[Item]]
   )(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
-    val idMapWriterBehavior = CachingWriter.to[((Page.ID, Option[String]), Item.ID)](idMapFile)
+    val idMapWriterBehavior = CachingWriter.to[((Page.ID, WikiItem.Version), Item.ID)](idMapFile)
     val itemWriterBehavior = CachingWriter.to[Item](itemsFile, StandardOpenOption.CREATE_NEW)
 
     ItemScraper
@@ -60,9 +60,9 @@ final class ScrapeItemsRunner(
       .onComplete(runStatus => reporter ! Cache.Message.Complete(runStatus))
   }
 
-  private def loadIDMap(): Map[(Page.ID, Option[String]), Item.ID] =
+  private def loadIDMap(): Map[(Page.ID, WikiItem.Version), Item.ID] =
     if (Files.exists(idMapFile)) {
-      decode[List[((Page.ID, Option[String]), Item.ID)]](Files.readString(idMapFile))
+      decode[List[((Page.ID, WikiItem.Version), Item.ID)]](Files.readString(idMapFile))
         .toTry.get
         .toMap
     } else
