@@ -6,12 +6,15 @@ import ddm.scraper.wiki.model.{Page, WikiItem}
 import ddm.scraper.wiki.parser.Term
 
 object ItemInfoboxDecoder {
-  def decode(page: Page, obj: Term.Template.Object): DecoderResult[WikiItem.Infobox] =
+  def decode(
+    page: Page,
+    version: WikiItem.Version,
+    obj: Term.Template.Object
+  ): DecoderResult[WikiItem.Infobox] =
     for {
       gameID <- obj.decode("id")(asGameID)
       gameName <- obj.decode("name")(_.collapse(simplifyTextValues).as[Term.Unstructured])
       itemPageName <- asItemPageName(page.name)
-      maybeVersion <- obj.decodeOpt("version")(_.as[Term.Unstructured])
       imageBins <- obj.decode("image")(asImageBins)
       examine <- obj.decode("examine")(_.collapse(simplifyTextValues).as[Term.Unstructured])
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
@@ -22,7 +25,7 @@ object ItemInfoboxDecoder {
       page.id,
       gameName.raw,
       itemPageName,
-      maybeVersion.map(_.raw),
+      version,
       imageBins,
       examine.raw,
       asBankable(maybeBankable, maybeStacksInBank),
