@@ -78,7 +78,7 @@ object MainComponent {
       val progressedSteps = progressedStepsAsTrees.map(_.node)
       val playerAtFocusedStep = EffectResolver.resolve(
         Player.initial,
-        progressedSteps.flatMap(_.directEffects): _*
+        progressedSteps.flatMap(_.directEffects.underlying): _*
       )
 
       val itemFuse =

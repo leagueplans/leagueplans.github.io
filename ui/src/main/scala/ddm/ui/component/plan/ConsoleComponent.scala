@@ -58,6 +58,7 @@ object ConsoleComponent {
             val (postStepPlayer, encodedEffects, stepErrors) =
               step
                 .directEffects
+                .underlying
                 .foldLeft((preStepPlayer, List.empty[VdomNode], List.empty[String])) {
                   case ((preEffectPlayer, effectAcc, errorAcc), effect) =>
                     val (effectErrors, postEffectPlayer) =
