@@ -32,13 +32,11 @@ object EffectDescriptionComponent {
           s"+${baseExp * currentMultiplier} $skill XP ($baseExp XP pre-multiplier)"
 
         case Effect.GainItem(item, count, target) =>
-          s"+$count ${itemCache(item).name} (${target.raw})"
+          val prefix = if (count >= 0) "+" else ""
+          s"$prefix$count ${itemCache(item).name} (${target.raw})"
 
         case Effect.MoveItem(item, count, source, target) =>
           s"$count ${itemCache(item).name}: ${source.raw} -> ${target.raw}"
-
-        case Effect.DropItem(item, count, source) =>
-          s"-$count ${itemCache(item).name} (${source.raw})"
 
         case Effect.CompleteQuest(quest) =>
           s"Quest completed: ${quest.name}, +${quest.points} quest points"

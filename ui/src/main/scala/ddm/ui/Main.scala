@@ -27,8 +27,7 @@ object Main extends App {
           new StorageManager[Tree[Step]](ResourcePaths.planStorageKey, window.localStorage),
           defaultPlan,
           ItemCache(items)
-        )
-        ).renderIntoDOM(container)
+        )).renderIntoDOM(container)
 
         document.body.appendChild(container): @nowarn("msg=discarded non-Unit value")
       }

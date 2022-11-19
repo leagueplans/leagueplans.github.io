@@ -2,7 +2,7 @@ package ddm.ui.model
 
 import ddm.common.model.Item
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.plan.Effect.{CompleteQuest, CompleteTask, DropItem, GainExp, GainItem, MoveItem, SetMultiplier, UnlockSkill}
+import ddm.ui.model.plan.Effect._
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, ItemCache}
 import ddm.ui.model.player.skill.Skill
@@ -17,7 +17,6 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: GainExp => gainExpValidator.validate(e)(player, itemCache)
       case e: GainItem => gainItemValidator.validate(e)(player, itemCache)
       case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
-      case e: DropItem => dropItemValidator.validate(e)(player, itemCache)
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, itemCache)
       case e: CompleteQuest => empty.validate(e)(player, itemCache)
       case e: SetMultiplier => empty.validate(e)(player, itemCache)
@@ -35,20 +34,14 @@ object EffectValidator extends EffectValidator[Effect] {
 
   private val gainItemValidator: EffectValidator[GainItem] =
     from(
-      pre = _ => List.empty,
-      post = gain => List(Validator.depositorySize(gain.target))
+      pre = gain => if (gain.count < 0) List(Validator.hasItem(gain.target, gain.item, -gain.count)) else List.empty,
+      post = gain => if (gain.count > 0) List(Validator.depositorySize(gain.target)) else List.empty
     )
 
   private val moveItemValidator: EffectValidator[MoveItem] =
     from(
       pre = move => List(Validator.hasItem(move.source, move.item, move.count)),
       post = move => List(Validator.depositorySize(move.target))
-    )
-
-  private val dropItemValidator: EffectValidator[DropItem] =
-    from(
-      pre = drop => List(Validator.hasItem(drop.source, drop.item, drop.count)),
-      post = _ => List.empty
     )
 
   private val unlockSkillValidator: EffectValidator[UnlockSkill] =
