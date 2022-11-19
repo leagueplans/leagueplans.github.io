@@ -1,11 +1,12 @@
 package ddm.ui.component.player
 
-import ddm.ui.component.common.DualColumnListComponent
+import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent}
 import ddm.ui.component.player.stats.StatPaneComponent
+import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, ItemCache}
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
 object StatusComponent {
   val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
@@ -14,7 +15,12 @@ object StatusComponent {
       .renderBackend[Backend]
       .build
 
-  final case class Props(player: Player, itemCache: ItemCache)
+  final case class Props(
+    player: Player,
+    itemCache: ItemCache,
+    addEffectToStep: Effect => Callback,
+    contextMenuController: ContextMenuComponent.Controller
+  )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     private val statPaneComponent = StatPaneComponent.build
@@ -29,7 +35,8 @@ object StatusComponent {
           ^.display.flex,
           statPaneComponent(StatPaneComponent.Props(
             props.player.stats,
-            props.player.leagueStatus.skillsUnlocked
+            props.player.leagueStatus.skillsUnlocked,
+            props.contextMenuController
           )),
           props.player
             .depositories

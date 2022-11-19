@@ -1,5 +1,6 @@
 package ddm.ui.component.player.stats
 
+import ddm.ui.component.common.ContextMenuComponent
 import ddm.ui.model.player.skill.Skill._
 import ddm.ui.model.player.skill.{Skill, Stat, Stats}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -12,7 +13,11 @@ object StatPaneComponent {
       .renderBackend[Backend]
       .build
 
-  final case class Props(stats: Stats, unlockedSkills: Set[Skill])
+  final case class Props(
+    stats: Stats,
+    unlockedSkills: Set[Skill],
+    contextMenuController: ContextMenuComponent.Controller
+  )
 
   private val orderedSkills: List[Skill] =
     List(
@@ -73,7 +78,8 @@ object StatPaneComponent {
     private def renderStat(skill: Skill, props: Props): VdomNode =
       statComponent(StatComponent.Props(
         Stat(skill, props.stats(skill)),
-        props.unlockedSkills.contains(skill)
+        props.unlockedSkills.contains(skill),
+        props.contextMenuController
       ))
   }
 }

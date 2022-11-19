@@ -1,12 +1,13 @@
 package ddm.ui.component
 
 import ddm.ui.StorageManager
+import ddm.ui.component.common.ContextMenuComponent
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.StatusComponent
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.Tree
-import ddm.ui.model.plan.Step
+import ddm.ui.model.plan.{Effect, Step}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
@@ -60,6 +61,7 @@ object MainComponent {
     private val planComponent = PlanComponent.build
     private val statusComponent = StatusComponent.build
     private val consoleComponent = ConsoleComponent.build
+    private val contextMenuComponent = ContextMenuComponent.build
 
     def render(props: Props, state: State): VdomNode = {
       val allTrees = state.plan.recurse(List(_))
@@ -90,26 +92,37 @@ object MainComponent {
           }
         )
 
-      <.div(
-        ^.display.flex,
-        planComponent(PlanComponent.Props(
-          playerAtFocusedStep,
-          props.itemCache,
-          itemFuse,
-          state.plan,
-          focusedStep,
-          setFocusedStep,
-          setPlan
-        )),
-        statusComponent(StatusComponent.Props(
-          playerAtFocusedStep,
-          props.itemCache
-        )),
-        consoleComponent(ConsoleComponent.Props(
-          progressedSteps, Player.initial, props.itemCache
-        ))
-      )
+      withContextMenu { case (contextMenuController, contextMenu) =>
+        <.div(
+          contextMenu,
+          <.div(
+            ^.display.flex,
+            ^.onClickCapture ==> (_ => contextMenuController.hide()),
+            planComponent(PlanComponent.Props(
+              playerAtFocusedStep,
+              props.itemCache,
+              itemFuse,
+              state.plan,
+              focusedStep,
+              setFocusedStep,
+              setPlan
+            )),
+            statusComponent(StatusComponent.Props(
+              playerAtFocusedStep,
+              props.itemCache,
+              addEffectToFocus,
+              contextMenuController
+            )),
+            consoleComponent(ConsoleComponent.Props(
+              progressedSteps, Player.initial, props.itemCache
+            ))
+          )
+        )
+      }
     }
+
+    private val withContextMenu: With[ContextMenuComponent.Controller] =
+      render => contextMenuComponent(ContextMenuComponent.Props(render))
 
     private def setPlan(plan: Tree[Step]): Callback =
       scope.modState(currentState =>
@@ -121,6 +134,19 @@ object MainComponent {
         currentState.copy(focusedStep =
           Option.when(!currentState.focusedStep.contains(step))(step)
         )
+      )
+
+    private def addEffectToFocus(effect: Effect): Callback =
+      scope.modState(currentState =>
+        currentState.focusedStep match {
+          case None => currentState
+          case Some(focusedStepID) =>
+            currentState.copy(plan =
+              currentState.plan.modify(focusedStepID)(_.id)(_.mapNode(focusedStep =>
+                focusedStep.copy(directEffects = focusedStep.directEffects + effect)
+              ))
+            )
+        }
       )
   }
 }

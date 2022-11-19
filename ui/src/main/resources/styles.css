@@ -94,15 +94,22 @@ p {
   width: 100%;
 }
 
-.stat-icon {
+.stat-pane-cell .skill-icon {
   position: absolute;
   width: 40%;
   top: 10%;
   left: 8%;
 }
 
-.stat-icon.locked {
+.skill-icon.locked {
   opacity: 0.15;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 1;
+  background-color: #fcf8ed;
+  padding: 2px;
 }
 
 .tooltip {

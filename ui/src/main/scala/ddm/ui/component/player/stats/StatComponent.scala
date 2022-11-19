@@ -1,7 +1,6 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.ResourcePaths
-import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
+import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent, ElementWithTooltipComponent}
 import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
@@ -13,30 +12,51 @@ object StatComponent {
       .renderBackend[Backend]
       .build
 
-  final case class Props(stat: Stat, unlocked: Boolean)
+  final case class Props(
+    stat: Stat,
+    unlocked: Boolean,
+    contextMenuController: ContextMenuComponent.Controller
+  )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
+    private val skillIconComponent = SkillIconComponent.build
     private val elementWithTooltipComponent = ElementWithTooltipComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
 
     def render(props: Props): VdomNode =
       elementWithTooltipComponent(ElementWithTooltipComponent.Props(
-        renderCell(props.stat, props.unlocked, _),
+        renderCell(props.stat, props.unlocked, props.contextMenuController, _),
         renderTooltip(props.stat, _)
       ))
 
-    private def renderCell(stat: Stat, unlocked: Boolean, tooltipTags: TagMod): VdomNode =
+    private def renderCell(
+      stat: Stat,
+      unlocked: Boolean,
+      contextMenuController: ContextMenuComponent.Controller,
+      tooltipTags: TagMod
+    ): VdomNode =
       <.div(
         ^.className := "stat",
         tooltipTags,
-        <.img(
-          ^.classSet(
-            "stat-icon" -> true,
-            "locked" -> !unlocked
-          ),
-          ^.src := ResourcePaths.skillIcon(stat.skill),
-          ^.alt := s"${stat.skill} icon"
-        ),
+        <.div(
+          addContextMenu(contextMenuController),
+          renderImage(stat, unlocked)
+        )
+      )
+
+    private def addContextMenu(
+      controller: ContextMenuComponent.Controller
+    ): TagMod =
+      controller.show(
+        TagMod(
+          <.span("Gain XP"),
+          ^.onClick --> controller.hide()
+        )
+      )
+
+    private def renderImage(stat: Stat, unlocked: Boolean) =
+      TagMod(
+        skillIconComponent(SkillIconComponent.Props(stat.skill, "locked" -> !unlocked)),
         <.img(
           ^.className := "stat-background",
           ^.src := "images/stat-pane/stat-background.png",
