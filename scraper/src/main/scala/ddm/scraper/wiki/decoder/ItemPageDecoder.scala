@@ -10,6 +10,9 @@ object ItemPageDecoder {
   private val switchBoxes =
     Set("switch infobox", "multi infobox")
 
+  private val ignoredSubTemplates =
+    Set("infobox npc")
+
   def extractItemTemplates(terms: List[Term]): List[DecoderResult[(WikiItem.Version, Template.Object)]] =
     terms
       .collectFirst {
@@ -45,6 +48,7 @@ object ItemPageDecoder {
   ): List[DecoderResult[(WikiItem.Version, Template.Object)]] =
     extractSubTemplate(obj) match {
       case Left(error) => List(Left(error))
+      case Right((_, subTemplate)) if ignoredSubTemplates.contains(subTemplate.name.toLowerCase) => List.empty
       case Right((subPath, subTemplate)) => extractItemTemplates(subTemplate, relativePath :+ subPath)
     }
 
