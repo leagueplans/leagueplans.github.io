@@ -94,14 +94,14 @@ object ConsoleComponent {
         renderSection(section, TagMod.empty)
 
     private def renderSection(section: Section, tooltipTags: TagMod): VdomNode =
-      <.dt(
+      <.div(
         ^.key := section.id.toString,
         ^.classSet(
           "console-section" -> true,
           "error" -> section.errors.nonEmpty
         ),
         tooltipTags,
-        section.description,
+        <.dt(section.description),
         section.effects.toTagMod(<.dd(_))
       )
 
