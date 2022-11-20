@@ -91,8 +91,6 @@ lazy val ui =
       Test / requireJsDomEnv := true,
       installJsdom / version := "16.6.0",
       webpack / version := "4.46.0",
-      startWebpackDevServer / version := "3.11.2",
-      (Compile / fastOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) },
-      (Compile / fullOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) }
+      startWebpackDevServer / version := "3.11.2"
     )
     .dependsOn(common.js)

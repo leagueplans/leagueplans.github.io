@@ -1,5 +1,6 @@
 package ddm.ui.component
 
+import ddm.common.model.Item
 import ddm.ui.StorageManager
 import ddm.ui.component.common.ContextMenuComponent
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
@@ -24,9 +25,19 @@ object MainComponent {
   val build: ScalaComponent[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .initialStateFromProps[State](props =>
-        State(loadPlan(props), focusedStep = None)
-      )
+      .initialStateFromProps[State] { props =>
+        // Just putting this in the state for performance (only calc once) - can it be somewhere else?
+        val items =
+          new Fuse(
+            props.itemCache.raw.values.toList,
+            new FuseOptions {
+              override val keys: UndefOr[js.Array[String]] =
+                js.defined(js.Array("name"))
+            }
+          )
+
+        State(items, loadPlan(props), focusedStep = None)
+      }
       .renderBackend[Backend]
       .componentDidUpdate(savePlan)
       .build
@@ -55,7 +66,7 @@ object MainComponent {
     itemCache: ItemCache
   )
 
-  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
+  final case class State(items: Fuse[Item], plan: Tree[Step], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     private val planComponent = PlanComponent.build
@@ -83,15 +94,6 @@ object MainComponent {
         progressedSteps.flatMap(_.directEffects.underlying): _*
       )
 
-      val itemFuse =
-        new Fuse(
-          props.itemCache.raw.values.toList,
-          new FuseOptions {
-            override val keys: UndefOr[js.Array[String]] =
-              js.defined(js.Array("name"))
-          }
-        )
-
       withContextMenu { case (contextMenuController, contextMenu) =>
         <.div(
           contextMenu,
@@ -101,7 +103,7 @@ object MainComponent {
             planComponent(PlanComponent.Props(
               playerAtFocusedStep,
               props.itemCache,
-              itemFuse,
+              state.items,
               state.plan,
               focusedStep,
               setFocusedStep,
