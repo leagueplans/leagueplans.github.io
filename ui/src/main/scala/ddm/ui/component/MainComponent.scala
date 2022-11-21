@@ -25,19 +25,9 @@ object MainComponent {
   val build: ScalaComponent[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
-      .initialStateFromProps[State] { props =>
-        // Just putting this in the state for performance (only calc once) - can it be somewhere else?
-        val items =
-          new Fuse(
-            props.itemCache.raw.values.toList,
-            new FuseOptions {
-              override val keys: UndefOr[js.Array[String]] =
-                js.defined(js.Array("name"))
-            }
-          )
-
-        State(items, loadPlan(props), focusedStep = None)
-      }
+      .initialStateFromProps[State](props =>
+        State(loadPlan(props), focusedStep = None)
+      )
       .renderBackend[Backend]
       .componentDidUpdate(savePlan)
       .build
@@ -64,9 +54,18 @@ object MainComponent {
     storageManager: StorageManager[Tree[Step]],
     defaultPlan: Tree[Step],
     itemCache: ItemCache
-  )
+  ) {
+    private[MainComponent] val itemFuse: Fuse[Item] =
+      new Fuse(
+        itemCache.raw.values.toList,
+        new FuseOptions {
+          override val keys: UndefOr[js.Array[String]] =
+            js.defined(js.Array("name"))
+        }
+      )
+  }
 
-  final case class State(items: Fuse[Item], plan: Tree[Step], focusedStep: Option[UUID])
+  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
 
   final class Backend(scope: BackendScope[Props, State]) {
     private val planComponent = PlanComponent.build
@@ -99,11 +98,11 @@ object MainComponent {
           contextMenu,
           <.div(
             ^.display.flex,
-            ^.onClickCapture ==> (_ => contextMenuController.hide()),
+            ^.onClickCapture --> contextMenuController.hide(),
             planComponent(PlanComponent.Props(
               playerAtFocusedStep,
               props.itemCache,
-              state.items,
+              props.itemFuse,
               state.plan,
               focusedStep,
               setFocusedStep,

@@ -12,9 +12,9 @@ object ContextMenuComponent {
       .renderBackend[Backend]
       .build
 
-  final class Controller(scope: BackendScope[Props, State]) {
+  final class Controller(hidden: Boolean, scope: BackendScope[Props, State]) {
     def hide(): Callback =
-      scope.setState(State.Hidden)
+      Callback.when(!hidden)(scope.setState(State.Hidden))
 
     def show(menu: TagMod): TagMod =
       ^.onContextMenu ==> { event =>
@@ -34,7 +34,10 @@ object ContextMenuComponent {
 
   final class Backend(scope: BackendScope[Props, State]) {
     def render(props: Props, state: State): VdomNode =
-      props.render(new Controller(scope), renderMenu(state))
+      props.render(
+        new Controller(state == State.Hidden, scope),
+        renderMenu(state)
+      )
 
     private def renderMenu(state: State): TagMod =
       state match {
