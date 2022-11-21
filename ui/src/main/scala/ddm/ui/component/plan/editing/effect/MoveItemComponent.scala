@@ -49,7 +49,7 @@ object MoveItemComponent {
       render => targetInput(SelectComponent.Props(
         id = "target-depository-select",
         label = "Choose where to move the item to:",
-        options = player.depositories.values.map(d => d.id.raw -> d.id).toList,
+        options = player.depositories.values.map(d => d.id -> d.id.raw).toList,
         render
       ))
   }

@@ -53,7 +53,7 @@ object GainItemComponent {
       render => depositoryTarget(SelectComponent.Props(
         id = "target-depository-select",
         label = "Choose where to place the item:",
-        options = player.depositories.keys.map(id => id.raw -> id).toList,
+        options = player.depositories.keys.map(id => id -> id.raw).toList,
         render
       ))
 

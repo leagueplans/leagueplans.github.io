@@ -44,7 +44,7 @@ object SelectItemFromDepositoryComponent {
       render => sourceInput(SelectComponent.Props(
         id = "source-depository-select",
         label = "Choose where to pick the item from:",
-        options = player.depositories.values.map(d => d.id.raw -> d.id).toList,
+        options = player.depositories.values.map(d => d.id -> d.id.raw).toList,
         render
       ))
 
@@ -54,12 +54,12 @@ object SelectItemFromDepositoryComponent {
       itemCache: ItemCache
     ): With[Option[Item.ID]] = {
       val depository = player.depositories(source)
-      val items = itemCache.itemise(depository).map { case (item, _) => item.name -> Some(item.id) }
+      val items = itemCache.itemise(depository).map { case (item, _) => Some(item.id) -> item.name }
 
       render => itemInput(SelectComponent.Props(
         id = "dropped-item-select",
         label = "Select item:",
-        options = items :+ ("" -> None),
+        options = items :+ (None -> ""),
         render
       ))
     }

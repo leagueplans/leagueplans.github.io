@@ -15,31 +15,32 @@ object SelectComponent {
   final case class Props[T](
     id: String,
     label: String,
-    options: List[(String, T)],
+    options: List[(T, String)],
     render: Render[T]
-  )
+  ) {
+    private[SelectComponent] val encode: Map[T, String] = options.toMap
+    private[SelectComponent] val decode: Map[String, T] = encode.map(_.swap)
+  }
 
   type State[T] = T
 
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
-      val decode = props.options.toMap
-
       val select =
         TagMod(
           <.label(^.`for` := props.id, props.label),
           <.select(
             ^.id := props.id,
             ^.name := props.id,
-            props.options.toTagMod { case (value, t) =>
+            ^.value := props.encode(state),
+            props.options.toTagMod { case (_, description) =>
               <.option(
-                ^.value := value,
-                (^.selected := true).when(t == state),
-                value
+                ^.value := description,
+                description
               )
             },
             ^.onChange ==> { event: ReactEventFromInput =>
-              scope.setState(decode(event.target.value))
+              scope.setState(props.decode(event.target.value))
             }
           )
         )

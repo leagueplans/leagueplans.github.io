@@ -35,7 +35,7 @@ object GainExpComponent {
       render => skillSelect(SelectComponent.Props(
         id = "skill-select",
         label = "Select skill:",
-        Skill.all.map(s => s.toString -> s),
+        Skill.all.map(s => s -> s.toString),
         render
       ))
 
