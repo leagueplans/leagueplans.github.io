@@ -77,7 +77,7 @@ lazy val ui =
     .settings(
       libraryDependencies ++= List(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
-        "org.scala-js" %%% "scalajs-dom" % "2.1.0",
+        "org.scala-js" %%% "scalajs-dom" % "2.3.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),

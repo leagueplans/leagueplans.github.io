@@ -1,29 +1,32 @@
 package ddm.ui.component.common
 
-import ddm.ui.component.Render
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, Ref, ScalaComponent}
 
 object ContextMenuComponent {
-  val build: ScalaComponent[Props, State, Backend, CtorType.Props] =
+  val build: ScalaComponent[Unit, State, Backend, CtorType.Nullary] =
     ScalaComponent
-      .builder[Props]
+      .builder[Unit]
       .initialState[State](State.Hidden)
       .renderBackend[Backend]
+      // This is here because the component has its state set to hidden whenever
+      // the mouse clicks on anything but the context menu.
+      .shouldComponentUpdatePure(update => update.currentState != update.nextState)
       .build
 
-  final class Controller(hidden: Boolean, scope: BackendScope[Props, State]) {
+  final class Controller(componentRef: Ref.WithScalaComponent[Unit, State, Backend, CtorType.Nullary]) {
+    private val stateSetter: Ref.Get[State => Unit] =
+      componentRef.map(_.setState)
+
     def hide(): Callback =
-      Callback.when(!hidden)(scope.setState(State.Hidden))
+      stateSetter.foreach(_.apply(State.Hidden))
 
     def show(menu: TagMod): TagMod =
       ^.onContextMenu ==> { event =>
         event.preventDefault()
-        scope.setState(State.Visible(event.pageX, event.pageY, menu))
+        stateSetter.foreach(_.apply(State.Visible(event.pageX, event.pageY, menu)))
       }
   }
-
-  final case class Props(render: Render[Controller])
 
   sealed trait State
 
@@ -32,17 +35,11 @@ object ContextMenuComponent {
     case object Hidden extends State
   }
 
-  final class Backend(scope: BackendScope[Props, State]) {
-    def render(props: Props, state: State): VdomNode =
-      props.render(
-        new Controller(state == State.Hidden, scope),
-        renderMenu(state)
-      )
-
-    private def renderMenu(state: State): TagMod =
+  final class Backend(scope: BackendScope[Unit, State]) {
+    def render(state: State): VdomNode =
       state match {
         case State.Hidden =>
-          TagMod.empty
+          EmptyVdom
 
         case State.Visible(x, y, menu) =>
           <.div(

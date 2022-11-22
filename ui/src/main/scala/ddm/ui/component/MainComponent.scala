@@ -13,8 +13,9 @@ import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentDidUpdate
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, Ref, ScalaComponent}
 
 import java.util.UUID
 import scala.scalajs.js
@@ -26,7 +27,7 @@ object MainComponent {
     ScalaComponent
       .builder[Props]
       .initialStateFromProps[State](props =>
-        State(loadPlan(props), focusedStep = None)
+        State(loadPlan(props), focusedStepID = None)
       )
       .renderBackend[Backend]
       .componentDidUpdate(savePlan)
@@ -65,7 +66,29 @@ object MainComponent {
       )
   }
 
-  final case class State(plan: Tree[Step], focusedStep: Option[UUID])
+  final case class State(plan: Tree[Step], focusedStepID: Option[UUID]) {
+    private val allTrees = plan.recurse(List(_))
+
+    private[MainComponent] val (progressedStepsAsTrees, focusedStep) =
+      focusedStepID match {
+        case Some(id) =>
+          val (lhs, rhs) = allTrees.span(_.node.id != id)
+          val focused = rhs.headOption
+          (lhs ++ focused, focused)
+
+        case None =>
+          (allTrees, None)
+      }
+
+    private[MainComponent] val progressedSteps: List[Step] =
+      progressedStepsAsTrees.map(_.node)
+
+    private[MainComponent] val playerAtFocusedStep: Player =
+      EffectResolver.resolve(
+        Player.initial,
+        progressedSteps.flatMap(_.directEffects.underlying): _*
+      )
+  }
 
   final class Backend(scope: BackendScope[Props, State]) {
     private val planComponent = PlanComponent.build
@@ -73,57 +96,35 @@ object MainComponent {
     private val consoleComponent = ConsoleComponent.build
     private val contextMenuComponent = ContextMenuComponent.build
 
-    def render(props: Props, state: State): VdomNode = {
-      val allTrees = state.plan.recurse(List(_))
+    private val contextMenuRef = Ref.toScalaComponent(contextMenuComponent)
+    private val contextMenuController = new ContextMenuComponent.Controller(contextMenuRef)
 
-      val (progressedStepsAsTrees, focusedStep) =
-        state.focusedStep match {
-          case Some(id) =>
-            val (lhs, rhs) = allTrees.span(_.node.id != id)
-            val focused = rhs.headOption
-            (lhs ++ focused, focused)
-
-          case None =>
-            (allTrees, None)
-        }
-
-      val progressedSteps = progressedStepsAsTrees.map(_.node)
-      val playerAtFocusedStep = EffectResolver.resolve(
-        Player.initial,
-        progressedSteps.flatMap(_.directEffects.underlying): _*
-      )
-
-      withContextMenu { case (contextMenuController, contextMenu) =>
+    def render(props: Props, state: State): VdomNode =
+      ReactFragment(
+        contextMenuComponent.withRef(contextMenuRef)(),
         <.div(
-          contextMenu,
-          <.div(
-            ^.display.flex,
-            ^.onClickCapture --> contextMenuController.hide(),
-            planComponent(PlanComponent.Props(
-              playerAtFocusedStep,
-              props.itemCache,
-              props.itemFuse,
-              state.plan,
-              focusedStep,
-              setFocusedStep,
-              setPlan
-            )),
-            statusComponent(StatusComponent.Props(
-              playerAtFocusedStep,
-              props.itemCache,
-              addEffectToFocus,
-              contextMenuController
-            )),
-            consoleComponent(ConsoleComponent.Props(
-              progressedSteps, Player.initial, props.itemCache
-            ))
-          )
+          ^.onClickCapture --> contextMenuController.hide(),
+          ^.display.flex,
+          planComponent(PlanComponent.Props(
+            state.playerAtFocusedStep,
+            props.itemCache,
+            props.itemFuse,
+            state.plan,
+            state.focusedStep,
+            setFocusedStep,
+            setPlan
+          )),
+          statusComponent(StatusComponent.Props(
+            state.playerAtFocusedStep,
+            props.itemCache,
+            addEffectToFocus(state, editingEnabled = true),
+            contextMenuController
+          )),
+          consoleComponent(ConsoleComponent.Props(
+            state.progressedSteps, Player.initial, props.itemCache
+          ))
         )
-      }
-    }
-
-    private val withContextMenu: With[ContextMenuComponent.Controller] =
-      render => contextMenuComponent(ContextMenuComponent.Props(render))
+      )
 
     private def setPlan(plan: Tree[Step]): Callback =
       scope.modState(currentState =>
@@ -132,22 +133,23 @@ object MainComponent {
 
     private def setFocusedStep(step: UUID): Callback =
       scope.modState(currentState =>
-        currentState.copy(focusedStep =
-          Option.when(!currentState.focusedStep.contains(step))(step)
+        currentState.copy(focusedStepID =
+          Option.when(!currentState.focusedStepID.contains(step))(step)
         )
       )
 
-    private def addEffectToFocus(effect: Effect): Callback =
-      scope.modState(currentState =>
-        currentState.focusedStep match {
-          case None => currentState
-          case Some(focusedStepID) =>
-            currentState.copy(plan =
-              currentState.plan.modify(focusedStepID)(_.id)(_.mapNode(focusedStep =>
-                focusedStep.copy(directEffects = focusedStep.directEffects + effect)
-              ))
-            )
+    private def addEffectToFocus(currentState: State, editingEnabled: Boolean): Option[Effect => Callback] =
+      currentState
+        .focusedStep
+        .filter(_ => editingEnabled)
+        .map { focusedStep => effect =>
+          val updatedStep = focusedStep.mapNode(step =>
+            step.copy(directEffects = step.directEffects + effect)
+          )
+
+          scope.setState(currentState.copy(plan =
+            currentState.plan.update(updatedStep)(_.id)
+          ))
         }
-      )
   }
 }

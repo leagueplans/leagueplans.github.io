@@ -1,9 +1,11 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent, ElementWithTooltipComponent}
-import ddm.ui.model.player.skill.Stat
+import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent, ElementWithTooltipComponent, ModalComponent}
+import ddm.ui.model.plan.Effect
+import ddm.ui.model.player.skill.{Skill, Stat}
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, Ref, ScalaComponent}
 
 object StatComponent {
   val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
@@ -15,60 +17,56 @@ object StatComponent {
   final case class Props(
     stat: Stat,
     unlocked: Boolean,
+    addEffectToStep: Option[Effect => Callback],
     contextMenuController: ContextMenuComponent.Controller
   )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
-    private val skillIconComponent = SkillIconComponent.build
+    private val statPaneComponent = StatPaneComponent.build
     private val elementWithTooltipComponent = ElementWithTooltipComponent.build
+    private val gainExpComponent = GainExpComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
 
-    def render(props: Props): VdomNode =
-      elementWithTooltipComponent(ElementWithTooltipComponent.Props(
-        renderCell(props.stat, props.unlocked, props.contextMenuController, _),
-        renderTooltip(props.stat, _)
-      ))
+    private val modalComponent = ModalComponent.build(ModalComponent.State.Hidden)
+    private val modalComponentRef = Ref.toScalaComponent(modalComponent)
+    private val modalController = new ModalComponent.Controller(modalComponentRef)
 
-    private def renderCell(
-      stat: Stat,
-      unlocked: Boolean,
-      contextMenuController: ContextMenuComponent.Controller,
-      tooltipTags: TagMod
-    ): VdomNode =
+    def render(props: Props): VdomNode =
+      ReactFragment(
+        modalComponent.withRef(modalComponentRef)(),
+        elementWithTooltipComponent(ElementWithTooltipComponent.Props(
+          renderCell(props, _),
+          renderTooltip(props.stat, _)
+        ))
+      )
+
+    private def renderCell(props: Props, tooltipTags: TagMod): VdomNode =
       <.div(
         ^.className := "stat",
+        ^.key := s"${props.stat}-${props.unlocked}",
         tooltipTags,
         <.div(
-          addContextMenu(contextMenuController),
-          renderImage(stat, unlocked)
+          renderContextMenu(props.stat.skill, props.addEffectToStep, props.contextMenuController),
+          statPaneComponent(StatPaneComponent.Props(props.stat, props.unlocked))
         )
       )
 
-    private def addContextMenu(
-      controller: ContextMenuComponent.Controller
+    private def renderContextMenu(
+      skill: Skill,
+      addEffectToStep: Option[Effect => Callback],
+      menuController: ContextMenuComponent.Controller
     ): TagMod =
-      controller.show(
-        TagMod(
-          <.span("Gain XP"),
-          ^.onClick --> controller.hide()
-        )
-      )
-
-    private def renderImage(stat: Stat, unlocked: Boolean) =
-      TagMod(
-        skillIconComponent(SkillIconComponent.Props(stat.skill, "locked" -> !unlocked)),
-        <.img(
-          ^.className := "stat-background",
-          ^.src := "images/stat-pane/stat-background.png",
-          ^.alt := s"${stat.skill} level"
-        ),
-        <.p(
-          ^.className := "stat-text numerator",
-          stat.level.raw
-        ),
-        <.p(
-          ^.className := "stat-text denominator",
-          stat.level.raw
+      addEffectToStep.toTagMod(addEffect =>
+        menuController.show(
+          TagMod(
+            <.span("Gain XP"),
+            ^.onClick --> modalController.show(
+              gainExpComponent(GainExpComponent.Props(
+                skill,
+                Callback.traverseOption(_)(addEffect(_)) *> modalController.hide()
+              ))
+            ) *> menuController.hide()
+          )
         )
       )
 
@@ -81,6 +79,7 @@ object StatComponent {
               ("Next level at:", next.bound.toString),
               ("Remaining XP:", (next.bound - stat.exp).toString)
             ))
+
           case None =>
             dualColumnListComponent(List(
               (s"${stat.skill.toString} XP:", stat.exp.toString)

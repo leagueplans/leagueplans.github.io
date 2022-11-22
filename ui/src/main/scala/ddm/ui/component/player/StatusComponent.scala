@@ -1,7 +1,7 @@
 package ddm.ui.component.player
 
 import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent}
-import ddm.ui.component.player.stats.StatPaneComponent
+import ddm.ui.component.player.stats.StatWindowComponent
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, ItemCache}
@@ -18,12 +18,12 @@ object StatusComponent {
   final case class Props(
     player: Player,
     itemCache: ItemCache,
-    addEffectToStep: Effect => Callback,
+    addEffectToStep: Option[Effect => Callback],
     contextMenuController: ContextMenuComponent.Controller
   )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
-    private val statPaneComponent = StatPaneComponent.build
+    private val statWindowComponent = StatWindowComponent.build
     private val depositoryComponent = DepositoryComponent.build
     private val equipmentComponent = EquipmentComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
@@ -33,9 +33,10 @@ object StatusComponent {
       <.div(
         <.div(
           ^.display.flex,
-          statPaneComponent(StatPaneComponent.Props(
+          statWindowComponent(StatWindowComponent.Props(
             props.player.stats,
             props.player.leagueStatus.skillsUnlocked,
+            props.addEffectToStep,
             props.contextMenuController
           )),
           props.player

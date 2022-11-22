@@ -73,14 +73,14 @@ p {
   width: 100%;
 }
 
-.stat-pane {
+.stat-window {
   border-spacing: 0px;
   border: solid;
   border-radius: 5px;
   height: fit-content;
 }
 
-.stat-pane-cell {
+.stat-window-cell {
   position: relative;
   padding: 0px;
 }
@@ -94,7 +94,7 @@ p {
   width: 100%;
 }
 
-.stat-pane-cell .skill-icon {
+.stat .skill-icon {
   position: absolute;
   width: 40%;
   top: 10%;
@@ -110,6 +110,10 @@ p {
   z-index: 1;
   background-color: #fcf8ed;
   padding: 2px;
+}
+
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .tooltip {
