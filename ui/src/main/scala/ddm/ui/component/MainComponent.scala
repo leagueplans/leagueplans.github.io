@@ -3,6 +3,8 @@ package ddm.ui.component
 import ddm.common.model.Item
 import ddm.ui.StorageManager
 import ddm.ui.component.common.ContextMenuComponent
+import ddm.ui.component.plan.editing.EditingManagementComponent
+import ddm.ui.component.plan.editing.EditingManagementComponent.EditingMode
 import ddm.ui.component.plan.{ConsoleComponent, PlanComponent}
 import ddm.ui.component.player.StatusComponent
 import ddm.ui.facades.fusejs.FuseOptions
@@ -91,6 +93,7 @@ object MainComponent {
   }
 
   final class Backend(scope: BackendScope[Props, State]) {
+    private val editingManagementComponent = EditingManagementComponent.build
     private val planComponent = PlanComponent.build
     private val statusComponent = StatusComponent.build
     private val consoleComponent = ConsoleComponent.build
@@ -104,32 +107,41 @@ object MainComponent {
         contextMenuComponent.withRef(contextMenuRef)(),
         <.div(
           ^.onClickCapture --> contextMenuController.hide(),
-          ^.display.flex,
-          planComponent(PlanComponent.Props(
-            state.playerAtFocusedStep,
-            props.itemCache,
-            props.itemFuse,
-            state.plan,
-            state.focusedStep,
-            setFocusedStep,
-            setPlan
-          )),
-          statusComponent(StatusComponent.Props(
-            state.playerAtFocusedStep,
-            props.itemCache,
-            addEffectToFocus(state, editingEnabled = true),
-            contextMenuController
-          )),
-          consoleComponent(ConsoleComponent.Props(
-            state.progressedSteps, Player.initial, props.itemCache
-          ))
+          withEditingManager(props, state)((editingMode, editingManager) =>
+            ReactFragment(
+              editingManager,
+              renderMain(props, state, editingMode)
+            )
+          )
         )
       )
 
-    private def setPlan(plan: Tree[Step]): Callback =
-      scope.modState(currentState =>
-        currentState.copy(plan = plan)
+    private def renderMain(props: Props, state: State, editingMode: EditingMode): VdomNode =
+      <.div(
+        ^.display.flex,
+        planComponent(PlanComponent.Props(state.plan, state.focusedStep, editingMode, setFocusedStep, setPlan)),
+        statusComponent(StatusComponent.Props(
+          state.playerAtFocusedStep,
+          props.itemCache,
+          addEffectToFocus(state, editingMode),
+          contextMenuController
+        )),
+        consoleComponent(ConsoleComponent.Props(state.progressedSteps, Player.initial, props.itemCache))
       )
+
+    private def withEditingManager(props: Props, state: State): WithE[EditingMode, VdomNode] =
+      render => editingManagementComponent(EditingManagementComponent.Props(
+        state.playerAtFocusedStep,
+        props.itemCache,
+        props.itemFuse,
+        state.focusedStep.map(step =>
+          (step, updatedStep => setPlan(state.plan.update(updatedStep)(_.id)))
+        ),
+        render
+      ))
+
+    private def setPlan(plan: Tree[Step]): Callback =
+      scope.modState(_.copy(plan = plan))
 
     private def setFocusedStep(step: UUID): Callback =
       scope.modState(currentState =>
@@ -138,10 +150,10 @@ object MainComponent {
         )
       )
 
-    private def addEffectToFocus(currentState: State, editingEnabled: Boolean): Option[Effect => Callback] =
+    private def addEffectToFocus(currentState: State, editingMode: EditingMode): Option[Effect => Callback] =
       currentState
         .focusedStep
-        .filter(_ => editingEnabled)
+        .filter(_ => editingMode != EditingMode.Locked)
         .map { focusedStep => effect =>
           val updatedStep = focusedStep.mapNode(step =>
             step.copy(directEffects = step.directEffects + effect)
