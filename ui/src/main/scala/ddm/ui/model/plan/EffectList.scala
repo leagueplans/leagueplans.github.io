@@ -37,9 +37,10 @@ final case class EffectList(underlying: List[Effect]) {
 
   private def add(effect: MoveItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
-      oldEffect.item == newEffect.item &&
+      oldEffect.item == newEffect.item && (
         (oldEffect.source == newEffect.source && oldEffect.target == newEffect.target) ||
-        (oldEffect.source == newEffect.target && oldEffect.target == newEffect.source)
+          (oldEffect.source == newEffect.target && oldEffect.target == newEffect.source)
+      )
     )((oldEffect, newEffect) =>
       if (oldEffect.target == newEffect.target)
         Some(oldEffect.copy(count = oldEffect.count + newEffect.count))
