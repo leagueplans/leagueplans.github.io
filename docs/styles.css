@@ -53,7 +53,7 @@ p {
 }
 
 .step .toggle-button {
-  background-color: rgba(255,255,255,0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   border: none;
   padding: 0px;
   width: 15px;
@@ -73,14 +73,14 @@ p {
   width: 100%;
 }
 
-.stat-pane {
+.stat-window {
   border-spacing: 0px;
   border: solid;
   border-radius: 5px;
   height: fit-content;
 }
 
-.stat-pane-cell {
+.stat-window-cell {
   position: relative;
   padding: 0px;
 }
@@ -94,15 +94,26 @@ p {
   width: 100%;
 }
 
-.stat-icon {
+.stat .skill-icon {
   position: absolute;
   width: 40%;
   top: 10%;
   left: 8%;
 }
 
-.stat-icon.locked {
+.skill-icon.locked {
   opacity: 0.15;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 1;
+  background-color: #fcf8ed;
+  padding: 2px;
+}
+
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .tooltip {
