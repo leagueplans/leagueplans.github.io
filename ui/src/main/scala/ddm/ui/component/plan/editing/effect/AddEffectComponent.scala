@@ -43,7 +43,6 @@ object AddEffectComponent {
       "Drop item" -> DropItemComponent.build,
       "Gain item" -> GainItemComponent.build,
       "Move item" -> MoveItemComponent.build,
-      "Unlock skill" -> UnlockSkillComponent.build
     ).map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
     def render(props: Props): VdomNode =
