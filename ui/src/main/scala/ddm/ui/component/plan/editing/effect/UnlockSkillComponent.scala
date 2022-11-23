@@ -28,12 +28,12 @@ object UnlockSkillComponent {
       )
 
     private def withSkillSelect(unlockedSkills: Set[Skill]): With[Option[Skill]] = {
-      val skills = Skill.all.filterNot(unlockedSkills).map(s => s.toString -> Some(s))
+      val skills = Skill.all.filterNot(unlockedSkills).map(s => Some(s) -> s.toString)
 
       render => skillSelect(SelectComponent.Props(
         id = "skill-select",
         label = "Select skill:",
-        options = skills :+ ("" -> None),
+        options = skills :+ (None -> ""),
         render
       ))
     }

@@ -2,7 +2,7 @@ package ddm.ui.component.plan.editing
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.ui.component.Render
+import ddm.ui.component.RenderE
 import ddm.ui.component.common.ToggleButtonComponent
 import ddm.ui.component.common.form.RadioButtonComponent
 import ddm.ui.model.common.Tree
@@ -25,7 +25,7 @@ object EditingManagementComponent {
     itemCache: ItemCache,
     fuse: Fuse[Item],
     focusedStep: Option[(Tree[Step], Tree[Step] => Callback)],
-    render: Render[EditingMode]
+    render: RenderE[EditingMode, VdomNode]
   )
 
   sealed trait EditingMode

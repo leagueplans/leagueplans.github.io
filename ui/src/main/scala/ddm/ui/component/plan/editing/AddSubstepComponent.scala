@@ -3,7 +3,7 @@ package ddm.ui.component.plan.editing
 import ddm.ui.component.With
 import ddm.ui.component.common.form.{FormComponent, TextInputComponent}
 import ddm.ui.model.common.Tree
-import ddm.ui.model.plan.Step
+import ddm.ui.model.plan.{EffectList, Step}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
@@ -40,7 +40,7 @@ object AddSubstepComponent {
     private def addSubstep(step: Tree[Step], substepDescription: String): Tree[Step] =
       step.addChild(
         Tree(
-          Step(substepDescription, directEffects = Set.empty),
+          Step(substepDescription, directEffects = EffectList.empty),
           children = List.empty
         )
       )

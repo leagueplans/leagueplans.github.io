@@ -1,11 +1,12 @@
 package ddm.ui.component.player
 
-import ddm.ui.component.common.DualColumnListComponent
-import ddm.ui.component.player.stats.StatPaneComponent
+import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent}
+import ddm.ui.component.player.stats.StatWindowComponent
+import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.{Depository, ItemCache}
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
 object StatusComponent {
   val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
@@ -14,10 +15,15 @@ object StatusComponent {
       .renderBackend[Backend]
       .build
 
-  final case class Props(player: Player, itemCache: ItemCache)
+  final case class Props(
+    player: Player,
+    itemCache: ItemCache,
+    addEffectToStep: Option[Effect => Callback],
+    contextMenuController: ContextMenuComponent.Controller
+  )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
-    private val statPaneComponent = StatPaneComponent.build
+    private val statWindowComponent = StatWindowComponent.build
     private val depositoryComponent = DepositoryComponent.build
     private val equipmentComponent = EquipmentComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
@@ -27,9 +33,11 @@ object StatusComponent {
       <.div(
         <.div(
           ^.display.flex,
-          statPaneComponent(StatPaneComponent.Props(
+          statWindowComponent(StatWindowComponent.Props(
             props.player.stats,
-            props.player.leagueStatus.skillsUnlocked
+            props.player.leagueStatus.skillsUnlocked,
+            props.addEffectToStep,
+            props.contextMenuController
           )),
           props.player
             .depositories
@@ -39,9 +47,7 @@ object StatusComponent {
             .toList
             .sortBy(_.id.raw)
             .toTagMod(depository =>
-              <.td(
-                depositoryComponent(DepositoryComponent.Props(depository, props.itemCache))
-              )
+              depositoryComponent(DepositoryComponent.Props(depository, props.itemCache))
             )
         ),
         <.div(

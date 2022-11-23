@@ -9,7 +9,10 @@ object RadioButtonComponent {
   def build[T]: ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
     ScalaComponent
       .builder[Props[T]]
-      .initialState[State[T]](None)
+      .initialStateFromProps[State[T]] { props =>
+        val (_, default) = props.labelResultPairs.head
+        default
+      }
       .renderBackend[Backend[T]]
       .build
 
@@ -19,33 +22,36 @@ object RadioButtonComponent {
     render: Render[T]
   )
 
-  type State[T] = Option[T]
+  type State[T] = T
 
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
-      val (_, default) = props.labelResultPairs.head
-      val activeButton = state.getOrElse(default)
-
       val radios =
         <.div(
           ^.className := "radios",
           props.labelResultPairs.toList.zipWithIndex.map { case ((label, result), index) =>
             val id = s"${props.name}-choice-$index"
+            val checked = state == result
 
             TagMod(
               <.input.radio(
+                // For some reason, react will only update the checked property
+                // if the button is given a key that changes at the same time as
+                // the property changes.
+                ^.key := s"$id-$checked",
                 ^.id := id,
                 ^.name := props.name,
                 ^.value := label,
-                ^.onClick --> scope.setState(Some(result)),
-                TagMod.when(activeButton == result)(^.checked := true)
+                // onChange is used over onClick to avoid irrelevant react warnings
+                ^.onChange --> scope.setState(result),
+                TagMod.when(checked)(^.checked := true)
               ),
               <.label(^.`for` := id, label)
             )
           }.toTagMod
         )
 
-      props.render(state.getOrElse(default), radios)
+      props.render(state, radios)
     }
   }
 }

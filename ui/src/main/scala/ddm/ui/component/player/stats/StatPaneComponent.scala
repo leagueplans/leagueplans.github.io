@@ -1,7 +1,7 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.model.player.skill.Skill._
-import ddm.ui.model.player.skill.{Skill, Stat, Stats}
+import ddm.ui.model.player.skill.Stat
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
@@ -12,68 +12,27 @@ object StatPaneComponent {
       .renderBackend[Backend]
       .build
 
-  final case class Props(stats: Stats, unlockedSkills: Set[Skill])
-
-  private val orderedSkills: List[Skill] =
-    List(
-      Attack,
-      Hitpoints,
-      Mining,
-      Strength,
-      Agility,
-      Smithing,
-      Defence,
-      Herblore,
-      Fishing,
-      Ranged,
-      Thieving,
-      Cooking,
-      Prayer,
-      Crafting,
-      Firemaking,
-      Magic,
-      Fletching,
-      Woodcutting,
-      Runecraft,
-      Slayer,
-      Farming,
-      Construction,
-      Hunter
-    )
+  final case class Props(stat: Stat, unlocked: Boolean)
 
   final class Backend(scope: BackendScope[Props, Unit]) {
-    private val totalLevelComponent = TotalLevelComponent.build
-    private val statComponent = StatComponent.build
+    private val skillIconComponent = SkillIconComponent.build
 
     def render(props: Props): VdomNode =
-      <.table(
-        ^.className := "stat-pane",
-        <.tbody(
-          orderedSkills
-            .map(renderStat(_, props))
-            .appended[VdomNode](
-              totalLevelComponent(TotalLevelComponent.Props(
-                props.stats.totalLevel, props.stats.totalExp
-              ))
-            )
-            .sliding(size = 3, step = 3)
-            .toTagMod(row =>
-              <.tr(
-                row.toTagMod(component =>
-                  <.td(
-                    ^.className := "stat-pane-cell",
-                    component
-                  )
-                )
-              )
-            )
+      ReactFragment(
+        skillIconComponent(SkillIconComponent.Props(props.stat.skill, "locked" -> !props.unlocked)),
+        <.img(
+          ^.className := "stat-background",
+          ^.src := "images/stat-window/stat-background.png",
+          ^.alt := s"${props.stat.skill} level"
+        ),
+        <.p(
+          ^.className := "stat-text numerator",
+          props.stat.level.raw
+        ),
+        <.p(
+          ^.className := "stat-text denominator",
+          props.stat.level.raw
         )
       )
-
-    private def renderStat(skill: Skill, props: Props): VdomNode =
-      statComponent(StatComponent.Props(
-        Stat(skill, props.stats(skill)),
-        props.unlockedSkills.contains(skill)
-      ))
   }
 }

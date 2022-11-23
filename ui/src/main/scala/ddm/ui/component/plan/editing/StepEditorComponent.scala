@@ -71,7 +71,7 @@ object StepEditorComponent {
 
     private def removeEffect(props: Props): VdomNode =
       <.ol(
-        props.step.node.directEffects.toTagMod(effect =>
+        props.step.node.directEffects.underlying.toTagMod(effect =>
           <.li(
             <.input.button(
               ^.onClick ==> { event: ^.onClick.Event =>

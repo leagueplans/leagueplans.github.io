@@ -22,15 +22,13 @@ object Main extends App {
         // Creating a container, since react raises a warning if we render
         // directly into the document body.
         val container = document.createElement("div")
+        document.body.appendChild(container)
 
         MainComponent.build(MainComponent.Props(
           new StorageManager[Tree[Step]](ResourcePaths.planStorageKey, window.localStorage),
           defaultPlan,
           ItemCache(items)
-        )
-        ).renderIntoDOM(container)
-
-        document.body.appendChild(container): @nowarn("msg=discarded non-Unit value")
+        )).renderIntoDOM(container): @nowarn("msg=discarded non-Unit value")
       }
     }
 

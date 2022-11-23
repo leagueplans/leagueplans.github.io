@@ -58,6 +58,7 @@ object ConsoleComponent {
             val (postStepPlayer, encodedEffects, stepErrors) =
               step
                 .directEffects
+                .underlying
                 .foldLeft((preStepPlayer, List.empty[VdomNode], List.empty[String])) {
                   case ((preEffectPlayer, effectAcc, errorAcc), effect) =>
                     val (effectErrors, postEffectPlayer) =
@@ -93,14 +94,14 @@ object ConsoleComponent {
         renderSection(section, TagMod.empty)
 
     private def renderSection(section: Section, tooltipTags: TagMod): VdomNode =
-      <.dt(
+      <.div(
         ^.key := section.id.toString,
         ^.classSet(
           "console-section" -> true,
           "error" -> section.errors.nonEmpty
         ),
         tooltipTags,
-        section.description,
+        <.dt(section.description),
         section.effects.toTagMod(<.dd(_))
       )
 

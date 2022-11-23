@@ -77,7 +77,7 @@ lazy val ui =
     .settings(
       libraryDependencies ++= List(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
-        "org.scala-js" %%% "scalajs-dom" % "2.1.0",
+        "org.scala-js" %%% "scalajs-dom" % "2.3.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
@@ -91,8 +91,6 @@ lazy val ui =
       Test / requireJsDomEnv := true,
       installJsdom / version := "16.6.0",
       webpack / version := "4.46.0",
-      startWebpackDevServer / version := "3.11.2",
-      (Compile / fastOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) },
-      (Compile / fullOptJS / scalaJSLinkerConfig) ~= { _.withSourceMap(false) }
+      startWebpackDevServer / version := "3.11.2"
     )
     .dependsOn(common.js)

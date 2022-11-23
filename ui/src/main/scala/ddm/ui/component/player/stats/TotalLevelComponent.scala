@@ -30,7 +30,7 @@ object TotalLevelComponent {
         tooltipTags,
         <.img(
           ^.className := "stat-background",
-          ^.src := "images/stat-pane/total-level-background.png",
+          ^.src := "images/stat-window/total-level-background.png",
           ^.alt := "Total level",
         ),
         <.p(

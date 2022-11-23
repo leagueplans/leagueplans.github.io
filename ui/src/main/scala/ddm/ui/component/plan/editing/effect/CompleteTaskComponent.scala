@@ -34,7 +34,7 @@ object CompleteTaskComponent {
       render => tierInputComponent(SelectComponent.Props(
         id = "tier-select",
         label = "Select task tier:",
-        options = TaskTier.all.toList.map(t => t.toString -> t),
+        options = TaskTier.all.toList.map(t => t -> t.toString),
         render
       ))
 

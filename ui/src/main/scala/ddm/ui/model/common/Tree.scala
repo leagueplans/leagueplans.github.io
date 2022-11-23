@@ -48,30 +48,36 @@ final case class Tree[T](node: T, children: List[Tree[T]]) {
   def removeChild(tree: Tree[T]): Tree[T] =
     copy(children = children.filterNot(_ == tree))
 
-  def update[K](updatedDescendant: Tree[T])(toKey: T => K): Tree[T] = {
-    if (toKey(node) == toKey(updatedDescendant.node))
-      updatedDescendant
+  def modifyChild[K](key: K)(toKey: T => K)(f: Tree[T] => Tree[T]): Tree[T] =
+    copy(children = children.map {
+      case child @ Tree(node, _) if toKey(node) == key => f(child)
+      case other => other
+    })
+
+  def update[K](updatedDescendant: Tree[T])(toKey: T => K): Tree[T] =
+    modify(toKey(updatedDescendant.node))(toKey)(_ => updatedDescendant)
+
+  def modify[K](key: K)(toKey: T => K)(f: Tree[T] => Tree[T]): Tree[T] =
+    if (toKey(node) == key)
+      f(this)
     else
-      ancestors(updatedDescendant.node)(toKey) match {
+      ancestors(key)(toKey) match {
         case Nil => this
-        case ancestors =>
-          ancestors.foldLeft(updatedDescendant) { (child, parent) =>
-            parent.copy(children = parent.children.map {
-              case Tree(node, _) if toKey(node) == toKey(child.node) => child
-              case other => other
-            })
-          }
+        case parentOfTarget :: ancestors =>
+          val updatedParent = parentOfTarget.modifyChild(key)(toKey)(f)
+          ancestors.foldLeft(updatedParent)((updatedChild, parent) =>
+            parent.modifyChild(toKey(updatedChild.node))(toKey)(_ => updatedChild)
+          )
       }
-  }
 
-  private def ancestors[K](child: T)(toKey: T => K): List[Tree[T]] = {
+  private def ancestors[K](key: K)(toKey: T => K): List[Tree[T]] = {
     val keyToParentNode =
-      childNodeToParentNode.map { case (k, v) => toKey(k) -> v }
+      childNodeToParentNode.map { case (child, parent) => toKey(child) -> parent }
 
-    List.unfold(child)(node =>
+    List.unfold(key)(k =>
       keyToParentNode
-        .get(toKey(node))
-        .map(parent => (parent, parent))
+        .get(k)
+        .map(parent => (parent, toKey(parent)))
     ).map(nodeToTree)
   }
 

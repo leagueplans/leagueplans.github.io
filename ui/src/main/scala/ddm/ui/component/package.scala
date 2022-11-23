@@ -51,6 +51,8 @@ package object component {
    * to do state management, or for the state management to be
    * reimplemented when new dependencies on the state are introduced.
    */
-  type Render[T] = (T, TagMod) => VdomNode
-  type With[T] = Render[T] => VdomNode
+  type Render[-T] = RenderE[T, TagMod]
+  type With[+T] = WithE[T, TagMod]
+  type RenderE[-T, -E <: TagMod] = (T, E) => VdomNode
+  type WithE[+T, +E <: TagMod] = RenderE[T, E] => VdomNode
 }
