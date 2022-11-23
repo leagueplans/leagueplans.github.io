@@ -2,7 +2,8 @@ package ddm.ui.component.player.stats
 
 import ddm.ui.component.common.{ContextMenuComponent, DualColumnListComponent, ElementWithTooltipComponent, ModalComponent}
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.skill.{Skill, Stat}
+import ddm.ui.model.plan.Effect.UnlockSkill
+import ddm.ui.model.player.skill.Stat
 import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, Ref, ScalaComponent}
@@ -46,27 +47,29 @@ object StatComponent {
         ^.key := s"${props.stat}-${props.unlocked}",
         tooltipTags,
         <.div(
-          renderContextMenu(props.stat.skill, props.addEffectToStep, props.contextMenuController),
+          renderContextMenu(props),
           statPaneComponent(StatPaneComponent.Props(props.stat, props.unlocked))
         )
       )
 
-    private def renderContextMenu(
-      skill: Skill,
-      addEffectToStep: Option[Effect => Callback],
-      menuController: ContextMenuComponent.Controller
-    ): TagMod =
-      addEffectToStep.toTagMod(addEffect =>
-        menuController.show(
-          TagMod(
-            <.span("Gain XP"),
-            ^.onClick --> modalController.show(
-              gainExpComponent(GainExpComponent.Props(
-                skill,
-                Callback.traverseOption(_)(addEffect(_)) *> modalController.hide()
-              ))
-            ) *> menuController.hide()
-          )
+    private def renderContextMenu(props: Props): TagMod =
+      props.addEffectToStep.toTagMod(addEffect =>
+        props.contextMenuController.show(
+          if (props.unlocked)
+            <.span(
+              "Gain XP",
+              ^.onClick --> modalController.show(
+                gainExpComponent(GainExpComponent.Props(
+                  props.stat.skill,
+                  Callback.traverseOption(_)(addEffect(_)) *> modalController.hide()
+                ))
+              ) *> props.contextMenuController.hide()
+            )
+          else
+            <.span(
+              "Unlock",
+              ^.onClick --> addEffect(UnlockSkill(props.stat.skill)) *> props.contextMenuController.hide()
+            )
         )
       )
 
