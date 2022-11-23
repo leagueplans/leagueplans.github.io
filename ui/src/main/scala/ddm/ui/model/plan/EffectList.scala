@@ -35,6 +35,20 @@ final case class EffectList(underlying: List[Effect]) {
         .filter(_.count != 0)
     )
 
+  // In theory you can minimise more moves than this.
+  // For example, `bank -> inventory -> equipped` can be shortened to
+  // `bank -> equipped`.
+  // There's an interesting paper that effectively covers this topic titled:
+  // Settling Multiple Debts Efficiently: An Invitation to Computing Science
+  // We're effectively trying to construct a bipartite graph with a minimised
+  // number of edges. The paper highlights that this is suspected to be an NP
+  // hard problem.
+  //
+  // If I ever look back into this, the advantage I do have is that I'm only
+  // ever adding a single edge to a graph that is already bipartite with a
+  // minimum number of edges. I suspect that's not a good enough
+  // simplification to avoid the NP-ness though (I'm thinking about the case
+  // where you add an edge between two distinct subgraphs).
   private def add(effect: MoveItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
       oldEffect.item == newEffect.item && (
