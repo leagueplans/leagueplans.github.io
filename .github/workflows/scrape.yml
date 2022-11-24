@@ -42,7 +42,7 @@ jobs:
         commit-message: Update ${{ github.event.inputs.resource }}
         branch: scraper/${{ github.event.inputs.resource }}
         delete-branch: true
-        title: [Experiment] Update ${{ github.event.inputs.resource }}
+        title: "[Experiment] Update ${{ github.event.inputs.resource }}"
         body: |
           Triggered by workflow [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
