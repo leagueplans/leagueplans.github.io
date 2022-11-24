@@ -40,8 +40,9 @@ jobs:
       if: steps.identify-changes.outputs.sources == 'true'
       run: |
         sbt ui/test
-        ui/npm install
-        ui/npm run build
+        cd ui
+        npm install
+        npm run build
 
     - name: Sync docs
       if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
