@@ -14,7 +14,9 @@ import scala.concurrent.ExecutionContext
 object ScrapeSkillIconsRunner {
   def from(args: CommandLineArgs): ScrapeSkillIconsRunner =
     new ScrapeSkillIconsRunner(
-      args.get("target-directory")(root => Path.of(root).resolve("dump"))
+      args.get("target-directory")(root =>
+        Path.of(root).resolve("dump/dynamic/assets/images/skill-icons")
+      )
     )
 }
 
