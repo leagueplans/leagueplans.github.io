@@ -1,7 +1,6 @@
 package ddm.ui.component.player
 
 import ddm.common.model.Item
-import ddm.ui.ResourcePaths
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
@@ -17,8 +16,11 @@ object ItemIconComponent {
   final class Backend(scope: BackendScope[Props, Unit]) {
     def render(props: Props): VdomNode =
       <.img(
-        ^.src := ResourcePaths.itemIcon(props.item, props.count),
+        ^.src := iconPath(props.item, props.count),
         ^.alt := s"${props.item.name} icon"
       )
   }
+
+  private def iconPath(item: Item, count: Int): String =
+    s"assets/images/items/${item.imageFor(count).raw}"
 }

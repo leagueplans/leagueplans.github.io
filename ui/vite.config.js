@@ -36,14 +36,9 @@ export default defineConfig(({ command, mode }) => {
     publicDir: "dynamic",
     base: "/osrs-planner/",
     resolve: { alias: [ { find: "@linkOutputDir", replacement: linkOutputDir } ] },
-    server: {
-      port: 5173,
-      strictPort: true
-    },
-    preview: {
-      port: 5173,
-      strictPort: true
-    },
-    build: { outDir: "../../../target/vite" }
+    json: { stringify: true },
+    server: { port: 5173, strictPort: true },
+    preview: { port: 5173, strictPort: true },
+    build: { outDir: "../../../target/vite", emptyOutDir: true }
   }
 });

@@ -6,38 +6,38 @@ import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.item.ItemCache
 import io.circe.Decoder
-import io.circe.parser.decode
-import org.scalajs.dom.{Event, document, fetch, window}
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
+import io.circe.scalajs.decodeJs
+import org.scalajs.dom.{Event, document, window}
 
 import scala.annotation.nowarn
-import scala.concurrent.Future
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 
 object Main extends App {
+  @js.native @JSImport("/data/items.json", JSImport.Default)
+  private val itemsJson: js.Object = js.native
+
+  @js.native @JSImport("/data/plan.json", JSImport.Default)
+  private val defaultPlanJson: js.Object = js.native
+
   document.addEventListener[Event]("DOMContentLoaded", _ => setupUI())
 
   private def setupUI(): Unit =
-    withResource[Set[Item]](ResourcePaths.itemsJson) { items =>
-      withResource[Tree[Step]](ResourcePaths.defaultPlanJson) { defaultPlan =>
+    withResource[Set[Item]](itemsJson) { items =>
+      withResource[Tree[Step]](defaultPlanJson) { defaultPlan =>
         // Creating a container, since react raises a warning if we render
         // directly into the document body.
         val container = document.createElement("div")
         document.body.appendChild(container)
 
         MainComponent.build(MainComponent.Props(
-          new StorageManager[Tree[Step]](ResourcePaths.planStorageKey, window.localStorage),
+          new StorageManager[Tree[Step]]("plan", window.localStorage),
           defaultPlan,
           ItemCache(items)
         )).renderIntoDOM(container): @nowarn("msg=discarded non-Unit value")
       }
     }
 
-  private def withResource[T : Decoder](path: String)(f: T => Unit): Unit =
-    fetch(path)
-      .toFuture
-      .flatMap(_.text().toFuture)
-      .map(decode[T])
-      .map(_.toTry)
-      .flatMap(Future.fromTry)
-      .foreach(f)
+  private def withResource[T : Decoder](obj: js.Object)(f: T => Unit): Unit =
+    decodeJs[T](obj).foreach(f)
 }

@@ -10,7 +10,6 @@ ThisBuild / scalacOptions ++= List(
   "-language:existentials",            // Existential types (besides wildcard types) can be written and inferred
   "-language:higherKinds",             // Allow higher-kinded types
   "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
-  "-Wdead-code",                       // Warn when dead code is identified.
   "-Wextra-implicit",                  // Warn when more than one implicit parameter section is defined.
   "-Wnumeric-widen",                   // Warn when numerics are widened.
   "-Wunused:imports",                  // Warn if an import selector is not referenced.
@@ -67,7 +66,8 @@ lazy val wikiScraper =
         "org.parboiled" %% "parboiled" % "2.4.0",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
         "com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion
-      )
+      ),
+      scalacOptions += "-Wdead-code" // Can't use with scala-js due to https://github.com/scala/bug/issues/11942
     )
     .dependsOn(common.jvm)
 
@@ -82,7 +82,6 @@ lazy val ui =
     .settings(
       libraryDependencies ++= List(
         "org.scala-js" %%% "scalajs-dom" % "2.3.0",
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         "org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
         "io.circe" %%% "circe-scalajs" % circeVersion

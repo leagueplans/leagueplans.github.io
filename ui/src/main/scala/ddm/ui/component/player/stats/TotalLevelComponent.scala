@@ -5,12 +5,18 @@ import ddm.ui.model.player.skill.Exp
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
 object TotalLevelComponent {
   val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .renderBackend[Backend]
       .build
+
+  @js.native @JSImport("/images/stat-window/total-level-background.png", JSImport.Default)
+  private val totalLevelBackground: String = js.native
 
   final case class Props(totalLevel: Int, totalExp: Exp)
 
@@ -30,7 +36,7 @@ object TotalLevelComponent {
         tooltipTags,
         <.img(
           ^.className := "stat-background",
-          ^.src := "images/stat-window/total-level-background.png",
+          ^.src := totalLevelBackground,
           ^.alt := "Total level",
         ),
         <.p(
