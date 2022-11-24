@@ -30,21 +30,21 @@ jobs:
         node-version: 16
 
     - uses: actions/setup-java@v3
-      if: steps.identify-changes.outputs.sources == 'true'
+      #if: steps.identify-changes.outputs.sources == 'true'
       with:
         distribution: temurin
         java-version: '17'
 
     - name: Bundle javascript
       id: bundle-js
-      if: steps.identify-changes.outputs.sources == 'true'
+      #if: steps.identify-changes.outputs.sources == 'true'
       run: |
         sbt ui/test
         ui/npm install
         ui/npm run build
 
     - name: Sync docs
-      if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
+      #if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
       run: |
         ./.github/scripts/sync_docs.sh
         ./.github/scripts/commit_docs.sh
