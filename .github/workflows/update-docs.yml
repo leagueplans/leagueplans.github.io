@@ -15,33 +15,37 @@ jobs:
       with:
         base: ${{ github.ref }}
         filters: |
-          ui-sources:
-            - 'ui/src/main/scala/**'
-            - 'project/**'
-            - 'build.sbt'
-          ui-resources:
-            - 'ui/src/main/resources/**'
+          sources:
+          - 'common/js/src/main/**'
+          - 'common/shared/src/main/**'
+          - 'ui/src/main/**'
+          - 'ui/package.json'
+          - 'ui/package-lock.json'
+          - 'ui/vite.config.js'
+          - 'project/**'
+          - 'build.sbt'
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
 
     - uses: actions/setup-java@v3
-      if: steps.identify-changes.outputs.ui-sources == 'true'
+      if: steps.identify-changes.outputs.sources == 'true'
       with:
         distribution: temurin
         java-version: '17'
 
     - name: Bundle javascript
       id: bundle-js
-      if: steps.identify-changes.outputs.ui-sources == 'true'
-      run: ./.github/scripts/bundle_js.sh
+      if: steps.identify-changes.outputs.sources == 'true'
+      run: |
+        sbt ui/test
+        cd ui
+        npm install
+        npm run build
 
-    - name: Sync docs with resources
-      id: sync-docs
-      if: steps.identify-changes.outputs.ui-resources == 'true'
-      run: ./.github/scripts/sync_docs.sh
-
-    - name: Commit docs
-      if: ${{ (github.ref == 'refs/heads/master') && (
-                (steps.bundle-js.outcome == 'success') ||
-                (steps.sync-docs.outcome == 'success')
-              )
-           }}
-      run: ./.github/scripts/commit_docs.sh
+    - name: Sync docs
+      if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
+      run: |
+        ./.github/scripts/sync_docs.sh
+        ./.github/scripts/commit_docs.sh

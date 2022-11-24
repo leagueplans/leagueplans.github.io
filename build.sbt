@@ -1,3 +1,5 @@
+import org.scalajs.linker.interface.ModuleSplitStyle
+
 name := "osrs-planner"
 
 ThisBuild / scalaVersion := "2.13.8"
@@ -8,7 +10,6 @@ ThisBuild / scalacOptions ++= List(
   "-language:existentials",            // Existential types (besides wildcard types) can be written and inferred
   "-language:higherKinds",             // Allow higher-kinded types
   "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
-  "-Wdead-code",                       // Warn when dead code is identified.
   "-Wextra-implicit",                  // Warn when more than one implicit parameter section is defined.
   "-Wnumeric-widen",                   // Warn when numerics are widened.
   "-Wunused:imports",                  // Warn if an import selector is not referenced.
@@ -65,32 +66,41 @@ lazy val wikiScraper =
         "org.parboiled" %% "parboiled" % "2.4.0",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
         "com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion
-      )
+      ),
+      scalacOptions += "-Wdead-code" // Can't use with scala-js due to https://github.com/scala/bug/issues/11942
     )
     .dependsOn(common.jvm)
 
 val reactVersion = "17.0.2"
 
+val fastLinkOutputDir = taskKey[String]("output directory for `npm run dev`")
+val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
+
 lazy val ui =
   project.in(file("ui"))
-    .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
+    .enablePlugins(ScalaJSPlugin)
     .settings(
       libraryDependencies ++= List(
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         "org.scala-js" %%% "scalajs-dom" % "2.3.0",
+        "org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0",
         "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
-      Compile / npmDependencies ++= List(
-        "react" -> reactVersion,
-        "react-dom" -> reactVersion,
-        "fuse.js" -> "6.5.3"
-      ),
       scalaJSUseMainModuleInitializer := true,
-      jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
-      Test / requireJsDomEnv := true,
-      installJsdom / version := "16.6.0",
-      webpack / version := "4.46.0",
-      startWebpackDevServer / version := "3.11.2"
+      scalaJSLinkerConfig ~= (config =>
+        config
+          .withModuleKind(ModuleKind.ESModule)
+          .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("ddm.ui")))
+      ),
+      fastLinkOutputDir := {
+        // Ensure that fastLinkJS has run, then return its output directory
+        (Compile / fastLinkJS).value
+        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
+      },
+      fullLinkOutputDir := {
+        // Ensure that fullLinkJS has run, then return its output directory
+        (Compile / fullLinkJS).value
+        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
+      }
     )
     .dependsOn(common.js)

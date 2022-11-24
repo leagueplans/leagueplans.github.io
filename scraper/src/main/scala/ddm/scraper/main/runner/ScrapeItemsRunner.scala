@@ -20,7 +20,7 @@ object ScrapeItemsRunner {
       parseMode(args),
       idMapFile = args.get("id-map")(Path.of(_)),
       itemsFile = dumpDirectory.resolve("data/items.json"),
-      imagesDirectory = dumpDirectory.resolve("images/items")
+      imagesDirectory = dumpDirectory.resolve("dynamic/assets/images/items")
     )
   }
 

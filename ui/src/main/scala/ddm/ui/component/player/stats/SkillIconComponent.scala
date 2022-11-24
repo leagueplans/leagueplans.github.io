@@ -1,6 +1,5 @@
 package ddm.ui.component.player.stats
 
-import ddm.ui.ResourcePaths
 import ddm.ui.model.player.skill.Skill
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
@@ -18,9 +17,12 @@ object SkillIconComponent {
     def render(props: Props): VdomNode =
       <.img(
         ^.classSet1("skill-icon", props.classes: _*),
-        ^.src := ResourcePaths.skillIcon(props.skill),
+        ^.src := skillIcon(props.skill),
         ^.alt := s"${props.skill} icon"
       )
   }
+
+  private def skillIcon(skill: Skill): String =
+    s"assets/images/skill-icons/${skill.toString}.png"
 }
 

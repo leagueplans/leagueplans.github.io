@@ -7,10 +7,10 @@ set -o pipefail
 readonly SCRAPER=$1
 readonly USER_AGENT='OSRS planner CI (+https://github.com/DanielMoss/osrs-planner)'
 readonly TMP='tmp'
-readonly RESOURCES='ui/src/main/resources'
+readonly TARGET='ui/src/main/web'
 
-if [[ ! -d "${RESOURCES}" ]]; then
-  mkdir --verbose --parents "${RESOURCES}"
+if [[ ! -d "${TARGET}" ]]; then
+  mkdir --verbose --parents "${TARGET}"
 fi
 
 run () {
@@ -22,17 +22,18 @@ sync () {
         --delete \
         "$@" \
         --exclude="*" \
-        "${TMP}/dump/" "${RESOURCES}/"
+        "${TMP}/dump/" "${TARGET}/"
 }
 
 case "${SCRAPER}" in
   "items")
     run "id-map=scraper/src/main/resources/id-map.json"
-    sync --include="/data/" --include="/data/items.json" --include="/images/" --include="/images/items/***"
+    sync --include="/data/" --include="/data/items.json" \
+         --include="/dynamic/" --include="/dynamic/assets/" --include="/dynamic/assets/images/" --include="/dynamic/assets/images/items/***"
     ;;
 
   "skill-icons")
     run
-    sync --include="/images/" --include="/images/skill-icons/***"
+    sync --include="/dynamic/" --include="/dynamic/assets/" --include="/dynamic/assets/images/" --include="/dynamic/assets/images/skill-icons/***"
     ;;
 esac
