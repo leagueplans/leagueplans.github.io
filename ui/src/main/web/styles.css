@@ -1,9 +1,3 @@
-@font-face {
-  /* Obtained from https://github.com/RuneStar/fonts */
-  font-family: osrs-font;
-  src: url('fonts/osrs.ttf') format('truetype');
-}
-
 body {
   font-family: osrs-font;
 }
@@ -175,26 +169,6 @@ p {
   top: 21%;
   text-align: center;
   line-height: 75%;
-}
-
-.depository {
-  border-spacing: 0px;
-  border: solid;
-  border-radius: 5px;
-  height: fit-content;
-  background-color: #494034;
-}
-
-.depository-cell {
-  height: 36px;
-  width: 36px;
-  padding: 0px;
-  position: relative;
-}
-
-.item-quantity {
-  position: absolute;
-  top: 0px;
 }
 
 .console {

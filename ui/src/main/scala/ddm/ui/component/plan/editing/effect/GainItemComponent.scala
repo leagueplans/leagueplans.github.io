@@ -6,7 +6,6 @@ import ddm.ui.component.common.form.{FormComponent, NumberInputComponent, Select
 import ddm.ui.component.plan.editing.ItemSearchComponent
 import ddm.ui.component.plan.editing.effect.AddEffectComponent.Props
 import ddm.ui.model.plan.Effect.GainItem
-import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Depository
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
@@ -21,13 +20,13 @@ object GainItemComponent {
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     private val countInput = NumberInputComponent.build[Int](1)
-    private val depositoryTarget = SelectComponent.build[Depository.ID](Depository.inventory.id)
+    private val depositoryTarget = SelectComponent.build[Depository.Kind](Depository.Kind.Inventory)
     private val itemSearchComponent = ItemSearchComponent.build
     private val formComponent = FormComponent.build
 
     def render(props: AddEffectComponent.Props): VdomNode =
       withCountInput((count, countInput) =>
-        withTarget(props.player)((target, targetInput) =>
+        withTarget((target, targetInput) =>
           withItemSearch(props.fuse) { (maybeItem, itemSearch) =>
             val maybeEffect = maybeItem.map(item => GainItem(item.id, count, target))
 
@@ -49,11 +48,11 @@ object GainItemComponent {
         render
       ))
 
-    private def withTarget(player: Player): With[Depository.ID] =
+    private val withTarget: With[Depository.Kind] =
       render => depositoryTarget(SelectComponent.Props(
         id = "target-depository-select",
         label = "Choose where to place the item:",
-        options = player.depositories.keys.map(id => id -> id.raw).toList,
+        options = Depository.Kind.kinds.toList.map(k => k -> k.name),
         render
       ))
 

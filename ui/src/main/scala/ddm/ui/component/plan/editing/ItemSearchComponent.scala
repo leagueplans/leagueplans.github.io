@@ -24,7 +24,6 @@ object ItemSearchComponent {
   final class Backend(scope: BackendScope[Props, State]) {
     private val fuseSearchComponent = FuseSearchComponent.build[Item]
     private val elementWithTooltipComponent = ElementWithTooltipComponent.build
-    private val itemIconComponent = ItemIconComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
 
     def render(props: Props, state: State): VdomNode =
@@ -75,7 +74,7 @@ object ItemSearchComponent {
       <.div(
         ^.className := "item",
         tooltipTags,
-        itemIconComponent(ItemIconComponent.Props(item, count = 1)),
+        ItemIconComponent(item, quantity = 1),
         <.span(item.name),
         ^.onClick ==> { e: ^.onClick.Event =>
           e.stopPropagation()

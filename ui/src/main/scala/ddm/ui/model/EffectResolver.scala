@@ -16,20 +16,17 @@ object EffectResolver {
         )
 
       case Effect.GainItem(item, count, target) =>
-        player.depositories.get(target) match {
-          case None => player
-          case Some(depository) =>
-            val updatedCount = depository.contents.getOrElse(item, 0) + count
-            val updatedContents =
-              if (updatedCount <= 0)
-                depository.contents - item
-              else
-                depository.contents + (item -> updatedCount)
+        val depository = player.get(target)
+        val updatedCount = depository.contents.getOrElse(item, 0) + count
+        val updatedContents =
+          if (updatedCount <= 0)
+            depository.contents - item
+          else
+            depository.contents + (item -> updatedCount)
 
-            player.copy(depositories =
-              player.depositories + (target -> depository.copy(contents = updatedContents))
-            )
-        }
+        player.copy(depositories =
+          player.depositories + (target -> depository.copy(contents = updatedContents))
+        )
 
       case Effect.MoveItem(item, count, source, target) =>
         resolve(

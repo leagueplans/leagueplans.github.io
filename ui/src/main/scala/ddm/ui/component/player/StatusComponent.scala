@@ -24,7 +24,6 @@ object StatusComponent {
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     private val statWindowComponent = StatWindowComponent.build
-    private val depositoryComponent = DepositoryComponent.build
     private val equipmentComponent = EquipmentComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
     private val leagueComponent = LeagueComponent.build
@@ -33,28 +32,20 @@ object StatusComponent {
       <.div(
         <.div(
           ^.display.flex,
+          equipmentComponent(EquipmentComponent.Props(
+            props.player, props.itemCache
+          ))
+        ),
+        <.div(
+          ^.display.flex,
           statWindowComponent(StatWindowComponent.Props(
             props.player.stats,
             props.player.leagueStatus.skillsUnlocked,
             props.addEffectToStep,
             props.contextMenuController
           )),
-          props.player
-            .depositories
-            .collect { case (id, depository) if id == Depository.bank.id || id == Depository.inventory.id =>
-              depository
-            }
-            .toList
-            .sortBy(_.id.raw)
-            .toTagMod(depository =>
-              depositoryComponent(DepositoryComponent.Props(depository, props.itemCache))
-            )
-        ),
-        <.div(
-          ^.display.flex,
-          equipmentComponent(EquipmentComponent.Props(
-            props.player, props.itemCache
-          ))
+          DepositoryComponent(props.player.get(Depository.Kind.Inventory), props.itemCache),
+          DepositoryComponent(props.player.get(Depository.Kind.Bank), props.itemCache)
         ),
         <.div(
           dualColumnListComponent(List(

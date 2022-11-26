@@ -19,12 +19,12 @@ object MoveItemComponent {
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     private val selectItemFromDepositoryComponent = SelectItemFromDepositoryComponent.build
-    private val targetInput = SelectComponent.build(Depository.inventory.id)
+    private val targetInput = SelectComponent.build[Depository.Kind](Depository.Kind.Inventory)
     private val formComponent = FormComponent.build
 
     def render(props: AddEffectComponent.Props): VdomNode =
       withItemSelection(props.player, props.itemCache)((maybeItem, itemSelection) =>
-        withTarget(props.player) { (target, targetInput) =>
+        withTarget { (target, targetInput) =>
           val maybeEffect =
             maybeItem
               .map(selected => MoveItem(selected.item, selected.count, selected.source, target))
@@ -45,11 +45,11 @@ object MoveItemComponent {
         render
       ))
 
-    private def withTarget(player: Player): With[Depository.ID] =
+    private val withTarget: With[Depository.Kind] =
       render => targetInput(SelectComponent.Props(
         id = "target-depository-select",
         label = "Choose where to move the item to:",
-        options = player.depositories.values.map(d => d.id -> d.id.raw).toList,
+        options = Depository.Kind.kinds.toList.map(k => k -> k.name),
         render
       ))
   }

@@ -1,23 +1,28 @@
 package ddm.ui.component.player
 
 import ddm.common.model.Item
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object ItemIconComponent {
-  val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
+  private val build: ScalaComponent[Props, Unit, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .renderBackend[Backend]
       .build
 
-  final case class Props(item: Item, count: Int)
+  def apply(item: Item, quantity: Int, customTags: TagMod = TagMod.empty): Unmounted[Props, Unit, Backend] =
+    build(Props(item, quantity, customTags))
+
+  final case class Props(item: Item, quantity: Int, customTags: TagMod)
 
   final class Backend(scope: BackendScope[Props, Unit]) {
     def render(props: Props): VdomNode =
       <.img(
-        ^.src := iconPath(props.item, props.count),
-        ^.alt := s"${props.item.name} icon"
+        ^.src := iconPath(props.item, props.quantity),
+        ^.alt := s"${props.item.name} icon",
+        props.customTags
       )
   }
 

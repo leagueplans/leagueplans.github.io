@@ -1,7 +1,7 @@
 package ddm.ui.component.player
 
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Equipment, ItemCache}
+import ddm.ui.model.player.item.{Depository, ItemCache}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
@@ -15,19 +15,12 @@ object EquipmentComponent {
   final case class Props(player: Player, itemCache: ItemCache)
 
   final class Backend(scope: BackendScope[Props, Unit]) {
-    private val depositoryComponent = DepositoryComponent.build
-
     def render(props: Props): VdomNode =
       <.div(
         ^.display.flex,
-        Equipment
-          .initial
-          .raw
-          .keys
-          .map(props.player.depositories)
-          .toList
-          .sortBy(_.id.raw)
-          .toTagMod(d => depositoryComponent(DepositoryComponent.Props(d, props.itemCache)))
+        Depository.Kind.EquipmentSlot.slots
+          .map(props.player.get)
+          .toTagMod(DepositoryComponent(_, props.itemCache))
       )
   }
 }

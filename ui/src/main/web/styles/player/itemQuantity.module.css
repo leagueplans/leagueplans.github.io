@@ -1,0 +1,11 @@
+.under100K {
+  color: yellow;
+}
+
+.under10M {
+  color: white;
+}
+
+.over10M {
+  color: #00ff80;
+}
