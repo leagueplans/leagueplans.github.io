@@ -123,6 +123,7 @@ object MainComponent {
         statusComponent(StatusComponent.Props(
           state.playerAtFocusedStep,
           props.itemCache,
+          props.itemFuse,
           addEffectToFocus(state, editingMode),
           contextMenuController
         )),
@@ -133,7 +134,6 @@ object MainComponent {
       render => editingManagementComponent(EditingManagementComponent.Props(
         state.playerAtFocusedStep,
         props.itemCache,
-        props.itemFuse,
         state.focusedStep.map(step =>
           (step, updatedStep => setPlan(state.plan.update(updatedStep)(_.id)))
         ),

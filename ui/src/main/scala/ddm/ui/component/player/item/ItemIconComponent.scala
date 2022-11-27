@@ -1,4 +1,4 @@
-package ddm.ui.component.player
+package ddm.ui.component.player.item
 
 import ddm.common.model.Item
 import japgolly.scalajs.react.component.Scala.Unmounted

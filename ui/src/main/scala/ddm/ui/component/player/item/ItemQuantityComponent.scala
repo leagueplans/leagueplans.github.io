@@ -1,4 +1,4 @@
-package ddm.ui.component.player
+package ddm.ui.component.player.item
 
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -17,7 +17,7 @@ object ItemQuantityComponent {
   def apply(quantity: Int, customTags: TagMod = TagMod.empty): Unmounted[Props, Unit, Backend] =
     build(Props(quantity, customTags))
 
-  @js.native @JSImport("/styles/player/itemQuantity.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/itemQuantity.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val under100K: String = js.native
     val under10M: String = js.native

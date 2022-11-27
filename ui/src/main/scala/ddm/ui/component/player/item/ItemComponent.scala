@@ -1,4 +1,4 @@
-package ddm.ui.component.player
+package ddm.ui.component.player.item
 
 import ddm.common.model.Item
 import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
@@ -19,7 +19,7 @@ object ItemComponent {
   def apply(item: Item, quantity: Int): Unmounted[Props, Unit, Backend] =
     build(Props(item, quantity))
 
-  @js.native @JSImport("/styles/player/item.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/item.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val quantity: String = js.native
   }

@@ -1,13 +1,11 @@
 package ddm.ui.component.plan.editing.effect
 
 import cats.data.NonEmptyList
-import ddm.common.model.Item
 import ddm.ui.component.With
 import ddm.ui.component.common.form.RadioButtonComponent
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
-import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
@@ -21,7 +19,6 @@ object AddEffectComponent {
   type Submit = Effect => Callback
 
   final case class Props(
-    fuse: Fuse[Item],
     itemCache: ItemCache,
     player: Player,
     onSubmit: Submit
@@ -41,7 +38,6 @@ object AddEffectComponent {
       "Complete quest" -> CompleteQuestComponent.build,
       "Complete task" -> CompleteTaskComponent.build,
       "Drop item" -> DropItemComponent.build,
-      "Gain item" -> GainItemComponent.build,
       "Move item" -> MoveItemComponent.build,
     ).map( { case (k, builder) => k -> { p: Props => builder(p) }})
 
