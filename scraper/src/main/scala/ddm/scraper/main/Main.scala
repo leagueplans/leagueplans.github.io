@@ -13,12 +13,13 @@ import org.log4s.getLogger
 
 import java.nio.file.{Files, Path}
 import scala.annotation.nowarn
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.chaining.scalaUtilChainingOps
 import scala.util.{Failure, Success}
 
 object Main extends App {
-  ActorSystem[Nothing](
+  private val actorSystem = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       import context.{executionContext, system}
 
@@ -74,4 +75,6 @@ object Main extends App {
     },
     name = "scraper"
   )
+
+  Await.result(actorSystem.whenTerminated, atMost = 5.hours)
 }
