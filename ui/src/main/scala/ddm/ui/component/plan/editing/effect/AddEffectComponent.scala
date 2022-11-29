@@ -3,9 +3,11 @@ package ddm.ui.component.plan.editing.effect
 import cats.data.NonEmptyList
 import ddm.ui.component.With
 import ddm.ui.component.common.form.RadioButtonComponent
+import ddm.ui.component.common.form.RadioButtonComponent.Choice
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 
@@ -32,7 +34,7 @@ object AddEffectComponent {
     //
     // My best guess from a bit of digging is that some sort of implicit search is failing,
     // because there were some monstrously long types created from implicit resolution
-    private val effectSelectComponent = RadioButtonComponent.build[Props => VdomNode]
+    private val effectSelectComponent = new RadioButtonComponent[Props => VdomNode]
     private val effects: NonEmptyList[(String, Props => VdomNode)] =
     NonEmptyList.of(
       "Complete quest" -> CompleteQuestComponent.build,
@@ -51,10 +53,19 @@ object AddEffectComponent {
       )
 
     private val withEffectSelect: With[Props => VdomNode] =
-      render => effectSelectComponent(RadioButtonComponent.Props(
-        name = "effect-select",
-        effects,
+      render => effectSelectComponent(
+        groupName = "effect-select",
+        effects.map { case (label, effect) =>
+          Choice(
+            effect,
+            id = label,
+            label = label,
+            radioTags = TagMod.empty,
+            labelTags = <.span(label),
+            render = ReactFragment(_, _)
+          )
+        },
         render
-      ))
+      )
   }
 }

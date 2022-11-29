@@ -2,7 +2,7 @@ package ddm.ui.component.common.form
 
 import ddm.ui.component.common.DebounceComponent
 import ddm.ui.component.common.form.FuseSearchComponent.{Backend, Props}
-import ddm.ui.component.{Render, With, WithS}
+import ddm.ui.component.{RenderE, WithE, WithS}
 import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -24,7 +24,7 @@ final class FuseSearchComponent[T] {
     placeholder: String,
     maxResults: Int,
     defaultResults: List[T],
-    render: Render[List[T]]
+    render: RenderE[List[T], VdomNode]
   ): Unmounted[Props[T], Unit, Backend[T]] =
     build(Props(fuse, id, label, placeholder, maxResults, defaultResults, render))
 }
@@ -37,7 +37,7 @@ object FuseSearchComponent {
     placeholder: String,
     maxResults: Int,
     defaultResults: List[T],
-    render: Render[List[T]]
+    render: RenderE[List[T], VdomNode]
   )
 
   final class Backend[T](scope: BackendScope[Props[T], Unit]) {
@@ -46,13 +46,12 @@ object FuseSearchComponent {
 
     def render(props: Props[T]): VdomNode =
       withSearchBox(props)((searchContent, searchBox) =>
-        withDebounce(searchContent, search(props.fuse, props.maxResults)) {
-          case Some(results) => props.render(results, searchBox)
-          case None => props.render(props.defaultResults, searchBox)
-        }
+        withDebounce(searchContent, search(props.fuse, props.maxResults))(maybeResults =>
+          props.render(maybeResults.getOrElse(props.defaultResults), searchBox)
+        )
       )
 
-    private def withSearchBox(props: Props[T]): With[String] =
+    private def withSearchBox(props: Props[T]): WithE[String, VdomNode] =
       render => textInputComponent(TextInputComponent.Props(
         TextInputComponent.Type.Search,
         props.id,

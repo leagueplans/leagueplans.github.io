@@ -49,7 +49,7 @@ object ItemSearchComponent {
       render => fuseSearchComponent(
         items,
         id = "fuse-item-search-box",
-        label = "Search for item:",
+        label = "Item:",
         placeholder = "Logs",
         maxResults = 10,
         defaultResults = List.empty,
@@ -92,7 +92,8 @@ object ItemSearchComponent {
     private def renderItem(
       item: Item,
       quantity: Int,
-      isSelected: Boolean, tooltipTags: TagMod
+      isSelected: Boolean,
+      tooltipTags: TagMod
     ): VdomNode =
       <.div(
         ^.className := "item",

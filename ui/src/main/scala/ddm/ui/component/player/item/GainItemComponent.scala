@@ -51,7 +51,7 @@ object GainItemComponent {
 
     private val withQuantityInput: With[Int] =
       render => quantityInput(NumberInputComponent.Props(
-        id = "item-count-entry",
+        id = "item-quantity-entry",
         label = "Quantity:",
         min = 0,
         max = Int.MaxValue,

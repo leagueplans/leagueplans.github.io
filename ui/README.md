@@ -61,6 +61,8 @@ object MyComponent {
   final case class State(stateParam: Any)
   
   final class Backend(scope: BackendScope[Props, State]) {
+    private val subComponent = new MyComponent()
+    
     def render(props: Props, state: State): VdomNode =
       ???
   }
@@ -80,3 +82,5 @@ If there are no parameters needed to define `build`, then we can remove the `MyC
 #### The `Styles` object
 
 #### State management
+
+#### Subcomponents
