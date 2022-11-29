@@ -17,7 +17,7 @@ final case class ItemCache(raw: Map[Item.ID, Item]) {
       .toList
       .map { case (id, count) => (this(id), count) }
       .flatMap {
-        case (item, count) if item.stackable || depository.stackAll =>
+        case (item, count) if item.stackable || depository.kind.autoStack =>
           List((item, count))
         case (item, count) =>
           List.fill(count)((item, 1))

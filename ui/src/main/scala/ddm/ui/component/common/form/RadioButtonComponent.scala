@@ -1,25 +1,48 @@
 package ddm.ui.component.common.form
 
 import cats.data.NonEmptyList
-import ddm.ui.component.Render
+import ddm.ui.component.RenderE
+import ddm.ui.component.common.form.RadioButtonComponent.{Backend, Choice, Props, State}
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
-object RadioButtonComponent {
-  def build[T]: ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
+final class RadioButtonComponent[T] {
+  private val build: ScalaComponent[Props[T], State[T], Backend[T], CtorType.Props] =
     ScalaComponent
       .builder[Props[T]]
-      .initialStateFromProps[State[T]] { props =>
-        val (_, default) = props.labelResultPairs.head
-        default
+      .getDerivedStateFromPropsAndState[State[T]] {
+        case (props, Some(value)) if props.choices.exists(_.value == value) =>
+          value
+        case (props, _) =>
+          props.choices.head.value
       }
       .renderBackend[Backend[T]]
       .build
 
+  def apply(
+    groupName: String,
+    choices: NonEmptyList[Choice[T]],
+    renderSelection: RenderE[T, VdomNode]
+  ): Unmounted[Props[T], State[T], Backend[T]] =
+    build(Props(groupName, choices, renderSelection))
+}
+
+object RadioButtonComponent {
   final case class Props[T](
-    name: String,
-    labelResultPairs: NonEmptyList[(String, T)],
-    render: Render[T]
+    groupName: String,
+    choices: NonEmptyList[Choice[T]],
+    renderSelection: RenderE[T, VdomNode]
+  )
+
+  final case class Choice[T](
+    value: T,
+    id: String,
+    label: String,
+    radioTags: TagMod,
+    labelTags: TagMod,
+    render: (VdomNode, VdomNode) => VdomNode // Radio & Label
   )
 
   type State[T] = T
@@ -27,31 +50,45 @@ object RadioButtonComponent {
   final class Backend[T](scope: BackendScope[Props[T], State[T]]) {
     def render(props: Props[T], state: State[T]): VdomNode = {
       val radios =
-        <.div(
-          ^.className := "radios",
-          props.labelResultPairs.toList.zipWithIndex.map { case ((label, result), index) =>
-            val id = s"${props.name}-choice-$index"
-            val checked = state == result
-
-            TagMod(
-              <.input.radio(
-                // For some reason, react will only update the checked property
-                // if the button is given a key that changes at the same time as
-                // the property changes.
-                ^.key := s"$id-$checked",
-                ^.id := id,
-                ^.name := props.name,
-                ^.value := label,
-                // onChange is used over onClick to avoid irrelevant react warnings
-                ^.onChange --> scope.setState(result),
-                TagMod.when(checked)(^.checked := true)
-              ),
-              <.label(^.`for` := id, label)
-            )
-          }.toTagMod
+        ReactFragment.withKey(props.groupName)(
+          props.choices.toList.map(choice =>
+            renderChoice(props.groupName, choice, choice.value == state)
+          ): _*
         )
 
-      props.render(state, radios)
+      props.renderSelection(state, radios)
     }
+
+    private def renderChoice(
+      groupName: String,
+      choice: Choice[T],
+      checked: Boolean
+    ): VdomNode =
+      choice.render(
+        renderRadio(groupName, choice, checked),
+        renderLabel(choice)
+      )
+
+    private def renderRadio(
+      groupName: String,
+      choice: Choice[T],
+      checked: Boolean
+    ): VdomNode =
+      <.input.radio(
+        // For some reason, react will only update the checked property
+        // if the button is given a key that changes at the same time as
+        // the property changes.
+        ^.key := s"${choice.id}-$checked",
+        ^.id := choice.id,
+        ^.name := groupName ,
+        ^.value := choice.label,
+        // onChange is used over onClick to avoid irrelevant react warnings
+        ^.onChange --> scope.setState(choice.value),
+        TagMod.when(checked)(^.checked := true),
+        choice.radioTags
+      )
+
+    private def renderLabel(choice: Choice[T]): VdomNode =
+      <.label(^.`for` := choice.id, choice.labelTags)
   }
 }

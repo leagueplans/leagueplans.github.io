@@ -73,27 +73,26 @@ object EffectValidator extends EffectValidator[Effect] {
   private final case class Validator(validate: (Player, ItemCache) => Either[String, Unit])
 
   private object Validator {
-    def depositorySize(depositoryID: Depository.ID): Validator =
+    def depositorySize(kind: Depository.Kind): Validator =
       Validator(
         (player, itemCache) => {
-          val depository = player.depositories(depositoryID)
-          val size = itemCache.itemise(depository).size
+          val size = itemCache.itemise(player.get(kind)).size
           Either.cond(
-            size <= depository.capacity,
+            size <= kind.capacity,
             right = (),
-            left = s"${depository.id.raw} requires $size spaces (max ${depository.capacity})"
+            left = s"${kind.name} requires $size spaces (max ${kind.capacity})"
           )
         }
       )
 
-    def hasItem(depositoryID: Depository.ID, itemID: Item.ID, removalCount: Int): Validator =
+    def hasItem(kind: Depository.Kind, itemID: Item.ID, removalCount: Int): Validator =
       Validator(
         (player, itemCache) => {
-          val heldCount = player.depositories(depositoryID).contents.getOrElse(itemID, 0)
+          val heldCount = player.get(kind).contents.getOrElse(itemID, 0)
           Either.cond(
             heldCount >= removalCount,
             right = (),
-            left = s"${depositoryID.raw} does not have enough of ${itemCache(itemID).name}"
+            left = s"${kind.name} does not have enough of ${itemCache(itemID).name}"
           )
         }
       )

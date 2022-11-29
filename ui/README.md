@@ -27,3 +27,60 @@ This will produce an optimised bundle under [`target/vite`](target/vite) suitabl
 
 #### Implementation
 The npm commands above defer (via [`package.json`](package.json)) to Vite. Vite's build have been configured (via [`vite.config.js`](vite.config.js)) to trigger an sbt build first, which ensures that the produced bundles are up-to-date with the local repository. The configuration for this is a slightly modified version of the code demonstrated by [Sébastien Doeraene](https://github.com/sjrd) in his talk, [Getting Started with Scala.js and Vite](https://www.youtube.com/watch?v=dv7fPmgFTNA). The repository featured in his talk can be found [here](https://github.com/sjrd/scalajs-sbt-vite-laminar-chartjs-example).
+
+### Component design
+A typical component implementation will look something like this:
+```scala
+import MyComponent.{Backend, Props, State}
+import japgolly.scalajs.react.component.Scala.{Component, Unmounted}
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
+final class MyComponent(initialStateParam: Any) {
+  private val build: Component[Props, State, Backend, CtorType.Props] =
+    ScalaComponent
+      .builder[Props]
+      .initialState[State](State(initialStateParam))
+      .renderBackend[Backend]
+      .build
+
+  def apply(propsParam: Any): Unmounted[Props, State, Backend] =
+    build(Props(propsParam))
+}
+
+object MyComponent {
+  @js.native @JSImport("/styles/myComponent.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val myStyle: String = js.native
+  }
+  
+  final case class Props(propsParam: Any)
+  final case class State(stateParam: Any)
+  
+  final class Backend(scope: BackendScope[Props, State]) {
+    private val subComponent = new MyComponent()
+    
+    def render(props: Props, state: State): VdomNode =
+      ???
+  }
+}
+```
+
+#### The `build` val
+There are a few key conventions to a React component's lifecycle:
+- a mount event should be fired when a component is added to the virtual DOM
+- update events should be fired when a component's props or state change
+- an unmount event should be fired when a component is removed from the virtual DOM
+
+The `build` val is important for making sure that our component implementations respect these conventions. For example, on the first invocation of the `apply` method we expect a mount event to be fired, and on subsequent invocations we expect an update event to be fired. If `build` was implemented as a def rather than a val, then a new component instance would be generated on every call to `apply`. Instead of getting an update event on subsequent invocations, we'd actually get a mount event for the new component instance, and an unmount event for the prior component instance.
+
+If there are no parameters needed to define `build`, then we can remove the `MyComponent` class and move both `build` and `apply` to the companion object.
+
+#### The `Styles` object
+
+#### State management
+
+#### Subcomponents

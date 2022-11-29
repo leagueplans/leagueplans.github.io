@@ -1,13 +1,11 @@
 package ddm.ui.component.plan.editing
 
-import ddm.common.model.Item
 import ddm.ui.component.plan.EffectDescriptionComponent
 import ddm.ui.component.plan.editing.effect.AddEffectComponent
 import ddm.ui.model.common.Tree
 import ddm.ui.model.plan.Step
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
-import ddm.ui.wrappers.fusejs.Fuse
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CtorType, ScalaComponent}
 import org.scalajs.dom.window
@@ -23,8 +21,7 @@ object StepEditorComponent {
     step: Tree[Step],
     editStep: Tree[Step] => Callback,
     player: Player,
-    itemCache: ItemCache,
-    fuse: Fuse[Item]
+    itemCache: ItemCache
   )
 
   final class Backend(scope: BackendScope[Props, Unit]) {
@@ -92,7 +89,6 @@ object StepEditorComponent {
 
     private def addEffect(props: Props): VdomNode =
       addEffectComponent(AddEffectComponent.Props(
-        props.fuse,
         props.itemCache,
         props.player,
         effect => props.editStep(

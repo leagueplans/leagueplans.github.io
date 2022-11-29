@@ -55,4 +55,6 @@ package object component {
   type With[+T] = WithE[T, TagMod]
   type RenderE[-T, -E <: TagMod] = (T, E) => VdomNode
   type WithE[+T, +E <: TagMod] = RenderE[T, E] => VdomNode
+  type RenderS[-T] = T => VdomNode
+  type WithS[+T] = RenderS[T] => VdomNode
 }

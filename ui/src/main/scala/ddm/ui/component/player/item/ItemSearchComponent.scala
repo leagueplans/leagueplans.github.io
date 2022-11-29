@@ -1,50 +1,64 @@
-package ddm.ui.component.plan.editing
+package ddm.ui.component.player.item
 
 import ddm.common.model.Item
 import ddm.ui.component.common.form.FuseSearchComponent
 import ddm.ui.component.common.{DualColumnListComponent, ElementWithTooltipComponent}
-import ddm.ui.component.player.ItemIconComponent
 import ddm.ui.component.{Render, With}
 import ddm.ui.wrappers.fusejs.Fuse
+import japgolly.scalajs.react.component.Scala.{Component, Unmounted}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ScalaComponent}
 
 object ItemSearchComponent {
-  val build: ScalaComponent[Props, State, Backend, CtorType.Props] =
+  private val build: Component[Props, State, Backend, CtorType.Props] =
     ScalaComponent
       .builder[Props]
       .initialState[State](None)
       .renderBackend[Backend]
       .build
 
-  final case class Props(fuse: Fuse[Item], render: Render[Option[Item]])
+  def apply(
+    items: Fuse[Item],
+    quantity: Int,
+    render: Render[Option[Item]]
+  ): Unmounted[Props, State, Backend] =
+    build(Props(items, quantity, render))
+
+  final case class Props(
+    items: Fuse[Item],
+    quantity: Int,
+    render: Render[Option[Item]]
+  )
 
   type State = Option[Item]
 
   final class Backend(scope: BackendScope[Props, State]) {
-    private val fuseSearchComponent = FuseSearchComponent.build[Item]
+    private val fuseSearchComponent = new FuseSearchComponent[Item]
     private val elementWithTooltipComponent = ElementWithTooltipComponent.build
-    private val itemIconComponent = ItemIconComponent.build
     private val dualColumnListComponent = DualColumnListComponent.build
 
     def render(props: Props, state: State): VdomNode =
-      withSearch(props.fuse)((results, searchBox) =>
-        props.render(state, renderSearch(results, state, searchBox))
+      withSearch(props.items)((results, searchBox) =>
+        props.render(
+          state,
+          renderSearch(results, props.quantity, state, searchBox)
+        )
       )
 
-    private def withSearch(fuse: Fuse[Item]): With[List[Item]] =
-      render => fuseSearchComponent(FuseSearchComponent.Props(
-        fuse,
+    private def withSearch(items: Fuse[Item]): With[List[Item]] =
+      render => fuseSearchComponent(
+        items,
         id = "fuse-item-search-box",
-        label = "Search for item:",
+        label = "Item:",
         placeholder = "Logs",
-        limit = 10,
+        maxResults = 10,
         defaultResults = List.empty,
         render
-      ))
+      )
 
     private def renderSearch(
       results: List[Item],
+      quantity: Int,
       selected: Option[Item],
       searchBox: TagMod
     ): VdomNode =
@@ -53,12 +67,16 @@ object ItemSearchComponent {
         searchBox,
         <.ol(
           results.toTagMod(item =>
-            <.li(renderResult(item, selected.contains(item)))
+            <.li(renderResult(item, quantity, selected.contains(item)))
           )
         )
       )
 
-    private def renderResult(item: Item, isSelected: Boolean): TagMod =
+    private def renderResult(
+      item: Item,
+      quantity: Int,
+      isSelected: Boolean
+    ): TagMod =
       TagMod(
         ^.key := item.id.raw,
         ^.classSet(
@@ -66,16 +84,21 @@ object ItemSearchComponent {
           "selected" -> isSelected
         ),
         elementWithTooltipComponent(ElementWithTooltipComponent.Props(
-          renderItem(item, isSelected, _),
+          renderItem(item, quantity, isSelected, _),
           renderTooltip(item, _)
         ))
       )
 
-    private def renderItem(item: Item, isSelected: Boolean, tooltipTags: TagMod): VdomNode =
+    private def renderItem(
+      item: Item,
+      quantity: Int,
+      isSelected: Boolean,
+      tooltipTags: TagMod
+    ): VdomNode =
       <.div(
         ^.className := "item",
         tooltipTags,
-        itemIconComponent(ItemIconComponent.Props(item, count = 1)),
+        ItemIconComponent(item, quantity),
         <.span(item.name),
         ^.onClick ==> { e: ^.onClick.Event =>
           e.stopPropagation()
@@ -83,11 +106,11 @@ object ItemSearchComponent {
         }
       )
 
-    private def renderTooltip(item: Item, tags: TagMod): VdomNode =
+    private def renderTooltip(item: Item, tooltipTags: TagMod): VdomNode =
       <.div(
-        tags,
+        tooltipTags,
         dualColumnListComponent(List(
-          ("ID:", item.id.raw),
+          ("ID prefix:", item.id.raw.take(8)),
           ("Examine:", item.examine)
         ))
       )

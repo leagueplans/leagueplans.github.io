@@ -1,6 +1,7 @@
 package ddm.ui.component.common.form
 
-import ddm.ui.component.Render
+import ddm.ui.component.RenderE
+import japgolly.scalajs.react.feature.ReactFragment
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, CtorType, ReactEventFromInput, ScalaComponent}
 
@@ -17,7 +18,7 @@ object TextInputComponent {
     id: String,
     label: String,
     placeholder: String,
-    render: Render[String]
+    render: RenderE[String, VdomNode]
   )
 
   type State = String
@@ -36,7 +37,7 @@ object TextInputComponent {
       }
 
       val input =
-        TagMod(
+        ReactFragment.withKey(props.id)(
           <.label(^.`for` := props.id, props.label),
           inputConstructor(
             ^.id := props.id,

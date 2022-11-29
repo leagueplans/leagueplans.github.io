@@ -33,10 +33,10 @@ object EffectDescriptionComponent {
 
         case Effect.GainItem(item, count, target) =>
           val prefix = if (count >= 0) "+" else ""
-          s"$prefix$count ${itemCache(item).name} (${target.raw})"
+          s"$prefix$count ${itemCache(item).name} (${target.name})"
 
         case Effect.MoveItem(item, count, source, target) =>
-          s"$count ${itemCache(item).name}: ${source.raw} -> ${target.raw}"
+          s"$count ${itemCache(item).name}: ${source.name} -> ${target.name}"
 
         case Effect.CompleteQuest(quest) =>
           s"Quest completed: ${quest.name}, +${quest.points} quest points"

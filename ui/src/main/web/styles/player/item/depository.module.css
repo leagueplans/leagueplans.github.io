@@ -1,0 +1,35 @@
+.depository {
+  display: grid;
+  grid-auto-rows: 36px;
+
+  column-gap: 2px;
+
+  width: fit-content;
+  height: fit-content;
+
+  border: solid;
+  border-radius: 5px;
+  margin: 0px;
+  padding: 7px 10px;
+
+  background-color: #494034;
+  list-style-type: none;
+}
+
+.bank {
+  composes: depository;
+  grid-template-columns: repeat(8, 36px);
+  grid-template-rows: repeat(7, 36px);
+}
+
+.inventory {
+  composes: depository;
+  grid-template-columns: repeat(4, 36px);
+  grid-template-rows: repeat(7, 36px);
+}
+
+.equipmentSlot {
+  composes: depository;
+  grid-template-columns: repeat(1, 36px);
+  grid-template-rows: repeat(1, 36px);
+}
