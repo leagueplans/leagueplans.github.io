@@ -110,19 +110,6 @@ p {
   background: rgba(0, 0, 0, 0.5);
 }
 
-.dual-column-list {
-  white-space: nowrap;
-  height: fit-content;
-}
-
-.dual-column-list.left {
-  text-align: left;
-}
-
-.dual-column-list.right {
-  text-align: right;
-}
-
 .stat-text {
   position: absolute;
   color: yellow;
