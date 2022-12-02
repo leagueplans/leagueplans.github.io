@@ -110,29 +110,6 @@ p {
   background: rgba(0, 0, 0, 0.5);
 }
 
-.tooltip {
-  visibility: hidden;
-  position: absolute;
-  top: 75%;
-  z-index: 1;
-  background-color: #e8e895;
-  padding: 2px;
-  transition: 0s visibility;
-}
-
-.tooltip p {
-  color: black;
-}
-
-.element-with-tooltip {
-  position: relative;
-}
-
-.element-with-tooltip:hover .tooltip {
-  visibility: visible;
-  transition-delay: 250ms;
-}
-
 .dual-column-list {
   white-space: nowrap;
   height: fit-content;
