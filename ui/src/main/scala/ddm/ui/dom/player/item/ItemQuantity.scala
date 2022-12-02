@@ -7,16 +7,13 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object ItemQuantity {
-  def apply(quantity: Signal[Int]): Signal[L.Node] =
-    quantity.splitOne(_ <= 1) {
-      case (true, _, _) => L.emptyNode
-      case (false, _, signal) =>
-        val clsAndRepr = signal.map(classAndRepr)
-        L.span(
-          L.cls <-- clsAndRepr.map(_._1),
-          L.child <-- clsAndRepr.map(_._2)
-        )
-    }
+  def apply(quantity: Signal[Int]): L.Span = {
+    val clsAndRepr = quantity.map(classAndRepr)
+    L.span(
+      L.cls <-- clsAndRepr.map(_._1),
+      L.child <-- clsAndRepr.map(_._2)
+    )
+  }
 
   @js.native @JSImport("/styles/player/item/itemQuantity.module.css", JSImport.Default)
   private object Styles extends js.Object {
@@ -27,6 +24,8 @@ object ItemQuantity {
 
   private def classAndRepr(quantity: Int): (String, String) =
     quantity match {
+      case q if q == 1 =>
+        (Styles.under100K, "")
       case q if q < 100000 =>
         (Styles.under100K, q.toString)
       case q if q < 10000000 =>
