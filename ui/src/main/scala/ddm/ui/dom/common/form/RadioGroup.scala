@@ -12,15 +12,22 @@ object RadioGroup {
   def apply[T](
     groupName: String,
     options: NonEmptyList[Opt[T]],
-    render: (T, L.Input, L.Label) => L.Children
+    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): (L.Children, Signal[T]) = {
     val default = options.head
     val selection = Var(default)
+
     val rendering =
-      option(default, groupName, initiallyChecked = true, selection.writer, render) +:
-        options.tail.map(
-          option(_, groupName, initiallyChecked = false, selection.writer, render)
+      ((default, true) +: options.tail.map((_, false))).map { case (opt, initiallyChecked) =>
+        option(
+          opt,
+          groupName,
+          initiallyChecked,
+          selection.writer,
+          selection.signal.map(Some(_)),
+          render
         )
+      }
 
     (rendering.flatten, selection.signal.map(_.value))
   }
@@ -30,7 +37,7 @@ object RadioGroup {
   def apply[T](
     groupName: String,
     options: Signal[List[Opt[T]]],
-    render: (T, L.Input, L.Label) => L.Children
+    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): (L.Modifier[L.Element], Signal[Option[T]]) = {
     val selection = Var[Option[Opt[T]]](None)
     val rendering =
@@ -40,6 +47,7 @@ object RadioGroup {
           groupName,
           initiallyChecked = false,
           selection.writer.contramapSome[Opt[T]],
+          selection.signal,
           render
         )
       }.map(_.flatten)
@@ -57,13 +65,15 @@ object RadioGroup {
     opt: Opt[T],
     groupName: String,
     initiallyChecked: Boolean,
-    selection: Observer[Opt[T]],
-    render: (T, L.Input, L.Label) => L.Children
+    selector: Observer[Opt[T]],
+    selected: Signal[Option[Opt[T]]],
+    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): L.Children = {
     val id = s"$groupName-${opt.id}"
-    val checked = selection.contracollect[Boolean] { case true => opt }
+    val checked = selector.contracollect[Boolean] { case true => opt }
     render(
       opt.value,
+      selected.signal.map(_.contains(opt)),
       radio(id, groupName, initiallyChecked, checked),
       label(id)
     )
@@ -80,7 +90,7 @@ object RadioGroup {
       L.idAttr(id),
       L.name(groupName),
       L.defaultChecked(initiallyChecked),
-      L.onClick.mapToChecked.setAsChecked --> checked,
+      L.onClick.mapToChecked.setAsChecked --> checked
     )
 
   private def label(id: String): L.Label =
