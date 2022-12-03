@@ -106,10 +106,6 @@ p {
   padding: 2px;
 }
 
-.modal::backdrop {
-  background: rgba(0, 0, 0, 0.5);
-}
-
 .stat-text {
   position: absolute;
   color: yellow;
