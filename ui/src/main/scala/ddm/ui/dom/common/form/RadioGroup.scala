@@ -4,9 +4,12 @@ import cats.data.NonEmptyList
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
+import org.scalajs.dom.Event
 
 object RadioGroup {
   final case class Opt[T](value: T, id: String)
+
+  private final case class Selection[T](opt: Opt[T], autoSelected: Boolean)
 
   /** The first option is chosen as the default */
   def apply[T](
@@ -15,66 +18,55 @@ object RadioGroup {
     render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): (L.Children, Signal[T]) = {
     val default = options.head
-    val selection = Var(default)
+    val selection = Var(Selection(default, autoSelected = true))
 
     val rendering =
-      ((default, true) +: options.tail.map((_, false))).map { case (opt, initiallyChecked) =>
-        option(
-          opt,
-          groupName,
-          initiallyChecked,
-          selection.writer,
-          selection.signal.map(Some(_)),
-          render
-        )
+      options.toList.map { opt =>
+        val checked = selection.signal.map(_.opt == opt)
+        val selector = selection.writer.contramap[Any](_ => Selection(opt, autoSelected = false))
+        option(opt, groupName, checked, selector, render)
       }
 
-    (rendering.flatten, selection.signal.map(_.value))
+    (rendering.flatten, selection.signal.map(_.opt.value))
   }
 
-  /** No option is selected by default. Selections are maintained so long as
-    * they remain in the list of options. */
+  /** Manual selections are maintained so long as they remain in the
+    * list of options. If a manual selection has not been made, then
+    * the first item in the list will be chosen as the default. */
   def apply[T](
     groupName: String,
     options: Signal[List[Opt[T]]],
     render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): (L.Modifier[L.Element], Signal[Option[T]]) = {
-    val selection = Var[Option[Opt[T]]](None)
+    val selection = Var[Option[Selection[T]]](None)
     val rendering =
       options.split(_.id) { case (_, opt, _) =>
-        option(
-          opt,
-          groupName,
-          initiallyChecked = false,
-          selection.writer.contramapSome[Opt[T]],
-          selection.signal,
-          render
-        )
+        val checked = selection.signal.map(_.exists(_.opt == opt))
+        val selector = selection.writer.contramap[Any](_ => Some(Selection(opt, autoSelected = false)))
+        option(opt, groupName, checked, selector, render)
       }.map(_.flatten)
 
     val bindings =
       List(
-        options --> clearSelectionIfOptionRemoved(selection),
+        options --> updateDefaultSelection(selection),
         L.children <-- rendering
       )
 
-    (bindings, selection.signal.map(_.map(_.value)))
+    (bindings, selection.signal.map(_.map(_.opt.value)))
   }
 
   private def option[T](
     opt: Opt[T],
     groupName: String,
-    initiallyChecked: Boolean,
-    selector: Observer[Opt[T]],
-    selected: Signal[Option[Opt[T]]],
+    checked: Signal[Boolean],
+    selector: Observer[Event],
     render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
   ): L.Children = {
     val id = s"$groupName-${opt.id}"
-    val checked = selector.contracollect[Boolean] { case true => opt }
     render(
       opt.value,
-      selected.signal.map(_.contains(opt)),
-      radio(id, groupName, initiallyChecked, checked),
+      checked,
+      radio(id, groupName, checked, selector),
       label(id)
     )
   }
@@ -82,27 +74,31 @@ object RadioGroup {
   private def radio(
     id: String,
     groupName: String,
-    initiallyChecked: Boolean,
-    checked: Observer[Boolean]
+    checked: Signal[Boolean],
+    selector: Observer[Event]
   ): L.Input =
     L.input(
       L.`type`("radio"),
       L.idAttr(id),
       L.name(groupName),
-      L.defaultChecked(initiallyChecked),
-      L.onClick.mapToChecked.setAsChecked --> checked
+      L.controlled(
+        L.checked <-- checked,
+        L.onClick --> selector
+      )
     )
 
   private def label(id: String): L.Label =
     L.label(L.forId(id))
 
-  private def clearSelectionIfOptionRemoved[T](
-    selection: Var[Option[Opt[T]]],
+  private def updateDefaultSelection[T](
+    selection: Var[Option[Selection[T]]]
   ): Observer[List[Opt[T]]] =
     selection.updater[List[Opt[T]]] {
-      case (Some(opt), updatedOptions) if updatedOptions.contains(opt) =>
-        Some(opt)
-      case _ =>
+      case (Some(selection), updatedOptions) if !selection.autoSelected && updatedOptions.contains(selection.opt) =>
+        Some(selection)
+      case (_, default :: _) =>
+        Some(Selection(default, autoSelected = true))
+      case (_, Nil) =>
         None
     }
 }

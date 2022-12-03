@@ -1,21 +1,20 @@
 package ddm.ui.dom.common.form
 
-import com.raquo.airstream.core.Observer
-import com.raquo.domtypes.jsdom.defs.events.TypedTargetEvent
+import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, eventPropToProcessor}
-import org.scalajs.dom.html
+import org.scalajs.dom.Event
 
 object Form {
-  def apply(observer: Observer[Unit]): (L.FormElement, L.Input) = {
-    val submit = input
+  def apply(): (L.FormElement, L.Input, EventStream[Unit]) = {
+    val onSubmit = new EventBus[Unit]
+    val submit = input()
     val form = L.form(
-      submit,
-      L.onSubmit.preventDefault -->
-        observer.contramap[TypedTargetEvent[html.Form]](_ => ())
+      L.onSubmit.preventDefault --> onSubmit.writer.contramap[Event](_ => ())
     )
-    (form, submit)
+    (form, submit, onSubmit.events)
   }
 
-  private def input: L.Input =
+  private def input(): L.Input =
     L.input(L.`type`("submit"))
 }

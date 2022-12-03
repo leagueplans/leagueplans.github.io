@@ -15,16 +15,14 @@ object ItemSearch {
     items: Fuse[Item],
     quantity: Signal[Int],
     id: String
-  ): (L.Modifier[L.Element], Signal[Option[Item]]) = {
-    val (search, options) = fuseSearch(items, id)
+  ): (L.Input, L.Label, L.Modifier[L.Element], Signal[Option[Item]]) = {
+    val (search, searchLabel, options) = fuseSearch(items, id)
     val (radios, selection) = radioGroup(options, quantity, id)
-    val modifiers = search :+ radios
-    (modifiers, selection)
+    (search, searchLabel, radios, selection)
   }
 
   @js.native @JSImport("/styles/player/item/itemSearch.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val search: String = js.native
     val radio: String = js.native
     val alternative: String = js.native
     val selection: String = js.native
@@ -33,7 +31,7 @@ object ItemSearch {
   private def fuseSearch(
     items: Fuse[Item],
     id: String
-  ): (List[L.Node], Signal[List[Item]]) = {
+  ): (L.Input, L.Label, Signal[List[Item]]) = {
     val (search, label, options) =
       FuseSearch(
         items,
@@ -42,12 +40,7 @@ object ItemSearch {
         defaultResults = List.empty
       )
 
-    val nodes = List(
-      label.amend(L.span("Item:")),
-      search.amend(L.cls(Styles.search), L.placeholder("Logs"))
-    )
-
-    (nodes, options)
+    (search.amend(L.placeholder("Logs")), label.amend(L.span("Item:")), options)
   }
 
   private def radioGroup(

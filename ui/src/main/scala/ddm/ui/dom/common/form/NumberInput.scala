@@ -7,12 +7,11 @@ import com.raquo.laminar.api.{L, eventPropToProcessor}
 object NumberInput {
   def apply[N : Numeric](id: String, initial: N): (L.Input, L.Label, Signal[N]) = {
     val state = Var(initial)
-    (input(id, initial.toString, state), label(id), state.signal)
+    (input(id, state), label(id), state.signal)
   }
 
   private def input[N : Numeric](
     id: String,
-    initial: String,
     content: Var[N]
   ): L.Input =
     L.input(
