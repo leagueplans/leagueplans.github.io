@@ -24,7 +24,6 @@ object GainItemElement {
     val (itemSearchNodes, radios, itemSignal) = itemInput(items, quantitySignal)
 
     val form = emptyForm.amend(
-      L.cls(Styles.root),
       itemSearchNodes,
       quantityNodes,
       submitButton.amend(L.cls(Styles.input)),
@@ -37,7 +36,6 @@ object GainItemElement {
 
   @js.native @JSImport("/styles/player/item/gainItemElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val root: String = js.native
     val label: String = js.native
     val input: String = js.native
   }

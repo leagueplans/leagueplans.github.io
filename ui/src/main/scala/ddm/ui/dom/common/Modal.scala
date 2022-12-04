@@ -2,10 +2,10 @@ package ddm.ui.dom.common
 
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
-import com.raquo.laminar.api.{L, enrichSource}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.builders.HtmlTag
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLDialogElement
+import org.scalajs.dom.{Event, HTMLDialogElement}
 
 object Modal {
   // Currently does not exist in Laminar
@@ -23,7 +23,8 @@ object Modal {
             case true => if (!node.ref.open) node.ref.showModal()
             case false => if (node.ref.open) node.ref.close()
           }
-        )
+        ),
+        L.customEventProp("close") --> content.writer.contramap[Event](_ => None)
       )
 
     (node, content.writer)
