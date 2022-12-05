@@ -11,5 +11,5 @@ object SkillIcon {
     )
 
   private def skillIcon(skill: Skill): String =
-    s"assets/images/skill-icons/${skill.toString}.png"
+    s"assets/images/skill-icons/$skill.png"
 }

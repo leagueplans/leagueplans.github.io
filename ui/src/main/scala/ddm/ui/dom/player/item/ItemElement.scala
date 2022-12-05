@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, intToNode, textToNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.{KeyValuePairs, Tooltip}
 
@@ -27,6 +27,6 @@ object ItemElement {
     Tooltip(KeyValuePairs(
       L.span("Name:") -> L.span(item.name),
       L.span("ID prefix:") -> L.span(item.id.raw.take(8)),
-      L.span("Quantity:") -> L.span(L.child <-- quantity.map(_.toString))
+      L.span("Quantity:") -> L.span(L.child.text <-- quantity)
     ))
 }

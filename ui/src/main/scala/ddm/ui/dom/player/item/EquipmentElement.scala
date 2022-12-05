@@ -11,7 +11,7 @@ import ddm.ui.model.player.item.{Depository, ItemCache}
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 
-object Equipment {
+object EquipmentElement {
   def apply(
     player: Signal[Player],
     itemCache: ItemCache,

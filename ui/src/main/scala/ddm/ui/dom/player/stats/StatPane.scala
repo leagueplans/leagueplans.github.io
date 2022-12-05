@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.stats
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, intToNode, seqToModifier, textToNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -65,8 +65,8 @@ object StatPane {
       L.cls(Styles.pane),
       L.children <-- stat.splitOne(_.level)((level, _, _) =>
         List(
-          L.span(L.cls(Styles.numerator), level.raw.toString),
-          L.span(L.cls(Styles.denominator), level.raw.toString)
+          L.span(L.cls(Styles.numerator), level.raw),
+          L.span(L.cls(Styles.denominator), level.raw)
         )
       ),
       L.children <-- stat.splitOne(_.skill)((skill, _, _) =>
