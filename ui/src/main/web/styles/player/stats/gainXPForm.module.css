@@ -5,3 +5,7 @@
 .input {
   margin: 3px;
 }
+
+.icon {
+  vertical-align: sub;
+}

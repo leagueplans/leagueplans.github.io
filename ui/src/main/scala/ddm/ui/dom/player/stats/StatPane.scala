@@ -1,16 +1,15 @@
 package ddm.ui.dom.player.stats
 
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, seqToModifier, textToNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.{ContextMenu, KeyValuePairs, Modal, Tooltip}
+import ddm.ui.dom.common._
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.UnlockSkill
-import ddm.ui.model.player.skill.{Skill, Stat}
-import ddm.ui.utils.airstream.ObserverOps.{RichOptionObserver, RichSignalObserver}
+import ddm.ui.model.player.skill.Stat
+import ddm.ui.utils.airstream.ObserverOps.RichOptionObserver
 import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js
@@ -24,9 +23,18 @@ object StatPane {
   ): (ReactiveHtmlElement[HTMLDialogElement], L.Div) = {
     val pane = toPane(stat).amend(toTooltip(stat))
     val (modal, modalBus) = Modal()
-    val gainXPFormOpener = stat.splitOne(_.skill)((skill, _, _) =>
-      toGainXPFormOpener(skill, modalBus, effectObserver)
-    )
+
+    val gainXPFormOpener =
+      stat
+        .splitOne(_.skill)((skill, _, _) => GainXPForm(skill))
+        .combineWith(effectObserver)
+        .map { case (form, formSubmissions, maybeObserver) =>
+          FormOpener(
+            modalBus,
+            maybeObserver.observer,
+            () => (form, formSubmissions.collect { case Some(effect) => effect })
+          )
+        }
 
     val menuBinder = toMenuBinder(
       contextMenuController,
@@ -35,7 +43,7 @@ object StatPane {
       gainXPFormOpener
     )
 
-    (modal.amend(L.cls()), pane.amend(menuBinder))
+    (modal, pane.amend(menuBinder))
   }
 
   @js.native @JSImport("/images/stat-window/stat-background.png", JSImport.Default)
@@ -105,36 +113,11 @@ object StatPane {
   private def xpValue(span: L.Span): L.Modifier[L.HtmlElement] =
     List(L.cls(Styles.xp), span)
 
-  private type OpenFormCommand = Any
-
-  private def toGainXPFormOpener(
-    skill: Skill,
-    modalBus: WriteBus[Option[L.Element]],
-    effectObserver: Signal[Option[Observer[Effect]]]
-  ): Observer[OpenFormCommand] = {
-    val (form, submissions) = GainXPForm(skill)
-    val selfClosingForm = form.amend(
-      bind(submissions, effectObserver),
-      submissions.mapToStrict(None) --> modalBus
-    )
-    modalBus.contramap[OpenFormCommand](_ => Some(selfClosingForm))
-  }
-
-  /** Emit the event into the current observer, if it exists */
-  private def bind(
-    submissions: EventStream[Option[Effect]],
-    observer: Signal[Option[Observer[Effect]]]
-  ): L.Modifier[L.Element] =
-    L.onMountBind(ctx =>
-      submissions.collect { case Some(effect) => effect} -->
-        observer.map(_.observer).latest(ctx.owner)
-    )
-
   private def toMenuBinder(
     controller: ContextMenu.Controller,
     statSignal: Signal[Stat],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    gainXPFormOpenerSignal: Signal[Observer[OpenFormCommand]]
+    gainXPFormOpenerSignal: Signal[Observer[FormOpener.Command]]
   ): Binder[Base] =
     controller.bind(closer =>
       Signal
@@ -148,7 +131,7 @@ object StatPane {
 
   private def toMenu(
     stat: Stat,
-    gainXPFormOpener: Observer[OpenFormCommand],
+    gainXPFormOpener: Observer[FormOpener.Command],
     effectObserver: Observer[UnlockSkill],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button = {

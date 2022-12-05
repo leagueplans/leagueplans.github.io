@@ -1,16 +1,15 @@
 package ddm.ui.dom.player.item
 
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, textToNode}
+import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, textToNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{ContextMenu, Modal}
+import ddm.ui.dom.common.{ContextMenu, FormOpener, Modal}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.item.{Depository, ItemCache}
-import ddm.ui.utils.airstream.ObserverOps._
+import ddm.ui.utils.airstream.ObserverOps.RichOptionObserver
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.HTMLDialogElement
 import org.scalajs.dom.html.{LI, OList}
@@ -28,9 +27,18 @@ object DepositoryElement {
   ): (ReactiveHtmlElement[HTMLDialogElement], ReactiveHtmlElement[OList]) = {
     val contents = toDepositoryContents(depository, itemCache)
     val (modal, modalBus) = Modal()
-    val gainItemFormOpener = depository.splitOne(_.kind)((kind, _, _) =>
-      toGainItemFormOpener(kind, itemFuse, modalBus, effectObserver)
-    )
+
+    val gainItemFormOpener =
+      depository
+        .splitOne(_.kind)((kind, _, _) => GainItemForm(kind, itemFuse))
+        .combineWith(effectObserver)
+        .map { case (form, formSubmissions, maybeObserver) =>
+          FormOpener(
+            modalBus,
+            maybeObserver.observer,
+            () => (form, formSubmissions.collect { case Some(effect) => effect })
+          )
+        }
 
     val menuBinder = toMenuBinder(
       contextMenuController,
@@ -80,36 +88,10 @@ object DepositoryElement {
         )
       )
 
-  private type OpenFormCommand = Any
-
-  private def toGainItemFormOpener(
-    depository: Depository.Kind,
-    itemFuse: Fuse[Item],
-    modalBus: WriteBus[Option[L.Element]],
-    effectObserver: Signal[Option[Observer[Effect]]]
-  ): Observer[OpenFormCommand] = {
-    val (form, submissions) = GainItemForm(depository, itemFuse)
-    val selfClosingForm = form.amend(
-      bind(submissions, effectObserver),
-      submissions.mapToStrict(None) --> modalBus
-    )
-    modalBus.contramap[OpenFormCommand](_ => Some(selfClosingForm))
-  }
-
-  /** Emit the event into the current observer, if it exists */
-  private def bind(
-    submissions: EventStream[Option[Effect]],
-    observer: Signal[Option[Observer[Effect]]]
-  ): L.Modifier[L.Element] =
-    L.onMountBind(ctx =>
-      submissions.collect { case Some(effect) => effect} -->
-        observer.map(_.observer).latest(ctx.owner)
-    )
-
   private def toMenuBinder(
     controller: ContextMenu.Controller,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    gainItemFormOpenerSignal: Signal[Observer[OpenFormCommand]]
+    gainItemFormOpenerSignal: Signal[Observer[FormOpener.Command]]
   ): Binder[Base] =
     controller.bind(menuCloser =>
       effectObserverSignal
@@ -122,7 +104,7 @@ object DepositoryElement {
     )
 
   private def toMenu(
-    gainItemFormOpener: Observer[OpenFormCommand],
+    gainItemFormOpener: Observer[FormOpener.Command],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     L.button(

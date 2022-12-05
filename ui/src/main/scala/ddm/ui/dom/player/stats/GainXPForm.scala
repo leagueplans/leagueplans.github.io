@@ -15,7 +15,7 @@ object GainXPForm {
     val (xpInputNodes, xpSignal) = xpInput()
 
     val form = emptyForm.amend(
-      SkillIcon(skill),
+      SkillIcon(skill).amend(L.cls(Styles.icon)),
       xpInputNodes,
       submitButton.amend(L.cls(Styles.input))
     )
@@ -28,6 +28,7 @@ object GainXPForm {
   private object Styles extends js.Object {
     val label: String = js.native
     val input: String = js.native
+    val icon: String = js.native
   }
 
   private def xpInput(): (List[L.Element], Signal[Double]) = {
