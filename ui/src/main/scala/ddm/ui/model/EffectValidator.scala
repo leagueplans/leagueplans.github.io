@@ -76,7 +76,7 @@ object EffectValidator extends EffectValidator[Effect] {
     def depositorySize(kind: Depository.Kind): Validator =
       Validator(
         (player, itemCache) => {
-          val size = itemCache.itemise(player.get(kind)).size
+          val size = itemCache.itemise(player.get(kind)).map { case (_, stacks) => stacks.size }.sum
           Either.cond(
             size <= kind.capacity,
             right = (),

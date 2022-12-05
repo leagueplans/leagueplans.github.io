@@ -59,9 +59,10 @@ object DepositoryComponent {
     private def renderContents(props: Props): VdomNode =
       <.ol(
         ^.className := style(props.depository.kind),
-        props.itemCache.itemise(props.depository).map { case (item, quantity) =>
-          <.li(ItemComponent(item, quantity))
-        }.toTagMod,
+        props.itemCache
+          .itemise(props.depository)
+          .flatMap { case (item, stacks) => stacks.map(item -> _) }
+          .toTagMod { case (item, quantity) => <.li(ItemComponent(item, quantity)) },
         renderContextMenu(
           props.depository.kind,
           props.itemFuse,

@@ -78,15 +78,17 @@ object DepositoryElement {
     itemCache: ItemCache
   ): Signal[List[ReactiveHtmlElement[LI]]] =
     depository
-      .map(itemCache.itemise)
-      .split { case (item, _) => item } ((item, _, signal) =>
+      .map(itemCache.itemise(_).flatMap { case (item, stacks) =>
+        stacks.zipWithIndex.map { case (size, index) => (item, size, index) }
+      })
+      .split { case (item, _, stackIndex) => item -> stackIndex } { case ((item, _), _, signal) =>
         L.li(
           ItemElement(
             item,
-            signal.map { case (_, quantity) => quantity }
+            signal.map { case (_, quantity, _) => quantity }
           )
         )
-      )
+      }
 
   private def toMenuBinder(
     controller: ContextMenu.Controller,
