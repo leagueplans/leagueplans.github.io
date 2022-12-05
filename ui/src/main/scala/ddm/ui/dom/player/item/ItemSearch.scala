@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, textToNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{FuseSearch, RadioGroup}
 import ddm.ui.dom.common.{KeyValuePairs, Tooltip}

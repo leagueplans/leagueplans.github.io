@@ -99,13 +99,6 @@ p {
   opacity: 0.15;
 }
 
-.context-menu {
-  position: absolute;
-  z-index: 1;
-  background-color: #fcf8ed;
-  padding: 2px;
-}
-
 .stat-text {
   position: absolute;
   color: yellow;
