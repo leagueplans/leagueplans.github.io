@@ -79,7 +79,7 @@ object StatWindowComponent {
 
     private def renderStat(skill: Skill, props: Props): VdomNode =
       statComponent(StatComponent.Props(
-        Stat(skill, props.stats(skill)),
+        Stat(skill, props.stats(skill), props.unlockedSkills.contains(skill)),
         props.unlockedSkills.contains(skill),
         props.addEffectToStep,
         props.contextMenuController

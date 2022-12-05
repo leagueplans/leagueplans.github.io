@@ -10,6 +10,7 @@ import ddm.common.model.Item
 import ddm.ui.dom.common.{ContextMenu, Modal}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.utils.airstream.ObserverOps._
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.HTMLDialogElement
 import org.scalajs.dom.html.{LI, OList}
@@ -89,20 +90,21 @@ object DepositoryElement {
   ): Observer[OpenFormCommand] = {
     val (form, submissions) = GainItemForm(depository, itemFuse)
     val selfClosingForm = form.amend(
-      toBinder(submissions.collect { case Some(effect) => effect }, effectObserver),
+      bind(submissions, effectObserver),
       submissions.mapToStrict(None) --> modalBus
     )
     modalBus.contramap[OpenFormCommand](_ => Some(selfClosingForm))
   }
 
   /** Emit the event into the current observer, if it exists */
-  private def toBinder[T](
-    stream: EventStream[T],
-    observer: Signal[Option[Observer[T]]]
-  ): Binder[Base] =
-    stream.withCurrentValueOf(observer) --> Observer[(T, Option[Observer[T]])] { case (t, observer) =>
-      observer.foreach(_.onNext(t))
-    }
+  private def bind(
+    submissions: EventStream[Option[Effect]],
+    observer: Signal[Option[Observer[Effect]]]
+  ): L.Modifier[L.Element] =
+    L.onMountBind(ctx =>
+      submissions.collect { case Some(effect) => effect} -->
+        observer.map(_.observer).latest(ctx.owner)
+    )
 
   private def toMenuBinder(
     controller: ContextMenu.Controller,

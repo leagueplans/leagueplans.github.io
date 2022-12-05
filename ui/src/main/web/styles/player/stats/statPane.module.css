@@ -1,0 +1,50 @@
+.pane {
+  position: relative;
+  width: 60px;
+  height: 30px;
+}
+
+.icon {
+  position: absolute;
+  top: 10%;
+  left: 8%;
+
+  width: 40%;
+}
+
+.locked {
+  opacity: 0.15;
+}
+
+.background {
+  width: 100%;
+}
+
+.level {
+  position: absolute;
+  color: yellow;
+  font-size: 16px;
+  text-shadow: 1px 1px black;
+}
+
+.numerator {
+  composes: level;
+
+  top: 13%;
+  right: 27%;
+  left: 52%;
+  text-align: center;
+}
+
+.denominator {
+  composes: level;
+
+  top: 51%;
+  right: 10%;
+  left: 73%;
+  text-align: center;
+}
+
+.xp {
+  text-align: right;
+}
