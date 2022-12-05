@@ -38,6 +38,6 @@ object TotalLevelPane {
 
   private def toTooltip(stats: Signal[Stats]): L.Modifier[L.HtmlElement] =
     Tooltip(KeyValuePairs(
-      L.span("Total XP:") -> L.span(L.child.text <-- stats.map(_.totalExp.toString))
+      L.span("Total XP:") -> L.span(L.cls(Styles.xp), L.child.text <-- stats.map(_.totalExp.toString))
     ))
 }

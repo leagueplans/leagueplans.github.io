@@ -67,63 +67,6 @@ p {
   width: 100%;
 }
 
-.stat-window {
-  border-spacing: 0px;
-  border: solid;
-  border-radius: 5px;
-  height: fit-content;
-}
-
-.stat-window-cell {
-  position: relative;
-  padding: 0px;
-}
-
-.stat {
-  width: 60px;
-  height: 30px; /* 50% width */
-}
-
-.stat-background {
-  width: 100%;
-}
-
-.stat .skill-icon {
-  position: absolute;
-  width: 40%;
-  top: 10%;
-  left: 8%;
-}
-
-.skill-icon.locked {
-  opacity: 0.15;
-}
-
-.stat-text {
-  position: absolute;
-  color: yellow;
-  text-shadow: 1px 1px black;
-  font-size: 14px;
-}
-
-.stat-text.numerator {
-  top: 15%;
-  right: 28%;
-  text-align: right;
-}
-
-.stat-text.denominator {
-  top: 55%;
-  right: 8%;
-  text-align: right;
-}
-
-.stat-text.total-level {
-  top: 21%;
-  text-align: center;
-  line-height: 75%;
-}
-
 .console {
   background-color: black;
 }
