@@ -11,13 +11,15 @@ import scala.scalajs.js.annotation.JSImport
 object ItemElement {
   def apply(item: Item, quantity: Signal[Int]): L.Div =
     L.div(
+      L.cls(Styles.item),
       ItemQuantity(quantity).amend(L.cls(Styles.quantity)),
       ItemIcon(item, quantity),
       tooltip(item, quantity)
     )
 
-  @js.native @JSImport("/styles/player/item/item.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/itemElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val item: String = js.native
     val quantity: String = js.native
   }
 

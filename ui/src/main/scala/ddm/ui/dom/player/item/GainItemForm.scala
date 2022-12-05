@@ -14,7 +14,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.chaining.scalaUtilChainingOps
 
-object GainItemElement {
+object GainItemForm {
   def apply(
     target: Depository.Kind,
     items: Fuse[Item]
@@ -34,7 +34,7 @@ object GainItemElement {
     (form, submissions)
   }
 
-  @js.native @JSImport("/styles/player/item/gainItemElement.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/gainItemForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val label: String = js.native
     val input: String = js.native

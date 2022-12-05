@@ -1,3 +1,7 @@
+.item {
+  position: relative;
+}
+
 .quantity {
   position: absolute;
   top: 0px;
