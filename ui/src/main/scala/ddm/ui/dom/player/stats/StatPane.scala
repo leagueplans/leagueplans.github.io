@@ -49,7 +49,7 @@ object StatPane {
   @js.native @JSImport("/images/stat-window/stat-background.png", JSImport.Default)
   private val statBackground: String = js.native
 
-  @js.native @JSImport("/styles/player/stats/statPane.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/stats/pane.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val pane: String = js.native
     val icon: String = js.native

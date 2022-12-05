@@ -22,8 +22,10 @@
 
 .level {
   position: absolute;
-  color: yellow;
+
+  text-align: center;
   font-size: 16px;
+  color: yellow;
   text-shadow: 1px 1px black;
 }
 
@@ -33,7 +35,6 @@
   top: 13%;
   right: 27%;
   left: 52%;
-  text-align: center;
 }
 
 .denominator {
@@ -42,7 +43,13 @@
   top: 51%;
   right: 10%;
   left: 73%;
-  text-align: center;
+}
+
+.total {
+  composes: level;
+
+  top: 20%;
+  left: 5%;
 }
 
 .xp {
