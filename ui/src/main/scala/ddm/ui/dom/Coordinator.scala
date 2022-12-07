@@ -5,10 +5,11 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import ddm.ui.StorageManager
 import ddm.ui.dom.common._
+import ddm.ui.dom.plan.{Forester, PlanElement}
 import ddm.ui.dom.player.PlayerElement
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
-import ddm.ui.model.common.Tree
+import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, Step}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.ItemCache
@@ -21,8 +22,8 @@ import scala.util.{Failure, Success}
 
 object Coordinator {
   def apply(
-    storageManager: StorageManager[Tree[Step]],
-    defaultPlan: Tree[Step],
+    storageManager: StorageManager[Forest[UUID, Step]],
+    defaultPlan: Forest[UUID, Step],
     itemCache: ItemCache
   ): L.Div = {
     val itemFuse = new Fuse(
@@ -33,49 +34,52 @@ object Coordinator {
       }
     )
 
-    val state = Var(State(
-      loadPlan(storageManager).getOrElse(defaultPlan),
-      focusedStepID = None
-    ))
+    val initialPlan = loadPlan(storageManager).getOrElse(defaultPlan)
+
+    val focusedStepID = Var[Option[UUID]](None)
+    val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
+    val (plan, forester) = PlanElement(initialPlan, focusedStepID.signal, focusUpdater)
+    val state = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
 
     val (contextMenu, contextMenuController) = ContextMenu()
     val playerElement = PlayerElement(
-      state.signal.map(_.playerAtFocusedStep),
+      state.map(_.playerAtFocusedStep),
       itemCache,
       itemFuse,
-      addEffectToFocus(state),
+      addEffectToFocus(state, forester),
       contextMenuController
     )
 
     L.div(
       contextMenu,
-      playerElement,
-      state.signal.map(_.plan) --> Observer(storageManager.save)
+      L.div(
+        L.display.flex,
+        plan,
+        playerElement,
+      ),
+      forester.forestSignal --> Observer(storageManager.save)
     )
   }
 
-  private def loadPlan(storageManager: StorageManager[Tree[Step]]): Option[Tree[Step]] =
+  private def loadPlan(storageManager: StorageManager[Forest[UUID, Step]]): Option[Forest[UUID, Step]] =
     storageManager.load().map {
       case Success(savedPlan) => savedPlan
       case Failure(ex) => throw new RuntimeException(s"Failure when trying to load plan", ex)
     }
 
-  private final case class State(plan: Tree[Step], focusedStepID: Option[UUID]) {
-    private val allTrees = plan.recurse(List(_))
+  private final case class State(plan: Forest[UUID, Step], focusedStepID: Option[UUID]) {
+    private val allSteps: List[Step] = plan.toList
 
-    val (progressedStepsAsTrees, focusedStep) =
+    val (progressedSteps, focusedStep) =
       focusedStepID match {
         case Some(id) =>
-          val (lhs, rhs) = allTrees.span(_.node.id != id)
+          val (lhs, rhs) = allSteps.span(_.id != id)
           val focused = rhs.headOption
           (lhs ++ focused, focused)
 
         case None =>
-          (allTrees, None)
+          (allSteps, None)
       }
-
-    val progressedSteps: List[Step] =
-      progressedStepsAsTrees.map(_.node)
 
     val playerAtFocusedStep: Player =
       EffectResolver.resolve(
@@ -84,16 +88,17 @@ object Coordinator {
       )
   }
 
-  private def addEffectToFocus(stateVar: Var[State]): Signal[Option[Observer[Effect]]] =
-    stateVar.signal.map(state =>
+  private def addEffectToFocus(
+    stateSignal: Signal[State],
+    forester: Forester[UUID, Step]
+  ): Signal[Option[Observer[Effect]]] =
+    stateSignal.map(state =>
       state.focusedStep.map(focusedStep =>
-        stateVar.writer.contramap[Effect] { effect =>
-          val updatedStep = focusedStep.mapNode(step =>
-            step.copy(directEffects = step.directEffects + effect)
+        Observer[Effect](effect =>
+          forester.update(
+            focusedStep.copy(directEffects = focusedStep.directEffects + effect)
           )
-
-          state.copy(plan = state.plan.update(updatedStep)(_.id))
-        }
+        )
       )
     )
 }
