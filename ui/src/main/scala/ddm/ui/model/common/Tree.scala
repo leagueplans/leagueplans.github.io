@@ -103,7 +103,7 @@ final case class Tree[T](node: T, children: List[Tree[T]]) {
 
   private def toStringHelper(indentSize: Int): String = {
     val indent = List.fill(indentSize)(' ').mkString
-    val childrenString = children.map(_.toStringHelper(indentSize + 2)).mkString("\n", "", s"")
+    val childrenString = children.map(_.toStringHelper(indentSize + 2)).mkString("\n", "", "")
     s"$indent$node$childrenString"
   }
 }

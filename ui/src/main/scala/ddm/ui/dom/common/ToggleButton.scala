@@ -3,13 +3,15 @@ package ddm.ui.dom.common
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor}
+import ddm.ui.utils.laminar.LaminarOps.RichL
+import org.scalajs.dom.Event
 
 object ToggleButton {
   def apply[T](
     initial: T,
     alternative: T,
-    initialContent: L.HtmlElement,
-    alternativeContent: L.HtmlElement
+    initialContent: L.Element,
+    alternativeContent: L.Element
   ): (L.Button, Signal[T]) = {
     val state = Var(initial)
 
@@ -17,8 +19,10 @@ object ToggleButton {
       L.button(
         L.`type`("button"),
         L.child <-- state.signal.map(t => if (t == initial) initialContent else alternativeContent),
-        L.composeEvents(L.onClick)(_.filter(!_.defaultPrevented)) -->
-          state.updater[Any]((t, _) => if (t == initial) alternative else initial)
+        L.ifUnhandled(L.onClick) --> state.updater[Event] { case (t, event) =>
+          event.preventDefault()
+          if (t == initial) alternative else initial
+        }
       )
 
     (button, state.signal)

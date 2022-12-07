@@ -3,6 +3,7 @@ package ddm.ui.dom.common.form
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, eventPropToProcessor}
+import ddm.ui.utils.laminar.LaminarOps.RichL
 import org.scalajs.dom.Event
 
 object Form {
@@ -10,7 +11,7 @@ object Form {
     val onSubmit = new EventBus[Unit]
     val submit = input()
     val form = L.form(
-      L.onSubmit.preventDefault --> onSubmit.writer.contramap[Event](_ => ())
+      L.ifUnhandled(L.onSubmit) --> onSubmit.writer.contramap[Event](_.preventDefault())
     )
     (form, submit, onSubmit.events)
   }

@@ -8,6 +8,7 @@ import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.facades.dom.RichElement.Ops
+import ddm.ui.utils.laminar.LaminarOps.RichL
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.{Element, MouseEvent}
 
@@ -23,7 +24,7 @@ object ContextMenu {
   ) {
     def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Child]]): Binder[Base] = {
       val contents = toContents(closer)
-      L.composeEvents(L.onContextMenu)(_.withCurrentValueOf(contents)) --> opener
+      L.ifUnhandledF(L.onContextMenu)(_.withCurrentValueOf(contents)) --> opener
     }
   }
 
@@ -49,7 +50,7 @@ object ContextMenu {
   }
 
   private def opener(status: Observer[Status.Open]): Observer[(MouseEvent, Option[L.Child])] =
-    status.contracollect[(MouseEvent, Option[L.Child])] { case (event, Some(contents)) if !event.defaultPrevented =>
+    status.contracollect[(MouseEvent, Option[L.Child])] { case (event, Some(contents)) =>
       event.preventDefault()
       Status.Open(event.pageX, event.pageY, contents)
     }
@@ -74,9 +75,9 @@ object ContextMenu {
     status.changes.collect { case open: Status.Open => s"${pick(open)}px" }
 
   private def closeOnClickOutside(status: Observer[Status.Closed.type]): Binder[Base] =
-    L.documentEvents.onContextMenu --> status.contracollect[MouseEvent] {
-      case event if !event.defaultPrevented => Status.Closed
-    }
+    L.documentEvents
+      .onContextMenu
+      .filter(!_.defaultPrevented) --> status.contracollect[Any](_ => Status.Closed)
 
   private def closeIfAnotherMenuIsOpened(status: Observer[Status.Closed.type]): L.Modifier[Base] =
     L.inContext(node =>

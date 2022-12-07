@@ -1,0 +1,60 @@
+.step {
+  display: flex;
+
+  border: 1px solid rgba(255, 253, 214, 0.5);
+  border-radius: 3px;
+}
+
+.focused {
+  composes: step;
+  background-color: #595604;
+}
+
+.notFocused {
+  composes: step;
+  background-color: #3d4b59;
+}
+
+.description {
+  color: white;
+}
+
+.content {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+  padding-bottom: 2px;
+  flex-grow: 1; /* Ensure the content fills the div so it can be clicked on */
+}
+
+.subSteps {
+  margin: 0px;
+  padding: 0px;
+  list-style-type: none;
+}
+
+.subStep {
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
+
+.toggle {
+  border: none;
+  padding: 0px;
+  background-color: rgba(255, 255, 255, 0.2);
+
+  display: flex;
+}
+
+.toggle:hover {
+  background-color: #323a42;
+}
+
+.toggle:active {
+  background-color: #4f5a66;
+}
+
+.toggleIcon {
+  width: 14px;
+  color: white;
+}
