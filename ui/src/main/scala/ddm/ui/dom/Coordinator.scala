@@ -55,8 +55,8 @@ object Coordinator {
       contextMenu,
       L.div(
         L.cls(Styles.page),
-        planElement.amend(L.cls(Styles.plan)),
         playerElement.amend(L.cls(Styles.state)),
+        planElement.amend(L.cls(Styles.plan))
       ),
       forester.forestSignal --> Observer(storageManager.save)
     )

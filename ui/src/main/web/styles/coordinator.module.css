@@ -4,9 +4,10 @@
 
 .plan {
   flex: 1;
+  height: 100vh;
   overflow: auto;
 }
 
 .state {
-  flex: 2;
+  flex: 1;
 }

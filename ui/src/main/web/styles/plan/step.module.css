@@ -1,8 +1,8 @@
 .step {
-  display: flex;
-
-  border: 1px solid rgba(255, 253, 214, 0.5);
-  border-radius: 3px;
+  border: solid rgba(255, 253, 214, 0.5);
+  border-width: 0.05rem 0rem 0.05rem 0.05rem;
+  border-radius: 0.3rem 0 0 0.3rem;;
+  padding: 0.125rem 0rem 0.125rem 0.125rem;
 }
 
 .focused {
@@ -10,47 +10,74 @@
   background-color: #444203;
 }
 
-.notFocused {
+.hovered {
+  composes: step;
+  background-color: #082a4c
+}
+
+.inactive {
   composes: step;
   background-color: #00172e;
 }
 
 .content {
-  padding-left: 5px;
-  padding-right: 5px;
-  padding-top: 5px;
-  padding-bottom: 2px;
-  flex-grow: 1; /* Ensure the content fills the div so it can be clicked on */
+  margin-top: 0.2rem;
 }
 
-.subSteps {
-  margin: 0px;
-  padding: 0px;
-  list-style-type: none;
-}
-
-.subStep {
-  margin-top: 3px;
-  margin-bottom: 3px;
-}
-
-.toggle {
+.subStepsToggle {
+  background: none;
   border: none;
-  padding: 0px;
-  background-color: rgba(255, 255, 255, 0.2);
+  margin-top: 0.1rem;
 
+  display: flex;
+
+  font-size: 1rem;
+  color: white;
+}
+
+.subStepsToggle:hover {
+  filter: drop-shadow(0 0 0.1rem white);
+}
+
+.subStepsToggle:active {
+  opacity: 0.7;
+}
+
+.horizontalSubStepsToggle {
+  composes: subStepsToggle;
+}
+
+.verticalSubStepsToggle {
+  composes: subStepsToggle;
+
+  flex-direction: column;
+  align-items: center;
+}
+
+.hiddenStepsAnnotation {
+  margin-left: 0.25rem;
+}
+
+.collapseBanner {
+  background-color: white;
+  width: 0.1rem;
+  height: 100%;
+
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.subStepsSection {
   display: flex;
 }
 
-.toggle:hover {
-  background-color: #323a42;
+.subStepsList {
+  margin: 0px;
+  padding: 0px;
+  list-style-type: none;
+  flex-grow: 1;
 }
 
-.toggle:active {
-  background-color: #4f5a66;
-}
-
-.toggleIcon {
-  width: 14px;
-  color: white;
+.subStep + .subStep {
+  margin-top: 0.1rem;
 }
