@@ -7,16 +7,12 @@
 
 .focused {
   composes: step;
-  background-color: #595604;
+  background-color: #444203;
 }
 
 .notFocused {
   composes: step;
-  background-color: #3d4b59;
-}
-
-.description {
-  color: white;
+  background-color: #00172e;
 }
 
 .content {

@@ -1,4 +1,4 @@
-package ddm.ui.dom.plan
+package ddm.ui.dom.common
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
@@ -55,8 +55,14 @@ final class Forester[ID, T](
   def add(child: T, parent: ID): Unit =
     run(_.add(child, parent))
 
+  def move(child: ID, maybeParent: Option[ID]): Unit =
+    run(_.move(child, maybeParent))
+
   def remove(id: ID): Unit =
     run(_.remove(id))
+
+  def update(id: ID, f: T => T): Unit =
+    run(_.update(id, f))
 
   def update(data: T): Unit =
     run(_.update(data))

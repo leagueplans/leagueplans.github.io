@@ -27,6 +27,9 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
     }
   }
 
+  def move(childID: ID, maybeParentID: Option[ID]): List[Update[ID, T]] =
+    forest.nodes.get(childID).toList.flatMap(addOption(_, maybeParentID))
+
   def remove(id: ID): List[Update[ID, T]] =
     removeHelper(acc = List.empty, remaining = List(id))
 
@@ -42,9 +45,14 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
         removeHelper(removeLink ++ removeNode ++ acc, children ++ t)
     }
 
+  def update(id: ID, f: T => T): List[Update[ID, T]] =
+    forest.nodes.get(id).flatMap { existingData =>
+      val updated = f(existingData)
+      Option.when(updated != existingData)(UpdateData(id, updated))
+    }.toList
+
   def update(data: T): List[Update[ID, T]] = {
     val id = toID(data)
-
     forest.nodes.get(id) match {
       case Some(existingData) => Option.when(data != existingData)(UpdateData(id, data)).toList
       case None => List(AddNode(id, data))

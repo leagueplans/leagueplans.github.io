@@ -1,0 +1,12 @@
+.page {
+  display: flex;
+}
+
+.plan {
+  flex: 1;
+  overflow: auto;
+}
+
+.state {
+  flex: 2;
+}

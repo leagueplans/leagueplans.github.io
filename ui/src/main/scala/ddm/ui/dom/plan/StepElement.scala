@@ -1,7 +1,7 @@
 package ddm.ui.dom.plan
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ToggleButton
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
@@ -23,11 +23,13 @@ object StepElement {
 
   def apply(
     step: Signal[Step],
+    subSteps: Signal[L.Children],
     theme: Signal[Theme],
-    focusObserver: Observer[UUID],
-    subSteps: Signal[L.Children]
+    editingEnabledSignal: Signal[Boolean],
+    stepUpdater: Observer[Step],
+    focusObserver: Observer[UUID]
   ): L.Div = {
-    val (toggleButton, state) =
+    val (toggleSubSteps, showSubSteps) =
       ToggleButton(
         initial = true,
         alternative = false,
@@ -35,7 +37,6 @@ object StepElement {
         alternativeContent = L.icon(FreeSolid.faEye).amend(L.svg.cls(Styles.toggleIcon))
       )
 
-    val description = L.p(L.cls(Styles.description), L.child.text <-- step.map(_.description))
     val content = toContent(subSteps)
     val clickListener =
       L.ifUnhandledF(L.onClick)(_.withCurrentValueOf(step)) -->
@@ -49,11 +50,11 @@ object StepElement {
         case Theme.Focused => Styles.focused
         case Theme.NotFocused => Styles.notFocused
       },
-      toggleButton.amend(L.cls(Styles.toggle)),
+      toggleSubSteps.amend(L.cls(Styles.toggle)),
       L.div(
         L.cls(Styles.content),
-        description,
-        L.child.maybe <-- state.map(Option.when(_)(content)),
+        StepDescription(step, stepUpdater, editingEnabledSignal),
+        L.child.maybe <-- showSubSteps.map(Option.when(_)(content)),
         clickListener
       )
     )
@@ -67,7 +68,6 @@ object StepElement {
     val content: String = js.native
     val toggle: String = js.native
     val toggleIcon: String = js.native
-    val description: String = js.native
     val subSteps: String = js.native
     val subStep: String = js.native
   }

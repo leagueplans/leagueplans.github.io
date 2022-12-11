@@ -1,7 +1,6 @@
 package ddm.ui.utils.laminar
 
 import com.raquo.domtypes.generic.codecs.{DoubleAsStringCodec, StringAsIsCodec}
-import com.raquo.domtypes.generic.defs.SvgNamespaces
 import com.raquo.laminar.api.{L, seqToModifier, seqToSetter}
 import com.raquo.laminar.modifiers.Setter
 import ddm.ui.facades.fontawesome.commontypes.IconDefinition

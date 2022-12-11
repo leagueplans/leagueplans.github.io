@@ -21,6 +21,8 @@
 }
 
 .level {
+  composes: osrs-font from "../../fonts.module.css";
+
   position: absolute;
 
   text-align: center;

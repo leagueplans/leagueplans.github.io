@@ -6,6 +6,18 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object FreeSolid {
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowDownLong")
+  object faArrowDownLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowRightLong")
+  object faArrowRightLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowUpLong")
+  object faArrowUpLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCrosshairs")
+  object faCrosshairs extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faEye")
   object faEye extends IconDefinition
 
@@ -17,4 +29,7 @@ object FreeSolid {
 
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faPlus")
   object faPlus extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTrash")
+  object faTrash extends IconDefinition
 }

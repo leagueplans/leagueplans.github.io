@@ -71,6 +71,17 @@ final class Forest[ID, T] private[forest](
       roots
     )
 
+  def children(id: ID): List[T] =
+    toChildren(id).flatMap(nodes.get)
+
+  def siblings(childID: ID): List[T] =
+    toParent
+      .get(childID)
+      .toList
+      .flatMap(toChildren)
+      .filterNot(_ == childID)
+      .flatMap(nodes.get)
+
   def toList: List[T] =
     recurse((id, _) => List(id)).flatMap(nodes.get)
 

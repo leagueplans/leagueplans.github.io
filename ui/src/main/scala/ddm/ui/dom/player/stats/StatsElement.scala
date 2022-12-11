@@ -58,9 +58,9 @@ object StatsElement {
     L.ol(
       L.cls(Styles.stats),
       L.children <-- statPanes,
-      TotalLevelPane(statsSignal.map(stats =>
+      L.li(TotalLevelPane(statsSignal.map(stats =>
         Stats(stats.map(stat => stat.skill -> stat.exp).toMap))
-      )
+      ))
     )
   }
 

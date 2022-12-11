@@ -1,11 +1,11 @@
 package ddm.ui.dom
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Var
+import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 import ddm.ui.StorageManager
 import ddm.ui.dom.common._
-import ddm.ui.dom.plan.{Forester, PlanElement}
+import ddm.ui.dom.plan.PlanElement
 import ddm.ui.dom.player.PlayerElement
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
@@ -18,6 +18,7 @@ import ddm.ui.wrappers.fusejs.Fuse
 import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
+import scala.scalajs.js.annotation.JSImport
 import scala.util.{Failure, Success}
 
 object Coordinator {
@@ -38,7 +39,7 @@ object Coordinator {
 
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
-    val (plan, forester) = PlanElement(initialPlan, focusedStepID.signal, focusUpdater)
+    val (planElement, forester) = PlanElement(initialPlan, focusedStepID.signal, Val(true), focusUpdater)
     val state = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
 
     val (contextMenu, contextMenuController) = ContextMenu()
@@ -53,18 +54,25 @@ object Coordinator {
     L.div(
       contextMenu,
       L.div(
-        L.display.flex,
-        plan,
-        playerElement,
+        L.cls(Styles.page),
+        planElement.amend(L.cls(Styles.plan)),
+        playerElement.amend(L.cls(Styles.state)),
       ),
       forester.forestSignal --> Observer(storageManager.save)
     )
   }
 
+  @js.native @JSImport("/styles/coordinator.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val page: String = js.native
+    val plan: String = js.native
+    val state: String = js.native
+  }
+
   private def loadPlan(storageManager: StorageManager[Forest[UUID, Step]]): Option[Forest[UUID, Step]] =
     storageManager.load().map {
       case Success(savedPlan) => savedPlan
-      case Failure(ex) => throw new RuntimeException(s"Failure when trying to load plan", ex)
+      case Failure(ex) => throw new RuntimeException("Failure when trying to load plan", ex)
     }
 
   private final case class State(plan: Forest[UUID, Step], focusedStepID: Option[UUID]) {
