@@ -30,9 +30,10 @@ object DepositoryElement {
 
     val gainItemFormOpener =
       depository
-        .splitOne(_.kind)((kind, _, _) => GainItemForm(kind, itemFuse))
+        .map(_.kind)
         .combineWith(effectObserver)
-        .map { case (form, formSubmissions, maybeObserver) =>
+        .map { case (kind, maybeObserver) =>
+          val (form, formSubmissions) = GainItemForm(kind, itemFuse)
           FormOpener(
             modalBus,
             maybeObserver.observer,

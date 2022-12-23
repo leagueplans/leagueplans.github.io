@@ -1,0 +1,42 @@
+.effect {
+  display: flex;
+  align-items: center;
+  padding-left: 0.25rem;
+}
+
+.text {
+  color: white;
+}
+
+.icon {
+  display: inline-block;
+  padding-right: 0.25rem;
+}
+
+.skillIcon {
+  composes: icon;
+}
+
+.itemIcon {
+  composes: icon;
+}
+
+.arrow {
+  composes: icon;
+}
+
+.pickup {
+  composes: arrow;
+  color: green;
+}
+
+.drop {
+  composes: arrow;
+  color: red;
+}
+
+.transfer {
+  composes: arrow;
+  color: orange;
+  padding-left: 0.25rem;
+}

@@ -1,16 +1,18 @@
 package ddm.ui.dom.plan
 
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.model.plan.Step
+import ddm.ui.dom.common.{DragSortableList, Forester}
+import ddm.ui.facades.fontawesome.freeregular.FreeRegular
+import ddm.ui.model.plan.{Effect, EffectList, Step}
 import ddm.ui.utils.laminar.LaminarOps.RichL
 import org.scalajs.dom.html.OList
-import org.scalajs.dom.{Event, MouseEvent}
+import org.scalajs.dom.{Event, KeyCode, MouseEvent}
 
 import java.util.UUID
 import scala.scalajs.js
@@ -24,22 +26,35 @@ object StepElement {
   }
 
   def apply(
+    stepID: UUID,
     step: Signal[Step],
-    subSteps: Signal[L.Children],
+    subStepsSignal: Signal[L.Children],
     theme: Signal[Theme],
     editingEnabledSignal: Signal[Boolean],
-    stepUpdater: Observer[Step],
-    focusObserver: Observer[UUID]
+    modalBus: WriteBus[Option[L.Element]],
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    focusObserver: Observer[UUID],
+    showEffect: Effect => L.HtmlElement
   ): L.Div = {
-    val content = toCollapsibleSteps(subSteps)
-    val clickListener =
-      L.ifUnhandledF(L.onClick)(_.withCurrentValueOf(step)) -->
-        focusObserver.contramap[(Event, Step)] { case (event, step) =>
-          event.preventDefault()
-          step.id
-        }
-
     val (hoverListeners, isHovering) = hoverControls
+    val subSteps =
+      L.child <-- CollapsibleList(
+        subStepsSignal.map(_.size),
+        showInitially = true,
+        contentType = "step",
+        expandedSubSteps(subStepsSignal)
+      )
+
+    val effects =
+      L.child.maybe <-- CollapsibleList(
+        step.map(_.directEffects.underlying.size),
+        showInitially = false,
+        contentType = "effect",
+        expandedEffects(stepID, step, stepUpdater, showEffect)
+      ).combineWith(editingEnabledSignal)
+        .map { case (effects, editingEnabled) =>
+          Option.when(editingEnabled)(effects)
+        }
 
     L.div(
       L.cls <-- Signal.combine(theme, isHovering).map {
@@ -47,9 +62,17 @@ object StepElement {
         case (Theme.NotFocused, false) => Styles.inactive
         case (Theme.NotFocused, true) => Styles.hovered
       },
+      L.tabIndex(0),
+      L.children <-- editingEnabledSignal.map(editingEnabled =>
+        Option.when(editingEnabled)(List(
+          DeleteStepButton(stepID, modalBus, stepUpdater).amend(L.cls(Styles.button)),
+          AddSubStepButton(stepID, modalBus, stepUpdater).amend(L.cls(Styles.button))
+        )).toList.flatten
+      ),
       StepDescription(step, stepUpdater, editingEnabledSignal),
-      L.child <-- content,
-      clickListener,
+      subSteps,
+      effects,
+      focusListeners(stepID, focusObserver),
       hoverListeners
     )
   }
@@ -60,93 +83,105 @@ object StepElement {
     val hovered: String = js.native
     val inactive: String = js.native
 
-    val horizontalSubStepsToggle: String = js.native
-    val verticalSubStepsToggle: String = js.native
-    val hiddenStepsAnnotation: String = js.native
-    val collapseBanner: String = js.native
+    val button: String = js.native
 
-    val subStepsSection: String = js.native
-    val subStepsList: String = js.native
+    val subList: String = js.native
     val subStep: String = js.native
+    val effect: String = js.native
   }
 
-  private def toCollapsibleSteps(subStepsSignal: Signal[L.Children]): Signal[L.Child] = {
-    val showSubStepsState = Var(true)
-
-    Signal
-      .combine(showSubStepsState, subStepsSignal)
-      .splitOne { case (showSubSteps, subSteps) => (showSubSteps, subSteps.nonEmpty) } {
-        case ((_, false), _, _) =>
-          L.emptyNode
-
-        case ((false, true), _, _) =>
-          expandSubStepsButton(
-            subStepsSignal.map(_.size),
-            showSubStepsState.writer
-          )
-
-        case ((true, true), _, _) =>
-          L.div(
-            L.cls(Styles.subStepsSection),
-            collapseSubStepsButton(showSubStepsState.writer),
-            expandedSubSteps(subStepsSignal)
-          )
-      }
-  }
-
-  private def expandSubStepsButton(
-    subStepCount: Signal[Int],
-    showSubSteps: Observer[Boolean]
-  ): L.Button =
-    L.button(
-      L.cls(Styles.horizontalSubStepsToggle),
-      L.`type`("button"),
-      L.icon(FreeSolid.faCaretRight),
-      L.span(
-        L.cls(Styles.hiddenStepsAnnotation),
-        L.child.text <-- subStepCount.map(i => s"$i steps hidden")
-      ),
-      L.ifUnhandled(L.onClick) --> showSubSteps.contramap[MouseEvent] { event =>
+  private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
+    val hovering = Var(false)
+    val listeners = List(
+      L.ifUnhandled(L.onMouseOver) --> hovering.writer.contramap[MouseEvent] { event =>
         event.preventDefault()
         true
-      }
-    )
-
-  private def collapseSubStepsButton(showSubSteps: Observer[Boolean]): L.Button =
-    L.button(
-      L.cls(Styles.verticalSubStepsToggle),
-      L.`type`("button"),
-      L.icon(FreeSolid.faCaretDown),
-      L.div(L.cls(Styles.collapseBanner)),
-      L.ifUnhandled(L.onClick) --> showSubSteps.contramap[MouseEvent] { event =>
+      },
+      L.ifUnhandled(L.onMouseOut) --> hovering.writer.contramap[MouseEvent] { event =>
         event.preventDefault()
         false
       }
     )
+    (listeners, hovering.signal)
+  }
 
   private def expandedSubSteps(subStepsSignal: Signal[L.Children]): ReactiveHtmlElement[OList] =
     L.ol(
-      L.cls(Styles.subStepsList),
+      L.cls(Styles.subList),
       L.children <-- subStepsSignal.split(identity)((child, _, _) =>
         L.li(L.cls(Styles.subStep), child)
       )
     )
 
-  private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
-    val hovering = Var(false)
-    val listeners =
-      List(
-        L.ifUnhandled(L.onMouseOver) --> hovering.writer.contramap[MouseEvent] { event =>
-          println(true)
-          event.preventDefault()
-          true
-        },
-        L.ifUnhandled(L.onMouseOut) --> hovering.writer.contramap[MouseEvent] { event =>
-          println(false)
-          event.preventDefault()
-          false
-        }
+  private def expandedEffects(
+    stepID: UUID,
+    stepSignal: Signal[Step],
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    showEffect: Effect => L.HtmlElement
+  ): ReactiveHtmlElement[OList] = {
+    DragSortableList[Effect, Effect](
+      stepID.toString,
+      stepSignal.map(_.directEffects.underlying),
+      stepUpdater.contramap[List[Effect]](effects => forester =>
+        forester.update(stepID, step => step.copy(directEffects = EffectList(effects)))
+      ),
+      identity,
+      (effect, _, _, dragIcon) => List(
+        L.cls(Styles.effect),
+        dragIcon.amend(L.cls(Styles.button)),
+        deleteEffectButton(stepSignal, effect, stepUpdater),
+        showEffect(effect)
       )
-    (listeners, hovering.signal)
+    )/*
+
+    L.ol(
+      L.cls(Styles.subList),
+      L.children <-- stepSignal.splitOne(_.directEffects.underlying)((effects, _, _) =>
+        effects.map(effect =>
+          L.li(
+            L.cls(Styles.effect),
+            deleteEffectButton(stepSignal, effect, stepUpdater),
+            showEffect(effect)
+          )
+        )
+      )
+    )*/
+  }
+
+  private def deleteEffectButton(
+    stepSignal: Signal[Step],
+    effect: Effect,
+    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+  ): L.Button =
+    L.button(
+      L.cls(Styles.button),
+      L.`type`("button"),
+      L.icon(FreeRegular.faTrashCan),
+      L.ifUnhandledF(L.onClick)(_.withCurrentValueOf(stepSignal)) -->
+        stepUpdater.contramap[(MouseEvent, Step)] { case (event, step) => forester =>
+          event.preventDefault()
+          forester.update(
+            step.copy(directEffects =
+              EffectList(
+                step.directEffects.underlying.filterNot(_ == effect)
+              )
+            )
+          )
+        }
+    )
+
+  private def focusListeners(
+    stepID: UUID,
+    focusObserver: Observer[UUID]
+  ): List[Binder[Base]] = {
+    val handler = focusObserver.contramap[Event] { event =>
+      event.preventDefault()
+      stepID
+    }
+
+    List(
+      L.ifUnhandled(L.onClick) --> handler,
+      L.ifUnhandledF(L.onKeyDown)(_.filter(_.keyCode == KeyCode.Enter)) --> handler
+    )
   }
 }

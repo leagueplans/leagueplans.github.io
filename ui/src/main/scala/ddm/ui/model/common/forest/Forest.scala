@@ -63,9 +63,9 @@ final class Forest[ID, T] private[forest](
   private[forest] val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
-  def map[S](f: T => S): Forest[ID, S] =
+  def map[S](f: (ID, T) => S): Forest[ID, S] =
     new Forest(
-      nodes.map { case (id, t) => id -> f(t) },
+      nodes.map { case (id, t) => id -> f(id, t) },
       toParent,
       toChildren,
       roots

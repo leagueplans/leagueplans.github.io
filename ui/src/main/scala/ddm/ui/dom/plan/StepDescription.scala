@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.EditableParagraph
+import ddm.ui.dom.common.{EditableParagraph, Forester}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.laminar.LaminarOps.RichL
@@ -12,13 +12,14 @@ import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
 import org.scalajs.dom.{Event, FocusEvent}
 
+import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepDescription {
   def apply(
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Step],
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
     editingEnabledSignal: Signal[Boolean]
   ): L.Div = {
     val isEditing = Var(false)
@@ -79,7 +80,7 @@ object StepDescription {
   private def liveEditingParagraph(
     initialDescription: String,
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Step],
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
     isEditingUpdater: Observer[Boolean]
   ): ReactiveHtmlElement[Paragraph] = {
     val (p, descriptionSignal) = EditableParagraph(initial = initialDescription)
@@ -87,8 +88,8 @@ object StepDescription {
     p.amend(
       L.cls(Styles.paragraph),
       descriptionSignal.withCurrentValueOf(stepSignal) -->
-        stepUpdater.contramap[(String, Step)] { case (description, step) =>
-          step.copy(description = description)
+        stepUpdater.contramap[(String, Step)] { case (description, step) => forester =>
+          forester.update(step.copy(description = description))
         },
       // Don't change the focused step every time you click to edit
       // a paragraph, which would trigger a bunch of repainting

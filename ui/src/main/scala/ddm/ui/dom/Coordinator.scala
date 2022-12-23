@@ -5,7 +5,7 @@ import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 import ddm.ui.StorageManager
 import ddm.ui.dom.common._
-import ddm.ui.dom.plan.PlanElement
+import ddm.ui.dom.plan.{DescribedEffect, PlanElement}
 import ddm.ui.dom.player.PlayerElement
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
@@ -39,7 +39,13 @@ object Coordinator {
 
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
-    val (planElement, forester) = PlanElement(initialPlan, focusedStepID.signal, Val(true), focusUpdater)
+    val (planElement, forester) = PlanElement(
+      initialPlan,
+      focusedStepID.signal,
+      Val(true),
+      focusUpdater,
+      DescribedEffect(_, itemCache)
+    )
     val state = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
 
     val (contextMenu, contextMenuController) = ContextMenu()

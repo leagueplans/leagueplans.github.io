@@ -19,7 +19,7 @@ object DragSortableList {
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
     toID: T => ID,
-    toElement: (ID, T, Signal[T], L.Div) => L.Children
+    toElement: (ID, T, Signal[T], L.Div) => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
     val dragTracker = Var[Option[Dragging[ID, T]]](None)

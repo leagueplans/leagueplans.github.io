@@ -11,19 +11,6 @@
 }
 
 .editingToggle {
-  background: none;
-  border: none;
-  padding: 0.25rem;
-
-  font-size: 1rem;
+  composes: button from "button.module.css";
   width: 1.4rem;
-  color: white;
-}
-
-.editingToggle:hover {
-  filter: drop-shadow(0 0 0.1rem white);
-}
-
-.editingToggle:active {
-  opacity: 0.7;
 }

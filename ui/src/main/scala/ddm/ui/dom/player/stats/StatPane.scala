@@ -26,9 +26,10 @@ object StatPane {
 
     val gainXPFormOpener =
       stat
-        .splitOne(_.skill)((skill, _, _) => GainXPForm(skill))
+        .map(_.skill)
         .combineWith(effectObserver)
-        .map { case (form, formSubmissions, maybeObserver) =>
+        .map { case (skill, maybeObserver) =>
+          val (form, formSubmissions) = GainXPForm(skill)
           FormOpener(
             modalBus,
             maybeObserver.observer,
