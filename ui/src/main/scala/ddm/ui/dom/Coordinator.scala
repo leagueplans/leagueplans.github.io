@@ -35,6 +35,8 @@ object Coordinator {
       }
     )
 
+    val (contextMenu, contextMenuController) = ContextMenu()
+
     val initialPlan = loadPlan(storageManager).getOrElse(defaultPlan)
 
     val focusedStepID = Var[Option[UUID]](None)
@@ -43,12 +45,12 @@ object Coordinator {
       initialPlan,
       focusedStepID.signal,
       Val(true),
+      contextMenuController,
       focusUpdater,
       DescribedEffect(_, itemCache)
     )
     val state = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
 
-    val (contextMenu, contextMenuController) = ContextMenu()
     val playerElement = PlayerElement(
       state.map(_.playerAtFocusedStep),
       itemCache,

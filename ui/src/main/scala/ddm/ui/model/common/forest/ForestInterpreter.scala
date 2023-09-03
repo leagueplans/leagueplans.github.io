@@ -21,9 +21,15 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
         AddNode(childID, data) +: addLink.toList
 
       case Some(existingData) =>
-        val removeLink = forest.toParent.get(childID).map(RemoveLink(childID, _))
         val updateData = Option.when(existingData != data)(UpdateData(childID, data))
-        removeLink.toList ++ updateData ++ addLink
+        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).map(toID).contains(childID)
+
+        if (targetParentHasChildAsAncestor || maybeParentID.contains(childID))
+          updateData.toList
+        else {
+          val removeLink = forest.toParent.get(childID).map(RemoveLink(childID, _))
+          removeLink.toList ++ updateData ++ addLink
+        }
     }
   }
 

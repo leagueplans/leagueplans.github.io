@@ -3,20 +3,21 @@ package ddm.ui.dom.plan
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier}
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.{DragSortableList, Forester}
+import ddm.ui.dom.common.{ContextMenu, DragSortableList, Forester}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.{Effect, EffectList, Step}
 import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.html.OList
-import org.scalajs.dom.{Event, KeyCode, MouseEvent}
+import org.scalajs.dom.html.{Button, OList}
+import org.scalajs.dom.{Event, KeyCode, MouseEvent, window}
 
 import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
+import scala.util.Try
 
 object StepElement {
   sealed trait Theme
@@ -31,6 +32,7 @@ object StepElement {
     subStepsSignal: Signal[L.Children],
     theme: Signal[Theme],
     editingEnabledSignal: Signal[Boolean],
+    contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     focusObserver: Observer[UUID],
@@ -73,7 +75,8 @@ object StepElement {
       subSteps,
       effects,
       focusListeners(stepID, focusObserver),
-      hoverListeners
+      hoverListeners,
+      contextMenu(contextMenuController, editingEnabledSignal, stepID, stepUpdater)
     )
   }
 
@@ -118,7 +121,7 @@ object StepElement {
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     showEffect: Effect => L.HtmlElement
-  ): ReactiveHtmlElement[OList] = {
+  ): ReactiveHtmlElement[OList] =
     DragSortableList[Effect, Effect](
       stepID.toString,
       stepSignal.map(_.directEffects.underlying),
@@ -132,21 +135,7 @@ object StepElement {
         deleteEffectButton(stepSignal, effect, stepUpdater),
         showEffect(effect)
       )
-    )/*
-
-    L.ol(
-      L.cls(Styles.subList),
-      L.children <-- stepSignal.splitOne(_.directEffects.underlying)((effects, _, _) =>
-        effects.map(effect =>
-          L.li(
-            L.cls(Styles.effect),
-            deleteEffectButton(stepSignal, effect, stepUpdater),
-            showEffect(effect)
-          )
-        )
-      )
-    )*/
-  }
+    )
 
   private def deleteEffectButton(
     stepSignal: Signal[Step],
@@ -182,6 +171,55 @@ object StepElement {
     List(
       L.ifUnhandled(L.onClick) --> handler,
       L.ifUnhandledF(L.onKeyDown)(_.filter(_.keyCode == KeyCode.Enter)) --> handler
+    )
+  }
+
+  private def contextMenu(
+    controller: ContextMenu.Controller,
+    editingEnabledSignal: Signal[Boolean],
+    stepID: UUID,
+    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+  ): Binder[Base] =
+    controller.bind(closer =>
+      editingEnabledSignal.map(enabled =>
+        Option.when(enabled)(
+          L.div(
+            cutButton(stepID, closer),
+            pasteButton(stepID, stepUpdater, closer)
+          )
+        )
+      )
+    )
+
+  private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): ReactiveHtmlElement[Button] =
+    L.button(
+      L.`type`("button"),
+      L.span("Cut"),
+      L.ifUnhandledF(L.onClick)(_.flatMap { event =>
+        event.preventDefault()
+        window.navigator.clipboard.writeText(stepID.toString).toFuture
+      }) --> closer,
+    )
+
+  private def pasteButton(
+    stepID: UUID,
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    closer: Observer[ContextMenu.CloseCommand]
+  ): ReactiveHtmlElement[Button] = {
+    val stepMover =
+      stepUpdater.contramap[String](rawChildID => forester =>
+        Try(UUID.fromString(rawChildID)).map(childID =>
+          forester.move(child = childID, maybeParent = Some(stepID))
+        )
+      )
+
+    L.button(
+      L.`type`("button"),
+      L.span("Paste"),
+      L.ifUnhandledF(L.onClick)(_.flatMap { event =>
+        event.preventDefault()
+        window.navigator.clipboard.readText().toFuture
+      }) --> Observer.combine(stepMover, closer),
     )
   }
 }

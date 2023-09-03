@@ -3,7 +3,7 @@ package ddm.ui.dom.plan
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource}
-import ddm.ui.dom.common.{Forester, Modal}
+import ddm.ui.dom.common.{ContextMenu, Forester, Modal}
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, Step}
 
@@ -14,6 +14,7 @@ object PlanElement {
     initialPlan: Forest[UUID, Step],
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
+    contextMenuController: ContextMenu.Controller,
     focusObserver: Observer[UUID],
     showEffect: Effect => L.HtmlElement
   ): (L.Div, Forester[UUID, Step]) = {
@@ -22,7 +23,7 @@ object PlanElement {
     val forester = Forester[UUID, Step](
       initialPlan,
       _.id,
-      toElement(_, _, _, focusedStep, editingEnabled, modalBus, stepUpdates.writer, focusObserver, showEffect)
+      toElement(_, _, _, focusedStep, editingEnabled, contextMenuController, modalBus, stepUpdates.writer, focusObserver, showEffect)
     )
 
     val dom =
@@ -41,6 +42,7 @@ object PlanElement {
     subSteps: Signal[L.Children],
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
+    contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     focusObserver: Observer[UUID],
@@ -55,6 +57,7 @@ object PlanElement {
         case _ => StepElement.Theme.NotFocused
       },
       editingEnabled,
+      contextMenuController,
       modalBus,
       stepUpdater,
       focusObserver,

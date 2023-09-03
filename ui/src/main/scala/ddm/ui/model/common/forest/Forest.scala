@@ -82,6 +82,22 @@ final class Forest[ID, T] private[forest](
       .filterNot(_ == childID)
       .flatMap(nodes.get)
 
+  def ancestors(childID: ID): List[T] =
+    ancestorsHelper(childID, acc = List.empty)
+
+  @tailrec
+  private def ancestorsHelper(childID: ID, acc: List[T]): List[T] = {
+    val maybeParent = for {
+      parentID <- toParent.get(childID)
+      parent <- nodes.get(parentID)
+    } yield (parentID, parent)
+
+    maybeParent match {
+      case Some((parentID, parent)) => ancestorsHelper(parentID, acc :+ parent)
+      case None => acc
+    }
+  }
+
   def toList: List[T] =
     recurse((id, _) => List(id)).flatMap(nodes.get)
 
