@@ -84,7 +84,6 @@ lazy val ui =
         "org.scala-js" %%% "scalajs-dom" % "2.3.0",
         "org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0",
         "com.raquo" %%% "laminar" % "0.14.5",
-        "com.github.japgolly.scalajs-react" %%% "core" % "2.0.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       scalaJSUseMainModuleInitializer := true,
