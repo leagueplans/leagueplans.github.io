@@ -3,8 +3,9 @@ package ddm.ui.model
 import ddm.common.model.Item
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect._
-import ddm.ui.model.player.Player
+import ddm.ui.model.player.{Player, Quest}
 import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.Skill
 
 sealed trait EffectValidator[E <: Effect] {
@@ -18,9 +19,9 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: GainItem => gainItemValidator.validate(e)(player, itemCache)
       case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, itemCache)
-      case e: CompleteQuest => empty.validate(e)(player, itemCache)
+      case e: CompleteQuest => completeQuestValidator.validate(e)(player, itemCache)
       case e: SetMultiplier => empty.validate(e)(player, itemCache)
-      case e: CompleteTask => empty.validate(e)(player, itemCache)
+      case e: CompleteTask => completeTaskValidator.validate(e)(player, itemCache)
     }
 
   private def empty[E <: Effect]: EffectValidator[E] =
@@ -48,6 +49,18 @@ object EffectValidator extends EffectValidator[Effect] {
     from(
       pre = _ => List.empty,
       post = _ => List(Validator.hasPositiveRenown)
+    )
+
+  private val completeQuestValidator: EffectValidator[CompleteQuest] =
+    from(
+      pre = effect => List(Validator.questIncomplete(effect.quest)),
+      post = _ => List.empty
+    )
+
+  private val completeTaskValidator: EffectValidator[CompleteTask] =
+    from(
+      pre = effect => List(Validator.taskIncomplete(effect.task)),
+      post = _ => List.empty
     )
 
   private def from[E <: Effect](
@@ -103,6 +116,24 @@ object EffectValidator extends EffectValidator[Effect] {
           player.leagueStatus.skillsUnlocked.contains(skill),
           right = (),
           left = s"$skill has not been unlocked yet"
+        )
+      )
+
+    def questIncomplete(quest: Quest): Validator =
+      Validator(
+        (player, _) => Either.cond(
+          !player.completedQuests.contains(quest),
+          right = (),
+          left = s"${quest.name} has already been completed"
+        )
+      )
+
+    def taskIncomplete(task: Task): Validator =
+      Validator(
+        (player, _) => Either.cond(
+          !player.leagueStatus.tasksCompleted.contains(task),
+          right = (),
+          left = s"${task.name} has already been completed"
         )
       )
 

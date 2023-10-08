@@ -39,6 +39,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTrash")
   object faTrash extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTriangleExclamation")
+  object faTriangleExclamation extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faXmark")
   object faXmark extends IconDefinition
 }

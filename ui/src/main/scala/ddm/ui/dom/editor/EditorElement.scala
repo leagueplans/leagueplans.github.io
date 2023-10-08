@@ -2,11 +2,15 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToNode, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.{Forester, FormOpener}
+import ddm.ui.dom.common.{Forester, FormOpener, Tooltip}
+import ddm.ui.facades.fontawesome.freesolid.FreeSolid
+import ddm.ui.model.EffectValidator
 import ddm.ui.model.plan.{Effect, EffectList, Step}
-import ddm.ui.model.player.Quest
+import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.{Player, Quest}
+import ddm.ui.utils.laminar.LaminarOps.RichL
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 
@@ -16,18 +20,21 @@ import scala.scalajs.js.annotation.JSImport
 
 object EditorElement {
   def apply(
+    itemCache: ItemCache,
     quests: Fuse[Quest],
-    dataSignal: Signal[(Step, List[Step])],
+    dataSignal: Signal[(Step, List[Step], Player)],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]],
     showEffect: Effect => L.HtmlElement
   ): ReactiveHtmlElement[Div] = {
-    val stepSignal = dataSignal.map { case (step, _) => step }
-    val subStepsSignal = dataSignal.map { case (_, subSteps) => subSteps }
+    val stepSignal = dataSignal.map { case (step, _, _) => step }
+    val subStepsSignal = dataSignal.map { case (_, subSteps, _) => subSteps }
+    val playerSignal = dataSignal.map { case (_, _, player) => player }
 
     L.div(
       L.cls(Styles.editor),
       StepDescription(stepSignal, stepUpdater),
+      L.child <-- toWarnings(itemCache, playerSignal, stepSignal),
       L.div(
         L.cls(Styles.sections),
         L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalBus),
@@ -41,8 +48,37 @@ object EditorElement {
     val editor: String = js.native
     val sections: String = js.native
     val section: String = js.native
-    val text: String = js.native
+    val warningIcon: String = js.native
+    val tooltip: String = js.native
+    val subStepDescription: String = js.native
   }
+
+  private def toWarnings(
+    itemCache: ItemCache,
+    playerSignal: Signal[Player],
+    stepSignal: Signal[Step]
+  ): Signal[L.Child] =
+    Signal
+      .combine(playerSignal, stepSignal)
+      .map { case (player, step) =>
+        val (_, errors) = step.directEffects.underlying.foldLeft((player, List.empty[String])) {
+          case ((preEffectPlayer, errorAcc), effect) =>
+            val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, itemCache)
+            (postEffectPlayer, errorAcc ++ errors)
+        }
+
+        if (errors.isEmpty)
+          L.emptyNode
+        else
+          L.div(
+            L.cls(Styles.warningIcon),
+            Tooltip(L.div(
+              L.cls(Styles.tooltip),
+              errors.map(L.p(_))
+            )),
+            L.icon(FreeSolid.faTriangleExclamation)
+          )
+      }
 
   private def toSubSteps(
     stepSignal: Signal[Step],
@@ -60,7 +96,7 @@ object EditorElement {
         ),
         _.id,
         subStep => L.p(
-          L.cls(Styles.text),
+          L.cls(Styles.subStepDescription),
           subStep.description
         ),
         newSubStepObserver(stepID, modalBus, stepUpdater),

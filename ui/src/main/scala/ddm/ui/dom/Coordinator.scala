@@ -76,10 +76,11 @@ object Coordinator {
     val editorElement =
       stateSignal
         .map(state => state.focusedStep.map(step =>
-          (step, state.plan.children(step.id))
+          (step, state.plan.children(step.id), state.playerPreFocusedStep)
         ))
-        .split { case (step, _) => step.id } { case (_, _, signal) =>
+        .split { case (step, _, _) => step.id } { case (_, _, signal) =>
           EditorElement(
+            itemCache,
             questFuse,
             signal,
             stepUpdates.writer,
@@ -127,16 +128,22 @@ object Coordinator {
         case Some(id) =>
           val (lhs, rhs) = allSteps.span(_.id != id)
           val focused = rhs.headOption
-          (lhs ++ focused, focused)
+          (lhs, focused)
 
         case None =>
           (allSteps, None)
       }
 
-    val playerAtFocusedStep: Player =
+    val playerPreFocusedStep: Player =
       EffectResolver.resolve(
         Player.initial,
         progressedSteps.flatMap(_.directEffects.underlying): _*
+      )
+
+    val playerAtFocusedStep: Player =
+      EffectResolver.resolve(
+        playerPreFocusedStep,
+        focusedStep.toList.flatMap(_.directEffects.underlying): _*
       )
   }
 

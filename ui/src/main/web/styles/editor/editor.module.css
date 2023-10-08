@@ -5,8 +5,20 @@
 
 .sections {}
 
-.text {
+.subStepDescription {
   color: white;
+}
+
+.warningIcon {
+  color: white;
+  float: right;
+  font-size: 1.3rem;
+  margin: 0.4rem;
+}
+
+.tooltip {
+  color: black;
+  font-size: 1rem;
 }
 
 .section {
