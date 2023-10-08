@@ -1,7 +1,7 @@
 .step {
   border: solid rgba(255, 253, 214, 0.5);
   border-width: 0.05rem 0rem 0.05rem 0.05rem;
-  border-radius: 0.3rem 0 0 0.3rem;;
+  border-radius: 0.3rem 0 0 0.3rem;
   padding: 0.125rem 0rem 0.125rem 0.125rem;
 }
 
@@ -12,7 +12,7 @@
 
 .hovered {
   composes: step;
-  background-color: #082a4c
+  background-color: #082a4c;
 }
 
 .inactive {
@@ -20,8 +20,8 @@
   background-color: #00172e;
 }
 
-.button {
-  composes: button from "button.module.css";
+.description {
+  color: white;
 }
 
 .subList {
@@ -39,10 +39,4 @@
 
 .subStep {
   composes: listElement;
-}
-
-.effect {
-  composes: listElement;
-  display: flex;
-  padding-left: 0.25rem;
 }

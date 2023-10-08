@@ -1,7 +1,8 @@
 .listToggle {
-  composes: button from "button.module.css";
+  composes: button from "../common/button.module.css";
   display: flex;
 
+  font-size: 1rem;
   padding: 0 0.375rem 0 0.375rem;
 }
 

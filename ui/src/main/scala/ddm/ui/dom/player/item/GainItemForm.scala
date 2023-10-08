@@ -14,6 +14,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.chaining.scalaUtilChainingOps
 
+//TODO This currently allows you to add unbankable items to the bank
 object GainItemForm {
   def apply(
     target: Depository.Kind,
@@ -24,6 +25,7 @@ object GainItemForm {
     val (itemSearchNodes, radios, itemSignal) = itemInput(items, quantitySignal)
 
     val form = emptyForm.amend(
+      L.cls(Styles.form),
       itemSearchNodes,
       quantityNodes,
       submitButton.amend(L.cls(Styles.input)),
@@ -36,13 +38,14 @@ object GainItemForm {
 
   @js.native @JSImport("/styles/player/item/gainItemForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val form: String = js.native
     val label: String = js.native
     val input: String = js.native
   }
 
   private def quantityInput(): (List[L.Element], Signal[Int]) = {
     val (quantityInput, quantityLabel, quantitySignal) =
-      NumberInput(id = "gain-item-quantity-input", initial = 0)
+      NumberInput(id = "gain-item-quantity-input", initial = 1)
 
     val nodes = List(
       quantityLabel.amend(L.cls(Styles.label), L.span("Quantity:")),

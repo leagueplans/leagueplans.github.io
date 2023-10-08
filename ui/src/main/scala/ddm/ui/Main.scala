@@ -5,6 +5,7 @@ import ddm.common.model.Item
 import ddm.ui.dom.Coordinator
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.Step
+import ddm.ui.model.player.Quest
 import ddm.ui.model.player.item.ItemCache
 import io.circe.scalajs.decodeJs
 import io.circe.{Codec, Decoder}
@@ -19,6 +20,9 @@ object Main extends App {
   @js.native @JSImport("/data/items.json", JSImport.Default)
   private val itemsJson: js.Object = js.native
 
+  @js.native @JSImport("/data/quests.json", JSImport.Default)
+  private val questsJson: js.Object = js.native
+
   @js.native @JSImport("/data/plan.json", JSImport.Default)
   private val defaultPlanJson: js.Object = js.native
 
@@ -26,16 +30,20 @@ object Main extends App {
     Forest.codec(_.id)
 
   withResource[Set[Item]](itemsJson)(items =>
-    withResource[Forest[UUID, Step]](defaultPlanJson)(defaultPlan =>
-      L.documentEvents.onDomContentLoaded.foreach { _ =>
-        val container = document.createElement("div")
-        document.body.appendChild(container)
-        L.render(container, Coordinator(
-          new StorageManager[Forest[UUID, Step]]("plan", window.localStorage),
-          defaultPlan,
-          ItemCache(items)
-        ))
-      }(L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
+    withResource[List[Quest]](questsJson)(quests =>
+      withResource[Forest[UUID, Step]](defaultPlanJson)(defaultPlan =>
+        L.documentEvents.onDomContentLoaded.foreach { _ =>
+
+          val container = document.createElement("div")
+          document.body.appendChild(container)
+          L.render(container, Coordinator(
+            new StorageManager[Forest[UUID, Step]]("plan", window.localStorage),
+            defaultPlan,
+            ItemCache(items),
+            quests
+          ))
+        }(L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
+      )
     )
   )
 

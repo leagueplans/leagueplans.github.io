@@ -1,6 +1,7 @@
 package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
@@ -17,14 +18,14 @@ object EquipmentElement {
     itemCache: ItemCache,
     itemFuse: Fuse[Item],
     effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenuController: ContextMenu.Controller,
+    modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[Div] =
     L.div(
       L.display.flex,
       L.children <-- toSlots(player) { slot =>
-        val (modal, contents) = DepositoryElement(slot, itemCache, itemFuse, effectObserver, contextMenuController)
-        List(modal, contents)
-      }.map(_.flatten)
+        DepositoryElement(slot, itemCache, itemFuse, effectObserver, contextMenuController, modalBus)
+      }
     )
 
   private def toSlots[T](player: Signal[Player])(f: Signal[Depository] => T): Signal[List[T]] =

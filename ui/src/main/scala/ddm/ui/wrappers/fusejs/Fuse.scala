@@ -7,7 +7,7 @@ import io.circe.{Decoder, Encoder}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichIterableOnce
 
-final class Fuse[T : Encoder : Decoder](elements: List[T], options: FuseOptions) {
+final class Fuse[T : Encoder : Decoder](val elements: List[T], options: FuseOptions) {
   private val facade =
     new fFuse(
       elements.map(_.asJsAny).toJSArray,

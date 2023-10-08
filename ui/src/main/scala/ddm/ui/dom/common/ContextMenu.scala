@@ -37,9 +37,9 @@ object ContextMenu {
     (toMenu(status), controller)
   }
 
-  sealed trait Status
-  object Status {
-    private[ContextMenu] final case class Open(x: Double, y: Double, contents: L.Child) extends Status
+  private sealed trait Status
+  private object Status {
+    final case class Open(x: Double, y: Double, contents: L.Child) extends Status
     case object Closed extends Status
   }
 

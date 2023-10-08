@@ -1,0 +1,19 @@
+.description {
+  display: contents;
+}
+
+.paragraph {
+  display: inline;
+  white-space: pre-wrap;
+  color: white;
+
+  font-size: 1.5rem;
+}
+
+.editingToggle {
+  composes: button from "../common/button.module.css";
+
+  font-size: 1.5rem;
+  padding: 0.125rem;
+  width: 2.1rem;
+}

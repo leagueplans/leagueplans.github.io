@@ -1,4 +1,4 @@
-package ddm.ui.dom.plan
+package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observable, Observer, Sink}
 import com.raquo.airstream.eventbus.WriteBus
@@ -27,7 +27,7 @@ object DeletionConfirmer {
     val form = emptyForm.amend(
       L.p(
         "Are you sure you want to delete this step?\n" +
-          "This will also delete any nested steps as well."
+          "This will also delete any nested steps."
       ),
       cancelButton(modalBus),
       submitButton.amend(L.value("Confirm"))

@@ -1,11 +1,11 @@
 package ddm.ui.dom.plan
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.{EventBus, WriteBus}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, enrichSource}
-import ddm.ui.dom.common.{ContextMenu, Forester, Modal}
+import ddm.ui.dom.common.{ContextMenu, Forester}
 import ddm.ui.model.common.forest.Forest
-import ddm.ui.model.plan.{Effect, Step}
+import ddm.ui.model.plan.Step
 
 import java.util.UUID
 
@@ -15,20 +15,17 @@ object PlanElement {
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
-    focusObserver: Observer[UUID],
-    showEffect: Effect => L.HtmlElement
+    stepUpdates: EventBus[Forester[UUID, Step] => Unit],
+    focusObserver: Observer[UUID]
   ): (L.Div, Forester[UUID, Step]) = {
-    val (modal, modalBus) = Modal()
-    val stepUpdates = new EventBus[Forester[UUID, Step] => Unit]
     val forester = Forester[UUID, Step](
       initialPlan,
       _.id,
-      toElement(_, _, _, focusedStep, editingEnabled, contextMenuController, modalBus, stepUpdates.writer, focusObserver, showEffect)
+      toElement(_, _, _, focusedStep, editingEnabled, contextMenuController, stepUpdates.writer, focusObserver)
     )
 
     val dom =
       L.div(
-        modal,
         L.children <-- forester.domSignal,
         stepUpdates.events --> Observer[Forester[UUID, Step] => Unit](_.apply(forester))
       )
@@ -43,10 +40,8 @@ object PlanElement {
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
-    focusObserver: Observer[UUID],
-    showEffect: Effect => L.HtmlElement
+    focusObserver: Observer[UUID]
   ): L.HtmlElement =
     StepElement(
       stepID,
@@ -58,9 +53,7 @@ object PlanElement {
       },
       editingEnabled,
       contextMenuController,
-      modalBus,
       stepUpdater,
-      focusObserver,
-      showEffect
+      focusObserver
     )
 }

@@ -33,7 +33,3 @@
   grid-template-columns: repeat(1, 36px);
   grid-template-rows: repeat(1, 36px);
 }
-
-.modal {
-  height: 357px;
-}

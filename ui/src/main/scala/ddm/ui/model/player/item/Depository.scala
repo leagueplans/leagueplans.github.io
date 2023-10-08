@@ -30,6 +30,16 @@ object Depository {
       )
     }
 
+    implicit val ordering: Ordering[Kind] = {
+      case (Inventory, Inventory) => 0
+      case (Inventory, _) => -1
+      case (Bank, Inventory) => 1
+      case (Bank, Bank) => 0
+      case (Bank, _: EquipmentSlot) => -1
+      case (slot1: EquipmentSlot, slot2: EquipmentSlot) => Ordering.String.compare(slot1.slotName, slot2.slotName)
+      case (_: EquipmentSlot, _) => 1
+    }
+
     case object Inventory extends Kind {
       val name: String = "Inventory"
       val autoStack: Boolean = false

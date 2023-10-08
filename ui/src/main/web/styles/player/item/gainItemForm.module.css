@@ -1,7 +1,11 @@
+.form {
+  min-height: 22.5rem;
+}
+
 .label {
-  margin: 3px;
+  margin: 0.125rem;
 }
 
 .input {
-  margin: 3px;
+  margin: 0.125rem;
 }

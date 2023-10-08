@@ -1,0 +1,26 @@
+.radio {
+  appearance: none;
+  margin: 0;
+  position: fixed;
+}
+
+.option {
+  display: flex;
+  outline: 0.1rem solid;
+  padding: 0.25rem;
+  transition: background-color 175ms ease-out;
+}
+
+.alternative {
+  composes: option;
+}
+
+/* Even though the radios are hidden, they can still be tab-targeted */
+.alternative:hover, .radio:focus + .alternative {
+  background-color: #dfe7f5;
+}
+
+.selection {
+  composes: option;
+  background-color: #c0f0c5;
+}

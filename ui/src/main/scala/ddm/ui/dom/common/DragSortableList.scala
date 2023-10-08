@@ -77,8 +77,7 @@ object DragSortableList {
         // Can't use preventDefault here, since it stops the browser from
         // actually dragging the element
         _.filter(_.target == ctx.ref)
-          .withCurrentValueOf(itemIndex)
-          .withCurrentValueOf(order)
+          .withCurrentValueOf(itemIndex, order)
       ) -->
         dragTracker.contramap[(DragEvent, Int, List[T])] { case (event, originalIndex, originalOrder) =>
           // We don't use this, but it informs other apps not to receive the drop
@@ -96,7 +95,7 @@ object DragSortableList {
     orderObserver: Observer[List[T]]
   ): L.Modifier[L.HtmlElement] = {
     val streamMutator: EventStream[DragEvent] => EventStream[(Dragging[ID, T], Int)] =
-      _.withCurrentValueOf(Signal.combine(dragTracker, indexSignal))
+      _.withCurrentValueOf(dragTracker, indexSignal)
         .collect(Function.unlift {
           case (event, Some(dragging), index) =>
             event.preventDefault()

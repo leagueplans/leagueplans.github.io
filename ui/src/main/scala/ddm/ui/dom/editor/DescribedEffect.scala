@@ -1,4 +1,4 @@
-package ddm.ui.dom.plan
+package ddm.ui.dom.editor
 
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, seqToModifier, textToNode}
@@ -27,15 +27,15 @@ object DescribedEffect {
       case Effect.GainItem(item, count, target) =>
         if (count > 0)
           line(
-            L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup)),
+            text(s"${target.name}:"),
             ItemElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
-            text(target.name)
+            L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
         else
           line(
-            L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop)),
+            text(s"${target.name}:"),
             ItemElement(itemCache(item), Val(-count)).amend(L.cls(Styles.itemIcon)),
-            text(target.name)
+            L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
 
       case Effect.MoveItem(item, count, source, target) =>
@@ -68,7 +68,7 @@ object DescribedEffect {
   private def text(content: String): L.Span =
     L.span(L.cls(Styles.text), content)
 
-  @js.native @JSImport("/styles/plan/describedEffect.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/editor/describedEffect.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val effect: String = js.native
     val text: String = js.native

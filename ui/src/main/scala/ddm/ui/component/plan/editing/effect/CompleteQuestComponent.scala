@@ -24,7 +24,7 @@ object CompleteQuestComponent {
       withQPInput((qp, qpInput) =>
         withNameInput((name, nameInput) =>
           formComponent(FormComponent.Props(
-            props.onSubmit(CompleteQuest(Quest(name, qp)))
+            props.onSubmit(CompleteQuest(Quest(???, name, qp)))
               .when(qp > 0 && name.nonEmpty)
               .void,
             formContents = TagMod(nameInput, qpInput)

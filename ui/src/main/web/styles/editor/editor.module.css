@@ -1,0 +1,22 @@
+.editor {
+  background-color: #00172e;
+  height: 35vh;
+}
+
+.sections {}
+
+.text {
+  color: white;
+}
+
+.section {
+  min-width: 30%;
+  max-width: 50%;
+  display: inline-block;
+  vertical-align: top;
+  margin: 0.5rem;
+
+  border: solid rgba(255, 253, 214, 0.5);
+  border-width: 0.05rem;
+  border-radius: 0.3rem;
+}

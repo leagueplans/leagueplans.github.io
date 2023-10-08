@@ -1,17 +1,19 @@
 package ddm.ui.dom
 
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 import ddm.ui.StorageManager
 import ddm.ui.dom.common._
-import ddm.ui.dom.plan.{DescribedEffect, PlanElement}
+import ddm.ui.dom.editor.{DescribedEffect, EditorElement}
+import ddm.ui.dom.plan.PlanElement
 import ddm.ui.dom.player.PlayerElement
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, Step}
-import ddm.ui.model.player.Player
+import ddm.ui.model.player.{Player, Quest}
 import ddm.ui.model.player.item.ItemCache
 import ddm.ui.wrappers.fusejs.Fuse
 
@@ -25,7 +27,8 @@ object Coordinator {
   def apply(
     storageManager: StorageManager[Forest[UUID, Step]],
     defaultPlan: Forest[UUID, Step],
-    itemCache: ItemCache
+    itemCache: ItemCache,
+    questList: List[Quest]
   ): L.Div = {
     val itemFuse = new Fuse(
       itemCache.raw.values.toList,
@@ -35,35 +38,66 @@ object Coordinator {
       }
     )
 
+    val questFuse = new Fuse(
+      questList,
+      new FuseOptions {
+        override val keys: UndefOr[js.Array[String]] =
+          js.defined(js.Array("name"))
+      }
+    )
+
     val (contextMenu, contextMenuController) = ContextMenu()
+    val (modal, modalBus) = Modal()
 
     val initialPlan = loadPlan(storageManager).getOrElse(defaultPlan)
 
+    val stepUpdates = new EventBus[Forester[UUID, Step] => Unit]
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
       initialPlan,
       focusedStepID.signal,
-      Val(true),
+      editingEnabled = Val(true),
       contextMenuController,
-      focusUpdater,
-      DescribedEffect(_, itemCache)
+      stepUpdates,
+      focusUpdater
     )
-    val state = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
+    val stateSignal = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
 
     val playerElement = PlayerElement(
-      state.map(_.playerAtFocusedStep),
+      stateSignal.map(_.playerAtFocusedStep),
       itemCache,
       itemFuse,
-      addEffectToFocus(state, forester),
-      contextMenuController
+      addEffectToFocus(stateSignal, forester),
+      contextMenuController,
+      modalBus
     )
+
+    val editorElement =
+      stateSignal
+        .map(state => state.focusedStep.map(step =>
+          (step, state.plan.children(step.id))
+        ))
+        .split { case (step, _) => step.id } { case (_, _, signal) =>
+          EditorElement(
+            questFuse,
+            signal,
+            stepUpdates.writer,
+            modalBus,
+            DescribedEffect(_, itemCache)
+          )
+        }
 
     L.div(
       contextMenu,
+      modal,
       L.div(
         L.cls(Styles.page),
-        playerElement.amend(L.cls(Styles.state)),
+        L.div(
+          L.cls(Styles.lhs),
+          playerElement.amend(L.cls(Styles.state)),
+          L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
+        ),
         planElement.amend(L.cls(Styles.plan))
       ),
       forester.forestSignal --> Observer(storageManager.save)
@@ -73,8 +107,10 @@ object Coordinator {
   @js.native @JSImport("/styles/coordinator.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val page: String = js.native
-    val plan: String = js.native
+    val lhs: String = js.native
     val state: String = js.native
+    val editor: String = js.native
+    val plan: String = js.native
   }
 
   private def loadPlan(storageManager: StorageManager[Forest[UUID, Step]]): Option[Forest[UUID, Step]] =
