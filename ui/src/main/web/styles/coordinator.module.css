@@ -1,0 +1,25 @@
+.page {
+  display: flex;
+}
+
+.lhs {
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.state {
+  overflow: auto;
+  flex-grow: 1;
+}
+
+.editor {
+  overflow: auto;
+}
+
+.plan {
+  flex: 1;
+  height: 100vh;
+  overflow: auto;
+}

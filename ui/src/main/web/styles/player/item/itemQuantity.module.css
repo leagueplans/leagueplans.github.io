@@ -1,11 +1,18 @@
+.quantity {
+  composes: osrs-font from "../../fonts.module.css";
+}
+
 .under100K {
+  composes: quantity;
   color: yellow;
 }
 
 .under10M {
+  composes: quantity;
   color: white;
 }
 
 .over10M {
+  composes: quantity;
   color: #00ff80;
 }

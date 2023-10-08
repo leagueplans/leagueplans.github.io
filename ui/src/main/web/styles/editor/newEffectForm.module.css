@@ -1,0 +1,11 @@
+.form {
+  min-height: 20rem;
+}
+
+.input {
+  margin: 0.125rem 0.25rem;
+}
+
+.submit {
+  float: right;
+}

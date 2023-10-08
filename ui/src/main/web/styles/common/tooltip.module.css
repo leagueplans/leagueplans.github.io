@@ -1,0 +1,19 @@
+.hasTooltip {}
+
+.hidden {
+  display: none;
+  opacity: 0;
+}
+
+.visible {
+  border: 1px solid;
+  padding: 4px;
+  border-radius: 10px;
+
+  position: fixed;
+  z-index: 1;
+
+  background-color: white;
+  opacity: 1;
+  transition: opacity 250ms ease-in;
+}

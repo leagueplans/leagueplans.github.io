@@ -1,0 +1,44 @@
+.header {
+  display: flex;
+}
+
+.text {
+  color: white;
+  align-self: center;
+}
+
+.button {
+  composes: button from "../common/button.module.css";
+
+  display: flex;
+  flex-wrap: wrap;
+  flex-grow: 0;
+  align-content: center;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.deleteIcon {
+  composes: button;
+
+  float: right;
+}
+
+.item {
+  display: flex;
+
+  border: solid rgba(255, 253, 214, 0.5);
+  border-width: 0.05rem 0 0 0;
+}
+
+.item:hover {
+  background-color: #082a4c;
+}
+
+.itemDescription {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-grow: 1;
+  padding: 0.25rem 0;
+}

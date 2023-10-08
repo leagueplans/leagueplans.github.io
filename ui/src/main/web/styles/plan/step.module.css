@@ -1,0 +1,42 @@
+.step {
+  border: solid rgba(255, 253, 214, 0.5);
+  border-width: 0.05rem 0rem 0.05rem 0.05rem;
+  border-radius: 0.3rem 0 0 0.3rem;
+  padding: 0.125rem 0rem 0.125rem 0.125rem;
+}
+
+.focused {
+  composes: step;
+  background-color: #444203;
+}
+
+.hovered {
+  composes: step;
+  background-color: #082a4c;
+}
+
+.inactive {
+  composes: step;
+  background-color: #00172e;
+}
+
+.description {
+  color: white;
+}
+
+.subList {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  flex-grow: 1;
+}
+
+.listElement {}
+
+.listElement + .listElement {
+  margin-top: 0.1rem;
+}
+
+.subStep {
+  composes: listElement;
+}

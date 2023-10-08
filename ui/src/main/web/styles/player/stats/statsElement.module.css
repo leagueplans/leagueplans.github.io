@@ -1,0 +1,15 @@
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+
+  padding: 0px;
+  margin: 0px;
+
+  width: fit-content;
+  height: fit-content;
+
+  border: solid;
+  border-radius: 5px;
+
+  list-style-type: none;
+}

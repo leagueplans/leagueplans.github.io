@@ -1,0 +1,9 @@
+.item {
+  position: relative;
+}
+
+.quantity {
+  position: absolute;
+  top: 0;
+  left: 0;
+}

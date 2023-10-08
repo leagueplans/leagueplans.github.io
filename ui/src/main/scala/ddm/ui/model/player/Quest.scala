@@ -7,4 +7,4 @@ object Quest {
   implicit val codec: Codec[Quest] = deriveCodec[Quest]
 }
 
-final case class Quest(name: String, points: Int)
+final case class Quest(id: Int, name: String, points: Int)
