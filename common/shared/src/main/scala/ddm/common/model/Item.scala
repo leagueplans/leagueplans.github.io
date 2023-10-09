@@ -43,7 +43,8 @@ final case class Item(
   examine: String,
   images: NonEmptyList[(Item.Image.Bin, Item.Image.Path)],
   bankable: Item.Bankable,
-  stackable: Boolean
+  stackable: Boolean,
+  equipmentType: Option[EquipmentType]
 ) {
   def imageFor(count: Int): Item.Image.Path = {
     val (_, path) =
