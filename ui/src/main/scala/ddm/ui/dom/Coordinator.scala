@@ -136,7 +136,7 @@ object Coordinator {
 
     val playerPreFocusedStep: Player =
       EffectResolver.resolve(
-        Player.initial,
+        Player.leaguesFourInitial,
         progressedSteps.flatMap(_.directEffects.underlying): _*
       )
 

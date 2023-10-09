@@ -3,8 +3,16 @@ package ddm.ui.model.player.skill
 import ddm.ui.model.player.skill.Skill._
 
 object Stats {
-  val initial: Stats =
+  val leaguesThreeInitial: Stats =
     Stats(Map(Hitpoints -> Level(10).bound))
+
+  val leaguesFourInitial: Stats =
+    Stats(Map(
+      Agility -> Level(10).bound,
+      Herblore -> Level(3).bound,
+      Hitpoints -> Level(10).bound,
+      Runecraft -> Level(5).bound,
+    ))
 }
 
 final case class Stats(raw: Map[Skill, Exp]) {
