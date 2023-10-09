@@ -2,7 +2,6 @@ package ddm.scraper.wiki.model
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import io.circe.{Decoder, Encoder}
 
 object WikiItem {
   sealed trait GameID
@@ -19,30 +18,16 @@ object WikiItem {
     data: Array[Byte]
   )
 
-  object Version {
-    implicit val encoder: Encoder[Version] = Encoder[List[String]].contramap(_.raw)
-    implicit val decoder: Decoder[Version] = Decoder[List[String]].map(Version.apply)
-
-    implicit val ordering: Ordering[Version] =
-      Ordering.by[Version, List[String]](_.raw)(Ordering.Implicits.seqOrdering)
-  }
-
-  final case class Version(raw: List[String])
-
-  final case class Infobox(
-    gameID: GameID,
-    wikiPageID: Page.ID,
-    gameName: String,
-    wikiName: Page.Name.Other,
-    version: Version,
-    imageBins: NonEmptyList[(Item.Image.Bin, Page.Name.File)],
-    examine: String,
-    bankable: Item.Bankable,
-    stackable: Boolean
+  final case class Infoboxes(
+    pageID: Page.ID,
+    pageName: Page.Name.Other,
+    version: InfoboxVersion,
+    item: ItemInfobox,
+    maybeBonuses: Option[BonusesInfobox]
   )
 }
 
 final case class WikiItem(
-  infobox: WikiItem.Infobox,
+  infoboxes: WikiItem.Infoboxes,
   images: NonEmptyList[WikiItem.Image]
 )

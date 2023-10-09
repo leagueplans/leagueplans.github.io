@@ -2,37 +2,29 @@ package ddm.scraper.wiki.decoder
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.scraper.wiki.model.{Page, WikiItem}
+import ddm.scraper.wiki.model.{ItemInfobox, Page, WikiItem}
 import ddm.scraper.wiki.parser.Term
 
 object ItemInfoboxDecoder {
-  def decode(
-    page: Page,
-    version: WikiItem.Version,
-    obj: Term.Template.Object
-  ): DecoderResult[WikiItem.Infobox] =
+  def decode(obj: Term.Template.Object): DecoderResult[ItemInfobox] =
     for {
-      gameID <- obj.decode("id")(asGameID)
-      gameName <- obj.decode("name")(_.collapse(simplifyTextValues).as[Term.Unstructured])
-      itemPageName <- asItemPageName(page.name)
+      id <- obj.decode("id")(asID)
+      name <- obj.decode("name")(_.collapse(simplifyTextValues).as[Term.Unstructured])
       imageBins <- obj.decode("image")(asImageBins)
       examine <- obj.decode("examine")(_.collapse(simplifyTextValues).as[Term.Unstructured])
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
       maybeStacksInBank <- obj.decodeOpt("stacksinbank")(_.asBoolean)
       stackable <- obj.decode("stackable")(_.asBoolean)
-    } yield WikiItem.Infobox(
-      gameID,
-      page.id,
-      gameName.raw,
-      itemPageName,
-      version,
+    } yield ItemInfobox(
+      id,
+      name.raw,
       imageBins,
       examine.raw,
       asBankable(maybeBankable, maybeStacksInBank),
       stackable
     )
 
-  private def asGameID(raw: List[Term]): DecoderResult[WikiItem.GameID] =
+  private def asID(raw: List[Term]): DecoderResult[WikiItem.GameID] =
     raw.as[Term.Unstructured].flatMap { blob =>
       blob
         .raw
@@ -85,12 +77,6 @@ object ItemInfoboxDecoder {
 
       case _: Term.Function =>
         None
-    }
-
-  private def asItemPageName(name: Page.Name): DecoderResult[Page.Name.Other] =
-    name match {
-      case itemPageName: Page.Name.Other => Right(itemPageName)
-      case _ => Left(new DecoderException("Unexpected page name"))
     }
 
   private def asImageBins(raw: List[Term]): DecoderResult[NonEmptyList[(Item.Image.Bin, Page.Name.File)]] =

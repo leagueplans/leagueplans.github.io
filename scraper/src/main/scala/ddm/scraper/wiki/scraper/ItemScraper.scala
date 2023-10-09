@@ -1,13 +1,11 @@
 package ddm.scraper.wiki.scraper
 
-import akka.actor.typed.ActorRef
+import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.scraper.dumper.Cache
-import ddm.scraper.reporter.Reporter
-import ddm.scraper.wiki.decoder.{ItemInfoboxDecoder, ItemPageDecoder}
+import ddm.scraper.wiki.decoder.{ItemPageDecoder, ItemPageObjectExtractor}
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
 import ddm.scraper.wiki.model.{Page, WikiItem}
 import ddm.scraper.wiki.parser.TermParser
@@ -31,31 +29,55 @@ object ItemScraper {
   def scrape(
     mode: Mode,
     client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
+    reportError: (Page, Throwable) => Unit
   )(implicit mat: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] = {
     val source =
       mode match {
         case Mode.Pages(raw) =>
           client
             .fetch(MediaWikiSelector.Pages(raw), Some(MediaWikiContent.Revisions))
-            .via(Reporter.pageFlow(reporter))
+            .via(errorReportingFlow(reportError))
 
         case Mode.From(initialPage) =>
           Source
             .future(findPagesToIgnore(client))
-            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
+            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reportError))
             .dropWhile { case (page, _) => page.name != initialPage }
 
         case Mode.All =>
           Source
             .future(findPagesToIgnore(client))
-            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reporter))
+            .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reportError))
       }
 
     source
-      .via(decodingFlow(reporter))
-      .via(fetchImageFlow(client, reporter))
+      .mapConcat { case (page, content) =>
+        val (errors, infoboxes) = decode(page, content)
+        errors.foreach(reportError(page, _))
+        infoboxes.map((page, _))
+      }
+      .mapAsync(parallelism = 10) { case (page, infoboxes) =>
+        fetchImages(infoboxes.item.imageBins, client).transform {
+          case Failure(error) =>
+            Success((page, Left(error)))
+          case Success(images) =>
+            Success((page, Right(WikiItem(infoboxes, images))))
+        }
+      }
+      .via(errorReportingFlow(reportError))
   }
+
+  private def errorReportingFlow[T](
+    reportError: (Page, Throwable) => Unit
+  ): Flow[(Page, Either[Throwable, T]), (Page, T), NotUsed] =
+    Flow[(Page, Either[Throwable, T])]
+      .collect(Function.unlift {
+        case (page, Right(value)) =>
+          Some((page, value))
+        case (page, Left(error)) =>
+          reportError(page, error)
+          None
+      })
 
   private def findPagesToIgnore(
     client: MediaWikiClient
@@ -73,7 +95,7 @@ object ItemScraper {
   private def findItemPages(
     ignoredPages: Set[Page.ID],
     client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
+    reportError: (Page, Throwable) => Unit
   ): Source[(Page, String), _] =
     client
       .fetch(
@@ -81,33 +103,22 @@ object ItemScraper {
         Some(MediaWikiContent.Revisions)
       )
       .filterNot { case (page, _) => ignoredPages.contains(page.id) }
-      .via(Reporter.pageFlow(reporter))
+      .via(errorReportingFlow(reportError))
 
-  private def decodingFlow(
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  ): Flow[(Page, String), (Page, WikiItem.Infobox), _] =
-    Flow[(Page, String)]
-      .map { case (page, content) => (page, TermParser.parse(content)) }
-      .via(Reporter.pageFlow(reporter))
-      .mapConcat { case (page, terms) => ItemPageDecoder.extractItemTemplates(terms).map((page, _)) }
-      .via(Reporter.pageFlow(reporter))
-      .map { case (page, (itemVersion, obj)) => (page, ItemInfoboxDecoder.decode(page, itemVersion, obj)) }
-      .via(Reporter.pageFlow(reporter))
+  private def decode(page: Page, content: String): (List[Throwable], List[WikiItem.Infoboxes]) = {
+    TermParser.parse(content) match {
+      case Left(error) => (List(error), List.empty)
+      case Right(terms) =>
+        val (extractionErrors, versionedObjects) =
+          ItemPageObjectExtractor.extract(terms).partitionMap(identity)
 
-  private def fetchImageFlow(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  )(implicit ec: ExecutionContext): Flow[(Page, WikiItem.Infobox), (Page, WikiItem), _] =
-    Flow[(Page, WikiItem.Infobox)]
-      .mapAsync(parallelism = 10) { case (page, infobox) =>
-        fetchImages(infobox.imageBins, client).transform {
-          case Failure(error) =>
-            Success(Left((page, error)))
-          case Success(images) =>
-            Success(Right((page, WikiItem(infobox, images))))
-        }
-      }
-      .via(Reporter.flow(reporter))
+        val (decodingErrors, infoboxes) = versionedObjects.partitionMap(objects =>
+          ItemPageDecoder.decode(page, objects)
+        )
+
+        (extractionErrors ++ decodingErrors, infoboxes)
+    }
+  }
 
   private def fetchImages(
     wikiBins: NonEmptyList[(Item.Image.Bin, Page.Name.File)],
