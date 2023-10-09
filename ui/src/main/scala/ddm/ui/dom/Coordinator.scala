@@ -6,15 +6,15 @@ import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 import ddm.ui.StorageManager
 import ddm.ui.dom.common._
-import ddm.ui.dom.editor.{DescribedEffect, EditorElement}
+import ddm.ui.dom.editor.EditorElement
 import ddm.ui.dom.plan.PlanElement
 import ddm.ui.dom.player.PlayerElement
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, Step}
-import ddm.ui.model.player.{Player, Quest}
 import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.{Player, Quest}
 import ddm.ui.wrappers.fusejs.Fuse
 
 import java.util.UUID
@@ -81,11 +81,11 @@ object Coordinator {
         .split { case (step, _, _) => step.id } { case (_, _, signal) =>
           EditorElement(
             itemCache,
+            itemFuse,
             questFuse,
             signal,
             stepUpdates.writer,
-            modalBus,
-            DescribedEffect(_, itemCache)
+            modalBus
           )
         }
 
