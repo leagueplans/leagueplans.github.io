@@ -33,15 +33,29 @@ object Player {
       Item.ID("776d8d8a-c51e-459f-93ee-8dd468c4703e") -> 25 // Coins
     )
 
-  val initial: Player =
+  val leaguesThreeInitial: Player =
     Player(
-      Stats.initial,
+      Stats.leaguesThreeInitial,
       List(
         Depository(initialInventoryContents, Depository.Kind.Inventory),
         Depository(initialBankContents, Depository.Kind.Bank)
       ).map(d => d.kind -> d).toMap,
       completedQuests = Set.empty,
-      leagueStatus = LeagueStatus.initial
+      leagueStatus = LeagueStatus.leaguesThreeInitial
+    )
+
+  val leaguesFourInitial: Player =
+    Player(
+      Stats.leaguesFourInitial,
+      List(
+        Depository(initialInventoryContents, Depository.Kind.Inventory),
+        Depository(initialBankContents, Depository.Kind.Bank)
+      ).map(d => d.kind -> d).toMap,
+      completedQuests = Set(
+        Quest(18, "Druidic Ritual", 4),
+        Quest(19, "Lost City", 3),
+      ),
+      leagueStatus = LeagueStatus.leaguesFourInitial
     )
 }
 
