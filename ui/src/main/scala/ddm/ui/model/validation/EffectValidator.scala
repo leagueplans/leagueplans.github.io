@@ -1,18 +1,25 @@
-package ddm.ui.model
+package ddm.ui.model.validation
 
-import ddm.common.model.Item
-import ddm.ui.model.plan.Effect
+import ddm.ui.model.EffectResolver
 import ddm.ui.model.plan.Effect._
-import ddm.ui.model.player.{Player, Quest}
-import ddm.ui.model.player.item.{Depository, ItemCache}
-import ddm.ui.model.player.league.Task
-import ddm.ui.model.player.skill.Skill
+import ddm.ui.model.plan.{Effect, EffectList}
+import ddm.ui.model.player.Player
+import ddm.ui.model.player.item.ItemCache
 
 sealed trait EffectValidator[E <: Effect] {
   def validate(effect: E)(player: Player, itemCache: ItemCache): (List[String], Player)
 }
 
 object EffectValidator extends EffectValidator[Effect] {
+  def validate(effectList: EffectList)(player: Player, itemCache: ItemCache): List[String] = {
+    val (_, errors) = effectList.underlying.foldLeft((player, List.empty[String])) {
+      case ((preEffectPlayer, errorAcc), effect) =>
+        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, itemCache)
+        (postEffectPlayer, errorAcc ++ errors)
+    }
+    errors
+  }
+
   def validate(effect: Effect)(player: Player, itemCache: ItemCache): (List[String], Player) =
     effect match {
       case e: GainExp => gainExpValidator.validate(e)(player, itemCache)
@@ -79,71 +86,7 @@ object EffectValidator extends EffectValidator[Effect] {
 
       private def collectErrors(validators: List[Validator])(player: Player, itemCache: ItemCache): List[String] =
         validators
-          .map(_.validate(player, itemCache))
+          .map(_.apply(player, itemCache))
           .collect { case Left(error) => error }
     }
-
-  private final case class Validator(validate: (Player, ItemCache) => Either[String, Unit])
-
-  private object Validator {
-    def depositorySize(kind: Depository.Kind): Validator =
-      Validator(
-        (player, itemCache) => {
-          val size = itemCache.itemise(player.get(kind)).map { case (_, stacks) => stacks.size }.sum
-          Either.cond(
-            size <= kind.capacity,
-            right = (),
-            left = s"${kind.name} requires $size spaces (max ${kind.capacity})"
-          )
-        }
-      )
-
-    def hasItem(kind: Depository.Kind, itemID: Item.ID, removalCount: Int): Validator =
-      Validator(
-        (player, itemCache) => {
-          val heldCount = player.get(kind).contents.getOrElse(itemID, 0)
-          Either.cond(
-            heldCount >= removalCount,
-            right = (),
-            left = s"${kind.name} does not have enough of ${itemCache(itemID).name}"
-          )
-        }
-      )
-
-    def skillUnlocked(skill: Skill): Validator =
-      Validator(
-        (player, _) => Either.cond(
-          player.leagueStatus.skillsUnlocked.contains(skill),
-          right = (),
-          left = s"$skill has not been unlocked yet"
-        )
-      )
-
-    def questIncomplete(quest: Quest): Validator =
-      Validator(
-        (player, _) => Either.cond(
-          !player.completedQuests.contains(quest),
-          right = (),
-          left = s"${quest.name} has already been completed"
-        )
-      )
-
-    def taskIncomplete(task: Task): Validator =
-      Validator(
-        (player, _) => Either.cond(
-          !player.leagueStatus.tasksCompleted.contains(task),
-          right = (),
-          left = s"${task.name} has already been completed"
-        )
-      )
-
-    val hasPositiveRenown: Validator =
-      Validator(
-        (player, _) => Either.cond(
-          player.leagueStatus.expectedRenown >= 0,
-          right = (),
-          left = s"Not enough renown to make that purchase"
-        )
-      )
-  }
 }

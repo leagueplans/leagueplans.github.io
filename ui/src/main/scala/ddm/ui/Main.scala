@@ -48,5 +48,8 @@ object Main extends App {
   )
 
   private def withResource[T : Decoder](obj: js.Object)(f: T => Unit): Unit =
-    decodeJs[T](obj).foreach(f)
+    decodeJs[T](obj) match {
+      case Left(throwable) => throw throwable
+      case Right(t) => f(t)
+    }
 }

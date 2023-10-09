@@ -5,6 +5,7 @@
 .text {
   color: white;
   align-self: center;
+  padding-right: 0.375rem;
 }
 
 .button {

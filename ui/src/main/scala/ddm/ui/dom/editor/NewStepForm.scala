@@ -3,7 +3,7 @@ package ddm.ui.dom.editor
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToNode}
 import ddm.ui.dom.common.form.{Form, TextInput}
-import ddm.ui.model.plan.{EffectList, Step}
+import ddm.ui.model.plan.Step
 
 object NewStepForm {
   def apply(): (L.FormElement, EventStream[Option[Step]]) = {
@@ -40,6 +40,6 @@ object NewStepForm {
       .sample(descriptionSignal)
       .map {
         case "" => None
-        case description => Some(Step(description, EffectList.empty))
+        case description => Some(Step(description))
       }
 }
