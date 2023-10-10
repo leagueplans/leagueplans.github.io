@@ -34,7 +34,7 @@ jobs:
         report="${report//'%'/'%25'}"
         report="${report//$'\n'/'%0A'}"
         report="${report//$'\r'/'%0D'}"
-        echo "::set-output name=report::$report"
+        echo "report=$report" >> $GITHUB_OUTPUT
 
     - name: Raise PR for any changes
       uses: peter-evans/create-pull-request@v4
