@@ -1,0 +1,76 @@
+.pane {
+  position: relative;
+}
+
+.background {}
+
+.slot {
+  position: absolute;
+}
+
+.headSlot {
+  composes: slot;
+  top: 11px;
+  left: 84px;
+}
+
+.capeSlot {
+  composes: slot;
+  top: 50px;
+  left: 43px;
+}
+
+.neckSlot {
+  composes: slot;
+  top: 50px;
+  left: 84px;
+}
+
+.ammoSlot {
+  composes: slot;
+  top: 50px;
+  left: 125px;
+}
+
+.weaponSlot {
+  composes: slot;
+  top: 89px;
+  left: 28px;
+}
+
+.shieldSlot {
+  composes: slot;
+  top: 89px;
+  left: 140px;
+}
+
+.bodySlot {
+  composes: slot;
+  top: 89px;
+  left: 84px;
+}
+
+.legsSlot {
+  composes: slot;
+  top: 129px;
+  left: 84px;
+}
+
+.handsSlot {
+  composes: slot;
+  top: 169px;
+  left: 28px;
+}
+
+.feetSlot {
+  composes: slot;
+  top: 169px;
+  left: 84px;
+}
+
+.ringSlot {
+  composes: slot;
+  top: 169px;
+  left: 140px;
+}
+

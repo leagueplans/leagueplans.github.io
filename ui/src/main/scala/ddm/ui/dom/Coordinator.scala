@@ -68,7 +68,7 @@ object Coordinator {
       stateSignal.map(_.playerAtFocusedStep),
       itemCache,
       itemFuse,
-      addEffectToFocus(stateSignal, forester),
+      addEffectToFocus(focusedStepID.signal, forester),
       contextMenuController,
       modalBus
     )
@@ -148,16 +148,14 @@ object Coordinator {
   }
 
   private def addEffectToFocus(
-    stateSignal: Signal[State],
+    focusedStepSignal: Signal[Option[UUID]],
     forester: Forester[UUID, Step]
   ): Signal[Option[Observer[Effect]]] =
-    stateSignal.map(state =>
-      state.focusedStep.map(focusedStep =>
-        Observer[Effect](effect =>
-          forester.update(
-            focusedStep.copy(directEffects = focusedStep.directEffects + effect)
-          )
+    focusedStepSignal.map(_.map(focusedStepID =>
+      Observer[Effect](effect =>
+        forester.update(focusedStepID, step =>
+          step.copy(directEffects = step.directEffects + effect)
         )
       )
-    )
+    ))
 }

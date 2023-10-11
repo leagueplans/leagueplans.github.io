@@ -2,7 +2,7 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, seqToModifier, textToNode}
-import ddm.ui.dom.player.item.ItemElement
+import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect
@@ -28,19 +28,19 @@ object DescribedEffect {
         if (count > 0)
           line(
             text(s"${target.name}:"),
-            ItemElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
         else
           line(
             text(s"${target.name}:"),
-            ItemElement(itemCache(item), Val(-count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(itemCache(item), Val(-count)).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
 
       case Effect.MoveItem(item, count, source, target) =>
         line(
-          ItemElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
+          StackElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
           text(source.name),
           L.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),
           text(target.name)

@@ -1,18 +1,18 @@
-.quantity {
+.stackSize {
   composes: osrs-font from "../../fonts.module.css";
 }
 
 .under100K {
-  composes: quantity;
+  composes: stackSize;
   color: yellow;
 }
 
 .under10M {
-  composes: quantity;
+  composes: stackSize;
   color: white;
 }
 
 .over10M {
-  composes: quantity;
+  composes: stackSize;
   color: #00ff80;
 }

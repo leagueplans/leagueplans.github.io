@@ -1,0 +1,16 @@
+.slot {
+  display: grid;
+}
+
+.contents {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.background {
+  grid-row: 1;
+  grid-column: 1;
+}
