@@ -32,7 +32,10 @@ object Modal {
               case true => if (!node.ref.open) node.ref.showModal()
               case false => if (node.ref.open) node.ref.close()
             },
-            L.ifUnhandledF(L.onClick)(_.filter(_.target == node.ref)) --> content.writer.contramap[MouseEvent](_ => None)
+            L.ifUnhandledF(L.onClick)(_.filter(_.target == node.ref)) --> content.writer.contramap[MouseEvent] { event =>
+              event.preventDefault()
+              None
+            }
           )
         ),
         L.customEventProp("close") --> content.writer.contramap[Event](_ => None)

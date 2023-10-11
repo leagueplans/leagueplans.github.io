@@ -15,7 +15,7 @@ object Depository {
 
   object Kind {
     val kinds: Set[Kind] =
-      EquipmentSlot.slots ++ Set[Kind](Inventory, Bank)
+      EquipmentSlot.all.toSet ++ Set[Kind](Inventory, Bank)
 
     implicit val encoder: Encoder[Kind] =
       Encoder[String].contramap(_.name)
@@ -52,27 +52,29 @@ object Depository {
       val capacity: Int = 820
     }
 
-    final case class EquipmentSlot(slotName: String) extends Kind {
-      val name: String = s"$slotName slot"
+    sealed trait EquipmentSlot extends Kind {
+      lazy val name: String = s"$slotName slot"
       val autoStack: Boolean = false
       val capacity: Int = 1
+
+      def slotName: String
     }
 
     object EquipmentSlot {
-      val slots: Set[EquipmentSlot] =
-        Set(
-          "Head",
-          "Cape",
-          "Neck",
-          "Ammo",
-          "Weapon",
-          "Shield",
-          "Body",
-          "Legs",
-          "Hands",
-          "Feet",
-          "Ring"
-        ).map(EquipmentSlot.apply)
+      case object Head extends EquipmentSlot { val slotName: String = "Head" }
+      case object Cape extends EquipmentSlot { val slotName: String = "Cape" }
+      case object Neck extends EquipmentSlot { val slotName: String = "Neck" }
+      case object Ammo extends EquipmentSlot { val slotName: String = "Ammo" }
+      case object Weapon extends EquipmentSlot { val slotName: String = "Weapon" }
+      case object Shield extends EquipmentSlot { val slotName: String = "Shield" }
+      case object Body extends EquipmentSlot { val slotName: String = "Body" }
+      case object Legs extends EquipmentSlot { val slotName: String = "Legs" }
+      case object Hands extends EquipmentSlot { val slotName: String = "Hands" }
+      case object Feet extends EquipmentSlot { val slotName: String = "Feet" }
+      case object Ring extends EquipmentSlot { val slotName: String = "Ring" }
+
+      val all: List[EquipmentSlot] =
+        List(Head, Cape, Neck, Ammo, Weapon, Shield, Body, Legs, Hands, Feet, Ring)
     }
   }
 }

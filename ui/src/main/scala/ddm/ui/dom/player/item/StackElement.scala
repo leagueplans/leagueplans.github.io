@@ -8,25 +8,25 @@ import ddm.ui.dom.common.{KeyValuePairs, Tooltip}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object ItemElement {
-  def apply(item: Item, quantity: Signal[Int]): L.Div =
+object StackElement {
+  def apply(item: Item, sizeSignal: Signal[Int]): L.Div =
     L.div(
       L.cls(Styles.item),
-      ItemQuantity(quantity).amend(L.cls(Styles.quantity)),
-      ItemIcon(item, quantity),
-      tooltip(item, quantity)
+      StackSizeElement(sizeSignal).amend(L.cls(Styles.stackSize)),
+      ItemIcon(item, sizeSignal),
+      tooltip(item, sizeSignal)
     )
 
-  @js.native @JSImport("/styles/player/item/itemElement.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/stackElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val item: String = js.native
-    val quantity: String = js.native
+    val stackSize: String = js.native
   }
 
-  private def tooltip(item: Item, quantity: Signal[Int]): L.Modifier[L.HtmlElement] =
+  private def tooltip(item: Item, sizeSignal: Signal[Int]): L.Modifier[L.HtmlElement] =
     Tooltip(KeyValuePairs(
       L.span("Name:") -> L.span(item.name),
       L.span("ID prefix:") -> L.span(item.id.raw.take(8)),
-      L.span("Quantity:") -> L.span(L.child.text <-- quantity)
+      L.span("Quantity:") -> L.span(L.child.text <-- sizeSignal)
     ))
 }

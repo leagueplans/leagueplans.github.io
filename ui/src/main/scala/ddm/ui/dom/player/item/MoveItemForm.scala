@@ -1,11 +1,9 @@
 package ddm.ui.dom.player.item
 
-import cats.data.NonEmptyList
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToNode}
 import ddm.common.model.Item
-import ddm.common.model.Item.Bankable
-import ddm.ui.dom.common.form.{Form, NumberInput, Select}
+import ddm.ui.dom.common.form.{Form, NumberInput}
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.Depository
 
@@ -13,21 +11,14 @@ object MoveItemForm {
   def apply(
     item: Item,
     heldQuantity: Int,
-    heldDepository: Depository.Kind
+    source: Depository.Kind,
+    target: Depository.Kind
   ): (L.FormElement, EventStream[Option[MoveItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (quantityInput, quantityLabel, quantitySignal) = toQuantityInput(heldQuantity)
-    val (targetInput, targetLabel, targetSignal) = toTargetInput(item, heldDepository)
 
-    val form = emptyForm.amend(
-      quantityLabel,
-      quantityInput,
-      targetLabel,
-      targetInput,
-      submitButton
-    )
-
-    (form, effectSubmissions(item, heldDepository, quantitySignal, targetSignal, formSubmissions))
+    val form = emptyForm.amend(quantityLabel, quantityInput, submitButton)
+    (form, effectSubmissions(item, source, target, quantitySignal, formSubmissions))
   }
 
   private def toQuantityInput(heldQuantity: Int): (L.Input, L.Label, Signal[Int]) = {
@@ -45,42 +36,14 @@ object MoveItemForm {
     (amendedInput, amendedLabel, quantitySignal)
   }
 
-  private def toTargetInput(
-    item: Item,
-    heldDepository: Depository.Kind
-  ): (L.Select, L.Label, Signal[Depository.Kind]) = {
-    val bankableFilter = Option.when(item.bankable match {
-      case _: Bankable.Yes => false
-      case Bankable.No => true
-    })(Depository.Kind.Bank)
-
-    val viableTargets = Depository.Kind.kinds - heldDepository -- bankableFilter
-
-    val (input, label, targetSignal) =
-      Select(
-        id = "move-item-target-input",
-        NonEmptyList.fromListUnsafe(
-          viableTargets.toList.sorted.map(depository =>
-            Select.Opt(depository, depository.name)
-          )
-        )
-      )
-
-    (input, label.amend(L.span("Move to:")), targetSignal)
-  }
-
   private def effectSubmissions(
     item: Item,
-    heldDepository: Depository.Kind,
+    source: Depository.Kind,
+    target: Depository.Kind,
     quantitySignal: Signal[Int],
-    targetDepositorySignal: Signal[Depository.Kind],
     formSubmissions: EventStream[Unit]
   ): EventStream[Option[MoveItem]] =
-    formSubmissions
-      .sample(Signal.combine(quantitySignal, targetDepositorySignal))
-      .map { case (quantity, targetDepository) =>
-        Option.when(targetDepository != heldDepository)(
-          MoveItem(item.id, quantity, source = heldDepository, target = targetDepository)
-        )
-      }
+    formSubmissions.sample(quantitySignal).map(quantity =>
+      Option.when(quantity > 0)(MoveItem(item.id, quantity, source, target))
+    )
 }

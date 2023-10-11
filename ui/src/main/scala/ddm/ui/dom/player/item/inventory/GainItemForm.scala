@@ -1,10 +1,11 @@
-package ddm.ui.dom.player.item
+package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{Form, NumberInput}
+import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.model.plan.Effect.GainItem
 import ddm.ui.model.player.item.Depository
 import ddm.ui.wrappers.fusejs.Fuse
@@ -14,7 +15,6 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.chaining.scalaUtilChainingOps
 
-//TODO This currently allows you to add unbankable items to the bank
 object GainItemForm {
   def apply(
     target: Depository.Kind,
@@ -36,7 +36,7 @@ object GainItemForm {
     (form, submissions)
   }
 
-  @js.native @JSImport("/styles/player/item/gainItemForm.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/item/inventory/gainItemForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val form: String = js.native
     val label: String = js.native

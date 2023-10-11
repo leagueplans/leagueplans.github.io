@@ -2,7 +2,7 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, seqToModifier, textToNode}
-import ddm.ui.dom.player.item.ItemElement
+import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.model.plan.Requirement
 import ddm.ui.model.player.item.ItemCache
@@ -21,7 +21,7 @@ object DescribedRequirement {
 
       case Requirement.Tool(item) =>
         line(
-          ItemElement(itemCache(item), Val(1)).amend(L.cls(Styles.itemIcon))
+          StackElement(itemCache(item), Val(1)).amend(L.cls(Styles.itemIcon))
         )
 
       case Requirement.And(left, right) =>
