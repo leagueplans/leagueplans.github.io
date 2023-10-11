@@ -15,13 +15,15 @@ object ItemInfoboxDecoder {
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
       maybeStacksInBank <- obj.decodeOpt("stacksinbank")(_.asBoolean)
       stackable <- obj.decode("stackable")(_.asBoolean)
+      maybeNoteable <- obj.decodeOpt("noteable")(_.asBoolean)
     } yield ItemInfobox(
       id,
       name.raw,
       imageBins,
       examine.raw,
       asBankable(maybeBankable, maybeStacksInBank),
-      stackable
+      stackable,
+      maybeNoteable.getOrElse(true)
     )
 
   private def asID(raw: List[Term]): DecoderResult[WikiItem.GameID] =

@@ -9,5 +9,6 @@ final case class ItemInfobox(
   imageBins: NonEmptyList[(Item.Image.Bin, Page.Name.File)],
   examine: String,
   bankable: Item.Bankable,
-  stackable: Boolean
+  stackable: Boolean,
+  noteable: Boolean
 )
