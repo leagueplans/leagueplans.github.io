@@ -42,6 +42,7 @@ object ItemDumper {
       wikiItem.images.map(image => (image.bin, toImagePath(id, image))),
       wikiItem.infoboxes.item.bankable,
       wikiItem.infoboxes.item.stackable,
+      wikiItem.infoboxes.item.noteable,
       wikiItem.infoboxes.maybeBonuses.map(_.equipmentType)
     )
 
