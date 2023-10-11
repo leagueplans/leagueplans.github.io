@@ -15,7 +15,7 @@ object ItemInfoboxDecoder {
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
       maybeStacksInBank <- obj.decodeOpt("stacksinbank")(_.asBoolean)
       stackable <- obj.decode("stackable")(_.asBoolean)
-      maybeNoteable <- obj.decodeOpt("noteable")(_.asBoolean)
+      maybeNoteable <- obj.decodeOpt("noteable")(asNoteable)
     } yield ItemInfobox(
       id,
       name.raw,
@@ -121,4 +121,10 @@ object ItemInfoboxDecoder {
     else
       Item.Bankable.No
   }
+
+  private def asNoteable(terms: List[Term]): DecoderResult[Boolean] =
+    terms.asOpt[Term.Unstructured].flatMap {
+      case Some(term) => term.asBoolean
+      case None => Right(true)
+    }
 }

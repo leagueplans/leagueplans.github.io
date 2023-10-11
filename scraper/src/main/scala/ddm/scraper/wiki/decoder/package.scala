@@ -28,9 +28,14 @@ package object decoder {
 
   implicit final class RichTerms(val self: List[Term]) extends AnyVal {
     def as[T <: Term : ClassTag]: DecoderResult[T] =
+      asOpt[T].flatMap(
+        _.toRight(left = new DecoderException("No terms defined"))
+      )
+
+    def asOpt[T <: Term : ClassTag]: DecoderResult[Option[T]] =
       self match {
-        case Nil => Left(new DecoderException("No terms defined"))
-        case (t: T) :: Nil => Right(t)
+        case Nil => Right(None)
+        case (t: T) :: Nil => Right(Some(t))
         case _ :: Nil => Left(new DecoderException("Unexpected term type"))
         case _ => Left(new DecoderException("More than one term found"))
       }
