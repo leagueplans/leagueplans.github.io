@@ -1,9 +1,9 @@
-.stack {
+.icon {
   position: relative;
 }
 
-.stackSize {
+.noted {
+  scale: 0.7;
   position: absolute;
-  top: 0;
   left: 0;
 }

@@ -2,23 +2,23 @@ package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToNode}
-import ddm.common.model.Item
 import ddm.ui.dom.common.form.{Form, NumberInput}
 import ddm.ui.model.plan.Effect.MoveItem
-import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.item.{Depository, Stack}
 
 object MoveItemForm {
   def apply(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
     source: Depository.Kind,
-    target: Depository.Kind
+    target: Depository.Kind,
+    noteInTarget: Boolean
   ): (L.FormElement, EventStream[Option[MoveItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (quantityInput, quantityLabel, quantitySignal) = toQuantityInput(heldQuantity)
 
     val form = emptyForm.amend(quantityLabel, quantityInput, submitButton)
-    (form, effectSubmissions(item, source, target, quantitySignal, formSubmissions))
+    (form, effectSubmissions(stack, source, target, noteInTarget, quantitySignal, formSubmissions))
   }
 
   private def toQuantityInput(heldQuantity: Int): (L.Input, L.Label, Signal[Int]) = {
@@ -31,19 +31,29 @@ object MoveItemForm {
       L.maxAttr(heldQuantity.toString),
       L.stepAttr("1")
     )
-    val amendedLabel = label.amend(L.span("Quantity:"))
+    val amendedLabel = label.amend("Quantity:")
 
     (amendedInput, amendedLabel, quantitySignal)
   }
 
   private def effectSubmissions(
-    item: Item,
+    stack: Stack,
     source: Depository.Kind,
     target: Depository.Kind,
+    noteInTarget: Boolean,
     quantitySignal: Signal[Int],
     formSubmissions: EventStream[Unit]
   ): EventStream[Option[MoveItem]] =
     formSubmissions.sample(quantitySignal).map(quantity =>
-      Option.when(quantity > 0)(MoveItem(item.id, quantity, source, target))
+      Option.when(quantity > 0)(
+        MoveItem(
+          stack.item.id,
+          quantity,
+          source,
+          stack.noted,
+          target,
+          noteInTarget
+        )
+      )
     )
 }

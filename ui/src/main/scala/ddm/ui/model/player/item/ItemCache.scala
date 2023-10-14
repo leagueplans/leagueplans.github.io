@@ -11,16 +11,16 @@ final case class ItemCache(raw: Map[Item.ID, Item]) {
   def apply(id: Item.ID): Item =
     raw(id)
 
-  def itemise(depository: Depository): List[(Item, List[Int])] =
+  def itemise(depository: Depository): List[(Stack, List[Int])] =
     depository
       .contents
       .toList
-      .map { case (id, count) => this(id) -> count }
-      .sortBy { case (item, _) => item.name }
+      .map { case ((id, noted), count) => (this(id), noted, count) }
+      .sortBy { case (item, noted, _) => (item.name, noted) }
       .map {
-        case (item, count) if item.stackable || depository.kind.autoStack =>
-          item -> List(count)
-        case (item, count) =>
-          item -> List.fill(count)(1)
+        case (item, noted, count) if item.stackable || noted || depository.kind.autoStack =>
+          Stack(item, noted) -> List(count)
+        case (item, noted, count) =>
+          Stack(item, noted) -> List.fill(count)(1)
       }
 }

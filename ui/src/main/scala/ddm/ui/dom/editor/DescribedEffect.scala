@@ -6,7 +6,7 @@ import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{ItemCache, Stack}
 import ddm.ui.utils.laminar.LaminarOps.RichL
 
 import scala.scalajs.js
@@ -24,23 +24,23 @@ object DescribedEffect {
           text(s"$baseExp XP")
         )
 
-      case Effect.GainItem(item, count, target) =>
+      case Effect.AddItem(item, count, target, note) =>
         if (count > 0)
           line(
             text(s"${target.name}:"),
-            StackElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(Stack(itemCache(item), note), Val(count)).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
         else
           line(
             text(s"${target.name}:"),
-            StackElement(itemCache(item), Val(-count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(Stack(itemCache(item), note), Val(-count)).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
 
-      case Effect.MoveItem(item, count, source, target) =>
+      case Effect.MoveItem(item, count, source, notedInSource, target, notedInTarget) =>
         line(
-          StackElement(itemCache(item), Val(count)).amend(L.cls(Styles.itemIcon)),
+          StackElement(Stack(itemCache(item), notedInSource || notedInTarget), Val(count)).amend(L.cls(Styles.itemIcon)),
           text(source.name),
           L.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),
           text(target.name)

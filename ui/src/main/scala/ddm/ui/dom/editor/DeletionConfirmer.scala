@@ -2,11 +2,9 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observable, Observer, Sink}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
-import ddm.ui.dom.common.FormOpener
+import com.raquo.laminar.api.{L, textToNode}
 import ddm.ui.dom.common.form.Form
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.dom.common.{CancelModalButton, FormOpener}
 
 object DeletionConfirmer {
   def apply(
@@ -29,21 +27,10 @@ object DeletionConfirmer {
         "Are you sure you want to delete this step?\n" +
           "This will also delete any nested steps."
       ),
-      cancelButton(modalBus),
+      CancelModalButton(modalBus).amend(L.onMountFocus),
       submitButton.amend(L.value("Confirm"))
     )
 
     (form, formSubmissions)
   }
-
-  private def cancelButton(modalBus: WriteBus[Option[L.Element]]): L.Button =
-    L.button(
-      L.`type`("button"),
-      "Cancel",
-      L.onMountFocus,
-      L.ifUnhandled(L.onClick) --> modalBus.contramap[MouseEvent] { event =>
-        event.preventDefault()
-        None
-      }
-    )
 }

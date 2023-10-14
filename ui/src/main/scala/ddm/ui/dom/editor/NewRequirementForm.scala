@@ -27,7 +27,7 @@ object NewRequirementForm {
     val form = emptyForm.amend(
       L.cls(Styles.form),
       L.div(
-        typeLabel.amend(L.span("Requirement type:")),
+        typeLabel.amend("Requirement type:"),
         typeSelector.amend(L.cls(Styles.input)),
         submitButton.amend(L.cls(Styles.submit))
       ),
@@ -65,7 +65,12 @@ object NewRequirementForm {
 
   private def toToolSearch(items: Fuse[Item]): (ReactiveHtmlElement[Div], Signal[Option[Tool]]) = {
     val (search, searchLabel, radios, selection) =
-      ItemSearch(items, quantity = Val(1), id = "tool-requirement-item-search")
+      ItemSearch(
+        items,
+        noteSignal = Val(false),
+        quantitySignal = Val(1),
+        id = "tool-requirement-item-search"
+      )
 
     val div = L.div(
       searchLabel,
@@ -92,11 +97,11 @@ object NewRequirementForm {
 
     val div = L.div(
       L.p(
-        skillLabel.amend(L.span("Skill:")),
+        skillLabel.amend("Skill:"),
         skillInput.amend(L.cls(Styles.input))
       ),
       L.p(
-        levelLabel.amend(L.span("Level:")),
+        levelLabel.amend("Level:"),
         levelInput.amend(
           L.cls(Styles.input),
           L.required(true),

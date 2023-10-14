@@ -5,7 +5,7 @@ import com.raquo.laminar.api.{L, seqToModifier, textToNode}
 import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.model.plan.Requirement
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.item.{ItemCache, Stack}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -21,7 +21,7 @@ object DescribedRequirement {
 
       case Requirement.Tool(item) =>
         line(
-          StackElement(itemCache(item), Val(1)).amend(L.cls(Styles.itemIcon))
+          StackElement(Stack(itemCache(item), noted = false), sizeSignal = Val(1)).amend(L.cls(Styles.itemIcon))
         )
 
       case Requirement.And(left, right) =>

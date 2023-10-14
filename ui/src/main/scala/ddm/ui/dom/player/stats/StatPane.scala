@@ -138,10 +138,10 @@ object StatPane {
   ): L.Button = {
     val conditionalModifiers =
       if (stat.unlocked)
-        List(L.span("Gain XP"), L.onClick --> gainXPFormOpener)
+        List[L.Modifier[L.Button]]("Gain XP", L.onClick --> gainXPFormOpener)
       else
-        List(
-          L.span("Unlock skill"),
+        List[L.Modifier[L.Button]](
+          "Unlock skill",
           L.onClick --> effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
         )
 

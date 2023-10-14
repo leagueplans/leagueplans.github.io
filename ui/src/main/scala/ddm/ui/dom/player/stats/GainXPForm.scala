@@ -36,7 +36,7 @@ object GainXPForm {
       NumberInput(id = "gain-xp-input", initial = 0.0)
 
     val nodes = List(
-      xpLabel.amend(L.cls(Styles.label), L.span("XP:")),
+      xpLabel.amend(L.cls(Styles.label), "XP:"),
       xpInput.amend(
         L.cls(Styles.input),
         L.required(true),

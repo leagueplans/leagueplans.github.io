@@ -26,11 +26,11 @@ object Player {
       Item.ID("9f538721-45e7-4051-88f1-d12cd45db80b") -> 6, // Water rune
       Item.ID("6d0db6c2-f9f0-431b-af5b-60de0990184b") -> 4, // Earth rune
       Item.ID("3656ba5e-4024-480b-aac5-fd40a9216d00") -> 2 // Body rune
-    )
+    ).map { case (id, quantity) => (id, false) -> quantity }
 
   private val initialBankContents =
     Map(
-      Item.ID("776d8d8a-c51e-459f-93ee-8dd468c4703e") -> 25 // Coins
+      (Item.ID("776d8d8a-c51e-459f-93ee-8dd468c4703e"), false) -> 25 // Coins
     )
 
   val leaguesThreeInitial: Player =

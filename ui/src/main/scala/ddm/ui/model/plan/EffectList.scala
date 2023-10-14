@@ -12,7 +12,7 @@ final case class EffectList(underlying: List[Effect]) {
   def +(effect: Effect): EffectList =
     effect match {
       case e: GainExp => add(e)
-      case e: GainItem => add(e)
+      case e: AddItem => add(e)
       case e: MoveItem => add(e)
       case _: UnlockSkill | _: SetMultiplier | _: CompleteQuest | _: CompleteTask =>
         ignoreDuplicates(effect)
@@ -27,9 +27,11 @@ final case class EffectList(underlying: List[Effect]) {
         .filter(_.baseExp.raw != 0)
     )
 
-  private def add(effect: GainItem): EffectList =
+  private def add(effect: AddItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
-      oldEffect.item == newEffect.item && oldEffect.target == newEffect.target
+      oldEffect.item == newEffect.item &&
+        oldEffect.target == newEffect.target &&
+        oldEffect.note == newEffect.note
     )((oldEffect, newEffect) =>
       Some(oldEffect.copy(count = oldEffect.count + newEffect.count))
         .filter(_.count != 0)
@@ -52,8 +54,17 @@ final case class EffectList(underlying: List[Effect]) {
   private def add(effect: MoveItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
       oldEffect.item == newEffect.item && (
-        (oldEffect.source == newEffect.source && oldEffect.target == newEffect.target) ||
-          (oldEffect.source == newEffect.target && oldEffect.target == newEffect.source)
+        (
+          oldEffect.source == newEffect.source &&
+            oldEffect.notedInSource == newEffect.notedInSource &&
+            oldEffect.target == newEffect.target &&
+            oldEffect.noteInTarget == newEffect.noteInTarget
+        ) || (
+          oldEffect.source == newEffect.target &&
+            oldEffect.notedInSource == newEffect.noteInTarget &&
+            oldEffect.target == newEffect.source &&
+            oldEffect.noteInTarget == newEffect.notedInSource
+        )
       )
     )((oldEffect, newEffect) =>
       if (oldEffect.target == newEffect.target)
