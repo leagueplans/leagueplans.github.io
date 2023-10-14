@@ -6,15 +6,15 @@ import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import ddm.common.model.EquipmentType
 import ddm.common.model.Item.Bankable
-import ddm.common.model.{EquipmentType, Item}
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
 import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.plan.Effect.{GainItem, MoveItem}
+import ddm.ui.model.plan.Effect.{AddItem, MoveItem}
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Depository, ItemCache}
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
+import ddm.ui.model.player.item.{Depository, ItemCache, Stack}
 import ddm.ui.utils.laminar.LaminarOps.RichL
 import org.scalajs.dom.MouseEvent
 import org.scalajs.dom.html.{Button, Div}
@@ -23,7 +23,7 @@ object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
 
   def apply(
-    item: Item,
+    stack: Stack,
     itemCache: ItemCache,
     stackSizeSignal: Signal[Int],
     playerSignal: Signal[Player],
@@ -32,60 +32,78 @@ object InventoryItemContextMenu {
     modalBus: WriteBus[Option[L.Element]]
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
-      effectObserverSignal.map { maybeEffectObserver =>
-        maybeEffectObserver.map(effectObserver =>
-          toMenu(item, itemCache, stackSizeSignal, playerSignal, effectObserver, menuCloser, modalBus)
-        )
-      }
+      Signal
+        .combine(stackSizeSignal, effectObserverSignal)
+        .map { case (stackSize, maybeEffectObserver) =>
+          maybeEffectObserver.map(effectObserver =>
+            toMenu(stack, itemCache, stackSize, playerSignal, effectObserver, menuCloser, modalBus)
+          )
+        }
     )
 
   private def toMenu(
-    item: Item,
+    stack: Stack,
     itemCache: ItemCache,
-    stackSizeSignal: Signal[Int],
+    stackSize: Int,
     playerSignal: Signal[Player],
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[Div] = {
-    val heldQuantitySignal = playerSignal.map(_.get(inventory).contents.getOrElse(item.id, 0))
+    val heldQuantitySignal = playerSignal.map(
+      _.get(inventory).contents.getOrElse((stack.item.id, stack.noted), 0)
+    )
+
     L.div(
-      L.child <-- heldQuantitySignal.map(bankButton(item, _, effectObserver, menuCloser, modalBus)),
-      L.child <-- Signal.combine(stackSizeSignal, playerSignal).map { case (stackSize, player) =>
-        equipButton(item, itemCache, stackSize, player, effectObserver, menuCloser)
-      },
-      L.child <-- heldQuantitySignal.map(removeButton(item, _, effectObserver, menuCloser, modalBus)),
+      L.child <-- heldQuantitySignal.map(bankButton(stack, _, effectObserver, menuCloser, modalBus)),
+      L.child <-- playerSignal.map(player =>
+        equipButton(stack, itemCache, stackSize, player, effectObserver, menuCloser)
+      ),
+      L.child <-- heldQuantitySignal.map(removeButton(stack, _, effectObserver, menuCloser, modalBus)),
     )
   }
 
   private def bankButton(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
   ): L.Child =
-    item.bankable match {
+    stack.item.bankable match {
       case Bankable.No => L.emptyNode
       case _: Bankable.Yes =>
         val observer =
           if (heldQuantity > 1)
-            toBankItemFormOpener(item, heldQuantity, effectObserver, modalBus)
+            toBankItemFormOpener(stack, heldQuantity, effectObserver, modalBus)
           else
             effectObserver.contramap[Unit](_ =>
-              MoveItem(item.id, heldQuantity, inventory, Depository.Kind.Bank)
+              MoveItem(
+                stack.item.id,
+                heldQuantity,
+                inventory,
+                stack.noted,
+                Depository.Kind.Bank,
+                noteInTarget = false
+              )
             )
 
         button("Bank", observer, menuCloser)
     }
 
   private def toBankItemFormOpener(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
     effectObserver: Observer[MoveItem],
     modalBus: WriteBus[Option[L.Element]]
   ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = MoveItemForm(item, heldQuantity, inventory, Depository.Kind.Bank)
+    val (form, formSubmissions) = MoveItemForm(
+      stack,
+      heldQuantity,
+      inventory,
+      Depository.Kind.Bank,
+      noteInTarget = false
+    )
     FormOpener(
       modalBus,
       effectObserver,
@@ -94,31 +112,48 @@ object InventoryItemContextMenu {
   }
 
   private def equipButton(
-    item: Item,
+    stack: Stack,
     itemCache: ItemCache,
     stackSize: Int,
     player: Player,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Child =
-    item.equipmentType match {
-      case None => L.emptyNode
-      case Some(tpe) =>
-        val equipEffect = MoveItem(item.id, stackSize, inventory, toSlot(tpe))
+    (stack.noted, stack.item.equipmentType) match {
+      case (false, Some(tpe)) =>
+        val equipEffect = MoveItem(
+          stack.item.id,
+          stackSize,
+          inventory,
+          notedInSource = false,
+          toSlot(tpe),
+          noteInTarget = false
+        )
+
         val unequipEffects = toConflicts(tpe).flatMap { case (slot, conflictTypes) =>
-          player.get(slot).contents.flatMap { case (currentlyEquipped, equippedStackSize) =>
-            val sameStackableItem = item.id == currentlyEquipped && item.stackable
+          player.get(slot).contents.flatMap { case ((currentlyEquipped, _), equippedStackSize) =>
+            val sameStackableItem = stack.item.id == currentlyEquipped && stack.item.stackable
             val conflictedType = itemCache(currentlyEquipped).equipmentType.exists(conflictTypes.contains)
             Option.when(!sameStackableItem && conflictedType)(
-              MoveItem(currentlyEquipped, equippedStackSize, slot, inventory)
+              MoveItem(
+                currentlyEquipped,
+                equippedStackSize,
+                slot,
+                notedInSource = false,
+                inventory,
+                noteInTarget = false
+              )
             )
           }
         }
+
         val observer = Observer[Unit](_ =>
           (unequipEffects.toList :+ equipEffect).foreach(effectObserver.onNext)
         )
-
         button("Equip", observer, menuCloser)
+
+      case _ =>
+        L.emptyNode
     }
 
   private def toSlot(equipmentType: EquipmentType): EquipmentSlot =
@@ -156,28 +191,28 @@ object InventoryItemContextMenu {
     }
 
   private def removeButton(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
-    effectObserver: Observer[GainItem],
+    effectObserver: Observer[AddItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[Button] = {
     val observer =
       if (heldQuantity > 1)
-        toRemoveItemFormOpener(item, heldQuantity, effectObserver, modalBus)
+        toRemoveItemFormOpener(stack, heldQuantity, effectObserver, modalBus)
       else
-        effectObserver.contramap[Unit](_ => GainItem(item.id, -heldQuantity, inventory))
+        effectObserver.contramap[Unit](_ => AddItem(stack.item.id, -heldQuantity, inventory, stack.noted))
 
     button("Remove", observer, menuCloser)
   }
 
   private def toRemoveItemFormOpener(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
-    effectObserver: Observer[GainItem],
+    effectObserver: Observer[AddItem],
     modalBus: WriteBus[Option[L.Element]]
   ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = RemoveItemForm(item, heldQuantity, inventory)
+    val (form, formSubmissions) = RemoveItemForm(stack, heldQuantity, inventory)
     FormOpener(
       modalBus,
       effectObserver,
@@ -192,7 +227,7 @@ object InventoryItemContextMenu {
   ): ReactiveHtmlElement[Button] =
     L.button(
       L.`type`("button"),
-      L.span(text),
+      text,
       L.ifUnhandled(L.onClick) -->
         Observer
           .combine(clickObserver, menuCloser)

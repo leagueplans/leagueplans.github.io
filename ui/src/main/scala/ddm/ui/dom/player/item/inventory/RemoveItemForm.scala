@@ -2,21 +2,20 @@ package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToNode}
-import ddm.common.model.Item
 import ddm.ui.dom.common.form.{Form, NumberInput}
-import ddm.ui.model.plan.Effect.GainItem
-import ddm.ui.model.player.item.Depository
+import ddm.ui.model.plan.Effect.AddItem
+import ddm.ui.model.player.item.{Depository, Stack}
 
 object RemoveItemForm {
   def apply(
-    item: Item,
+    stack: Stack,
     heldQuantity: Int,
     depository: Depository.Kind
-  ): (L.FormElement, EventStream[Option[GainItem]]) = {
+  ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (input, label, quantitySignal) = quantityInput(heldQuantity)
     val form = emptyForm.amend(label, input, submitButton)
-    (form, effectSubmissions(item, depository, quantitySignal, formSubmissions))
+    (form, effectSubmissions(stack, depository, quantitySignal, formSubmissions))
   }
 
   private def quantityInput(heldQuantity: Int): (L.Input, L.Label, Signal[Int]) = {
@@ -29,20 +28,20 @@ object RemoveItemForm {
       L.maxAttr(heldQuantity.toString),
       L.stepAttr("1")
     )
-    val amendedLabel = label.amend(L.span("Quantity:"))
+    val amendedLabel = label.amend("Quantity:")
 
     (amendedInput, amendedLabel, quantitySignal)
   }
 
   private def effectSubmissions(
-    item: Item,
+    stack: Stack,
     depository: Depository.Kind,
     quantitySignal: Signal[Int],
     formSubmissions: EventStream[Unit]
-  ): EventStream[Option[GainItem]] =
+  ): EventStream[Option[AddItem]] =
     formSubmissions
       .sample(quantitySignal)
       .map(quantity => Option.when(quantity > 0)(
-        GainItem(item.id, -quantity, depository)
+        AddItem(stack.item.id, -quantity, depository, stack.noted)
       ))
 }

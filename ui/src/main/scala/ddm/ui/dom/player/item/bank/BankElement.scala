@@ -4,11 +4,10 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.common.model.Item
 import ddm.ui.dom.common.ContextMenu
-import ddm.ui.dom.player.item.{StackElement, ItemList}
+import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.model.player.item.{Depository, ItemCache, Stack}
 import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
@@ -22,9 +21,9 @@ object BankElement {
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[OList] =
-    ItemList(
+    StackList(
       bankSignal.map(itemCache.itemise),
-      toItemElement(effectObserverSignal, contextMenuController, modalBus)
+      toStackElement(effectObserverSignal, contextMenuController, modalBus)
     ).amend(L.cls(Styles.bank))
 
   @js.native @JSImport("/styles/player/item/bank/bankElement.module.css", JSImport.Default)
@@ -32,14 +31,14 @@ object BankElement {
     val bank: String = js.native
   }
 
-  private def toItemElement(
+  private def toStackElement(
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]]
-  )(item: Item, stackSizeSignal: Signal[Int]): L.Div =
-    StackElement(item, stackSizeSignal).amend(
+  )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
+    StackElement(stack, stackSizeSignal).amend(
       BankItemContextMenu(
-        item,
+        stack.item,
         stackSizeSignal,
         effectObserverSignal,
         contextMenuController,

@@ -25,7 +25,7 @@ object NewEffectForm {
     val form = emptyForm.amend(
       L.cls(Styles.form),
       L.div(
-        typeLabel.amend(L.span("Effect type:")),
+        typeLabel.amend("Effect type:"),
         typeSelector.amend(L.cls(Styles.input)),
         submitButton.amend(L.cls(Styles.submit))
       ),
@@ -91,11 +91,11 @@ object NewEffectForm {
 
     val div = L.div(
       L.p(
-        tierLabel.amend(L.span("Tier:")),
+        tierLabel.amend("Tier:"),
         tierInput.amend(L.cls(Styles.input))
       ),
       L.p(
-        nameLabel.amend(L.span("Name:")),
+        nameLabel.amend("Name:"),
         nameInput.amend(L.cls(Styles.input))
       )
     )

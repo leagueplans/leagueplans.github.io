@@ -4,11 +4,11 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.common.model.Item
 import ddm.ui.dom.common.ContextMenu
-import ddm.ui.dom.player.item.{StackElement, ItemList}
+import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
+import ddm.ui.model.player.item.Stack
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
@@ -17,7 +17,7 @@ import scala.scalajs.js.annotation.JSImport
 object EquipmentSlotElement {
   def apply(
     slot: EquipmentSlot,
-    stacks: List[(Item, List[Int])],
+    stacks: List[(Stack, List[Int])],
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
   ): ReactiveHtmlElement[Div] =
@@ -28,10 +28,10 @@ object EquipmentSlotElement {
         L.src(toBackground(slot, stacks.isEmpty)),
         L.alt(slot.name)
       ),
-      ItemList(
+      StackList(
         Val(stacks),
-        (item, stackSizeSignal) => StackElement(item, stackSizeSignal).amend(
-          EquippedItemContextMenu(item, stackSizeSignal, slot, effectObserverSignal, contextMenuController)
+        (stack, stackSizeSignal) => StackElement(stack, stackSizeSignal).amend(
+          EquippedItemContextMenu(stack.item, stackSizeSignal, slot, effectObserverSignal, contextMenuController)
         )
       ).amend(L.cls(Styles.contents))
     )

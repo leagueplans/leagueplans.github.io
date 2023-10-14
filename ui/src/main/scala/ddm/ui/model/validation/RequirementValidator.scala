@@ -33,7 +33,12 @@ object RequirementValidator {
   private val toolValidator: RequirementValidator[Tool] =
     new RequirementValidator[Tool] {
       def validate(requirement: Tool)(player: Player, itemCache: ItemCache): List[String] =
-        Validator.hasItem(Depository.Kind.Inventory, requirement.item, requiredCount = 1)(player, itemCache) match {
+        Validator.hasItem(
+          Depository.Kind.Inventory,
+          requirement.item,
+          noted = false,
+          requiredCount = 1
+        )(player, itemCache) match {
           case Left(error) => List(error)
           case Right(()) => List.empty
         }

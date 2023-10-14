@@ -39,7 +39,7 @@ object EquipmentElement {
     )
 
   @js.native @JSImport("/images/equipment/pane.png", JSImport.Default)
-  val background: String = js.native
+  private val background: String = js.native
 
   @js.native @JSImport("/styles/player/item/equipment/equipmentElement.module.css", JSImport.Default)
   private object Styles extends js.Object {

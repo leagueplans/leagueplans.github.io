@@ -23,22 +23,24 @@ object EquippedItemContextMenu {
     contextMenuController: ContextMenu.Controller
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
-      effectObserverSignal.map { maybeEffectObserver =>
-        maybeEffectObserver.map(effectObserver =>
-          toMenu(item, stackSizeSignal, slot, effectObserver, menuCloser)
-        )
-      }
+      Signal
+        .combine(effectObserverSignal, stackSizeSignal)
+        .map { case (maybeEffectObserver, stackSize) =>
+          maybeEffectObserver.map(effectObserver =>
+            toMenu(item, stackSize, slot, effectObserver, menuCloser)
+          )
+        }
     )
 
   private def toMenu(
     item: Item,
-    stackSizeSignal: Signal[Int],
+    stackSize: Int,
     slot: EquipmentSlot,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): ReactiveHtmlElement[Div] =
     L.div(
-      L.child <-- stackSizeSignal.map(unequipButton(item, _, slot, effectObserver, menuCloser))
+      unequipButton(item, stackSize, slot, effectObserver, menuCloser)
     )
 
   private def unequipButton(
@@ -49,12 +51,19 @@ object EquippedItemContextMenu {
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Child = {
     val observer = effectObserver.contramap[Unit](_ =>
-      MoveItem(item.id, stackSize, slot, Depository.Kind.Inventory)
+      MoveItem(
+        item.id,
+        stackSize,
+        slot,
+        notedInSource = false,
+        Depository.Kind.Inventory,
+        noteInTarget = false
+      )
     )
 
     L.button(
       L.`type`("button"),
-      L.span("Unequip"),
+      "Unequip",
       L.ifUnhandled(L.onClick) -->
         Observer
           .combine(observer, menuCloser)

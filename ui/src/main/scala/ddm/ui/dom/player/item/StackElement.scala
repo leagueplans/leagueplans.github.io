@@ -4,22 +4,23 @@ import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, intToNode, textToNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.{KeyValuePairs, Tooltip}
+import ddm.ui.model.player.item.Stack
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StackElement {
-  def apply(item: Item, sizeSignal: Signal[Int]): L.Div =
+  def apply(stack: Stack, sizeSignal: Signal[Int]): L.Div =
     L.div(
-      L.cls(Styles.item),
+      L.cls(Styles.stack),
+      StackIcon(stack, sizeSignal),
       StackSizeElement(sizeSignal).amend(L.cls(Styles.stackSize)),
-      ItemIcon(item, sizeSignal),
-      tooltip(item, sizeSignal)
+      tooltip(stack.item, sizeSignal)
     )
 
   @js.native @JSImport("/styles/player/item/stackElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val item: String = js.native
+    val stack: String = js.native
     val stackSize: String = js.native
   }
 

@@ -132,7 +132,7 @@ object StepElement {
   private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): ReactiveHtmlElement[Button] =
     L.button(
       L.`type`("button"),
-      L.span("Cut"),
+      "Cut",
       L.ifUnhandledF(L.onClick)(_.flatMap { event =>
         event.preventDefault()
         window.navigator.clipboard.writeText(stepID.toString).toFuture
@@ -153,7 +153,7 @@ object StepElement {
 
     L.button(
       L.`type`("button"),
-      L.span("Paste"),
+      "Paste",
       L.ifUnhandledF(L.onClick)(_.flatMap { event =>
         event.preventDefault()
         window.navigator.clipboard.readText().toFuture

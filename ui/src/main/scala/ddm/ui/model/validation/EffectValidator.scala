@@ -23,7 +23,7 @@ object EffectValidator extends EffectValidator[Effect] {
   def validate(effect: Effect)(player: Player, itemCache: ItemCache): (List[String], Player) =
     effect match {
       case e: GainExp => gainExpValidator.validate(e)(player, itemCache)
-      case e: GainItem => gainItemValidator.validate(e)(player, itemCache)
+      case e: AddItem => addItemValidator.validate(e)(player, itemCache)
       case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, itemCache)
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, itemCache)
@@ -40,15 +40,15 @@ object EffectValidator extends EffectValidator[Effect] {
       post = _ => List.empty
     )
 
-  private val gainItemValidator: EffectValidator[GainItem] =
+  private val addItemValidator: EffectValidator[AddItem] =
     from(
-      pre = gain => if (gain.count < 0) List(Validator.hasItem(gain.target, gain.item, -gain.count)) else List.empty,
+      pre = gain => if (gain.count < 0) List(Validator.hasItem(gain.target, gain.item, gain.note, -gain.count)) else List.empty,
       post = gain => if (gain.count > 0) List(Validator.depositorySize(gain.target)) else List.empty
     )
 
   private val moveItemValidator: EffectValidator[MoveItem] =
     from(
-      pre = move => List(Validator.hasItem(move.source, move.item, move.count)),
+      pre = move => List(Validator.hasItem(move.source, move.item, move.notedInSource, move.count)),
       post = move => List(Validator.depositorySize(move.target))
     )
 

@@ -24,18 +24,18 @@ object InventoryContextMenu {
     modalBus: WriteBus[Option[L.Element]]
   ): Binder[Base] =
     toMenuBinder(
-      toGainItemFormOpener(itemFuse, effectObserverSignal, modalBus),
+      toAddItemFormOpener(itemFuse, effectObserverSignal, modalBus),
       effectObserverSignal,
       contextMenuController
     )
 
-  private def toGainItemFormOpener(
+  private def toAddItemFormOpener(
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     modalBus: WriteBus[Option[L.Element]]
   ): Signal[Observer[FormOpener.Command]] =
     effectObserverSignal.map { maybeObserver =>
-      val (form, formSubmissions) = GainItemForm(Depository.Kind.Inventory, itemFuse)
+      val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalBus)
       FormOpener(
         modalBus,
         maybeObserver.observer,
@@ -44,30 +44,30 @@ object InventoryContextMenu {
     }
 
   private def toMenuBinder(
-    gainItemFormOpenerSignal: Signal[Observer[FormOpener.Command]],
+    addItemFormOpenerSignal: Signal[Observer[FormOpener.Command]],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
       Signal
-        .combine(effectObserverSignal, gainItemFormOpenerSignal)
-        .map { case (maybeEffectObserver, gainItemFormOpener) =>
+        .combine(effectObserverSignal, addItemFormOpenerSignal)
+        .map { case (maybeEffectObserver, addItemFormOpener) =>
           Option.when(maybeEffectObserver.nonEmpty)(
-            toElement(gainItemFormOpener, menuCloser)
+            toElement(addItemFormOpener, menuCloser)
           )
         }
     )
 
   private def toElement(
-    gainItemFormOpener: Observer[FormOpener.Command],
+    addItemFormOpener: Observer[FormOpener.Command],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): ReactiveHtmlElement[Button] =
     L.button(
       L.`type`("button"),
-      L.span("Add item"),
+      "Add item",
       L.ifUnhandled(L.onClick) -->
         Observer
-          .combine(gainItemFormOpener, menuCloser)
+          .combine(addItemFormOpener, menuCloser)
           .contramap[MouseEvent](_.preventDefault())
     )
 }

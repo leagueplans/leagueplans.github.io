@@ -79,4 +79,9 @@ object Depository {
   }
 }
 
-final case class Depository(contents: Map[Item.ID, Int], kind: Depository.Kind)
+/** @param contents
+  *   A map where the key consists of both the item ID and whether the item is
+  *   noted or not, and the value is the number of copies of that item (noted
+  *   or unnoted) in the depository.
+  */
+final case class Depository(contents: Map[(Item.ID, Boolean), Int], kind: Depository.Kind)

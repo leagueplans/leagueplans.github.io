@@ -21,14 +21,14 @@ object Validator {
       }
     }
 
-  def hasItem(kind: Depository.Kind, itemID: Item.ID, requiredCount: Int): Validator =
+  def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {
       def apply(player: Player, itemCache: ItemCache): Either[String, Unit] = {
-        val heldCount = player.get(kind).contents.getOrElse(itemID, 0)
+        val heldCount = player.get(kind).contents.getOrElse((itemID, noted), 0)
         Either.cond(
           heldCount >= requiredCount,
           right = (),
-          left = s"${kind.name} does not have enough of ${itemCache(itemID).name}"
+          left = s"${kind.name} does not have enough of ${if (noted) "noted " else ""}${itemCache(itemID).name}"
         )
       }
     }

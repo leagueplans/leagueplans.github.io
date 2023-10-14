@@ -27,7 +27,7 @@ object NewStepForm {
 
     (
       descriptionInput.amend(L.placeholder("Chop some logs")),
-      label.amend(L.span("Description:")),
+      label.amend("Description:"),
       description
     )
   }

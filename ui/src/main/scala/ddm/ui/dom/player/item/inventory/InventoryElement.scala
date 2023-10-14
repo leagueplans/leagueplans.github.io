@@ -6,10 +6,10 @@ import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.ContextMenu
-import ddm.ui.dom.player.item.{StackElement, ItemList}
+import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.model.player.item.{Depository, ItemCache, Stack}
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.OList
 
@@ -25,9 +25,9 @@ object InventoryElement {
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[OList] =
-    ItemList(
+    StackList(
       playerSignal.map(player => itemCache.itemise(player.get(Depository.Kind.Inventory))),
-      toItemElement(playerSignal, itemCache, effectObserverSignal, contextMenuController, modalBus)
+      toStackElement(playerSignal, itemCache, effectObserverSignal, contextMenuController, modalBus)
     ).amend(
       L.cls(Styles.inventory),
       InventoryContextMenu(itemFuse, effectObserverSignal, contextMenuController, modalBus)
@@ -38,16 +38,16 @@ object InventoryElement {
     val inventory: String = js.native
   }
 
-  private def toItemElement(
+  private def toStackElement(
     playerSignal: Signal[Player],
     itemCache: ItemCache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]]
-  )(item: Item, stackSizeSignal: Signal[Int]): L.Div =
-    StackElement(item, stackSizeSignal).amend(
+  )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
+    StackElement(stack, stackSizeSignal).amend(
       InventoryItemContextMenu(
-        item,
+        stack,
         itemCache,
         stackSizeSignal,
         playerSignal,
