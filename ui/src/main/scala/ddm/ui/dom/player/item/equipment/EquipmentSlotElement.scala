@@ -3,13 +3,14 @@ package ddm.ui.dom.player.item.equipment
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.L
-import com.raquo.laminar.nodes.ReactiveHtmlElement
+import com.raquo.laminar.modifiers.Binder
+import com.raquo.laminar.nodes.ReactiveElement.Base
+import ddm.common.model.Item
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
 import ddm.ui.model.player.item.Stack
-import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -20,7 +21,7 @@ object EquipmentSlotElement {
     stacks: List[(Stack, List[Int])],
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
-  ): ReactiveHtmlElement[Div] =
+  ): L.Div =
     L.div(
       L.cls(Styles.slot),
       L.img(
@@ -31,7 +32,7 @@ object EquipmentSlotElement {
       StackList(
         Val(stacks),
         (stack, stackSizeSignal) => StackElement(stack, stackSizeSignal).amend(
-          EquippedItemContextMenu(stack.item, stackSizeSignal, slot, effectObserverSignal, contextMenuController)
+          bindContextMenu(stack.item, stackSizeSignal, slot, effectObserverSignal, contextMenuController)
         )
       ).amend(L.cls(Styles.contents))
     )
@@ -87,4 +88,21 @@ object EquipmentSlotElement {
         case EquipmentSlot.Feet => Backgrounds.feet
         case EquipmentSlot.Ring => Backgrounds.ring
       }
+
+  private def bindContextMenu(
+    item: Item,
+    stackSizeSignal: Signal[Int],
+    slot: EquipmentSlot,
+    effectObserverSignal: Signal[Option[Observer[MoveItem]]],
+    contextMenuController: ContextMenu.Controller
+  ): Binder[Base] =
+    contextMenuController.bind(menuCloser =>
+      Signal
+        .combine(effectObserverSignal, stackSizeSignal)
+        .map { case (maybeEffectObserver, stackSize) =>
+          maybeEffectObserver.map(effectObserver =>
+            EquippedItemContextMenu(item, stackSize, slot, effectObserver, menuCloser)
+          )
+        }
+    )
 }

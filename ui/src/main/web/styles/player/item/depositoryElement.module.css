@@ -5,7 +5,8 @@
   column-gap: 2px;
 
   width: fit-content;
-  height: fit-content;
+  max-height: 255px;
+  overflow-y: auto;
 
   border: solid;
   border-radius: 5px;

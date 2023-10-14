@@ -8,16 +8,17 @@ import ddm.ui.dom.common._
 import ddm.ui.dom.player.item.bank.BankElement
 import ddm.ui.dom.player.item.equipment.EquipmentElement
 import ddm.ui.dom.player.item.inventory.InventoryElement
+import ddm.ui.dom.player.quest.QuestList
 import ddm.ui.dom.player.stats.StatsElement
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
 object PlayerElement {
   def apply(
     playerSignal: Signal[Player],
-    itemCache: ItemCache,
+    cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
@@ -27,25 +28,28 @@ object PlayerElement {
       L.div(
         L.display.flex,
         StatsElement.from(playerSignal, effectObserverSignal, contextMenuController),
-        EquipmentElement(playerSignal, itemCache, effectObserverSignal, contextMenuController),
-        InventoryElement(playerSignal, itemCache, itemFuse, effectObserverSignal, contextMenuController, modalBus),
+        EquipmentElement(playerSignal, cache, effectObserverSignal, contextMenuController),
+        InventoryElement(playerSignal, cache, itemFuse, effectObserverSignal, contextMenuController, modalBus),
         BankElement(
           playerSignal.map(_.get(Depository.Kind.Bank)),
-          itemCache,
+          cache,
           effectObserverSignal,
           contextMenuController,
           modalBus
         )
       ),
-      L.child <-- playerSignal.map(p =>
-        KeyValuePairs(
-          L.span("Quest points:") -> L.span(p.questPoints),
-          L.span("Combat level:") -> L.span(String.format("%.2f", p.stats.combatLevel)),
-          L.span("Multiplier:") -> L.span(p.leagueStatus.multiplier),
-          L.span("Tasks completed:") -> L.span(p.leagueStatus.tasksCompleted.size),
-          L.span("League points:") -> L.span(p.leagueStatus.leaguePoints),
-          L.span("Expected renown:") -> L.span(p.leagueStatus.expectedRenown)
-        )
+      L.div(
+        L.display.flex,
+        L.child <-- playerSignal.map(p =>
+          KeyValuePairs(
+            L.span("Combat level:") -> L.span(String.format("%.2f", p.stats.combatLevel)),
+            L.span("Multiplier:") -> L.span(p.leagueStatus.multiplier),
+            L.span("Tasks completed:") -> L.span(p.leagueStatus.tasksCompleted.size),
+            L.span("League points:") -> L.span(p.leagueStatus.leaguePoints),
+            L.span("Expected renown:") -> L.span(p.leagueStatus.expectedRenown)
+          )
+        ),
+        QuestList(playerSignal, cache, effectObserverSignal, contextMenuController)
       )
     )
   }

@@ -1,18 +1,18 @@
 package ddm.ui.model.validation
 
 import ddm.common.model.Item
-import ddm.ui.model.player.{Player, Quest}
-import ddm.ui.model.player.item.{Depository, ItemCache}
+import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.{Level, Skill}
+import ddm.ui.model.player.{Cache, Player}
 
-sealed trait Validator extends ((Player, ItemCache) => Either[String, Unit])
+sealed trait Validator extends ((Player, Cache) => Either[String, Unit])
 
 object Validator {
   def depositorySize(kind: Depository.Kind): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] = {
-        val size = itemCache.itemise(player.get(kind)).map { case (_, stacks) => stacks.size }.sum
+      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+        val size = cache.itemise(player.get(kind)).map { case (_, stacks) => stacks.size }.sum
         Either.cond(
           size <= kind.capacity,
           right = (),
@@ -23,19 +23,19 @@ object Validator {
 
   def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] = {
+      def apply(player: Player, cache: Cache): Either[String, Unit] = {
         val heldCount = player.get(kind).contents.getOrElse((itemID, noted), 0)
         Either.cond(
           heldCount >= requiredCount,
           right = (),
-          left = s"${kind.name} does not have enough of ${if (noted) "noted " else ""}${itemCache(itemID).name}"
+          left = s"${kind.name} does not have enough of ${if (noted) "noted " else ""}${cache.items(itemID).name}"
         )
       }
     }
 
   def skillUnlocked(skill: Skill): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] =
+      def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
           player.leagueStatus.skillsUnlocked.contains(skill),
           right = (),
@@ -45,7 +45,7 @@ object Validator {
 
   def hasLevel(skill: Skill, level: Int): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] =
+      def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
           Level.of(player.stats(skill)).raw >= level,
           right = (),
@@ -53,19 +53,19 @@ object Validator {
         )
     }
 
-  def questIncomplete(quest: Quest): Validator =
+  def questIncomplete(questID: Int): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] =
+      def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
-          !player.completedQuests.contains(quest),
+          !player.completedQuests.contains(questID),
           right = (),
-          left = s"${quest.name} has already been completed"
+          left = s"${cache.quests(questID).name} has already been completed"
         )
     }
 
   def taskIncomplete(task: Task): Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] =
+      def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
           !player.leagueStatus.tasksCompleted.contains(task),
           right = (),
@@ -75,7 +75,7 @@ object Validator {
 
   val hasPositiveRenown: Validator =
     new Validator {
-      def apply(player: Player, itemCache: ItemCache): Either[String, Unit] =
+      def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
           player.leagueStatus.expectedRenown >= 0,
           right = (),

@@ -1,5 +1,17 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  min-width: min-content;
+}
+
 .header {
   display: flex;
+  min-width: fit-content;
+}
+
+.list {
+  overflow: auto;
 }
 
 .text {

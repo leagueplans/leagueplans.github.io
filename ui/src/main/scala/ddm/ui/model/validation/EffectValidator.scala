@@ -3,32 +3,31 @@ package ddm.ui.model.validation
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.plan.Effect._
 import ddm.ui.model.plan.{Effect, EffectList}
-import ddm.ui.model.player.Player
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.{Cache, Player}
 
 sealed trait EffectValidator[E <: Effect] {
-  def validate(effect: E)(player: Player, itemCache: ItemCache): (List[String], Player)
+  def validate(effect: E)(player: Player, cache: Cache): (List[String], Player)
 }
 
 object EffectValidator extends EffectValidator[Effect] {
-  def validate(effectList: EffectList)(player: Player, itemCache: ItemCache): List[String] = {
+  def validate(effectList: EffectList)(player: Player, cache: Cache): List[String] = {
     val (_, errors) = effectList.underlying.foldLeft((player, List.empty[String])) {
       case ((preEffectPlayer, errorAcc), effect) =>
-        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, itemCache)
+        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, cache)
         (postEffectPlayer, errorAcc ++ errors)
     }
     errors
   }
 
-  def validate(effect: Effect)(player: Player, itemCache: ItemCache): (List[String], Player) =
+  def validate(effect: Effect)(player: Player, cache: Cache): (List[String], Player) =
     effect match {
-      case e: GainExp => gainExpValidator.validate(e)(player, itemCache)
-      case e: AddItem => addItemValidator.validate(e)(player, itemCache)
-      case e: MoveItem => moveItemValidator.validate(e)(player, itemCache)
-      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, itemCache)
-      case e: CompleteQuest => completeQuestValidator.validate(e)(player, itemCache)
-      case e: SetMultiplier => empty.validate(e)(player, itemCache)
-      case e: CompleteTask => completeTaskValidator.validate(e)(player, itemCache)
+      case e: GainExp => gainExpValidator.validate(e)(player, cache)
+      case e: AddItem => addItemValidator.validate(e)(player, cache)
+      case e: MoveItem => moveItemValidator.validate(e)(player, cache)
+      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, cache)
+      case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
+      case e: SetMultiplier => empty.validate(e)(player, cache)
+      case e: CompleteTask => completeTaskValidator.validate(e)(player, cache)
     }
 
   private def empty[E <: Effect]: EffectValidator[E] =
@@ -75,18 +74,18 @@ object EffectValidator extends EffectValidator[Effect] {
     post: E => List[Validator]
   ): EffectValidator[E] =
     new EffectValidator[E] {
-      def validate(effect: E)(player: Player, itemCache: ItemCache): (List[String], Player) = {
+      def validate(effect: E)(player: Player, cache: Cache): (List[String], Player) = {
         val postEffectPlayer = EffectResolver.resolve(player, effect)
         val errors =
-          collectErrors(pre(effect))(player, itemCache) ++
-            collectErrors(post(effect))(postEffectPlayer, itemCache)
+          collectErrors(pre(effect))(player, cache) ++
+            collectErrors(post(effect))(postEffectPlayer, cache)
 
         (errors, postEffectPlayer)
       }
 
-      private def collectErrors(validators: List[Validator])(player: Player, itemCache: ItemCache): List[String] =
+      private def collectErrors(validators: List[Validator])(player: Player, cache: Cache): List[String] =
         validators
-          .map(_.apply(player, itemCache))
+          .map(_.apply(player, cache))
           .collect { case Left(error) => error }
     }
 }

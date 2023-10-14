@@ -1,10 +1,8 @@
 package ddm.ui.dom.player.item.bank
 
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode, optionToModifier}
-import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
+import com.raquo.laminar.api.{L, eventPropToProcessor, optionToModifier, textToNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
@@ -18,23 +16,6 @@ import org.scalajs.dom.html.Div
 
 object BankItemContextMenu {
   def apply(
-    item: Item,
-    stackSizeSignal: Signal[Int],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
-  ): Binder[Base] =
-    contextMenuController.bind(menuCloser =>
-      Signal
-        .combine(effectObserverSignal, stackSizeSignal)
-        .map { case (maybeEffectObserver, stackSize) =>
-          maybeEffectObserver.map(effectObserver =>
-            toMenu(item, stackSize, effectObserver, menuCloser, modalBus)
-          )
-        }
-    )
-
-  private def toMenu(
     item: Item,
     stackSize: Int,
     effectObserver: Observer[Effect],
