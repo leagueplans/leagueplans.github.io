@@ -40,7 +40,7 @@ object NewRequirementForm {
     (form, effectSubmissions(formSubmissions, typeSignal, toolSignal, levelSignal))
   }
 
-  @js.native @JSImport("/styles/editor/newEffectForm.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/editor/newRequirementForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val form: String = js.native
 

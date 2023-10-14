@@ -24,7 +24,6 @@ object StepDescription {
     val isEditing = Var(false)
 
     L.div(
-      L.cls(Styles.description),
       editingToggle(isEditing),
       L.child <-- toParagraph(isEditing, stepSignal, stepUpdater)
     )
@@ -32,7 +31,6 @@ object StepDescription {
 
   @js.native @JSImport("/styles/editor/stepDescription.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val description: String = js.native
     val editingToggle: String = js.native
     val paragraph: String = js.native
   }

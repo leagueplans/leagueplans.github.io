@@ -5,13 +5,14 @@ import com.raquo.laminar.api.{L, seqToModifier, textToNode}
 import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.model.plan.Requirement
-import ddm.ui.model.player.item.{ItemCache, Stack}
+import ddm.ui.model.player.Cache
+import ddm.ui.model.player.item.Stack
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object DescribedRequirement {
-  def apply(requirement: Requirement, itemCache: ItemCache): L.HtmlElement =
+  def apply(requirement: Requirement, cache: Cache): L.HtmlElement =
     requirement match {
       case Requirement.Level(skill, level) =>
         line(
@@ -21,24 +22,27 @@ object DescribedRequirement {
 
       case Requirement.Tool(item) =>
         line(
-          StackElement(Stack(itemCache(item), noted = false), sizeSignal = Val(1)).amend(L.cls(Styles.itemIcon))
+          StackElement(
+            Stack(cache.items(item), noted = false),
+            sizeSignal = Val(1)
+          ).amend(L.cls(Styles.itemIcon))
         )
 
       case Requirement.And(left, right) =>
         line(
           text("("),
-          DescribedRequirement(left, itemCache),
+          DescribedRequirement(left, cache),
           text("and"),
-          DescribedRequirement(right, itemCache),
+          DescribedRequirement(right, cache),
           text(")"),
         )
 
       case Requirement.Or(left, right) =>
         line(
           text("("),
-          DescribedRequirement(left, itemCache),
+          DescribedRequirement(left, cache),
           text("or"),
-          DescribedRequirement(right, itemCache),
+          DescribedRequirement(right, cache),
           text(")"),
         )
     }

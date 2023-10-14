@@ -8,8 +8,7 @@ import ddm.common.model.Item
 import ddm.ui.dom.common.{Forester, FormOpener, Tooltip}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import ddm.ui.model.player.item.ItemCache
-import ddm.ui.model.player.{Player, Quest}
+import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.model.validation.StepValidator
 import ddm.ui.utils.laminar.LaminarOps.RichL
 import ddm.ui.wrappers.fusejs.Fuse
@@ -21,9 +20,8 @@ import scala.scalajs.js.annotation.JSImport
 
 object EditorElement {
   def apply(
-    itemCache: ItemCache,
+    cache: Cache,
     itemFuse: Fuse[Item],
-    quests: Fuse[Quest],
     dataSignal: Signal[(Step, List[Step], Player)],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
@@ -34,13 +32,13 @@ object EditorElement {
 
     L.div(
       L.cls(Styles.editor),
-      StepDescription(stepSignal, stepUpdater),
-      L.child <-- toWarnings(itemCache, playerSignal, stepSignal),
+      StepDescription(stepSignal, stepUpdater).amend(L.cls(Styles.description)),
+      L.child <-- toWarnings(cache, playerSignal, stepSignal),
       L.div(
         L.cls(Styles.sections),
         L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalBus),
-        L.child <-- toEffects(itemCache, quests, stepSignal, stepUpdater, modalBus),
-        L.child <-- toRequirements(itemCache, itemFuse, stepSignal, stepUpdater, modalBus)
+        L.child <-- toEffects(cache, stepSignal, stepUpdater, modalBus),
+        L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalBus)
       )
     )
   }
@@ -48,22 +46,23 @@ object EditorElement {
   @js.native @JSImport("/styles/editor/editor.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val editor: String = js.native
+    val description: String = js.native
+    val warningIcon: String = js.native
     val sections: String = js.native
     val section: String = js.native
-    val warningIcon: String = js.native
     val tooltip: String = js.native
     val subStepDescription: String = js.native
   }
 
   private def toWarnings(
-    itemCache: ItemCache,
+    cache: Cache,
     playerSignal: Signal[Player],
     stepSignal: Signal[Step]
   ): Signal[L.Child] =
     Signal
       .combine(playerSignal, stepSignal)
       .map { case (player, step) =>
-        val errors = StepValidator.validate(step)(player, itemCache)
+        val errors = StepValidator.validate(step)(player, cache)
 
         if (errors.isEmpty)
           L.emptyNode
@@ -121,8 +120,7 @@ object EditorElement {
   }
 
   private def toEffects(
-    itemCache: ItemCache,
-    quests: Fuse[Quest],
+    cache: Cache,
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
@@ -136,8 +134,8 @@ object EditorElement {
           forester.update(stepID, _.copy(directEffects = EffectList(effectOrdering)))
         ),
         identity,
-        DescribedEffect(_, itemCache),
-        newEffectObserver(quests, stepID, modalBus, stepUpdater),
+        DescribedEffect(_, cache),
+        newEffectObserver(stepID, modalBus, stepUpdater),
         stepUpdater.contramap[Effect](deletedEffect => forester =>
           forester.update(stepID, step => step.copy(directEffects = step.directEffects - deletedEffect))
         )
@@ -145,12 +143,11 @@ object EditorElement {
     }
 
   private def newEffectObserver(
-    quests: Fuse[Quest],
     stepID: UUID,
     modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit]
   ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = NewEffectForm(quests)
+    val (form, formSubmissions) = NewEffectForm()
     FormOpener(
       modalBus,
       stepUpdater.contracollect[Option[Effect]] { case Some(newEffect) => forester =>
@@ -161,7 +158,7 @@ object EditorElement {
   }
 
   private def toRequirements(
-    itemCache: ItemCache,
+    cache: Cache,
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
@@ -176,7 +173,7 @@ object EditorElement {
           forester.update(stepID, _.copy(requirements = requirementOrdering))
         ),
         identity,
-        DescribedRequirement(_, itemCache),
+        DescribedRequirement(_, cache),
         newRequirementObserver(itemFuse, stepID, modalBus, stepUpdater),
         stepUpdater.contramap[Requirement](deletedRequirement => forester =>
           forester.update(stepID, step => step.copy(requirements = step.requirements.filterNot(_ == deletedRequirement)))

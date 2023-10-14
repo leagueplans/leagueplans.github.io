@@ -5,8 +5,7 @@ import ddm.common.model.Item
 import ddm.ui.dom.Coordinator
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.Step
-import ddm.ui.model.player.Quest
-import ddm.ui.model.player.item.ItemCache
+import ddm.ui.model.player.{Cache, Quest}
 import io.circe.scalajs.decodeJs
 import io.circe.{Codec, Decoder}
 import org.scalajs.dom.{document, window}
@@ -30,7 +29,7 @@ object Main extends App {
     Forest.codec(_.id)
 
   withResource[Set[Item]](itemsJson)(items =>
-    withResource[List[Quest]](questsJson)(quests =>
+    withResource[Set[Quest]](questsJson)(quests =>
       withResource[Forest[UUID, Step]](defaultPlanJson)(defaultPlan =>
         L.documentEvents.onDomContentLoaded.foreach { _ =>
 
@@ -39,8 +38,7 @@ object Main extends App {
           L.render(container, Coordinator(
             new StorageManager[Forest[UUID, Step]]("plan", window.localStorage),
             defaultPlan,
-            ItemCache(items),
-            quests
+            Cache(items, quests)
           ))
         }(L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
       )

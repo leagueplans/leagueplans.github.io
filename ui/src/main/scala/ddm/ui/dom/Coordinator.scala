@@ -13,8 +13,7 @@ import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, Step}
-import ddm.ui.model.player.item.ItemCache
-import ddm.ui.model.player.{Player, Quest}
+import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
 import java.util.UUID
@@ -27,19 +26,10 @@ object Coordinator {
   def apply(
     storageManager: StorageManager[Forest[UUID, Step]],
     defaultPlan: Forest[UUID, Step],
-    itemCache: ItemCache,
-    questList: List[Quest]
+    cache: Cache
   ): L.Div = {
     val itemFuse = new Fuse(
-      itemCache.raw.values.toList,
-      new FuseOptions {
-        override val keys: UndefOr[js.Array[String]] =
-          js.defined(js.Array("name"))
-      }
-    )
-
-    val questFuse = new Fuse(
-      questList,
+      cache.items.values.toList,
       new FuseOptions {
         override val keys: UndefOr[js.Array[String]] =
           js.defined(js.Array("name"))
@@ -66,7 +56,7 @@ object Coordinator {
 
     val playerElement = PlayerElement(
       stateSignal.map(_.playerAtFocusedStep),
-      itemCache,
+      cache,
       itemFuse,
       addEffectToFocus(focusedStepID.signal, forester),
       contextMenuController,
@@ -79,14 +69,7 @@ object Coordinator {
           (step, state.plan.children(step.id), state.playerPreFocusedStep)
         ))
         .split { case (step, _, _) => step.id } { case (_, _, signal) =>
-          EditorElement(
-            itemCache,
-            itemFuse,
-            questFuse,
-            signal,
-            stepUpdates.writer,
-            modalBus
-          )
+          EditorElement(cache, itemFuse, signal, stepUpdates.writer, modalBus)
         }
 
     L.div(

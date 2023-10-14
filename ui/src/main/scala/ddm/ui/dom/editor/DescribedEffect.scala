@@ -6,17 +6,15 @@ import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.item.{ItemCache, Stack}
+import ddm.ui.model.player.Cache
+import ddm.ui.model.player.item.Stack
 import ddm.ui.utils.laminar.LaminarOps.RichL
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object DescribedEffect {
-  def apply(
-    effect: Effect,
-    itemCache: ItemCache
-  ): L.HtmlElement =
+  def apply(effect: Effect, cache: Cache): L.HtmlElement =
     effect match {
       case Effect.GainExp(skill, baseExp) =>
         line(
@@ -28,19 +26,28 @@ object DescribedEffect {
         if (count > 0)
           line(
             text(s"${target.name}:"),
-            StackElement(Stack(itemCache(item), note), Val(count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(
+              Stack(cache.items(item), note),
+              Val(count)
+            ).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
         else
           line(
             text(s"${target.name}:"),
-            StackElement(Stack(itemCache(item), note), Val(-count)).amend(L.cls(Styles.itemIcon)),
+            StackElement(
+              Stack(cache.items(item), note),
+              Val(-count)
+            ).amend(L.cls(Styles.itemIcon)),
             L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
 
       case Effect.MoveItem(item, count, source, notedInSource, target, notedInTarget) =>
         line(
-          StackElement(Stack(itemCache(item), notedInSource || notedInTarget), Val(count)).amend(L.cls(Styles.itemIcon)),
+          StackElement(
+            Stack(cache.items(item), notedInSource || notedInTarget),
+            Val(count)
+          ).amend(L.cls(Styles.itemIcon)),
           text(source.name),
           L.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),
           text(target.name)
@@ -56,7 +63,7 @@ object DescribedEffect {
         line(text(s"Multiplier set to ${multiplier}x"))
 
       case Effect.CompleteQuest(quest) =>
-        line(text(s"Completed \"${quest.name}\""))
+        line(text(s"Completed \"${cache.quests(quest).name}\""))
 
       case Effect.CompleteTask(task) =>
         line(text(s"Completed \"${task.name}\" (${task.tier})"))

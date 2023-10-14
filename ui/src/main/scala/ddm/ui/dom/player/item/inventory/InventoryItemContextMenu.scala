@@ -3,53 +3,30 @@ package ddm.ui.dom.player.item.inventory
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
-import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
-import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.EquipmentType
 import ddm.common.model.Item.Bankable
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
 import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.{AddItem, MoveItem}
-import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
-import ddm.ui.model.player.item.{Depository, ItemCache, Stack}
+import ddm.ui.model.player.item.{Depository, Stack}
+import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.utils.laminar.LaminarOps.RichL
 import org.scalajs.dom.MouseEvent
-import org.scalajs.dom.html.{Button, Div}
 
 object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
 
   def apply(
     stack: Stack,
-    itemCache: ItemCache,
-    stackSizeSignal: Signal[Int],
-    playerSignal: Signal[Player],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
-  ): Binder[Base] =
-    contextMenuController.bind(menuCloser =>
-      Signal
-        .combine(stackSizeSignal, effectObserverSignal)
-        .map { case (stackSize, maybeEffectObserver) =>
-          maybeEffectObserver.map(effectObserver =>
-            toMenu(stack, itemCache, stackSize, playerSignal, effectObserver, menuCloser, modalBus)
-          )
-        }
-    )
-
-  private def toMenu(
-    stack: Stack,
-    itemCache: ItemCache,
+    cache: Cache,
     stackSize: Int,
     playerSignal: Signal[Player],
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
-  ): ReactiveHtmlElement[Div] = {
+  ): L.Div = {
     val heldQuantitySignal = playerSignal.map(
       _.get(inventory).contents.getOrElse((stack.item.id, stack.noted), 0)
     )
@@ -57,7 +34,7 @@ object InventoryItemContextMenu {
     L.div(
       L.child <-- heldQuantitySignal.map(bankButton(stack, _, effectObserver, menuCloser, modalBus)),
       L.child <-- playerSignal.map(player =>
-        equipButton(stack, itemCache, stackSize, player, effectObserver, menuCloser)
+        equipButton(stack, cache, stackSize, player, effectObserver, menuCloser)
       ),
       L.child <-- heldQuantitySignal.map(removeButton(stack, _, effectObserver, menuCloser, modalBus)),
     )
@@ -113,7 +90,7 @@ object InventoryItemContextMenu {
 
   private def equipButton(
     stack: Stack,
-    itemCache: ItemCache,
+    cache: Cache,
     stackSize: Int,
     player: Player,
     effectObserver: Observer[MoveItem],
@@ -133,7 +110,7 @@ object InventoryItemContextMenu {
         val unequipEffects = toConflicts(tpe).flatMap { case (slot, conflictTypes) =>
           player.get(slot).contents.flatMap { case ((currentlyEquipped, _), equippedStackSize) =>
             val sameStackableItem = stack.item.id == currentlyEquipped && stack.item.stackable
-            val conflictedType = itemCache(currentlyEquipped).equipmentType.exists(conflictTypes.contains)
+            val conflictedType = cache.items(currentlyEquipped).equipmentType.exists(conflictTypes.contains)
             Option.when(!sameStackableItem && conflictedType)(
               MoveItem(
                 currentlyEquipped,
@@ -196,7 +173,7 @@ object InventoryItemContextMenu {
     effectObserver: Observer[AddItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
-  ): ReactiveHtmlElement[Button] = {
+  ): L.Button = {
     val observer =
       if (heldQuantity > 1)
         toRemoveItemFormOpener(stack, heldQuantity, effectObserver, modalBus)
@@ -224,7 +201,7 @@ object InventoryItemContextMenu {
     text: String,
     clickObserver: Observer[Unit],
     menuCloser: Observer[ContextMenu.CloseCommand]
-  ): ReactiveHtmlElement[Button] =
+  ): L.Button =
     L.button(
       L.`type`("button"),
       text,

@@ -52,8 +52,20 @@ object Player {
         Depository(initialBankContents, Depository.Kind.Bank)
       ).map(d => d.kind -> d).toMap,
       completedQuests = Set(
-        Quest(18, "Druidic Ritual", 4),
-        Quest(19, "Lost City", 3),
+        3, // Restless ghost
+        17, // Dragon slayer
+        18, // Druidic ritual
+        19, // Lost city
+        40, // Jungle potion
+        42, // Shilo village
+        49, // Dig site
+        55, // Elemental workshop
+        56, // Priest in peril
+        57, // Nature spirit
+        81, // Tears of guthix
+        105, // Fairytale I
+        122, // Fairytale II
+        152 // Bone voyage
       ),
       leagueStatus = LeagueStatus.leaguesFourInitial
     )
@@ -62,12 +74,9 @@ object Player {
 final case class Player(
   stats: Stats,
   depositories: Map[Depository.Kind, Depository],
-  completedQuests: Set[Quest],
+  completedQuests: Set[Int],
   leagueStatus: LeagueStatus
 ) {
   def get(kind: Depository.Kind): Depository =
     depositories.getOrElse(kind, Depository.empty(kind))
-
-  val questPoints: Int =
-    completedQuests.toList.map(_.points).sum
 }

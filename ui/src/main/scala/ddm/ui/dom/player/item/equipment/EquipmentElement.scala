@@ -5,9 +5,8 @@ import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect
-import ddm.ui.model.player.Player
+import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
-import ddm.ui.model.player.item.ItemCache
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
@@ -16,7 +15,7 @@ import scala.scalajs.js.annotation.JSImport
 object EquipmentElement {
   def apply(
     playerSignal: Signal[Player],
-    itemCache: ItemCache,
+    cache: Cache,
     effectObserver: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
   ): ReactiveHtmlElement[Div] =
@@ -30,7 +29,7 @@ object EquipmentElement {
         EquipmentSlot.all.map(slot =>
           EquipmentSlotElement(
             slot,
-            itemCache.itemise(player.get(slot)),
+            cache.itemise(player.get(slot)),
             effectObserver,
             contextMenuController
           ).amend(L.cls(toStyle(slot)))

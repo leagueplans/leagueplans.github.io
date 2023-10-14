@@ -1,0 +1,7 @@
+.notStarted {
+  color: red;
+}
+
+.complete {
+  color: rgb(13, 193, 13);
+}

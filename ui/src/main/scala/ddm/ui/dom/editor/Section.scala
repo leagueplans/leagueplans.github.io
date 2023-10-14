@@ -26,6 +26,7 @@ object Section {
     deletionObserver: Observer[T]
   ): ReactiveHtmlElement[Div] =
     L.div(
+      L.cls(Styles.section),
       toHeader(title, additionObserver),
       DragSortableList[ID, T](
         id = s"editor-$id",
@@ -33,12 +34,14 @@ object Section {
         orderObserver,
         toID,
         (_, t, _, dragIcon) => toItem(dragIcon, toDescription(t), deletionObserver.contramap(_ => t))
-      )
+      ).amend(L.cls(Styles.list))
     )
 
   @js.native @JSImport("/styles/editor/section.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val section: String = js.native
     val header: String = js.native
+    val list: String = js.native
     val text: String = js.native
 
     val button: String = js.native
