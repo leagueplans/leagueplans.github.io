@@ -20,17 +20,17 @@ object QuestElement {
   ): L.Span =
     L.span(
       L.cls <-- completeSignal.map {
-        case false => Styles.notStarted
-        case true => Styles.complete
+        case false => ColourStyles.notStarted
+        case true => ColourStyles.completed
       },
       quest.name,
       bindContextMenu(quest, completeSignal, effectObserverSignal, contextMenuController)
     )
 
-  @js.native @JSImport("/styles/player/quest/questElement.module.css", JSImport.Default)
-  private object Styles extends js.Object {
+  @js.native @JSImport("/styles/shared/player/statusColours.module.css", JSImport.Default)
+  private object ColourStyles extends js.Object {
     val notStarted: String = js.native
-    val complete: String = js.native
+    val completed: String = js.native
   }
 
   private def bindContextMenu(

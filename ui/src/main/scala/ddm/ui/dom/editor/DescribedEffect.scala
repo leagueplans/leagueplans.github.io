@@ -65,6 +65,12 @@ object DescribedEffect {
       case Effect.CompleteQuest(quest) =>
         line(text(s"Completed \"${cache.quests(quest).name}\""))
 
+      case Effect.CompleteDiaryTask(taskID) =>
+        val task = cache.diaryTasks(taskID)
+        val tier = task.tier.toString.toLowerCase
+        val region = task.region.name
+        line(text(s"Completed $tier $region diary step: \"${task.description}\""))
+
       case Effect.CompleteTask(task) =>
         line(text(s"Completed \"${task.name}\" (${task.tier})"))
     }

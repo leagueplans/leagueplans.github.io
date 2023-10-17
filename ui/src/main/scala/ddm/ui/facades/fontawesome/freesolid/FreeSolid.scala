@@ -15,11 +15,17 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowUpLong")
   object faArrowUpLong extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faBars")
+  object faBars extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCaretDown")
   object faCaretDown extends IconDefinition
 
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCaretRight")
   object faCaretRight extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCheck")
+  object faCheck extends IconDefinition
 
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleInfo")
   object faCircleInfo extends IconDefinition
@@ -35,6 +41,9 @@ object FreeSolid {
 
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faGripVertical")
   object faGripVertical extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHouse")
+  object faHouse extends IconDefinition
 
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faPlus")
   object faPlus extends IconDefinition

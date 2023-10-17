@@ -30,31 +30,9 @@ object Skill {
   case object Woodcutting extends Skill
 
   val all: List[Skill] =
-    List(
-      Agility,
-      Attack,
-      Construction,
-      Cooking,
-      Crafting,
-      Defence,
-      Farming,
-      Firemaking,
-      Fishing,
-      Fletching,
-      Herblore,
-      Hitpoints,
-      Hunter,
-      Magic,
-      Mining,
-      Prayer,
-      Ranged,
-      Runecraft,
-      Slayer,
-      Smithing,
-      Strength,
-      Thieving,
-      Woodcutting
-    )
+    List(Agility, Attack, Construction, Cooking, Crafting, Defence, Farming, Firemaking, Fishing,
+      Fletching, Herblore, Hitpoints, Hunter, Magic, Mining, Prayer, Ranged, Runecraft, Slayer,
+      Smithing, Strength, Thieving, Woodcutting)
 
   private val nameToSkill: Map[String, Skill] =
     all.map(s => s.toString -> s).toMap

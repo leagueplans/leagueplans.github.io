@@ -5,6 +5,7 @@ import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, intToNode, textToNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common._
+import ddm.ui.dom.player.diary.DiaryPanel
 import ddm.ui.dom.player.item.bank.BankElement
 import ddm.ui.dom.player.item.equipment.EquipmentElement
 import ddm.ui.dom.player.item.inventory.InventoryElement
@@ -49,7 +50,8 @@ object PlayerElement {
             L.span("Expected renown:") -> L.span(p.leagueStatus.expectedRenown)
           )
         ),
-        QuestList(playerSignal, cache, effectObserverSignal, contextMenuController)
+        QuestList(playerSignal, cache, effectObserverSignal, contextMenuController),
+        DiaryPanel(playerSignal, cache, effectObserverSignal, contextMenuController),
       )
     )
   }

@@ -41,6 +41,7 @@ object Player {
         Depository(initialBankContents, Depository.Kind.Bank)
       ).map(d => d.kind -> d).toMap,
       completedQuests = Set.empty,
+      completedDiaryTasks = Set.empty,
       leagueStatus = LeagueStatus.leaguesThreeInitial
     )
 
@@ -67,6 +68,37 @@ object Player {
         122, // Fairytale II
         152 // Bone voyage
       ),
+      completedDiaryTasks = Set(
+        203, // Travel to Port Sarim via the dock, east of Musa Point
+        204, // Travel to Ardougne via the port near Brimhaven
+        216, // Charter the Lady of the Waves from south of Cairn Isle to Port Khazard
+        227, // Charter a ship from the shipyard in the far east of Karamja
+        231, // Eat an oomlie wrap
+        234, // Kill a deathwing in the dungeon under the Kharazi Jungle
+        236, // Collect 5 palm leaves
+        242, // Create an antivenom potion whilst standing in the horse shoe mine
+        295, // Catch some anchovies in Al-Kharid
+        297, // Mine some iron ore at the Al-Kharid mine
+        299, // Complete a lap of the Al-Kharid rooftop course
+        300, // Grapple across the River Lum
+        301, // Purchase an upgraded device from Ava
+        310, // Craft some lava runes at the Fire Altar in Al-Kharid
+        311, // Cast Bones to Peaches in Al-Kharid Palace
+        316, // Take the train from Dorgesh-Kaan to Keldagrim
+        317, // Purchase some Barrows gloves from the Culinaromancer's Chest
+        320, // Recharge your prayer at the Duel Arena with Smite activated
+        322, // Steal from the Dorgesh-Kaan rich chest
+        323, // Pickpocket Movario on the Dorgesh-Kaan Agility Course
+        324, // Chop some magic logs at the magic training arena
+        382, // Select a colour for your kitten
+        383, // Use the Spirit tree in the north-eastern corner of Grand Exchange
+        390, // Pick a white tree fruit
+        391, // Use the balloon to travel from Varrock
+        393, // Trade furs with the Fancy Dress Seller for a Spottier cape and equip it
+        396, // Teleport to Paddewwa
+        404, // Use Lunar magic to make 20 mahogany planks in the Varrock Lumber Yard
+        406 // Smith and fletch ten rune darts within Varrock
+      ),
       leagueStatus = LeagueStatus.leaguesFourInitial
     )
 }
@@ -75,6 +107,7 @@ final case class Player(
   stats: Stats,
   depositories: Map[Depository.Kind, Depository],
   completedQuests: Set[Int],
+  completedDiaryTasks: Set[Int],
   leagueStatus: LeagueStatus
 ) {
   def get(kind: Depository.Kind): Depository =

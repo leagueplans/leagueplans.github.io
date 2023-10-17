@@ -1,0 +1,16 @@
+.tab {
+  display: flex;
+}
+
+.filters {}
+
+.tasks {
+  border-width: 1px;
+  border-style: solid;
+
+  flex-grow: 1;
+
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+}

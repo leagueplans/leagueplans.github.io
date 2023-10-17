@@ -1,0 +1,27 @@
+.icon {
+  position: relative;
+}
+
+.reward {
+  vertical-align: bottom;
+}
+
+.rewardComplete {
+  composes: reward;
+  opacity: 50%
+}
+
+.rewardIncomplete {
+  composes: reward;
+}
+
+.completedSymbol {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  stroke: white;
+  stroke-width: 14px;
+  stroke-opacity: 50%;
+}

@@ -41,6 +41,11 @@ object EffectResolver {
           player.completedQuests + quest
         )
 
+      case Effect.CompleteDiaryTask(task) =>
+        player.copy(completedDiaryTasks =
+          player.completedDiaryTasks + task
+        )
+
       case Effect.SetMultiplier(multiplier) =>
         player.copy(leagueStatus =
           player.leagueStatus.copy(multiplier = multiplier)
