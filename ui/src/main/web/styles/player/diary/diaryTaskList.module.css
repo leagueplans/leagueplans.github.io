@@ -1,0 +1,20 @@
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem;
+}
+
+.entry:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.entry:hover {
+  border-left-style: solid;
+  border-width: 0.4rem;
+  border-color: rgba(162, 206, 221, 0.5);
+}

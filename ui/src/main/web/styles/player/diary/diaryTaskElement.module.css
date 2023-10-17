@@ -1,0 +1,12 @@
+.element {
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  margin-right: 0.2rem;
+}
+
+.description {
+  text-shadow: 1px 1px black;
+}

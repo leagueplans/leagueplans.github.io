@@ -1,0 +1,35 @@
+.section {
+  display: flex;
+  flex-direction: column;
+
+  color: orange;
+  text-shadow: 1px 1px black;
+}
+
+.header {
+  margin: 0;
+  margin-bottom: 0.25rem;
+  align-self: center;
+}
+
+.filter {
+  margin: 0.5rem 0.25rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.input {
+  border-radius: 0.3rem;
+  border-color: black;
+
+  width: 8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  background-color: #494034;
+  color: orange;
+  text-shadow: 1px 1px black;
+}

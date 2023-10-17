@@ -31,7 +31,6 @@
 .section {
   align-self: flex-start;
   flex-grow: 1;
-  min-width: 8.5rem;
 
   max-height: -webkit-fill-available;
   max-height: -moz-available;

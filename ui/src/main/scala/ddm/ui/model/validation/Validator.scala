@@ -63,6 +63,17 @@ object Validator {
         )
     }
 
+  def diaryTaskIncomplete(taskID: Int): Validator =
+    new Validator {
+      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+        Either.cond(
+          !player.completedDiaryTasks.contains(taskID),
+          right = (),
+          left = s"\"${cache.diaryTasks(taskID).description}\" has already been completed"
+        )
+      }
+    }
+
   def taskIncomplete(task: Task): Validator =
     new Validator {
       def apply(player: Player, cache: Cache): Either[String, Unit] =

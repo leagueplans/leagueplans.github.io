@@ -1,5 +1,5 @@
 .inventory {
-  composes: depository from "../depositoryElement.module.css";
+  composes: depository from "styles/shared/player/item/depositoryElement.module.css";
 
   grid-template-columns: repeat(4, 36px);
   grid-template-rows: repeat(7, 36px);

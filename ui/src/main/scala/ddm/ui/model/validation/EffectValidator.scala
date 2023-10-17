@@ -26,6 +26,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: MoveItem => moveItemValidator.validate(e)(player, cache)
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, cache)
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
+      case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, cache)
       case e: SetMultiplier => empty.validate(e)(player, cache)
       case e: CompleteTask => completeTaskValidator.validate(e)(player, cache)
     }
@@ -60,6 +61,12 @@ object EffectValidator extends EffectValidator[Effect] {
   private val completeQuestValidator: EffectValidator[CompleteQuest] =
     from(
       pre = effect => List(Validator.questIncomplete(effect.quest)),
+      post = _ => List.empty
+    )
+
+  private val completeDiaryTaskValidator: EffectValidator[CompleteDiaryTask] =
+    from(
+      pre = effect => List(Validator.diaryTaskIncomplete(effect.task)),
       post = _ => List.empty
     )
 
