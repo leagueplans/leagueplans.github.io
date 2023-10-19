@@ -2,7 +2,7 @@ package ddm.ui.dom.player
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, intToNode, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common._
 import ddm.ui.dom.player.diary.DiaryPanel

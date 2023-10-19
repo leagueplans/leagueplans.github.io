@@ -12,7 +12,7 @@ object Forester {
   def apply[ID, T](
     forest: Forest[ID, T],
     toID: T => ID,
-    toElement: (ID, Signal[T], Signal[L.Children]) => L.Child
+    toElement: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
   ): Forester[ID, T] = {
     val domForest = forest.map(initialise(_, _, toElement))
     domForest.foreachParent { case ((_, childrenState, _), children) =>
@@ -24,10 +24,10 @@ object Forester {
   private def initialise[ID, T](
     id: ID,
     data: T,
-    toElement: (ID, Signal[T], Signal[L.Children]) => L.Child
-  ): (Observer[T], Var[L.Children], L.Child) = {
+    toElement: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
+  ): (Observer[T], Var[List[L.Node]], L.Node) = {
     val state = Var(data)
-    val children = Var[L.Children](List.empty)
+    val children = Var[List[L.Node]](List.empty)
     val element = toElement(id, state.signal, children.signal)
     (state.writer, children, element)
   }
@@ -36,14 +36,14 @@ object Forester {
 /** Optimises updates to the forest */
 final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
-  domState: mutable.Map[ID, (Observer[T], Var[L.Children], L.Child)],
+  domState: mutable.Map[ID, (Observer[T], Var[List[L.Node]], L.Node)],
   toID: T => ID,
-  toElement: (ID, Signal[T], Signal[L.Children]) => L.Child
+  toElement: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
 ) {
   val forestSignal: Signal[Forest[ID, T]] =
-    forestState.signal
+    forestState.signal.distinct
 
-  val domSignal: Signal[L.Children] =
+  val domSignal: Signal[List[L.Node]] =
     forestSignal.map(
       _.roots
         .flatMap(domState.get)

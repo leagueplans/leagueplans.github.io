@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.ui.dom.common.form.{Form, NumberInput}
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.{Depository, Stack}

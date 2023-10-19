@@ -2,7 +2,7 @@ package ddm.ui.dom.editor
 
 import cats.data.NonEmptyList
 import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.form.{Form, Select, TextInput}
 import ddm.ui.model.plan.Effect

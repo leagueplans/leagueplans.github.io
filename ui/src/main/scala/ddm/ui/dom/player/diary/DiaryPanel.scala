@@ -2,14 +2,13 @@ package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect.CompleteDiaryTask
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
 import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -54,7 +53,7 @@ object DiaryPanel {
       L.div(
         L.cls(Styles.header),
         toTabToggle(tabVar),
-        L.header(
+        L.headerTag(
           L.cls(Styles.title, PanelStyles.header),
           L.img(L.cls(Styles.titleIcon), L.src(icon), L.alt("Quest point icon")),
           "Achievement diaries"
@@ -101,13 +100,13 @@ object DiaryPanel {
         case Tab.Summary => L.icon(FreeSolid.faBars)
         case Tab.Details => L.icon(FreeSolid.faHouse)
       },
-      L.ifUnhandledF(L.onClick)(_.withCurrentValueOf(tabVar)) -->
-        tabVar.writer.contramap[(MouseEvent, Tab)] { case (event, current) =>
-          event.preventDefault()
-          current match {
+      L.onClick.ifUnhandledF(
+        _.map(_.preventDefault())
+          .sample(tabVar)
+          .map {
             case Tab.Summary => Tab.Details
             case Tab.Details => Tab.Summary
           }
-        }
+      ) --> tabVar.writer
     )
 }

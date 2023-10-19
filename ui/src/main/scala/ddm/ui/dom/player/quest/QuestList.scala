@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.quest
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, textToNode, seqToModifier}
+import com.raquo.laminar.api.{L, textToTextNode, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.dom.common.form.FuseSearch
@@ -28,7 +28,7 @@ object QuestList {
 
     L.div(
       L.cls(Styles.panel),
-      L.header(
+      L.headerTag(
         L.cls(Styles.header),
         L.img(L.cls(Styles.icon), L.src(icon), L.alt("Quest point icon")),
         "Quest list"
@@ -106,7 +106,7 @@ object QuestList {
     completedQuestsSignal: Signal[Set[Int]],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
     contextMenuController: ContextMenu.Controller
-  ): List[L.Child] =
+  ): List[L.Node] =
     List(
       L.h4(L.cls(Styles.categoryHeader), name),
       list(questsSignal, completedQuestsSignal, effectObserverSignal, contextMenuController)

@@ -17,7 +17,7 @@ object NumberInput {
     L.input(
       L.`type`("number"),
       L.idAttr(id),
-      L.name(id),
+      L.nameAttr(id),
       L.controlled(
         L.value <-- content.signal.map(_.toString),
         L.onInput.mapToValue.map(

@@ -12,7 +12,7 @@ object StylisedRadio {
     checked: Signal[Boolean],
     radio: L.Input,
     label: L.Label
-  ): L.Children =
+  ): List[L.Node] =
     List(
       radio.amend(L.cls(Styles.radio)),
       label.amend(

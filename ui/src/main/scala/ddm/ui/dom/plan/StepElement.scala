@@ -1,16 +1,16 @@
 package ddm.ui.dom.plan
 
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.{Observer, Signal, EventStream}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.{ContextMenu, Forester}
 import ddm.ui.model.plan.Step
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom.html.{Button, OList, Paragraph}
-import org.scalajs.dom.{Event, KeyCode, MouseEvent, window}
+import org.scalajs.dom.{Event, KeyCode, window}
 
 import java.util.UUID
 import scala.scalajs.js
@@ -27,7 +27,7 @@ object StepElement {
   def apply(
     stepID: UUID,
     step: Signal[Step],
-    subStepsSignal: Signal[L.Children],
+    subStepsSignal: Signal[List[L.Node]],
     theme: Signal[Theme],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
@@ -72,19 +72,13 @@ object StepElement {
   private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
     val hovering = Var(false)
     val listeners = List(
-      L.ifUnhandled(L.onMouseOver) --> hovering.writer.contramap[MouseEvent] { event =>
-        event.preventDefault()
-        true
-      },
-      L.ifUnhandled(L.onMouseOut) --> hovering.writer.contramap[MouseEvent] { event =>
-        event.preventDefault()
-        false
-      }
+      L.onMouseOver.handledAs(true) --> hovering.writer,
+      L.onMouseOut.handledAs(false) --> hovering.writer
     )
     (listeners, hovering.signal)
   }
 
-  private def expandedSubSteps(subStepsSignal: Signal[L.Children]): ReactiveHtmlElement[OList] =
+  private def expandedSubSteps(subStepsSignal: Signal[List[L.Node]]): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.subList),
       L.children <-- subStepsSignal.split(identity)((child, _, _) =>
@@ -107,8 +101,8 @@ object StepElement {
     }
 
     List(
-      L.ifUnhandled(L.onClick) --> handler,
-      L.ifUnhandledF(L.onKeyDown)(_.filter(_.keyCode == KeyCode.Enter)) --> handler
+      L.onClick.ifUnhandled --> handler,
+      L.onKeyDown.ifUnhandledF(_.filter(_.keyCode == KeyCode.Enter)) --> handler
     )
   }
 
@@ -133,9 +127,9 @@ object StepElement {
     L.button(
       L.`type`("button"),
       "Cut",
-      L.ifUnhandledF(L.onClick)(_.flatMap { event =>
+      L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        window.navigator.clipboard.writeText(stepID.toString).toFuture
+        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString))
       }) --> closer,
     )
 
@@ -154,9 +148,9 @@ object StepElement {
     L.button(
       L.`type`("button"),
       "Paste",
-      L.ifUnhandledF(L.onClick)(_.flatMap { event =>
+      L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        window.navigator.clipboard.readText().toFuture
+        EventStream.fromJsPromise(window.navigator.clipboard.readText())
       }) --> Observer.combine(stepMover, closer),
     )
   }

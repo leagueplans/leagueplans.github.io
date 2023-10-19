@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.item
 
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, StringValueMapper, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

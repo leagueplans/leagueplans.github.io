@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringSeqValueMapper, textToNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.dom.common.form.Select
 import ddm.ui.dom.player.diary.DiaryDetailsTab.Progress
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}

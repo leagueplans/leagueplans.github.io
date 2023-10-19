@@ -6,9 +6,9 @@ import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.airstream.ObservableOps.RichObserverTuple
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
 import org.scalajs.dom.html.OList
-import org.scalajs.dom.{DragEvent, Event}
+import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent, Event}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -73,7 +73,7 @@ object DragSortableList {
     dragTracker: Observer[Option[Dragging[ID, T]]]
   ): L.Modifier[L.HtmlElement] =
     L.inContext(ctx =>
-      L.composeEvents(L.onDragStart)(
+      L.onDragStart.compose(
         // Can't use preventDefault here, since it stops the browser from
         // actually dragging the element
         _.filter(_.target == ctx.ref)
@@ -82,7 +82,7 @@ object DragSortableList {
         dragTracker.contramap[(DragEvent, Int, List[T])] { case (event, originalIndex, originalOrder) =>
           // We don't use this, but it informs other apps not to receive the drop
           event.dataTransfer.setData(eventFormat, "placeholder")
-          event.dataTransfer.effectAllowed = "move"
+          event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
           Some(Dragging(itemID, originalIndex, originalOrder))
         }
     )
@@ -114,8 +114,8 @@ object DragSortableList {
       }
 
     List(
-      L.ifUnhandledF(L.onDragEnter)(streamMutator) --> orderMutator,
-      L.ifUnhandledF(L.onDragOver)(streamMutator) --> orderMutator
+      L.onDragEnter.ifUnhandledF(streamMutator) --> orderMutator,
+      L.onDragOver.ifUnhandledF(streamMutator) --> orderMutator
     )
   }
 
@@ -125,7 +125,7 @@ object DragSortableList {
     orderObserver: Observer[List[T]]
   ): L.Modifier[L.HtmlElement] =
     L.inContext(ctx =>
-      L.ifUnhandledF(L.onDragEnd)(
+      L.onDragEnd.ifUnhandledF(
         _.collect { case event if event.target == ctx.ref =>
           event.preventDefault()
           event
@@ -134,7 +134,7 @@ object DragSortableList {
         dragTracker.writer.contramap[Any](_ => None),
         orderObserver.contracollect[(DragEvent, Option[Dragging[ID, T]])](
           Function.unlift {
-            case (event, Some(dragging)) if event.dataTransfer.dropEffect == "none" =>
+            case (event, Some(dragging)) if event.dataTransfer.dropEffect == DataTransferDropEffectKind.none =>
               Some(dragging.originalOrder)
             case _ =>
               None

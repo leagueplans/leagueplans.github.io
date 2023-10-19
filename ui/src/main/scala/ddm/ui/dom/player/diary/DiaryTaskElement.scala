@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringValueMapper, textToNode}
+import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import ddm.ui.dom.common.{ContextMenu, Tooltip}

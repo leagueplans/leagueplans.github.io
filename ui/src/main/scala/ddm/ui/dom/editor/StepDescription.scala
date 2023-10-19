@@ -2,15 +2,14 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.{EditableParagraph, Forester}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
-import org.scalajs.dom.{Event, FocusEvent}
 
 import java.util.UUID
 import scala.scalajs.js
@@ -43,11 +42,9 @@ object StepDescription {
         case false => L.icon(FreeRegular.faPenToSquare)
         case true => L.icon(FreeRegular.faSquareCheck)
       },
-      L.ifUnhandledF(L.onClick)(_.withCurrentValueOf(isEditingState)) -->
-        isEditingState.writer.contramap[(Event, Boolean)] { case (event, isEditing) =>
-          event.preventDefault()
-          !isEditing
-        }
+      L.onClick.ifUnhandledF(
+        _.map(_.preventDefault()).sample(isEditingState).map(!_)
+      ) --> isEditingState.writer
     )
 
   private def toParagraph(
@@ -86,10 +83,7 @@ object StepDescription {
         ref.focus()
         dom.window.getSelection().selectAllChildren(ref)
       },
-      L.ifUnhandled(L.onBlur) --> isEditingUpdater.contramap[FocusEvent] { event =>
-        event.preventDefault()
-        false
-      }
+      L.onBlur.handledAs(false) --> isEditingUpdater
     )
   }
 }

@@ -2,7 +2,7 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observable, Observer, Sink}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.ui.dom.common.form.Form
 import ddm.ui.dom.common.{CancelModalButton, FormOpener}
 

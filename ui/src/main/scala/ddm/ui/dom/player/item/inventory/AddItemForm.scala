@@ -2,7 +2,7 @@ package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{CheckboxInput, Form, NumberInput}
 import ddm.ui.dom.common.{CancelModalButton, Tooltip}
