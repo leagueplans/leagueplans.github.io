@@ -1,7 +1,7 @@
 package ddm.ui.dom.editor
 
 import com.raquo.airstream.state.Val
-import com.raquo.laminar.api.{L, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import ddm.ui.dom.player.item.StackElement
 import ddm.ui.dom.player.stats.SkillIcon
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid

@@ -33,7 +33,7 @@ object TextInput {
         case Type.Text => "text"
       }),
       L.idAttr(id),
-      L.name(id),
+      L.nameAttr(id),
       L.defaultValue(initial),
       L.onInput.mapToValue.setAsValue --> content
     )

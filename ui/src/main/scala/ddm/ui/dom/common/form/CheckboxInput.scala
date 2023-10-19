@@ -18,7 +18,7 @@ object CheckboxInput {
     L.input(
       L.`type`("checkbox"),
       L.idAttr(id),
-      L.name(id),
+      L.nameAttr(id),
       L.checked(initial),
       L.onClick.mapToChecked --> content
     )

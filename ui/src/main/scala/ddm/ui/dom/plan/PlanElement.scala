@@ -36,7 +36,7 @@ object PlanElement {
   private def toElement(
     stepID: UUID,
     step: Signal[Step],
-    subSteps: Signal[L.Children],
+    subSteps: Signal[List[L.Node]],
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,

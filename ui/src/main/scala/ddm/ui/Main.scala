@@ -1,6 +1,6 @@
 package ddm.ui
 
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, eventPropToProcessor}
 import ddm.common.model.Item
 import ddm.ui.dom.Coordinator
 import ddm.ui.model.common.forest.Forest
@@ -36,8 +36,7 @@ object Main extends App {
     withResource[Set[Quest]](questsJson)(quests =>
       withResource[Set[DiaryTask]](diaryTasksJson)(diaryTasks =>
         withResource[Forest[UUID, Step]](defaultPlanJson)(defaultPlan =>
-          L.documentEvents.onDomContentLoaded.foreach { _ =>
-
+          L.documentEvents(_.onDomContentLoaded).foreach { _ =>
             val container = document.createElement("div")
             document.body.appendChild(container)
             L.render(container, Coordinator(

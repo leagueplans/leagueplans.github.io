@@ -1,7 +1,7 @@
 package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.ui.dom.common.form.{Form, TextInput}
 import ddm.ui.model.plan.Step
 

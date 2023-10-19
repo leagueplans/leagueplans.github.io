@@ -3,7 +3,7 @@ package ddm.ui.dom.editor
 import cats.data.NonEmptyList
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Val
-import com.raquo.laminar.api.{L, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{Form, NumberInput, Select}

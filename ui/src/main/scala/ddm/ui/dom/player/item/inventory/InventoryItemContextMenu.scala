@@ -2,7 +2,7 @@ package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.EquipmentType
 import ddm.common.model.Item.Bankable
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
@@ -12,8 +12,7 @@ import ddm.ui.model.plan.Effect.{AddItem, MoveItem}
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
 import ddm.ui.model.player.item.{Depository, Stack}
 import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 
 object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
@@ -46,7 +45,7 @@ object InventoryItemContextMenu {
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
-  ): L.Child =
+  ): L.Node =
     stack.item.bankable match {
       case Bankable.No => L.emptyNode
       case _: Bankable.Yes =>
@@ -95,7 +94,7 @@ object InventoryItemContextMenu {
     player: Player,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand]
-  ): L.Child =
+  ): L.Node =
     (stack.noted, stack.item.equipmentType) match {
       case (false, Some(tpe)) =>
         val equipEffect = MoveItem(
@@ -205,9 +204,6 @@ object InventoryItemContextMenu {
     L.button(
       L.`type`("button"),
       text,
-      L.ifUnhandled(L.onClick) -->
-        Observer
-          .combine(clickObserver, menuCloser)
-          .contramap[MouseEvent](_.preventDefault())
+      L.onClick.handled --> Observer.combine(clickObserver, menuCloser)
     )
 }

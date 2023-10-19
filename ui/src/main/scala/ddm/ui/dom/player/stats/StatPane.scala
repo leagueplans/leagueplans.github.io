@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.stats
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, intToNode, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement

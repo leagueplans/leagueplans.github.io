@@ -2,7 +2,7 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.{Forester, FormOpener, Tooltip}
@@ -58,7 +58,7 @@ object EditorElement {
     cache: Cache,
     playerSignal: Signal[Player],
     stepSignal: Signal[Step]
-  ): Signal[L.Child] =
+  ): Signal[L.Node] =
     Signal
       .combine(playerSignal, stepSignal)
       .map { case (player, step) =>

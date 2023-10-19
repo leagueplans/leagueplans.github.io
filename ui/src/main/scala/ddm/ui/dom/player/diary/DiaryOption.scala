@@ -1,10 +1,9 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -50,10 +49,10 @@ object DiaryOption {
       L.cls(Styles.region, PanelStyles.header),
       L.`type`("button"),
       region.name,
-      L.ifUnhandled(L.onClick) --> Observer.combine(
+      L.onClick.handled --> Observer.combine(
         regionObserver,
         tierObserver.contramap[Unit](_ => None)
-      ).contramap[MouseEvent](_.preventDefault())
+      )
     )
 
   private def tierButton(
@@ -67,9 +66,9 @@ object DiaryOption {
       L.cls(Styles.tier),
       L.`type`("button"),
       L.child <-- completeSignal.map(DiaryTierIcon(region, tier, _).amend(L.cls(Styles.icon))),
-      L.ifUnhandled(L.onClick) --> Observer.combine(
+      L.onClick.handled --> Observer.combine(
         regionObserver,
         tierObserver.contramap[Unit](_ => Some(tier))
-      ).contramap[MouseEvent](_.preventDefault())
+      )
     )
 }

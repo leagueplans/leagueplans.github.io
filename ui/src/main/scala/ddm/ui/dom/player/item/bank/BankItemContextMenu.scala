@@ -2,7 +2,7 @@ package ddm.ui.dom.player.item.bank
 
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, eventPropToProcessor, optionToModifier, textToNode}
+import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
@@ -10,8 +10,7 @@ import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.{Depository, Stack}
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom.html.Div
 
 object BankItemContextMenu {
@@ -36,7 +35,7 @@ object BankItemContextMenu {
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalBus: WriteBus[Option[L.Element]]
-  ): L.Child = {
+  ): L.Node = {
     val observer =
       if (stackSize > 1)
         toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modalBus)
@@ -55,10 +54,7 @@ object BankItemContextMenu {
     L.button(
       L.`type`("button"),
       if (note) "Withdraw noted" else "Withdraw",
-      L.ifUnhandled(L.onClick) -->
-        Observer
-          .combine(observer, menuCloser)
-          .contramap[MouseEvent](_.preventDefault())
+      L.onClick.handled --> Observer.combine(observer, menuCloser)
     )
   }
 

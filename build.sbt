@@ -39,7 +39,7 @@ lazy val root =
   (project in file("."))
     .aggregate(common.jvm, common.js, wikiScraper, ui)
 
-val circeVersion = "0.14.1"
+val circeVersion = "0.14.6"
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -71,8 +71,6 @@ lazy val wikiScraper =
     )
     .dependsOn(common.jvm)
 
-val reactVersion = "17.0.2"
-
 val fastLinkOutputDir = taskKey[String]("output directory for `npm run dev`")
 val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 
@@ -81,9 +79,9 @@ lazy val ui =
     .enablePlugins(ScalaJSPlugin)
     .settings(
       libraryDependencies ++= List(
-        "org.scala-js" %%% "scalajs-dom" % "2.3.0",
+        "org.scala-js" %%% "scalajs-dom" % "2.8.0",
         "org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0",
-        "com.raquo" %%% "laminar" % "0.14.5",
+        "com.raquo" %%% "laminar" % "16.0.0",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       scalaJSUseMainModuleInitializer := true,

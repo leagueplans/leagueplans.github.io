@@ -2,13 +2,11 @@ package ddm.ui.dom.common
 
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.domtypes.jsdom.defs.events.TypedTargetMouseEvent
-import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, styleToReactiveStyle}
+import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.facades.dom.RichElement.Ops
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.{Element, MouseEvent}
 
@@ -19,12 +17,12 @@ object ContextMenu {
   type CloseCommand = Any
 
   final class Controller(
-    opener: Observer[(MouseEvent, Option[L.Child])],
+    opener: Observer[(MouseEvent, Option[L.Node])],
     closer: Observer[CloseCommand]
   ) {
-    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Child]]): Binder[Base] = {
+    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder[Base] = {
       val contents = toContents(closer)
-      L.ifUnhandledF(L.onContextMenu)(_.withCurrentValueOf(contents)) --> opener
+      L.onContextMenu.ifUnhandledF(_.withCurrentValueOf(contents)) --> opener
     }
   }
 
@@ -39,7 +37,7 @@ object ContextMenu {
 
   private sealed trait Status
   private object Status {
-    final case class Open(x: Double, y: Double, contents: L.Child) extends Status
+    final case class Open(x: Double, y: Double, contents: L.Node) extends Status
     case object Closed extends Status
   }
 
@@ -49,8 +47,8 @@ object ContextMenu {
     val closed: String = js.native
   }
 
-  private def opener(status: Observer[Status.Open]): Observer[(MouseEvent, Option[L.Child])] =
-    status.contracollect[(MouseEvent, Option[L.Child])] { case (event, Some(contents)) =>
+  private def opener(status: Observer[Status.Open]): Observer[(MouseEvent, Option[L.Node])] =
+    status.contracollect[(MouseEvent, Option[L.Node])] { case (event, Some(contents)) =>
       event.preventDefault()
       Status.Open(event.pageX, event.pageY, contents)
     }
@@ -75,14 +73,19 @@ object ContextMenu {
     status.changes.collect { case open: Status.Open => s"${pick(open)}px" }
 
   private def closeOnClickOutside(status: Observer[Status.Closed.type]): Binder[Base] =
-    L.documentEvents
-      .onContextMenu
-      .filter(!_.defaultPrevented) --> status.contracollect[Any](_ => Status.Closed)
+    L.documentEvents(
+      _.onContextMenu
+        .filter(!_.defaultPrevented)
+        .mapTo(Status.Closed)
+    ) --> status
 
   private def closeIfAnotherMenuIsOpened(status: Observer[Status.Closed.type]): L.Modifier[Base] =
     L.inContext(node =>
-      L.documentEvents.onClick --> status.contracollect[TypedTargetMouseEvent[Element]] {
-        case event if !event.target.closestClass(Styles.open).contains(node.ref) => Status.Closed
-      }
+      L.documentEvents(
+        _.onClick
+          .mapToTargetAs[Element]
+          .filter(target => !Option(target.closest(s".${Styles.open}")).contains(node.ref))
+          .mapTo(Status.Closed)
+      ) --> status
     )
 }

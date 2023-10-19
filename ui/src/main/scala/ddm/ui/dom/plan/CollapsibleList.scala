@@ -2,10 +2,9 @@ package ddm.ui.dom.plan
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.L
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -16,7 +15,7 @@ object CollapsibleList {
     showInitially: Boolean,
     contentType: String,
     list: L.HtmlElement
-  ): Signal[L.Child] = {
+  ): Signal[L.Node] = {
     val showSubStepsState = Var(showInitially)
 
     Signal
@@ -61,10 +60,7 @@ object CollapsibleList {
         L.cls(Styles.collapsedListAnnotation),
         L.child.text <-- countSignal.map(i => s"$i ${contentType}s hidden")
       ),
-      L.ifUnhandled(L.onClick) --> show.contramap[MouseEvent] { event =>
-        event.preventDefault()
-        true
-      }
+      L.onClick.handledAs(true) --> show
     )
 
   private def collapseListButton(showSubSteps: Observer[Boolean]): L.Button =
@@ -73,9 +69,6 @@ object CollapsibleList {
       L.`type`("button"),
       L.icon(FreeSolid.faCaretDown),
       L.div(L.cls(Styles.collapseBanner)),
-      L.ifUnhandled(L.onClick) --> showSubSteps.contramap[MouseEvent] { event =>
-        event.preventDefault()
-        false
-      }
+      L.onClick.handledAs(false) --> showSubSteps
     )
 }

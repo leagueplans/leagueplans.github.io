@@ -2,8 +2,7 @@ package ddm.ui.dom.common
 
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, styleToReactiveStyle}
-import ddm.ui.facades.dom.RichElement.Ops
+import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier}
 import org.scalajs.dom.{Element, MouseEvent}
 
 import scala.scalajs.js
@@ -46,9 +45,7 @@ object Tooltip {
 
   private def isClosestListener(event: MouseEvent, parent: Element, cls: String): Boolean =
     event.target.isInstanceOf[Element] &&
-      event.target.asInstanceOf[Element]
-        .closestClass(cls)
-        .contains(parent)
+      Option(event.target.asInstanceOf[Element].closest(s".$cls")).contains(parent)
 
   private def tooltipSetters(
     mouseOver: Signal[Boolean],

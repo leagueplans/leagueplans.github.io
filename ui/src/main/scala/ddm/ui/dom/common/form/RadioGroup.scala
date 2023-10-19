@@ -15,8 +15,8 @@ object RadioGroup {
   def apply[T](
     groupName: String,
     options: NonEmptyList[Opt[T]],
-    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
-  ): (L.Children, Signal[T]) = {
+    render: (T, Signal[Boolean], L.Input, L.Label) => List[L.Node]
+  ): (List[L.Node], Signal[T]) = {
     val default = options.head
     val selection = Var(Selection(default, autoSelected = true))
 
@@ -36,7 +36,7 @@ object RadioGroup {
   def apply[T](
     groupName: String,
     options: Signal[List[Opt[T]]],
-    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
+    render: (T, Signal[Boolean], L.Input, L.Label) => List[L.Node]
   ): (L.Modifier[L.Element], Signal[Option[T]]) = {
     val selection = Var[Option[Selection[T]]](None)
     val rendering =
@@ -60,8 +60,8 @@ object RadioGroup {
     groupName: String,
     checked: Signal[Boolean],
     selector: Observer[Event],
-    render: (T, Signal[Boolean], L.Input, L.Label) => L.Children
-  ): L.Children = {
+    render: (T, Signal[Boolean], L.Input, L.Label) => List[L.Node]
+  ): List[L.Node] = {
     val id = s"$groupName-${opt.id}"
     render(
       opt.value,
@@ -80,7 +80,7 @@ object RadioGroup {
     L.input(
       L.`type`("radio"),
       L.idAttr(id),
-      L.name(groupName),
+      L.nameAttr(groupName),
       L.controlled(
         L.checked <-- checked,
         L.onClick --> selector

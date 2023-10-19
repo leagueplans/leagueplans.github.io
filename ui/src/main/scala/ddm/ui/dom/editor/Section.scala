@@ -1,14 +1,12 @@
 package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.domtypes.generic.Modifier
-import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.raquo.laminar.nodes.ReactiveHtmlElement.Base
 import ddm.ui.dom.common.DragSortableList
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.utils.laminar.LaminarOps.RichL
-import org.scalajs.dom.MouseEvent
+import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
 import org.scalajs.dom.html.{Button, Div}
 
 import scala.scalajs.js
@@ -62,14 +60,14 @@ object Section {
       L.cls(Styles.button),
       L.`type`("button"),
       L.icon(FreeSolid.faPlus),
-      L.ifUnhandled(L.onClick) --> observer.contramap[MouseEvent](_.preventDefault())
+      L.onClick.handled --> observer
     )
 
   private def toItem(
     dragIcon: ReactiveHtmlElement[Div],
     description: L.Modifier[L.HtmlElement],
     deletionObserver: Observer[Unit]
-  ): List[Modifier[Base]] =
+  ): List[L.Modifier[Base]] =
     List(
       L.cls(Styles.item),
       dragIcon.amend(L.cls(Styles.button)),
@@ -85,6 +83,6 @@ object Section {
       L.cls(Styles.deleteIcon),
       L.`type`("button"),
       L.icon(FreeSolid.faXmark),
-      L.ifUnhandled(L.onClick) --> observer.contramap[MouseEvent](_.preventDefault())
+      L.onClick.handled --> observer
     )
 }

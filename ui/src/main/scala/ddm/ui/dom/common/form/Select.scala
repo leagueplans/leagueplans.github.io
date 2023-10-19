@@ -3,7 +3,7 @@ package ddm.ui.dom.common.form
 import cats.data.NonEmptyList
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToNode}
+import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html
 
@@ -37,7 +37,7 @@ object Select {
   ): L.Select =
     L.select(
       L.idAttr(id),
-      L.name(id),
+      L.nameAttr(id),
       L.controlled(
         L.value <-- selectionSignal.map(_.uniqueLabel),
         L.onChange.mapToValue.map(label =>

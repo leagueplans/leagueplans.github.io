@@ -2,14 +2,13 @@ package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import ddm.ui.wrappers.fusejs.Fuse
-import org.scalajs.dom.MouseEvent
 
 object InventoryContextMenu {
   def apply(
@@ -43,9 +42,6 @@ object InventoryContextMenu {
     L.button(
       L.`type`("button"),
       "Add item",
-      L.ifUnhandled(L.onClick) -->
-        Observer
-          .combine(addItemFormOpener, menuCloser)
-          .contramap[MouseEvent](_.preventDefault())
+      L.onClick.handled --> Observer.combine(addItemFormOpener, menuCloser)
     )
 }
