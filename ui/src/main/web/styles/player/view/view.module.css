@@ -1,0 +1,48 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+
+  background-color: #494034;
+}
+
+.tabs {}
+
+.content {
+  flex-grow: 1;
+
+  overflow-y: hidden;
+  padding: 0.5rem;
+
+  background-color: #645c52;
+}
+
+.tab {
+  border: none;
+  border-radius: 0.8rem 0.8rem 0 0;
+
+  padding: 0.25rem 1rem;
+
+  background: none;
+  cursor: pointer;
+
+  color: white;
+  text-shadow: 1px 1px black;
+  font-size: 1.3rem;
+
+  transition: background-color 300ms ease-out;
+}
+
+.hiddenTab {
+  composes: tab;
+}
+
+.hiddenTab:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.viewedTab {
+  composes: tab;
+
+  background-color: #645c52;
+}

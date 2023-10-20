@@ -1,0 +1,16 @@
+.tabContent {
+  display: flex;
+  justify-content: space-around;
+}
+
+.questPanel {
+  min-width: 25%;
+  max-width: 27%;
+  box-sizing: border-box;
+}
+
+.diaryPanel {
+  width: 70%;
+  max-width: 44rem;
+  box-sizing: border-box;
+}

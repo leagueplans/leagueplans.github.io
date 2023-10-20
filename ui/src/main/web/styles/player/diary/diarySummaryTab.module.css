@@ -1,9 +1,13 @@
 .diaryOptions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  overflow-y: auto;
 }
 
 .option {
   margin: 0.25rem;
+  height: 5.8rem;
+
+  flex-grow: 1;
+  flex-basis: 0;
 }

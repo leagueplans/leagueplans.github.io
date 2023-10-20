@@ -2,6 +2,10 @@
   position: relative;
 }
 
+.itemImage {
+  vertical-align: bottom;
+}
+
 .noted {
   scale: 0.7;
   position: absolute;
