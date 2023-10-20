@@ -11,6 +11,7 @@ import scala.scalajs.js.annotation.JSImport
 object StackIcon {
   def apply(stack: Stack, stackSizeSignal: Signal[Int]): L.Div = {
     val itemImage = L.img(
+      L.cls(Styles.itemImage),
       L.src <-- stackSizeSignal.map(iconPath(stack.item, _)),
       L.alt(s"${stack.item.name} icon")
     )
@@ -27,6 +28,7 @@ object StackIcon {
   @js.native @JSImport("/styles/player/item/stackIcon.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val icon: String = js.native
+    val itemImage: String = js.native
     val noted: String = js.native
   }
 
@@ -36,7 +38,7 @@ object StackIcon {
   private def accountForNoting(itemImage: L.Image, noted: Boolean): List[L.Image] = {
     if (noted)
       List(
-        L.img(L.src(note)),
+        L.img(L.cls(Styles.itemImage), L.src(note)),
         itemImage.amend(L.cls(Styles.noted))
       )
     else

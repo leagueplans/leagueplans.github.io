@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.quest
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, textToTextNode, seqToModifier}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.dom.common.form.FuseSearch
@@ -27,9 +27,9 @@ object QuestList {
     val (filter, questsSignal) = questFilter(allQuests)
 
     L.div(
-      L.cls(Styles.panel),
+      L.cls(Styles.panel, PanelStyles.panel),
       L.headerTag(
-        L.cls(Styles.header),
+        L.cls(Styles.header, PanelStyles.header),
         L.img(L.cls(Styles.icon), L.src(icon), L.alt("Quest point icon")),
         "Quest list"
       ),
@@ -76,6 +76,12 @@ object QuestList {
     val icon: String = js.native
   }
 
+  @js.native @JSImport("/styles/shared/player/panel.module.css", JSImport.Default)
+  private object PanelStyles extends js.Object {
+    val panel: String = js.native
+    val header: String = js.native
+  }
+
   private def questFilter(quests: List[Quest]): (L.Input, Signal[List[Quest]]) = {
     val (search, _, signal) = FuseSearch(
       toFuse(quests),
@@ -108,7 +114,7 @@ object QuestList {
     contextMenuController: ContextMenu.Controller
   ): List[L.Node] =
     List(
-      L.h4(L.cls(Styles.categoryHeader), name),
+      L.h4(L.cls(Styles.categoryHeader, PanelStyles.header), name),
       list(questsSignal, completedQuestsSignal, effectObserverSignal, contextMenuController)
     )
 
