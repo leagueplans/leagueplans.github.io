@@ -1,6 +1,6 @@
 import org.scalajs.linker.interface.ModuleSplitStyle
 
-name := "osrs-planner"
+name := "league-plans"
 
 ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / scalacOptions ++= List(
