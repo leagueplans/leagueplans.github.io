@@ -39,7 +39,6 @@ export default defineConfig(({ command, mode }) => {
   return {
     root: "src/main/web",
     publicDir: "dynamic",
-    base: "/osrs-planner/",
     resolve: { alias: [ { find: "@linkOutputDir", replacement: linkOutputDir } ] },
     json: { stringify: true },
     server: { port: 5173, strictPort: true },

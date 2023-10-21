@@ -1,1 +1,1 @@
-# osrs-planner
+# League plans
