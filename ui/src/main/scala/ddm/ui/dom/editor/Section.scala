@@ -1,12 +1,13 @@
 package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.raquo.laminar.nodes.ReactiveHtmlElement.Base
 import ddm.ui.dom.common.DragSortableList
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
+import ddm.ui.utils.laminar.FontAwesome
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom.html.{Button, Div}
 
 import scala.scalajs.js
@@ -20,12 +21,12 @@ object Section {
     orderObserver: Observer[List[T]],
     toID: T => ID,
     toDescription: T => L.Modifier[L.HtmlElement],
-    additionObserver: Observer[Unit],
+    maybeAdditionObserver: Option[Observer[Unit]],
     deletionObserver: Observer[T]
   ): ReactiveHtmlElement[Div] =
     L.div(
       L.cls(Styles.section),
-      toHeader(title, additionObserver),
+      toHeader(title, maybeAdditionObserver),
       DragSortableList[ID, T](
         id = s"editor-$id",
         orderSignal,
@@ -43,23 +44,24 @@ object Section {
     val text: String = js.native
 
     val button: String = js.native
+    val addIcon: String = js.native
     val deleteIcon: String = js.native
     val item: String = js.native
     val itemDescription: String = js.native
   }
 
-  private def toHeader(title: String, additionObserver: Observer[Unit]): ReactiveHtmlElement[Div] =
+  private def toHeader(title: String, maybeAdditionObserver: Option[Observer[Unit]]): ReactiveHtmlElement[Div] =
     L.div(
       L.cls(Styles.header),
-      addButton(additionObserver),
+      maybeAdditionObserver.map(addButton),
       L.p(L.cls(Styles.text), title),
     )
 
   private def addButton(observer: Observer[Unit]): ReactiveHtmlElement[Button] =
     L.button(
-      L.cls(Styles.button),
+      L.cls(Styles.addIcon),
       L.`type`("button"),
-      L.icon(FreeSolid.faPlus),
+      FontAwesome.icon(FreeSolid.faPlus),
       L.onClick.handled --> observer
     )
 
@@ -82,7 +84,7 @@ object Section {
     L.button(
       L.cls(Styles.deleteIcon),
       L.`type`("button"),
-      L.icon(FreeSolid.faXmark),
+      FontAwesome.icon(FreeSolid.faXmark),
       L.onClick.handled --> observer
     )
 }

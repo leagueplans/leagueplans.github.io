@@ -10,7 +10,7 @@ import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.model.validation.StepValidator
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 
@@ -37,7 +37,7 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalBus),
-        L.child <-- toEffects(cache, stepSignal, stepUpdater, modalBus),
+        L.child <-- toEffects(cache, stepSignal, stepUpdater),
         L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalBus)
       )
     )
@@ -73,7 +73,7 @@ object EditorElement {
               L.cls(Styles.tooltip),
               errors.map(L.p(_))
             )),
-            L.icon(FreeSolid.faTriangleExclamation)
+            FontAwesome.icon(FreeSolid.faTriangleExclamation)
           )
       }
 
@@ -96,7 +96,7 @@ object EditorElement {
           L.cls(Styles.subStepDescription),
           subStep.description
         ),
-        newSubStepObserver(stepID, modalBus, stepUpdater),
+        Some(newSubStepObserver(stepID, modalBus, stepUpdater)),
         stepUpdater.contramap[Step](deletedStep => forester =>
           // Bit messy, but it works for now
           DeletionConfirmer(modalBus, Observer[Unit](_ => forester.remove(deletedStep.id))).onNext(())
@@ -122,8 +122,7 @@ object EditorElement {
   private def toEffects(
     cache: Cache,
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
-    modalBus: WriteBus[Option[L.Element]]
+    stepUpdater: Observer[Forester[UUID, Step] => Unit]
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id) { case (stepID, _, stepSignal) =>
       Section[Effect, Effect](
@@ -135,27 +134,12 @@ object EditorElement {
         ),
         identity,
         DescribedEffect(_, cache),
-        newEffectObserver(stepID, modalBus, stepUpdater),
+        None,
         stepUpdater.contramap[Effect](deletedEffect => forester =>
           forester.update(stepID, step => step.copy(directEffects = step.directEffects - deletedEffect))
         )
       ).amend(L.cls(Styles.section))
     }
-
-  private def newEffectObserver(
-    stepID: UUID,
-    modalBus: WriteBus[Option[L.Element]],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = NewEffectForm()
-    FormOpener(
-      modalBus,
-      stepUpdater.contracollect[Option[Effect]] { case Some(newEffect) => forester =>
-        forester.update(stepID, step => step.copy(directEffects = step.directEffects + newEffect))
-      },
-      () => (form, formSubmissions)
-    )
-  }
 
   private def toRequirements(
     cache: Cache,
@@ -174,7 +158,7 @@ object EditorElement {
         ),
         identity,
         DescribedRequirement(_, cache),
-        newRequirementObserver(itemFuse, stepID, modalBus, stepUpdater),
+        Some(newRequirementObserver(itemFuse, stepID, modalBus, stepUpdater)),
         stepUpdater.contramap[Requirement](deletedRequirement => forester =>
           forester.update(stepID, step => step.copy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
         )
