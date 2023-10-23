@@ -1,0 +1,80 @@
+.toastHub {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.4rem;
+
+  width: min(90%, 40rem);
+}
+
+.icon {
+  margin-right: 0.5rem;
+  font-size: 1.5rem;
+}
+
+@keyframes dropIn {
+  0% {
+    transform: translateY(-200%);
+    opacity: 0%;
+  }
+
+  100% {
+    transform: translateY(0%);
+    opacity: 100%;
+  }
+}
+
+.toast {
+  margin-top: 0.4rem;
+  border-style: solid;
+  border-radius: 2rem;
+
+  padding: 0.5rem;
+  font-size: 1.2rem;
+
+  display: flex;
+  align-items: center;
+
+  animation: 1s ease-out 0s 1 dropIn;
+}
+
+.info {
+  composes: toast;
+
+  color: white;
+  background-color: #1879d9;
+}
+
+.warning {
+  composes: toast;
+
+  color: black;
+  background-color: #ffff85;
+}
+
+.error {
+  composes: toast;
+
+  color: white;
+  background-color: #c70303;
+}
+
+.dismiss {
+  margin-left: 0.5rem;
+
+  border-style: none;
+  border-radius: 1rem;
+
+  cursor: pointer;
+
+  background: none;
+  color: unset;
+  font-size: 1.5rem;
+}
+
+.dismiss:hover, .dismiss:focus {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dismiss:active {
+  background-color: rgba(0, 0, 0, 0.2);
+}

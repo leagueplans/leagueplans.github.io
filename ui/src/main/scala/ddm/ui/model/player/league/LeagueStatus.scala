@@ -4,24 +4,6 @@ import ddm.ui.model.player.league.LeagueStatus.{freeSkillChoices, skillCosts}
 import ddm.ui.model.player.skill.Skill
 
 object LeagueStatus {
-  val leaguesThreeInitial: LeagueStatus =
-    LeagueStatus(
-      multiplier = 5,
-      tasksCompleted = Set.empty,
-      skillsUnlocked = Set(
-        Skill.Defence,
-        Skill.Fishing,
-        Skill.Thieving
-      )
-    )
-
-  val leaguesFourInitial: LeagueStatus =
-    LeagueStatus(
-      multiplier = 5,
-      tasksCompleted = Set.empty,
-      skillsUnlocked = Skill.all.toSet
-    )
-
   private val skillCosts: Skill => Int =
     {
       case Skill.Defence => 0

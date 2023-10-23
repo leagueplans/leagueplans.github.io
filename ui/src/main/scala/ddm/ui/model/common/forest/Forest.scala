@@ -28,7 +28,7 @@ object Forest {
       Encoder[List[Tree[T]]].contramap(toTrees)
     )
 
-  private def fromTrees[ID, T](trees: List[Tree[T]], toID: T => ID): Forest[ID, T] =
+  def fromTrees[ID, T](trees: List[Tree[T]], toID: T => ID): Forest[ID, T] =
     fromTreesHelper(Forest.empty, trees.map(None -> _), toID)
 
   @tailrec

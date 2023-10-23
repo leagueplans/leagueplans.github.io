@@ -10,7 +10,7 @@ import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
-object PlayerElement {
+object Visualiser {
   def apply(
     playerSignal: Signal[Player],
     cache: Cache,
