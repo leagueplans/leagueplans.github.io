@@ -29,4 +29,13 @@
   flex: 1;
   height: 100vh;
   overflow: auto;
+  background-color: #00172e;
+}
+
+.help {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 3.5rem;
+  height: 3.5rem;
 }

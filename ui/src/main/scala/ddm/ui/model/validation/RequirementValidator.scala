@@ -3,7 +3,6 @@ package ddm.ui.model.validation
 import ddm.ui.model.plan.Requirement
 import ddm.ui.model.plan.Requirement._
 import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.model.player.item.Depository
 
 sealed trait RequirementValidator[R <: Requirement] {
   def validate(requirement: R)(player: Player, cache: Cache): List[String]
@@ -34,7 +33,7 @@ object RequirementValidator {
     new RequirementValidator[Tool] {
       def validate(requirement: Tool)(player: Player, cache: Cache): List[String] =
         Validator.hasItem(
-          Depository.Kind.Inventory,
+          requirement.location,
           requirement.item,
           noted = false,
           requiredCount = 1

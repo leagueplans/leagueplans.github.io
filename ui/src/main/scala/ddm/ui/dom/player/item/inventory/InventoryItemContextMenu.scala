@@ -102,7 +102,7 @@ object InventoryItemContextMenu {
           stackSize,
           inventory,
           notedInSource = false,
-          toSlot(tpe),
+          EquipmentSlot.from(tpe),
           noteInTarget = false
         )
 
@@ -132,22 +132,6 @@ object InventoryItemContextMenu {
         L.emptyNode
     }
 
-  private def toSlot(equipmentType: EquipmentType): EquipmentSlot =
-    equipmentType match {
-      case EquipmentType.Head => EquipmentSlot.Head
-      case EquipmentType.Cape => EquipmentSlot.Cape
-      case EquipmentType.Neck => EquipmentSlot.Neck
-      case EquipmentType.Ammo => EquipmentSlot.Ammo
-      case EquipmentType.Weapon => EquipmentSlot.Weapon
-      case EquipmentType.Shield => EquipmentSlot.Shield
-      case EquipmentType.TwoHanded => EquipmentSlot.Weapon
-      case EquipmentType.Body => EquipmentSlot.Body
-      case EquipmentType.Legs => EquipmentSlot.Legs
-      case EquipmentType.Hands => EquipmentSlot.Hands
-      case EquipmentType.Feet => EquipmentSlot.Feet
-      case EquipmentType.Ring => EquipmentSlot.Ring
-    }
-
   private def toConflicts(equipmentType: EquipmentType): Set[(EquipmentSlot, Set[EquipmentType])] =
     equipmentType match {
       case EquipmentType.Weapon =>
@@ -163,7 +147,7 @@ object InventoryItemContextMenu {
           EquipmentSlot.Shield -> Set(EquipmentType.Shield)
         )
       case other =>
-        Set(toSlot(other) -> Set(other))
+        Set(EquipmentSlot.from(other) -> Set(other))
     }
 
   private def removeButton(

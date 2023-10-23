@@ -1,5 +1,6 @@
 .toastHub {
   position: absolute;
+  z-index: 1;
   bottom: 0.4rem;
   right: 0.4rem;
 
@@ -24,6 +25,8 @@
 }
 
 .toast {
+  width: fit-content;
+  float: right;
   margin-top: 0.4rem;
   border-style: solid;
   border-radius: 2rem;

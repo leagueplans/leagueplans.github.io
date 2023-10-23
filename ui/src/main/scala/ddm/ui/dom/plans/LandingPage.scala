@@ -45,6 +45,11 @@ object LandingPage {
             L.p(L.cls(Styles.intro), "Or select an existing plan"),
             PlansList(planStorage, loadObserver, modalBus),
           )
+        ),
+        L.p(
+          L.cls(Styles.disclaimer),
+          "Plans are saved against your browser's local storage. As a result, wiping your" +
+          " browser's storage will delete your plans. No data is saved remotely."
         )
       ),
       newPlanStream --> planObserver
@@ -55,6 +60,7 @@ object LandingPage {
   private object Styles extends js.Object {
     val page: String = js.native
     val intro: String = js.native
+    val disclaimer: String = js.native
     val content: String = js.native
   }
 

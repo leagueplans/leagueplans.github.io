@@ -22,18 +22,16 @@ object Visualiser {
     val randomStats =
       L.child <-- playerSignal.map(p =>
         KeyValuePairs(
-          L.span("Combat level:") -> L.span(String.format("%.2f", p.stats.combatLevel)),
           L.span("Multiplier:") -> L.span(p.leagueStatus.multiplier),
           L.span("Tasks completed:") -> L.span(p.leagueStatus.tasksCompleted.size),
-          L.span("League points:") -> L.span(p.leagueStatus.leaguePoints),
-          L.span("Expected renown:") -> L.span(p.leagueStatus.expectedRenown)
+          L.span("League points:") -> L.span(p.leagueStatus.leaguePoints)
         )
       )
 
     View(
       View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, contextMenuController, modalBus)),
       View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, contextMenuController)),
-      View.Tab("League progress", L.div(randomStats))
+      View.Tab("[Under construction] League progress", L.div(randomStats))
     )
   }
 }

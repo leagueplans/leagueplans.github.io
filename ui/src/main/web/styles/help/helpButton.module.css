@@ -1,0 +1,33 @@
+.button {
+  background-color: #2b3563;
+
+  border-left-style: solid;
+  border-top-style: solid;
+  border-right-style: none;
+  border-bottom-style: none;
+  border-radius: 1rem 0 0 0;
+  border-color: #bfa204;
+
+  cursor: pointer;
+
+  padding: 0;
+}
+
+.button:hover, .button:focus {
+  background-color: #114b02;
+}
+
+.button:active {
+  background-color: #092d00;
+}
+
+.icon {
+  color: white;
+  font-size: 2.5rem;
+}
+
+.modal {
+  white-space: break-spaces;
+  max-width: 90%;
+  width: 60rem;
+}
