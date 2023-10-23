@@ -1,0 +1,59 @@
+package ddm.ui
+
+import com.raquo.airstream.state.{StrictSignal, Var}
+import ddm.ui.PlanStorage.Result
+import ddm.ui.model.plan.Plan
+import io.circe.Error
+import io.circe.parser.decode
+import io.circe.syntax.EncoderOps
+import org.scalajs.dom.Storage
+
+import scala.util.Try
+
+object PlanStorage {
+  sealed trait Result
+
+  object Result {
+    final case class Success(plan: Plan.Named) extends Result
+    final case class Failure(error: Error) extends Result
+    case object None extends Result
+  }
+}
+
+final class PlanStorage(delegate: Storage) {
+  private val planNamespace: String = "@plan"
+  private val plansVar: Var[Set[String]] = Var(listPlans())
+
+  def plansSignal: StrictSignal[Set[String]] =
+    plansVar.signal
+
+  private def listPlans(): Set[String] =
+    (0 until delegate.length)
+      .map(delegate.key)
+      .collect { case s"${`planNamespace`}:$name" => name }
+      .toSet
+
+  def savePlan(namedPlan: Plan.Named): Try[Unit] =
+    Try(delegate.setItem(toKey(namedPlan.name), namedPlan.plan.asJson.noSpaces)).map { _ =>
+      plansVar.update(_ + namedPlan.name)
+      ()
+    }
+
+  def loadPlan(name: String): Result =
+    rawPlanData(name).map(decode[Plan](_)) match {
+      case Some(Right(plan)) => Result.Success(Plan.Named(name, plan))
+      case Some(Left(error)) => Result.Failure(error)
+      case None => Result.None
+    }
+
+  def deletePlan(name: String): Unit = {
+    delegate.removeItem(toKey(name))
+    plansVar.update(_ - name)
+  }
+
+  def rawPlanData(name: String): Option[String] =
+    Option(delegate.getItem(toKey(name)))
+
+  private def toKey(planName: String): String =
+    s"$planNamespace:$planName"
+}

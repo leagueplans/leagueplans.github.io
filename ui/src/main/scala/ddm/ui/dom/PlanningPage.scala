@@ -1,60 +1,56 @@
 package ddm.ui.dom
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.EventBus
+import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
-import ddm.ui.StorageManager
+import ddm.ui.PlanStorage
 import ddm.ui.dom.common._
 import ddm.ui.dom.editor.EditorElement
 import ddm.ui.dom.plan.PlanElement
-import ddm.ui.dom.player.PlayerElement
+import ddm.ui.dom.player.Visualiser
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
-import ddm.ui.model.plan.{Effect, Step}
+import ddm.ui.model.plan.{Effect, Plan, Step}
+import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
 import java.util.UUID
 import scala.scalajs.js
-import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSImport
-import scala.util.{Failure, Success}
 
-object Coordinator {
+object PlanningPage {
   def apply(
-    storageManager: StorageManager[Forest[UUID, Step]],
-    defaultPlan: Forest[UUID, Step],
-    cache: Cache
+    planStorage: PlanStorage,
+    initialPlan: Plan.Named,
+    cache: Cache,
+    contextMenuController: ContextMenu.Controller,
+    modalBus: WriteBus[Option[L.Element]]
   ): L.Div = {
     val itemFuse = new Fuse(
       cache.items.values.toList,
-      new FuseOptions {
-        override val keys: UndefOr[js.Array[String]] =
-          js.defined(js.Array("name"))
-      }
+      new FuseOptions { keys = js.defined(js.Array("name")) }
     )
-
-    val (contextMenu, contextMenuController) = ContextMenu()
-    val (modal, modalBus) = Modal()
-
-    val initialPlan = loadPlan(storageManager).getOrElse(defaultPlan)
 
     val stepUpdates = new EventBus[Forester[UUID, Step] => Unit]
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
-      initialPlan,
+      initialPlan.plan.steps,
       focusedStepID.signal,
       editingEnabled = Val(true),
       contextMenuController,
       stepUpdates,
       focusUpdater
     )
-    val stateSignal = Signal.combine(forester.forestSignal, focusedStepID).map(State.tupled)
+    val stateSignal =
+      Signal
+        .combine(forester.forestSignal, focusedStepID)
+        .map { case (forestSignal, focusedStep) => State(forestSignal, focusedStep, initialPlan.plan.mode) }
 
-    val playerElement = PlayerElement(
+    val visualiser = Visualiser(
       stateSignal.map(_.playerAtFocusedStep),
       cache,
       itemFuse,
@@ -73,18 +69,16 @@ object Coordinator {
         }
 
     L.div(
-      contextMenu,
-      modal,
+      L.cls(Styles.page),
       L.div(
-        L.cls(Styles.page),
-        L.div(
-          L.cls(Styles.lhs),
-          playerElement.amend(L.cls(Styles.state)),
-          L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
-        ),
-        planElement.amend(L.cls(Styles.plan))
+        L.cls(Styles.lhs),
+        visualiser.amend(L.cls(Styles.state)),
+        L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
       ),
-      forester.forestSignal --> Observer(storageManager.save)
+      planElement.amend(L.cls(Styles.plan)),
+      forester.forestSignal.map(steps =>
+        Plan.Named(initialPlan.name, Plan(initialPlan.plan.mode, steps))
+      ) --> Observer[Plan.Named](planStorage.savePlan)
     )
   }
 
@@ -97,13 +91,11 @@ object Coordinator {
     val plan: String = js.native
   }
 
-  private def loadPlan(storageManager: StorageManager[Forest[UUID, Step]]): Option[Forest[UUID, Step]] =
-    storageManager.load().map {
-      case Success(savedPlan) => savedPlan
-      case Failure(ex) => throw new RuntimeException("Failure when trying to load plan", ex)
-    }
-
-  private final case class State(plan: Forest[UUID, Step], focusedStepID: Option[UUID]) {
+  private final case class State(
+    plan: Forest[UUID, Step],
+    focusedStepID: Option[UUID],
+    mode: Mode
+  ) {
     private val allSteps: List[Step] = plan.toList
 
     val (progressedSteps, focusedStep) =
@@ -119,7 +111,7 @@ object Coordinator {
 
     val playerPreFocusedStep: Player =
       EffectResolver.resolve(
-        Player.leaguesFourInitial,
+        mode.initialPlayer,
         progressedSteps.flatMap(_.directEffects.underlying): _*
       )
 

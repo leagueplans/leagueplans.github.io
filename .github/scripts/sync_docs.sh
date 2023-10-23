@@ -15,4 +15,5 @@ rsync --verbose \
       --inplace \
       --times \
       --delete \
+      -- exclude 'CNAME' \
       "${DISTRIBUTION}/" "${DOCS}"

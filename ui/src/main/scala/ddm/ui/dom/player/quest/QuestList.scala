@@ -12,7 +12,6 @@ import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
-import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSImport
 
 object QuestList {
@@ -98,11 +97,8 @@ object QuestList {
     new Fuse(
       quests,
       new FuseOptions {
-        override val keys: UndefOr[js.Array[String]] =
-          js.defined(js.Array("name"))
-
-        override val threshold: UndefOr[Double] =
-          js.defined(0.3)
+        keys = js.defined(js.Array("name"))
+        threshold = js.defined(0.3)
       }
     )
 
