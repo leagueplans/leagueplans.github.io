@@ -3,8 +3,9 @@ package ddm.ui.dom
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.{Val, Var}
-import com.raquo.laminar.api.{L, enrichSource}
+import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.PlanStorage
+import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.dom.common._
 import ddm.ui.dom.editor.EditorElement
 import ddm.ui.dom.plan.PlanElement
@@ -16,10 +17,13 @@ import ddm.ui.model.plan.{Effect, Plan, Step}
 import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
+import org.scalajs.dom.console
 
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
+import scala.util.{Failure, Success}
 
 object PlanningPage {
   def apply(
@@ -27,7 +31,8 @@ object PlanningPage {
     initialPlan: Plan.Named,
     cache: Cache,
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalBus: WriteBus[Option[L.Element]],
+    toastBus: WriteBus[Toast],
   ): L.Div = {
     val itemFuse = new Fuse(
       cache.items.values.toList,
@@ -78,7 +83,13 @@ object PlanningPage {
       planElement.amend(L.cls(Styles.plan)),
       forester.forestSignal.map(steps =>
         Plan.Named(initialPlan.name, Plan(initialPlan.plan.mode, steps))
-      ) --> Observer[Plan.Named](planStorage.savePlan)
+      ) --> Observer[Plan.Named](plan => planStorage.savePlan(plan) match {
+        case Failure(error) =>
+          console.log(message = s"Failed to save plan [${error.getMessage}]")
+          toastBus.onNext(Toast(ToastHub.Type.Warning, 15.seconds, L.span("Failed to save plan")))
+        case Success(_) =>
+          ()
+      })
     )
   }
 
