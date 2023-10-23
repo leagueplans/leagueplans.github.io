@@ -26,7 +26,7 @@ object Bootstrap {
     val pageVar = Var[L.Node](L.emptyNode)
     val loadedPlanObserver =
       pageVar.writer.contramap[Plan.Named](
-        PlanningPage(storage, _, loadCache(toastBus), contextMenuController, modalBus)
+        PlanningPage(storage, _, loadCache(toastBus), contextMenuController, modalBus, toastBus)
       )
     pageVar.writer.onNext(LandingPage(storage, loadedPlanObserver, toastBus, modalBus))
 
