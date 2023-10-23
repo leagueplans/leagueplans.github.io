@@ -8,6 +8,7 @@ import ddm.ui.PlanStorage
 import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.dom.common._
 import ddm.ui.dom.editor.EditorElement
+import ddm.ui.dom.help.HelpButton
 import ddm.ui.dom.plan.PlanElement
 import ddm.ui.dom.player.Visualiser
 import ddm.ui.facades.fusejs.FuseOptions
@@ -81,6 +82,7 @@ object PlanningPage {
         L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
       ),
       planElement.amend(L.cls(Styles.plan)),
+      HelpButton(modalBus).amend(L.cls(Styles.help)),
       forester.forestSignal.map(steps =>
         Plan.Named(initialPlan.name, Plan(initialPlan.plan.mode, steps))
       ) --> Observer[Plan.Named](plan => planStorage.savePlan(plan) match {
@@ -93,13 +95,14 @@ object PlanningPage {
     )
   }
 
-  @js.native @JSImport("/styles/coordinator.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planningPage.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val page: String = js.native
     val lhs: String = js.native
     val state: String = js.native
     val editor: String = js.native
     val plan: String = js.native
+    val help: String = js.native
   }
 
   private final case class State(

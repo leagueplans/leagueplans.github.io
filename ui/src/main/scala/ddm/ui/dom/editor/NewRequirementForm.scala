@@ -10,6 +10,7 @@ import ddm.ui.dom.common.form.{Form, NumberInput, Select}
 import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.model.plan.Requirement
 import ddm.ui.model.plan.Requirement._
+import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.skill.Skill
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
@@ -63,7 +64,7 @@ object NewRequirementForm {
       )
     )
 
-  private def toToolSearch(items: Fuse[Item]): (ReactiveHtmlElement[Div], Signal[Option[Tool]]) = {
+  private def toToolSearch(items: Fuse[Item]): (ReactiveHtmlElement[Div], Signal[Option[Requirement]]) = {
     val (search, searchLabel, radios, selection) =
       ItemSearch(
         items,
@@ -77,7 +78,17 @@ object NewRequirementForm {
       search.amend(L.cls(Styles.input)),
       radios
     )
-    (div, selection.map(_.map(item => Tool(item.id))))
+
+    val requirement = selection.map(_.map(item =>
+      item.equipmentType match {
+        case Some(tpe) =>
+          Or(Tool(item.id, Depository.Kind.Inventory), Tool(item.id, Depository.Kind.EquipmentSlot.from(tpe)))
+        case None =>
+          Tool(item.id, Depository.Kind.Inventory)
+      }
+    ))
+
+    (div, requirement)
   }
 
   private def levelEntry(): (ReactiveHtmlElement[Div], Signal[Option[Level]]) = {
@@ -123,12 +134,12 @@ object NewRequirementForm {
   private def effectSubmissions(
     formSubmissions: EventStream[Unit],
     effectTypeSignal: Signal[RequirementType],
-    toolSignal: Signal[Option[Tool]],
+    toolSignal: Signal[Option[Requirement]],
     levelSignal: Signal[Option[Level]]
   ): EventStream[Option[Requirement]] =
     formSubmissions.sample(
       effectTypeSignal.flatMap {
-        case RequirementType.Tool => toolSignal.map(identity)
+        case RequirementType.Tool => toolSignal
         case RequirementType.Level => levelSignal.map(identity)
       }
     )

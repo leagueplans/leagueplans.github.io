@@ -20,8 +20,9 @@ object DescribedRequirement {
           SkillIcon(skill).amend(L.cls(Styles.skillIcon)),
         )
 
-      case Requirement.Tool(item) =>
+      case Requirement.Tool(item, location) =>
         line(
+          text(s"${location.name}:"),
           StackElement(
             Stack(cache.items(item), noted = false),
             sizeSignal = Val(1)

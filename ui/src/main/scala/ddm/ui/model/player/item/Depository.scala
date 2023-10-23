@@ -1,6 +1,6 @@
 package ddm.ui.model.player.item
 
-import ddm.common.model.Item
+import ddm.common.model.{EquipmentType, Item}
 import io.circe.{Decoder, Encoder}
 
 object Depository {
@@ -75,6 +75,22 @@ object Depository {
 
       val all: List[EquipmentSlot] =
         List(Head, Cape, Neck, Ammo, Weapon, Shield, Body, Legs, Hands, Feet, Ring)
+
+      def from(equipmentType: EquipmentType): EquipmentSlot =
+        equipmentType match {
+          case EquipmentType.Head => EquipmentSlot.Head
+          case EquipmentType.Cape => EquipmentSlot.Cape
+          case EquipmentType.Neck => EquipmentSlot.Neck
+          case EquipmentType.Ammo => EquipmentSlot.Ammo
+          case EquipmentType.Weapon => EquipmentSlot.Weapon
+          case EquipmentType.Shield => EquipmentSlot.Shield
+          case EquipmentType.TwoHanded => EquipmentSlot.Weapon
+          case EquipmentType.Body => EquipmentSlot.Body
+          case EquipmentType.Legs => EquipmentSlot.Legs
+          case EquipmentType.Hands => EquipmentSlot.Hands
+          case EquipmentType.Feet => EquipmentSlot.Feet
+          case EquipmentType.Ring => EquipmentSlot.Ring
+        }
     }
   }
 }

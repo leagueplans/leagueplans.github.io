@@ -1,8 +1,9 @@
 package ddm.ui.dom
 
+import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.PlanStorage
 import ddm.ui.dom.common.{ContextMenu, Modal, ToastHub}
@@ -13,7 +14,7 @@ import ddm.ui.model.player.{Cache, Quest}
 import io.circe.Decoder
 import io.circe.scalajs.decodeJs
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -35,7 +36,13 @@ object Bootstrap {
       contextMenu,
       modal,
       toastHub,
-      L.child <-- pageVar
+      L.child <-- pageVar,
+      EventStream.unit(emitOnce = true).delay(2000) --> Observer[Unit](_ =>
+        toastBus.onNext(feedbackToast())
+      ),
+      EventStream.unit(emitOnce = true).delay(2000) --> Observer[Unit](_ =>
+        toastBus.onNext(underDevelopmentToast())
+      )
     )
   }
 
@@ -66,4 +73,19 @@ object Bootstrap {
         toastBus.onNext(ToastHub.Toast(ToastHub.Type.Error, Duration.Inf, L.span(toastMessage)))
         throw error
     }
+
+  private def feedbackToast(): ToastHub.Toast =
+    ToastHub.Toast(
+      ToastHub.Type.Info,
+      10.seconds,
+      L.span("To offer feedback, contact @Granarder on discord.")
+    )
+
+  private def underDevelopmentToast(): ToastHub.Toast =
+    ToastHub.Toast(
+      ToastHub.Type.Warning,
+      30.seconds,
+      L.span("This site is under active development. It's likely that breaking changes will be made" +
+        " once the league ends, which will cause existing plans to fail to render.")
+    )
 }

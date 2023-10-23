@@ -34,7 +34,7 @@ object RequirementValidator {
     new RequirementValidator[Tool] {
       def validate(requirement: Tool)(player: Player, cache: Cache): List[String] =
         Validator.hasItem(
-          Depository.Kind.Inventory,
+          requirement.location,
           requirement.item,
           noted = false,
           requiredCount = 1
