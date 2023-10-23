@@ -1,6 +1,6 @@
 package ddm.ui.dom.plan
 
-import com.raquo.airstream.core.{Observer, Signal, EventStream}
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
@@ -9,7 +9,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.{ContextMenu, Forester}
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.laminar.LaminarOps.RichEventProp
-import org.scalajs.dom.html.{Button, OList, Paragraph}
+import org.scalajs.dom.html.{OList, Paragraph}
 import org.scalajs.dom.{Event, KeyCode, window}
 
 import java.util.UUID
@@ -18,20 +18,16 @@ import scala.scalajs.js.annotation.JSImport
 import scala.util.Try
 
 object StepElement {
-  sealed trait Theme
-  object Theme {
-    case object Focused extends Theme
-    case object NotFocused extends Theme
-  }
-
   def apply(
     stepID: UUID,
     step: Signal[Step],
     subStepsSignal: Signal[List[L.Node]],
-    theme: Signal[Theme],
+    isFocused: Signal[Boolean],
+    isCompleteSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    completionStatusObserver: Observer[Boolean],
     focusObserver: Observer[UUID]
   ): L.Div = {
     val (hoverListeners, isHovering) = hoverControls
@@ -44,25 +40,36 @@ object StepElement {
       )
 
     L.div(
-      L.cls <-- Signal.combine(theme, isHovering).map {
-        case (Theme.Focused, _) => Styles.focused
-        case (Theme.NotFocused, false) => Styles.inactive
-        case (Theme.NotFocused, true) => Styles.hovered
+      L.cls <-- Signal.combine(isFocused, isCompleteSignal, isHovering).map {
+        case (true, _, _) => Styles.focused
+        case (false, false, false) => Styles.incomplete
+        case (false, false, true) => Styles.hoveredIncomplete
+        case (false, true, false) => Styles.complete
+        case (false, true, true) => Styles.hoveredComplete
       },
       L.tabIndex(0),
       L.child <-- toDescription(step),
       subSteps,
       focusListeners(stepID, focusObserver),
       hoverListeners,
-      contextMenu(contextMenuController, editingEnabledSignal, stepID, stepUpdater)
+      contextMenu(
+        contextMenuController,
+        isCompleteSignal,
+        editingEnabledSignal,
+        stepID,
+        stepUpdater,
+        completionStatusObserver
+      )
     )
   }
 
   @js.native @JSImport("/styles/plan/step.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val focused: String = js.native
-    val hovered: String = js.native
-    val inactive: String = js.native
+    val hoveredIncomplete: String = js.native
+    val incomplete: String = js.native
+    val hoveredComplete: String = js.native
+    val complete: String = js.native
 
     val description: String = js.native
     val subList: String = js.native
@@ -108,22 +115,27 @@ object StepElement {
 
   private def contextMenu(
     controller: ContextMenu.Controller,
+    isCompleteSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     stepID: UUID,
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    completionStatusObserver: Observer[Boolean]
   ): Binder[Base] =
     controller.bind(closer =>
-      editingEnabledSignal.map(enabled =>
-        Option.when(enabled)(
-          L.div(
-            cutButton(stepID, closer),
-            pasteButton(stepID, stepUpdater, closer)
+      Signal
+        .combine(editingEnabledSignal, isCompleteSignal)
+        .map { case (editingEnabled, isComplete) =>
+          Option.when(editingEnabled)(
+            L.div(
+              cutButton(stepID, closer),
+              pasteButton(stepID, stepUpdater, closer),
+              changeStatusButton(isComplete, completionStatusObserver, closer)
+            )
           )
-        )
-      )
+        }
     )
 
-  private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): ReactiveHtmlElement[Button] =
+  private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
     L.button(
       L.`type`("button"),
       "Cut",
@@ -137,7 +149,7 @@ object StepElement {
     stepID: UUID,
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     closer: Observer[ContextMenu.CloseCommand]
-  ): ReactiveHtmlElement[Button] = {
+  ): L.Button = {
     val stepMover =
       stepUpdater.contramap[String](rawChildID => forester =>
         Try(UUID.fromString(rawChildID)).foreach(childID =>
@@ -154,4 +166,15 @@ object StepElement {
       }) --> Observer.combine(stepMover, closer),
     )
   }
+
+  private def changeStatusButton(
+    isComplete: Boolean,
+    completionStatusObserver: Observer[Boolean],
+    closer: Observer[ContextMenu.CloseCommand]
+  ): L.Button =
+    L.button(
+      L.`type`("button"),
+      if (isComplete) "Mark incomplete" else "Mark complete",
+      L.onClick.handledAs(!isComplete) --> Observer.combine(completionStatusObserver, closer)
+    )
 }
