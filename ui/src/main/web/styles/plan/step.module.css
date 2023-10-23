@@ -10,14 +10,24 @@
   background-color: #444203;
 }
 
-.hovered {
+.incomplete {
+  composes: step;
+  background-color: #00172e;
+}
+
+.hoveredIncomplete {
   composes: step;
   background-color: #082a4c;
 }
 
-.inactive {
+.complete {
   composes: step;
-  background-color: #00172e;
+  background-color: #1b4302;
+}
+
+.hoveredComplete {
+  composes: step;
+  background-color: #2b6904;
 }
 
 .description {
