@@ -17,7 +17,7 @@
 .text {
   color: white;
   align-self: center;
-  padding-right: 0.375rem;
+  padding: 0.5rem 0.375rem 0.5rem 0.375rem;
 }
 
 .button {
@@ -32,9 +32,13 @@
   cursor: pointer;
 }
 
+.addIcon {
+  composes: button;
+  padding-right: 0;
+}
+
 .deleteIcon {
   composes: button;
-
   float: right;
 }
 
