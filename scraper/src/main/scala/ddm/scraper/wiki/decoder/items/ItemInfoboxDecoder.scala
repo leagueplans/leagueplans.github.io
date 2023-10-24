@@ -1,7 +1,8 @@
-package ddm.scraper.wiki.decoder
+package ddm.scraper.wiki.decoder.items
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
+import ddm.scraper.wiki.decoder._
 import ddm.scraper.wiki.model.{ItemInfobox, Page, WikiItem}
 import ddm.scraper.wiki.parser.Term
 
@@ -9,9 +10,9 @@ object ItemInfoboxDecoder {
   def decode(obj: Term.Template.Object): DecoderResult[ItemInfobox] =
     for {
       id <- obj.decode("id")(asID)
-      name <- obj.decode("name")(_.collapse(simplifyTextValues).as[Term.Unstructured])
+      name <- obj.decode("name")(_.collapse(_.simplifiedText).as[Term.Unstructured])
       imageBins <- obj.decode("image")(asImageBins)
-      examine <- obj.decode("examine")(_.collapse(simplifyTextValues).as[Term.Unstructured])
+      examine <- obj.decode("examine")(_.collapse(_.simplifiedText).as[Term.Unstructured])
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
       maybeStacksInBank <- obj.decodeOpt("stacksinbank")(_.asBoolean)
       stackable <- obj.decode("stackable")(_.asBoolean)
@@ -61,30 +62,10 @@ object ItemInfoboxDecoder {
       .map(constructor.apply)
   }
 
-  private val ignoredTemplates: Set[String] =
-    Set("sic", "^")
-
-  private def simplifyTextValues(term: Term.Structured): Option[Term] =
-    term match {
-      case template: Term.Template =>
-        if (ignoredTemplates.contains(template.name.toLowerCase))
-          None
-        else if (template.name == "*")
-          Some(Term.Unstructured("\n-"))
-        else
-          Some(template)
-
-      case link: Term.Link =>
-        Some(Term.Unstructured(link.pageName.wikiName))
-
-      case _: Term.Function =>
-        None
-    }
-
   private def asImageBins(raw: List[Term]): DecoderResult[NonEmptyList[(Item.Image.Bin, Page.Name.File)]] =
     raw
       .foldLeft[DecoderResult[List[Page.Name.File]]](Right(List.empty)) {
-        case (Right(acc), Term.Link(file: Page.Name.File)) => Right(acc :+ file)
+        case (Right(acc), Term.Link(file: Page.Name.File, _)) => Right(acc :+ file)
         case (Right(acc), _: Term.Unstructured) => Right(acc)
         case (Right(_), _: Term) => Left(new DecoderException("Unexpected term"))
         case (l @ Left(_), _) => l

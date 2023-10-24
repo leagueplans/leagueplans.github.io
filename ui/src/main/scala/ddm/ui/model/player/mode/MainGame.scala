@@ -1,11 +1,11 @@
 package ddm.ui.model.player.mode
 
-import ddm.common.model.Item
+import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.league.LeagueStatus
-import ddm.ui.model.player.skill.Skill.Hitpoints
-import ddm.ui.model.player.skill.{Level, Skill, Stats}
+import ddm.common.model.Skill.Hitpoints
+import ddm.ui.model.player.skill.{Level, Stats}
 
 object MainGame extends Mode {
   val name: String = "Main game"

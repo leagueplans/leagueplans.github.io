@@ -6,9 +6,20 @@ import org.parboiled2._
 final class LinkParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parse: Rule1[Term.Link] =
     rule(
-      capture(oneOrMore(nonLinkEndChar)) ~ whiteSpace ~ linkEnd ~>
-        ((name: String) => Term.Link(Page.Name.from(name)))
+      pageName ~ optional(linkSeparator ~ text) ~ linkEnd ~> (
+        (pageName: String, text: Option[String]) =>
+          Term.Link(Page.Name.from(pageName), text.getOrElse(pageName).trim)
+      )
     )
+
+  private def pageName: Rule1[String] =
+    rule(capture(oneOrMore(nonPageNameEndChar)))
+
+  private def nonPageNameEndChar: Rule0 =
+    rule(!(linkSeparator | linkEnd) ~ ANY)
+
+  private def text: Rule1[String] =
+    rule(capture(oneOrMore(nonLinkEndChar)))
 
   private def nonLinkEndChar: Rule0 =
     rule(!linkEnd ~ ANY)

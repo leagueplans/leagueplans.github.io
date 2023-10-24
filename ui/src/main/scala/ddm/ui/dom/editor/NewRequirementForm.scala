@@ -5,13 +5,12 @@ import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.common.model.Item
+import ddm.common.model.{Item, Skill}
 import ddm.ui.dom.common.form.{Form, NumberInput, Select}
 import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.model.plan.Requirement
 import ddm.ui.model.plan.Requirement._
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.skill.Skill
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 

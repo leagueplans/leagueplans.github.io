@@ -3,11 +3,12 @@ package ddm.ui.dom.player.stats
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import ddm.common.model.Skill
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.skill.Skill._
-import ddm.ui.model.player.skill.{Skill, Stat, Stats}
+import ddm.common.model.Skill._
+import ddm.ui.model.player.skill.{Stat, Stats}
 import org.scalajs.dom.html.OList
 
 import scala.scalajs.js

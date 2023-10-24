@@ -65,9 +65,8 @@ package object decoder {
           acc ++ focus
 
         case (blob: Unstructured) :: tail =>
-          // Concatenating blobs with a space might not always be the right choice
           val simplifiedBlob = focus match {
-            case Some(blob0) => Unstructured(s"${blob0.raw} ${blob.raw}")
+            case Some(blob0) => Unstructured(concat(blob0.raw, blob.raw))
             case None => blob
           }
 
@@ -105,7 +104,39 @@ package object decoder {
               )
           }
       }
+
+    private def concat(blob1: String, blob2: String): String = {
+      val blob1Ends =
+        blob1.lastOption.forall(directAppendCharacters.contains)
+
+      lazy val blob2Begins =
+        blob2.toList match {
+          case 's' :: Nil => true
+          case 's' :: c :: _ => directConcatCharacters.contains(c)
+          case c :: _ => directConcatCharacters.contains(c)
+          case _ => false
+        }
+
+      if (blob1Ends || blob2Begins)
+        s"$blob1$blob2"
+      else
+        s"$blob1 $blob2"
+    }
   }
+
+  // When concatenating two unstructured terms, we need to decide whether
+  // to include a space between the terms or not. We won't include a space
+  // when concatenating blobs if the first blob end with one of these
+  // characters.
+  private val directAppendCharacters =
+    Set('"', '\'', '(', '£', '$')
+
+  // When concatenating two unstructured terms, we need to decide whether
+  // to include a space between the terms or not. We won't include a space
+  // when concatenating blobs if the second blob begins with one of these
+  // characters.
+  private val directConcatCharacters =
+    Set(' ', ',', '.', ')', ':', ';', '?', '\'', '"', '!', '%')
 
   implicit final class RichUnstructured(val self: Unstructured) extends AnyVal {
     def asBoolean: DecoderResult[Boolean] =
@@ -115,4 +146,26 @@ package object decoder {
         case other => Left(new DecoderException(s"Expected boolean but found [$other]"))
       }
   }
+
+  implicit final class RichStructured(val self: Structured) extends AnyVal {
+    def simplifiedText: Option[Term] =
+      self match {
+        case template: Template =>
+          if (ignoredTemplates.contains(template.name.toLowerCase))
+            None
+          else if (template.name == "*")
+            Some(Unstructured("\n-"))
+          else
+            Some(template)
+        case header: Header =>
+          Some(Unstructured(header.raw))
+        case link: Link =>
+          Some(Unstructured(link.text))
+        case _: Function =>
+          None
+      }
+  }
+
+  private val ignoredTemplates: Set[String] =
+    Set("sic", "^")
 }

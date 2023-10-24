@@ -2,9 +2,10 @@ package ddm.ui.dom.player.stats
 
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import ddm.common.model.Skill
 import ddm.ui.dom.common.form.{Form, NumberInput}
 import ddm.ui.model.plan.Effect.GainExp
-import ddm.ui.model.player.skill.{Exp, Skill}
+import ddm.ui.model.player.skill.Exp
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

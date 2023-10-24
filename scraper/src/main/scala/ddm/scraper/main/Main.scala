@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior, Terminated}
 import akka.http.scaladsl.model.headers.`User-Agent`
 import ddm.scraper.dumper.Cache
 import ddm.scraper.http.ThrottledHttpClient
-import ddm.scraper.main.runner.{Runner, ScrapeItemsRunner, ScrapeSkillIconsRunner}
+import ddm.scraper.main.runner.{Runner, ScrapeItemsRunner, ScrapeLeagueTasksRunner, ScrapeSkillIconsRunner}
 import ddm.scraper.reporter.ReportPrinter
 import ddm.scraper.wiki.http.MediaWikiClient
 import ddm.scraper.wiki.model.Page
@@ -63,6 +63,7 @@ object Main extends App {
       runner match {
         case r: ScrapeItemsRunner => r.run(client, reporter, spawn, spawn)
         case r: ScrapeSkillIconsRunner => r.run(client, reporter)
+        case r: ScrapeLeagueTasksRunner => r.run(client, reporter, spawn)
         case _ => throw new RuntimeException("Unexpected runner returned")
       }
 

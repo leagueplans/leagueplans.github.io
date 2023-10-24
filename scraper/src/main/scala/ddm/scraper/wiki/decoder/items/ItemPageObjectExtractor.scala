@@ -1,5 +1,6 @@
-package ddm.scraper.wiki.decoder
+package ddm.scraper.wiki.decoder.items
 
+import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult, SimpleInfoboxObjectExtractor}
 import ddm.scraper.wiki.model.InfoboxVersion
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.Template

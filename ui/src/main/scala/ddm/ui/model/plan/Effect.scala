@@ -1,9 +1,9 @@
 package ddm.ui.model.plan
 
-import ddm.common.model.Item
+import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.league.Task
-import ddm.ui.model.player.skill.{Exp, Skill}
+import ddm.ui.model.player.skill.Exp
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 

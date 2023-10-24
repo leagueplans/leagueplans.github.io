@@ -1,8 +1,8 @@
 package ddm.ui.model.player.mode
 
+import ddm.common.model.Skill
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.league.LeagueStatus
-import ddm.ui.model.player.skill.Skill
 
 object LeaguesIII extends Mode.League {
   val name: String = "Leagues III: Shattered Relics"

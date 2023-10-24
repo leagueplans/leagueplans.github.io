@@ -1,6 +1,7 @@
 package ddm.ui.model.player.skill
 
-import ddm.ui.model.player.skill.Skill._
+import ddm.common.model.Skill
+import ddm.common.model.Skill._
 
 object Stats {
   def apply(levels: (Skill, Exp)*): Stats =

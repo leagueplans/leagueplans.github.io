@@ -1,4 +1,4 @@
-package ddm.ui.model.player.skill
+package ddm.common.model
 
 import io.circe.{Decoder, Encoder}
 

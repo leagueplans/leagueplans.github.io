@@ -16,7 +16,7 @@ final class UnstructuredParser(val input: ParserInput) extends Parser with Contr
     )
 
   private def rootControlChar: Rule0 =
-    rule(functionStart | linkStart | templateStart)
+    rule(functionStart | headerStart | linkStart | templateStart)
 
   private def nestedControlChar: Rule0 =
     rule(rootControlChar | functionArgSeparator | functionEnd | templateSeparator | templateEnd)
