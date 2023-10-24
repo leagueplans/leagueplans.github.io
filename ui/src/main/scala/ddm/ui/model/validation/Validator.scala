@@ -1,9 +1,9 @@
 package ddm.ui.model.validation
 
-import ddm.common.model.Item
+import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.league.Task
-import ddm.ui.model.player.skill.{Level, Skill}
+import ddm.ui.model.player.skill.Level
 import ddm.ui.model.player.{Cache, Player}
 
 sealed trait Validator extends ((Player, Cache) => Either[String, Unit])

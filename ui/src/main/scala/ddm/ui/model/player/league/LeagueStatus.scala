@@ -1,7 +1,7 @@
 package ddm.ui.model.player.league
 
+import ddm.common.model.Skill
 import ddm.ui.model.player.league.LeagueStatus.{freeSkillChoices, skillCosts}
-import ddm.ui.model.player.skill.Skill
 
 object LeagueStatus {
   private val skillCosts: Skill => Int =

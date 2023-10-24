@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.stats
 
 import com.raquo.laminar.api.L
-import ddm.ui.model.player.skill.Skill
+import ddm.common.model.Skill
 
 object SkillIcon {
   def apply(skill: Skill): L.Image =

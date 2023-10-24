@@ -1,5 +1,6 @@
-package ddm.scraper.wiki.decoder
+package ddm.scraper.wiki.decoder.items
 
+import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult}
 import ddm.scraper.wiki.model.{BonusesInfobox, Page, WikiItem}
 import ddm.scraper.wiki.parser.Term.Template
 

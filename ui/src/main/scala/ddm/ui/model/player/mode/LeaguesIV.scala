@@ -1,9 +1,10 @@
 package ddm.ui.model.player.mode
 
+import ddm.common.model.Skill
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.league.LeagueStatus
-import ddm.ui.model.player.skill.Skill.{Agility, Herblore, Hitpoints, Runecraft}
-import ddm.ui.model.player.skill.{Level, Skill, Stats}
+import ddm.common.model.Skill.{Agility, Herblore, Hitpoints, Runecraft}
+import ddm.ui.model.player.skill.{Level, Stats}
 
 object LeaguesIV extends Mode.League {
   val name: String = "Leagues IV: Trailblazer Reloaded"

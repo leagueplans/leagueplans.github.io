@@ -22,7 +22,7 @@ object TermParser {
 final class TermParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parseRoot: Rule1[List[Term]] =
     rule(
-      zeroOrMore(function | link | template | runSubParser(new UnstructuredParser(_).parseRoot)) ~
+      zeroOrMore(function | header | link | template | runSubParser(new UnstructuredParser(_).parseRoot)) ~
         EOI ~>
         ((terms: Seq[Term]) => terms.toList)
     )
@@ -35,6 +35,9 @@ final class TermParser(val input: ParserInput) extends Parser with ControlCharac
 
   private def function: Rule1[Term.Function] =
     rule(functionStart ~ runSubParser(new FunctionParser(_).parse))
+
+  private def header: Rule1[Term.Header] =
+    rule(headerStart ~ runSubParser(new HeaderParser(_).parse))
 
   private def link: Rule1[Term.Link] =
     rule(linkStart ~ runSubParser(new LinkParser(_).parse))

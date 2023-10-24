@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.scraper.wiki.decoder.{ItemPageDecoder, ItemPageObjectExtractor}
+import ddm.scraper.wiki.decoder.items.{ItemPageDecoder, ItemPageObjectExtractor}
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
 import ddm.scraper.wiki.model.{Page, WikiItem}
 import ddm.scraper.wiki.parser.TermParser

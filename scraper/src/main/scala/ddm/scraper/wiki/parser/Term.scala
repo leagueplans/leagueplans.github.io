@@ -10,15 +10,14 @@ object Term {
 
   sealed trait Structured extends Term
 
-  final case class Link(pageName: Page.Name) extends Structured
+  final case class Header(raw: String, level: Int) extends Structured
+
+  final case class Link(pageName: Page.Name, text: String) extends Structured
 
   final case class Function(name: String, params: List[List[Term]]) extends Structured
 
   object Template {
-    final case class Object(
-      namedParams: Map[String, List[Term]],
-      anonParams: Set[List[Term]]
-    )
+    final case class Object(namedParams: Map[String, List[Term]], anonParams: List[List[Term]])
 
     sealed trait Parameter
 
@@ -36,14 +35,14 @@ object Term {
 
     def from(name: String, params: List[Parameter]): Template =
       params
-        .foldLeft((Map.empty[Parameter.Version, Map[String, List[Term]]], Set.empty[List[Term]])) {
+        .foldLeft((Map.empty[Parameter.Version, Map[String, List[Term]]], List.empty[List[Term]])) {
           case ((namedParams, anonParams), p: Parameter.Named) =>
             val currentParams = namedParams.getOrElse(p.version, Map.empty)
             val updatedParams = currentParams + (p.name -> p.value)
             (namedParams + (p.version -> updatedParams), anonParams)
 
           case ((namedParams, anonParams), p: Parameter.Anonymous) =>
-            (namedParams, anonParams + p.value)
+            (namedParams, anonParams :+ p.value)
         }
         .pipe { case (namedParams, anonParams) => new Template(name, namedParams, anonParams) }
   }
@@ -51,7 +50,7 @@ object Term {
   final class Template private (
     val name: String,
     namedParams: Map[Template.Parameter.Version, Map[String, List[Term]]],
-    anonParams: Set[List[Term]]
+    val anonParams: List[List[Term]]
   ) extends Structured {
     lazy val objects: Set[Template.Object] =
       versions.map { v =>

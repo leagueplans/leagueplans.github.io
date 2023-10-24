@@ -1,6 +1,7 @@
-package ddm.scraper.wiki.decoder
+package ddm.scraper.wiki.decoder.items
 
 import ddm.common.model.EquipmentType
+import ddm.scraper.wiki.decoder._
 import ddm.scraper.wiki.model.BonusesInfobox
 import ddm.scraper.wiki.parser.Term
 
