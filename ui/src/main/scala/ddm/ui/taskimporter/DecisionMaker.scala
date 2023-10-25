@@ -1,0 +1,100 @@
+package ddm.ui.taskimporter
+
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.laminar.api.{L, textToTextNode}
+import ddm.common.model.LeagueTask
+import io.circe.syntax.EncoderOps
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import io.circe.Printer
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
+object DecisionMaker {
+  sealed trait Decision
+
+  object Decision {
+    final case class New(task: LeagueTask) extends Decision
+    final case class Merge(existingTask: LeagueTask, newTask: LeagueTask, mergedTask: LeagueTask) extends Decision
+  }
+
+  def apply(
+    existingTaskStream: EventStream[LeagueTask],
+    newTaskSignal: Signal[LeagueTask],
+    observer: Observer[Decision]
+  ): L.Div =
+    L.div(
+      L.cls(Styles.decisionMaker),
+      L.children <--
+        existingTaskStream
+          .withCurrentValueOf(newTaskSignal)
+          .map { case (existingTask, newTask) =>
+            List(
+              mergeChoice(
+                "Merge (prefer existing name/description)",
+                existingTask,
+                newTask,
+                TaskMerger.mergePrioExisting(existingTask, newTask),
+                observer
+              ),
+              mergeChoice(
+                "Merge (prefer new name/description)",
+                existingTask,
+                newTask,
+                TaskMerger.mergePrioNew(existingTask, newTask),
+                observer
+              ),
+            )
+          },
+      L.child <-- newTaskSignal.map(newButton(_, observer))
+    )
+
+  @js.native @JSImport("/styles/taskimporter/decisionMaker.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val decisionMaker: String = js.native
+    val preview: String = js.native
+    val merge: String = js.native
+    val mergeButton: String = js.native
+    val `new`: String = js.native
+  }
+
+  private def mergeChoice(
+    descriptor: String,
+    existingTask: LeagueTask,
+    newTask: LeagueTask,
+    mergedTask: LeagueTask,
+    observer: Observer[Decision]
+  ): L.Div =
+    L.div(
+      L.cls(Styles.merge),
+      mergeButton(descriptor, existingTask, newTask, mergedTask, observer),
+      preview(mergedTask)
+    )
+
+  private def preview(mergedTask: LeagueTask): L.Div =
+    L.div(L.cls(Styles.preview), printer.print(mergedTask.asJson))
+
+  private val printer = Printer.spaces2.copy(dropNullValues = true, lrbracketsEmpty = "")
+
+  private def mergeButton(
+    descriptor: String,
+    existingTask: LeagueTask,
+    newTask: LeagueTask,
+    mergedTask: LeagueTask,
+    observer: Observer[Decision]
+  ): L.Button =
+    L.button(
+      L.cls(Styles.mergeButton),
+      L.`type`("button"),
+      descriptor,
+      L.onClick.handledAs(Decision.Merge(existingTask, newTask, mergedTask)) --> observer
+    )
+
+  private def newButton(newTask: LeagueTask, observer: Observer[Decision]): L.Button =
+    L.button(
+      L.cls(Styles.`new`),
+      L.`type`("button"),
+      "New task",
+      L.onClick.handledAs(Decision.New(newTask)) --> observer
+    )
+}

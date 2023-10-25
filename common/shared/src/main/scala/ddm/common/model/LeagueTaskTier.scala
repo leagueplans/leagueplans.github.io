@@ -1,7 +1,6 @@
 package ddm.common.model
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Decoder, Encoder}
 
 sealed trait LeagueTaskTier
 
@@ -16,5 +15,13 @@ object LeagueTaskTier {
   val all: Set[LeagueTaskTier] =
     Set(Beginner, Easy, Medium, Hard, Elite, Master)
 
-  implicit val codec: Codec[LeagueTaskTier] = deriveCodec[LeagueTaskTier]
+  private val nameToTier: Map[String, LeagueTaskTier] =
+    all.map(tier => tier.toString -> tier).toMap
+
+  implicit val encoder: Encoder[LeagueTaskTier] = Encoder[String].contramap(_.toString)
+  implicit val decoder: Decoder[LeagueTaskTier] = Decoder[String].emap(s =>
+    nameToTier
+      .get(s)
+      .toRight(left = s"Unknown tier name: [$s]")
+  )
 }
