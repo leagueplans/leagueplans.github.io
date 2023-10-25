@@ -28,6 +28,7 @@ object ItemSearch {
       FuseSearch(
         items,
         s"$id-fuse-search",
+        initial = "",
         maxResults = 30,
         defaultResults = List.empty
       )

@@ -1,0 +1,20 @@
+.decisionMaker {
+  display: flex;
+}
+
+.merge {
+  width: 45%
+}
+
+.mergeButton {
+  min-height: 2rem;
+}
+
+.preview {
+  font-family: monospace;
+  white-space: break-spaces;
+}
+
+.new {
+  width: 10%;
+}

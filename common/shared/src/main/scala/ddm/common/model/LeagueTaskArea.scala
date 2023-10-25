@@ -1,7 +1,6 @@
 package ddm.common.model
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Decoder, Encoder}
 
 sealed trait LeagueTaskArea {
   def name: String
@@ -23,5 +22,13 @@ object LeagueTaskArea {
   val all: Set[LeagueTaskArea] =
     Set(Global, Misthalin, Karamja, Asgarnia, Fremennik, Kandarin, Desert, Morytania, Tirannwn, Wilderness, Kourend)
 
-  implicit val codec: Codec[LeagueTaskArea] = deriveCodec[LeagueTaskArea]
+  private val nameToArea: Map[String, LeagueTaskArea] =
+    all.map(area => area.name -> area).toMap
+
+  implicit val encoder: Encoder[LeagueTaskArea] = Encoder[String].contramap(_.name)
+  implicit val decoder: Decoder[LeagueTaskArea] = Decoder[String].emap(s =>
+    nameToArea
+      .get(s)
+      .toRight(left = s"Unknown area name: [$s]")
+  )
 }

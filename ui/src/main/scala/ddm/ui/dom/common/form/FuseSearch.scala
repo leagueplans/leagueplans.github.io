@@ -8,15 +8,11 @@ object FuseSearch {
   def apply[T](
     fuse: Fuse[T],
     id: String,
+    initial: String,
     maxResults: Int,
     defaultResults: List[T]
   ): (L.Input, L.Label, Signal[List[T]])  = {
-    val (input, label, query) =
-      TextInput(
-        TextInput.Type.Search,
-        id,
-        initial = ""
-      )
+    val (input, label, query) = TextInput(TextInput.Type.Search, id, initial)
 
     val results = query.composeChanges(_.debounce(ms = 200)).map {
       case "" => defaultResults

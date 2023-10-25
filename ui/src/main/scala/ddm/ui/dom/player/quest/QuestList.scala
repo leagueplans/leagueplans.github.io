@@ -85,6 +85,7 @@ object QuestList {
     val (search, _, signal) = FuseSearch(
       toFuse(quests),
       id = "quest-list-fuse-search",
+      initial = "",
       maxResults = quests.size,
       defaultResults = quests
     )

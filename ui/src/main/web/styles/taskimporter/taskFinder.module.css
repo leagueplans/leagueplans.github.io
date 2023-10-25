@@ -1,0 +1,29 @@
+.finders {
+  display: flex;
+  margin-bottom: 2rem;
+}
+
+.filter {
+  width: 50%;
+}
+
+.radios {
+  height: 30rem;
+  overflow: auto;
+}
+
+.task {
+  border-style: solid;
+  box-sizing: border-box;
+  border-width: 1px;
+  width: 100%;
+  padding: 0.25rem;
+}
+
+.taskName {
+  font-size: 1rem;
+}
+
+.taskDescription {
+  font-size: 0.7rem;
+}
