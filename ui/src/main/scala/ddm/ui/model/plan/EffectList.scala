@@ -14,7 +14,7 @@ final case class EffectList(underlying: List[Effect]) {
       case e: GainExp => add(e)
       case e: AddItem => add(e)
       case e: MoveItem => add(e)
-      case _: UnlockSkill | _: SetMultiplier | _: CompleteQuest | _: CompleteDiaryTask | _: CompleteTask =>
+      case _: UnlockSkill | _: SetMultiplier | _: CompleteQuest | _: CompleteDiaryTask | _: CompleteLeagueTask =>
         ignoreDuplicates(effect)
     }
 

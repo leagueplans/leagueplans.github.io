@@ -1,17 +1,13 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
-import ddm.ui.dom.player.diary.DiaryDetailsTab.Progress
+import ddm.ui.dom.player.task.{TaskDetailsTab, TaskList}
 import ddm.ui.model.plan.Effect.CompleteDiaryTask
 import ddm.ui.model.player.Cache
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTask, DiaryTier}
 import org.scalajs.dom.html.OList
-
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
 
 object DiaryTaskList {
   def apply(
@@ -21,35 +17,26 @@ object DiaryTaskList {
     contextMenuController: ContextMenu.Controller,
     regionFilterSignal: Signal[Option[DiaryRegion]],
     tierFilterSignal: Signal[Option[DiaryTier]],
-    progressFilterSignal: Signal[Option[DiaryDetailsTab.Progress]]
-  ): ReactiveHtmlElement[OList] =
-    L.ol(
-      L.cls(Styles.list),
-      L.children <--
-        Signal
-          .combine(completedTasksSignal, regionFilterSignal, tierFilterSignal, progressFilterSignal)
-          .map { case (completedTasks, regionFilter, tierFilter, progressFilter) =>
-            enumerateTasks(cache, completedTasks, regionFilter, tierFilter, progressFilter)
-          }
-          .map(tasks =>
-            tasks.map(task =>
-              L.li(
-                L.cls(Styles.entry),
-                DiaryTaskElement(
-                  task,
-                  completedTasksSignal.map(_.contains(task.id)),
-                  effectObserverSignal,
-                  contextMenuController
-                )
-              )
-            )
-          )
-    )
+    progressFilterSignal: Signal[Option[TaskDetailsTab.Progress]],
+    searchFilterSignal: Signal[Option[List[DiaryTask]]]
+  ): ReactiveHtmlElement[OList] = {
+    val tasksSignal =
+      Signal
+        .combine(completedTasksSignal, regionFilterSignal, tierFilterSignal, progressFilterSignal, searchFilterSignal)
+        .map { case (completedTasks, regionFilter, tierFilter, progressFilter, searchFilter) =>
+          enumerateTasks(cache, completedTasks, regionFilter, tierFilter, progressFilter, searchFilter)
+        }
 
-  @js.native @JSImport("/styles/player/diary/diaryTaskList.module.css", JSImport.Default)
-  private object Styles extends js.Object {
-    val list: String = js.native
-    val entry: String = js.native
+    TaskList[Int, DiaryTask](
+      _.id,
+      tasksSignal,
+      task => DiaryTaskElement(
+        task,
+        completedTasksSignal.map(_.contains(task.id)),
+        effectObserverSignal,
+        contextMenuController
+      )
+    )
   }
 
   private def enumerateTasks(
@@ -57,19 +44,17 @@ object DiaryTaskList {
     completedTasks: Set[Int],
     regionFilter: Option[DiaryRegion],
     tierFilter: Option[DiaryTier],
-    progressFilter: Option[Progress]
+    progressFilter: Option[TaskDetailsTab.Progress],
+    searchFilter: Option[List[DiaryTask]]
   ): List[DiaryTask] =
-    cache
-      .diaryTasks
-      .values
+    searchFilter
+      .getOrElse(cache.diaryTasks.values.toList.sortBy(task => (task.tier, task.region, task.id)))
       .filter(task =>
         regionFilter.forall(_ == task.region) &&
           tierFilter.forall(_ == task.tier) &&
           progressFilter.forall {
-            case Progress.Incomplete => !completedTasks.contains(task.id)
-            case Progress.Complete => completedTasks.contains(task.id)
+            case TaskDetailsTab.Progress.Incomplete => !completedTasks.contains(task.id)
+            case TaskDetailsTab.Progress.Complete => completedTasks.contains(task.id)
           }
       )
-      .toList
-      .sortBy(task => (task.tier, task.region, task.id))
 }

@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
-import ddm.common.model.Item
+import ddm.common.model.{Item, LeagueTask}
 import ddm.ui.PlanStorage
 import ddm.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import ddm.ui.dom.plans.LandingPage
@@ -53,13 +53,17 @@ object Bootstrap {
   private def questsJson: js.Object = js.native
 
   @js.native @JSImport("/data/diaryTasks.json", JSImport.Default)
-  private def diariesJson: js.Object = js.native
+  private def diaryTasksJson: js.Object = js.native
+
+  @js.native @JSImport("/data/leagueTasks.json", JSImport.Default)
+  private def leagueTasksJson: js.Object = js.native
 
   private def loadCache(toastBus: WriteBus[ToastHub.Toast]): Cache =
     Cache(
       decode[Set[Item]](itemsJson, toastBus, "Failed to decode item data"),
       decode[Set[Quest]](questsJson, toastBus, "Failed to decode quest data"),
-      decode[Set[DiaryTask]](diariesJson, toastBus, "Failed to decode diary data")
+      decode[Set[DiaryTask]](diaryTasksJson, toastBus, "Failed to decode diary task data"),
+      decode[Set[LeagueTask]](leagueTasksJson, toastBus, "Failed to decode league task data")
     )
 
   private def decode[T : Decoder](

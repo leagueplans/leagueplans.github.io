@@ -6,7 +6,8 @@ import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.airstream.ObservableOps.RichObserverTuple
-import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
+import ddm.ui.utils.laminar.FontAwesome
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom.html.OList
 import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent, Event}
 
@@ -58,7 +59,7 @@ object DragSortableList {
     val mouseOver = Var(false)
     val icon = L.div(
       L.cls(Styles.icon),
-      L.icon(FreeSolid.faGripVertical),
+      FontAwesome.icon(FreeSolid.faGripVertical),
       L.onMouseOver --> mouseOver.writer.contramap[Event](_ => true),
       L.onMouseLeave --> mouseOver.writer.contramap[Event](_ => false)
     )

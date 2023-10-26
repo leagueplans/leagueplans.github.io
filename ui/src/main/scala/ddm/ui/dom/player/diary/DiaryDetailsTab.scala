@@ -1,15 +1,17 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Var
+import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.L
 import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.player.task.{TaskDetailsTab, TaskFilters}
+import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.plan.Effect.CompleteDiaryTask
 import ddm.ui.model.player.Cache
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
+import ddm.ui.wrappers.fusejs.Fuse
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
 
 object DiaryDetailsTab {
   def apply(
@@ -20,11 +22,32 @@ object DiaryDetailsTab {
     regionVar: Var[Option[DiaryRegion]],
     tierVar: Var[Option[DiaryTier]]
   ): L.Div = {
-    val progressVar = Var(Option.empty[Progress])
+    val filters = Val(List(
+      TaskFilters.Filter(
+        id = "region",
+        label = "Region:",
+        DiaryRegion.all.map(region => (region, region.name)),
+        regionVar
+      ),
+      TaskFilters.Filter(
+        id = "tier",
+        label = "Tier:",
+        DiaryTier.all.map(tier => (tier, tier.toString)),
+        tierVar
+      )
+    ))
 
-    L.div(
-      L.cls(Styles.tab),
-      DiaryFilters(regionVar, tierVar, progressVar).amend(L.cls(Styles.filters)),
+    val fuse = new Fuse(
+      cache.diaryTasks.values.toList.sortBy(_.id),
+      new FuseOptions {
+        keys = js.defined(js.Array("description"))
+      }
+    )
+
+    TaskDetailsTab(
+      taskType = "diary",
+      fuse,
+      filters,
       DiaryTaskList(
         completedTasksSignal,
         cache,
@@ -32,22 +55,9 @@ object DiaryDetailsTab {
         contextMenuController,
         regionVar.signal,
         tierVar.signal,
-        progressVar.signal
-      ).amend(L.cls(Styles.tasks))
+        _,
+        _
+      )
     )
-  }
-
-  sealed trait Progress
-
-  object Progress {
-    case object Incomplete extends Progress
-    case object Complete extends Progress
-  }
-
-  @js.native @JSImport("/styles/player/diary/diaryDetailsTab.module.css", JSImport.Default)
-  private object Styles extends js.Object {
-    val tab: String = js.native
-    val tasks: String = js.native
-    val filters: String = js.native
   }
 }

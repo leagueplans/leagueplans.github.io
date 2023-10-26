@@ -71,6 +71,7 @@ object HelpButton {
           |- gain experience (right-click on the relevant skill)
           |- complete a quest (right-click on the quest in the quest list)
           |- complete a diary task (right-click on the task in the diary menu)
+          |- complete a league task (right-click on the task in the league menu)
           |
           |If defining a plan for the Shattered Relics league, then there is an additional effect available:
           |- unlock a skill (right-click on the relevant locked skill)

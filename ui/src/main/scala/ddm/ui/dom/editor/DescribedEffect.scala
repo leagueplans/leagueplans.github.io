@@ -8,7 +8,7 @@ import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Cache
 import ddm.ui.model.player.item.Stack
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.FontAwesome
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -30,7 +30,7 @@ object DescribedEffect {
               Stack(cache.items(item), note),
               Val(count)
             ).amend(L.cls(Styles.itemIcon)),
-            L.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
+            FontAwesome.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
         else
           line(
@@ -39,7 +39,7 @@ object DescribedEffect {
               Stack(cache.items(item), note),
               Val(-count)
             ).amend(L.cls(Styles.itemIcon)),
-            L.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
+            FontAwesome.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
 
       case Effect.MoveItem(item, count, source, notedInSource, target, notedInTarget) =>
@@ -49,7 +49,7 @@ object DescribedEffect {
             Val(count)
           ).amend(L.cls(Styles.itemIcon)),
           text(source.name),
-          L.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),
+          FontAwesome.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),
           text(target.name)
         )
 
@@ -71,8 +71,9 @@ object DescribedEffect {
         val region = task.region.name
         line(text(s"Completed $tier $region diary step: \"${task.description}\""))
 
-      case Effect.CompleteTask(task) =>
-        line(text(s"Completed \"${task.name}\" (${task.tier})"))
+      case Effect.CompleteLeagueTask(taskID) =>
+        val task = cache.leagueTasks(taskID)
+        line(text(s"Completed \"${task.name}: ${task.description}\""))
     }
 
   private def line(content: L.Modifier[L.Div]*): L.Div =

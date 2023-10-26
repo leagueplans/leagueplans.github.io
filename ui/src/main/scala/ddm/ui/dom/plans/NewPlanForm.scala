@@ -6,7 +6,7 @@ import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.dom.common.form.{Form, Select, TextInput}
 import ddm.ui.model.common.forest.{Forest, Tree}
 import ddm.ui.model.plan.{Plan, Step}
-import ddm.ui.model.player.mode.{LeaguesIII, LeaguesIV, MainGame, Mode}
+import ddm.ui.model.player.mode.Mode
 
 import java.util.UUID
 import scala.scalajs.js
@@ -64,7 +64,7 @@ object NewPlanForm {
   private def createModeSelect(): (L.Select, L.Label, Signal[Mode]) =
     Select(
       id = "new-plan-mode-select",
-      NonEmptyList.of(MainGame, LeaguesIII, LeaguesIV).map(mode =>
+      NonEmptyList.fromListUnsafe(Mode.all).map(mode =>
         Select.Opt(mode, mode.name)
       )
     )

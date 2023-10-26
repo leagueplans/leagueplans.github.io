@@ -18,6 +18,9 @@ object ShatteredRelicsTaskProperties {
     case object Clues extends Category { val name: String = "Clues" }
     case object General extends Category { val name: String = "General" }
 
+    val all: List[Category] =
+      List(General, Quest, Clues, Combat) ++ Skill.all.map(SkillCat)
+
     implicit val encoder: Encoder[Category] =
       Encoder[String].contramap(_.name)
 

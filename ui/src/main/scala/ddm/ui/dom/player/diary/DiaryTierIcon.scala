@@ -3,7 +3,7 @@ package ddm.ui.dom.player.diary
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.FontAwesome
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -22,7 +22,7 @@ object DiaryTierIcon {
         L.alt(s"$tier ${region.name} diary icon")
       ),
       Option.when(complete)(
-        L.icon(FreeSolid.faCheck).amend(
+        FontAwesome.icon(FreeSolid.faCheck).amend(
           L.svg.cls(Styles.completedSymbol, ColourStyles.completed)
         )
       )

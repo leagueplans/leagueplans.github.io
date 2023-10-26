@@ -4,7 +4,8 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
+import ddm.ui.utils.laminar.FontAwesome
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -55,7 +56,7 @@ object CollapsibleList {
     L.button(
       L.cls(Styles.listToggleHorizontal),
       L.`type`("button"),
-      L.icon(FreeSolid.faCaretRight),
+      FontAwesome.icon(FreeSolid.faCaretRight),
       L.span(
         L.cls(Styles.collapsedListAnnotation),
         L.child.text <-- countSignal.map(i => s"$i ${contentType}s hidden")
@@ -67,7 +68,7 @@ object CollapsibleList {
     L.button(
       L.cls(Styles.listToggleVertical),
       L.`type`("button"),
-      L.icon(FreeSolid.faCaretDown),
+      FontAwesome.icon(FreeSolid.faCaretDown),
       L.div(L.cls(Styles.collapseBanner)),
       L.onClick.handledAs(false) --> showSubSteps
     )

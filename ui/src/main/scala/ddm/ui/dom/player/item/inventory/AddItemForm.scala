@@ -10,7 +10,7 @@ import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
-import ddm.ui.utils.laminar.LaminarOps.RichL
+import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
 
 import scala.scalajs.js
@@ -114,7 +114,7 @@ object AddItemForm {
         L.cls(Styles.label),
         L.div(
           L.cls(Styles.infoIcon),
-          L.icon(FreeSolid.faCircleInfo),
+          FontAwesome.icon(FreeSolid.faCircleInfo),
         ),
         Tooltip(L.p("This input will be ignored for items that cannot be noted.")),
         "Note:"

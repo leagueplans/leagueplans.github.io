@@ -14,13 +14,13 @@ object LeagueTaskArea {
   case object Fremennik extends LeagueTaskArea { val name: String = "Fremennik Provinces" }
   case object Kandarin extends LeagueTaskArea { val name: String = "Kandarin" }
   case object Desert extends LeagueTaskArea { val name: String = "Kharidian Desert" }
+  case object Kourend extends LeagueTaskArea { val name: String = "Kourend & Kebos" }
   case object Morytania extends LeagueTaskArea { val name: String = "Morytania" }
   case object Tirannwn extends LeagueTaskArea { val name: String = "Tirannwn" }
   case object Wilderness extends LeagueTaskArea { val name: String = "Wilderness" }
-  case object Kourend extends LeagueTaskArea { val name: String = "Kourend & Kebos" }
 
-  val all: Set[LeagueTaskArea] =
-    Set(Global, Misthalin, Karamja, Asgarnia, Fremennik, Kandarin, Desert, Morytania, Tirannwn, Wilderness, Kourend)
+  val all: List[LeagueTaskArea] =
+    List(Global, Misthalin, Karamja, Asgarnia, Fremennik, Kandarin, Desert, Kourend, Morytania, Tirannwn, Wilderness)
 
   private val nameToArea: Map[String, LeagueTaskArea] =
     all.map(area => area.name -> area).toMap

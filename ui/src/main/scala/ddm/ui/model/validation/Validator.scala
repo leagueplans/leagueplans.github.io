@@ -2,7 +2,6 @@ package ddm.ui.model.validation
 
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.Level
 import ddm.ui.model.player.{Cache, Player}
 
@@ -74,23 +73,13 @@ object Validator {
       }
     }
 
-  def taskIncomplete(task: Task): Validator =
+  def leagueTaskIncomplete(taskID: Int): Validator =
     new Validator {
       def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
-          !player.leagueStatus.tasksCompleted.contains(task),
+          !player.leagueStatus.completedTasks.contains(taskID),
           right = (),
-          left = s"${task.name} has already been completed"
-        )
-    }
-
-  val hasPositiveRenown: Validator =
-    new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] =
-        Either.cond(
-          player.leagueStatus.expectedRenown >= 0,
-          right = (),
-          left = s"Not enough renown to make that purchase"
+          left = s"\"${cache.leagueTasks(taskID).description}\" has already been completed"
         )
     }
 }

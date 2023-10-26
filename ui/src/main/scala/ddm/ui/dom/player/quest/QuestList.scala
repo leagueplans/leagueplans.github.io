@@ -86,11 +86,10 @@ object QuestList {
       toFuse(quests),
       id = "quest-list-fuse-search",
       initial = "",
-      maxResults = quests.size,
-      defaultResults = quests
+      maxResults = quests.size
     )
 
-    (search.amend(L.placeholder("filter")), signal)
+    (search.amend(L.placeholder("filter")), signal.map(_.getOrElse(quests)))
   }
 
 

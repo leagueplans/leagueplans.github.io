@@ -7,7 +7,8 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.{EditableParagraph, Forester}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
-import ddm.ui.utils.laminar.LaminarOps.{RichEventProp, RichL}
+import ddm.ui.utils.laminar.FontAwesome
+import ddm.ui.utils.laminar.LaminarOps.RichEventProp
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
 
@@ -39,8 +40,8 @@ object StepDescription {
       L.cls(Styles.editingToggle),
       L.`type`("button"),
       L.child <-- isEditingState.signal.map {
-        case false => L.icon(FreeRegular.faPenToSquare)
-        case true => L.icon(FreeRegular.faSquareCheck)
+        case false => FontAwesome.icon(FreeRegular.faPenToSquare)
+        case true => FontAwesome.icon(FreeRegular.faSquareCheck)
       },
       L.onClick.ifUnhandledF(
         _.map(_.preventDefault()).sample(isEditingState).map(!_)

@@ -12,8 +12,8 @@ object LeagueTaskTier {
   case object Elite extends LeagueTaskTier
   case object Master extends LeagueTaskTier
 
-  val all: Set[LeagueTaskTier] =
-    Set(Beginner, Easy, Medium, Hard, Elite, Master)
+  val all: List[LeagueTaskTier] =
+    List(Beginner, Easy, Medium, Hard, Elite, Master)
 
   private val nameToTier: Map[String, LeagueTaskTier] =
     all.map(tier => tier.toString -> tier).toMap

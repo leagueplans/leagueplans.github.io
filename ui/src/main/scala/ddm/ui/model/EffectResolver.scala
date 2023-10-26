@@ -51,10 +51,10 @@ object EffectResolver {
           player.leagueStatus.copy(multiplier = multiplier)
         )
 
-      case Effect.CompleteTask(task) =>
+      case Effect.CompleteLeagueTask(task) =>
         player.copy(leagueStatus =
-          player.leagueStatus.copy(tasksCompleted =
-            player.leagueStatus.tasksCompleted + task
+          player.leagueStatus.copy(completedTasks =
+            player.leagueStatus.completedTasks + task
           )
         )
 

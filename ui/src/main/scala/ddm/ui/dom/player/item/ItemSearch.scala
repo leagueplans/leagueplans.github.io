@@ -29,11 +29,10 @@ object ItemSearch {
         items,
         s"$id-fuse-search",
         initial = "",
-        maxResults = 30,
-        defaultResults = List.empty
+        maxResults = 30
       )
 
-    (search.amend(L.placeholder("Logs")), label.amend("Item:"), options)
+    (search.amend(L.placeholder("Logs")), label.amend("Item:"), options.map(_.getOrElse(List.empty)))
   }
 
   private def radioGroup(

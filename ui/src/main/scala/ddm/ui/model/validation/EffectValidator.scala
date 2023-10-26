@@ -28,7 +28,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
       case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, cache)
       case e: SetMultiplier => empty.validate(e)(player, cache)
-      case e: CompleteTask => completeTaskValidator.validate(e)(player, cache)
+      case e: CompleteLeagueTask => completeTaskValidator.validate(e)(player, cache)
     }
 
   private def empty[E <: Effect]: EffectValidator[E] =
@@ -55,7 +55,7 @@ object EffectValidator extends EffectValidator[Effect] {
   private val unlockSkillValidator: EffectValidator[UnlockSkill] =
     from(
       pre = _ => List.empty,
-      post = _ => List(Validator.hasPositiveRenown)
+      post = _ => List.empty
     )
 
   private val completeQuestValidator: EffectValidator[CompleteQuest] =
@@ -70,9 +70,9 @@ object EffectValidator extends EffectValidator[Effect] {
       post = _ => List.empty
     )
 
-  private val completeTaskValidator: EffectValidator[CompleteTask] =
+  private val completeTaskValidator: EffectValidator[CompleteLeagueTask] =
     from(
-      pre = effect => List(Validator.taskIncomplete(effect.task)),
+      pre = effect => List(Validator.leagueTaskIncomplete(effect.task)),
       post = _ => List.empty
     )
 
