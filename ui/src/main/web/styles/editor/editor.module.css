@@ -32,9 +32,11 @@
   align-self: flex-start;
   flex-grow: 1;
 
+  max-height: 100%;
   max-height: -webkit-fill-available;
-  max-height: -moz-available;
+  /*max-height: -moz-available; Does not work for height */
   max-height: fill-available;
+  box-sizing: border-box;
 
   margin: 0.5rem;
 
