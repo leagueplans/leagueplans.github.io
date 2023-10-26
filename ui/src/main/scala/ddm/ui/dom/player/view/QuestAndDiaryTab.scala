@@ -21,7 +21,7 @@ object QuestAndDiaryTab {
     L.div(
       L.cls(Styles.tabContent),
       QuestList(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.questPanel)),
-      DiaryPanel(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.diaryPanel)),
+      DiaryPanel(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.diaryPanel))
     )
 
   @js.native @JSImport("/styles/player/view/questAndDiaryTab.module.css", JSImport.Default)

@@ -1,0 +1,18 @@
+.tabContent {
+  display: flex;
+  justify-content: space-around;
+}
+
+.junkPanel {
+  min-width: 25%;
+  max-width: 27%;
+  box-sizing: border-box;
+
+  color: white;
+}
+
+.tasksPanel {
+  width: 70%;
+  max-width: 44rem;
+  box-sizing: border-box;
+}

@@ -9,14 +9,13 @@ object FuseSearch {
     fuse: Fuse[T],
     id: String,
     initial: String,
-    maxResults: Int,
-    defaultResults: List[T]
-  ): (L.Input, L.Label, Signal[List[T]])  = {
+    maxResults: Int
+  ): (L.Input, L.Label, Signal[Option[List[T]]])  = {
     val (input, label, query) = TextInput(TextInput.Type.Search, id, initial)
 
     val results = query.composeChanges(_.debounce(ms = 200)).map {
-      case "" => defaultResults
-      case q => fuse.search(q, maxResults)
+      case "" => None
+      case q => Some(fuse.search(q, maxResults))
     }
 
     (input, label, results)

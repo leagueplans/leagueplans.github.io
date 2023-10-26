@@ -1,9 +1,10 @@
 package ddm.ui.model.player.mode
 
-import ddm.common.model.Skill
+import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.league.LeagueStatus
 import ddm.common.model.Skill.{Agility, Herblore, Hitpoints, Runecraft}
+import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.skill.{Level, Stats}
 
 object LeaguesIV extends Mode.League {
@@ -11,11 +12,17 @@ object LeaguesIV extends Mode.League {
 
   val initialPlayer: Player =
     MainGame.initialPlayer.copy(
-      Stats(
+      stats = Stats(
         Agility -> Level(10).bound,
         Herblore -> Level(3).bound,
         Hitpoints -> Level(10).bound,
         Runecraft -> Level(5).bound,
+      ),
+      depositories = MainGame.initialPlayer.depositories + (
+        Depository.Kind.Inventory -> Depository(
+          MainGame.initialInventory + ((Item.ID("77ce3f14-9a1c-46c1-8ec1-b11440095206"), false) -> 1), // Dramen staff
+          Depository.Kind.Inventory
+        )
       ),
       completedQuests = Set(
         3, // Restless ghost
@@ -70,7 +77,7 @@ object LeaguesIV extends Mode.League {
       ),
       leagueStatus = LeagueStatus(
         multiplier = 5,
-        tasksCompleted = Set.empty,
+        completedTasks = Set.empty,
         skillsUnlocked = Skill.all.toSet
       )
     )

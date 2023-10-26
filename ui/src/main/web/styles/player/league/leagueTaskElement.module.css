@@ -1,0 +1,12 @@
+.element {
+  text-shadow: 1px 1px black;
+}
+
+.name {
+  margin-bottom: 0.2rem;
+}
+
+.description {
+  color: orange;
+  font-size: 0.8rem;
+}

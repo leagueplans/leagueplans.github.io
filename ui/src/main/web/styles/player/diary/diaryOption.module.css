@@ -1,4 +1,6 @@
 .option {
+  height: 5.8rem;
+
   border: solid;
   border-width: 1px;
   border-radius: 0.3rem;

@@ -2,7 +2,6 @@ package ddm.ui.model.plan
 
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.league.Task
 import ddm.ui.model.player.skill.Exp
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
@@ -29,5 +28,5 @@ object Effect {
 
   final case class CompleteQuest(quest: Int) extends Effect
   final case class CompleteDiaryTask(task: Int) extends Effect
-  final case class CompleteTask(task: Task) extends Effect
+  final case class CompleteLeagueTask(task: Int) extends Effect
 }

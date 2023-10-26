@@ -7,11 +7,11 @@ import ddm.ui.model.player.league.LeagueStatus
 object LeaguesIII extends Mode.League {
   val name: String = "Leagues III: Shattered Relics"
 
-  val initialPlayer: Player = {
+  val initialPlayer: Player =
     MainGame.initialPlayer.copy(
       leagueStatus = LeagueStatus(
         multiplier = 5,
-        tasksCompleted = Set.empty,
+        completedTasks = Set.empty,
         skillsUnlocked = Set(
           Skill.Defence,
           Skill.Fishing,
@@ -19,5 +19,4 @@ object LeaguesIII extends Mode.League {
         )
       )
     )
-  }
 }

@@ -1,12 +1,11 @@
 package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, seqToModifier}
+import com.raquo.laminar.api.L
+import ddm.ui.dom.player.task.TaskSummaryTab
 import ddm.ui.model.player.Cache
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTask, DiaryTier}
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
 import scala.util.chaining.scalaUtilChainingOps
 
 object DiarySummaryTab {
@@ -18,8 +17,7 @@ object DiarySummaryTab {
   ): L.Div = {
     val groupedTasks = groupTasks(cache)
 
-    L.div(
-      L.cls(Styles.diaryOptions),
+    TaskSummaryTab(
       DiaryRegion.all.map { region =>
         val tiers = groupedTasks(region)
         DiaryOption(
@@ -30,15 +28,9 @@ object DiarySummaryTab {
           completedEliteSignal = completedTasksSignal.map(isTierComplete(tiers(DiaryTier.Elite), _)),
           regionObserver = regionObserver.contramap[Unit](_ => region),
           tierObserver = tierObserver
-        ).amend(L.cls(Styles.option))
+        )
       }
     )
-  }
-
-  @js.native @JSImport("/styles/player/diary/diarySummaryTab.module.css", JSImport.Default)
-  private object Styles extends js.Object {
-    val diaryOptions: String = js.native
-    val option: String = js.native
   }
 
   private def groupTasks(cache: Cache): Map[DiaryRegion, Map[DiaryTier, List[DiaryTask]]] =

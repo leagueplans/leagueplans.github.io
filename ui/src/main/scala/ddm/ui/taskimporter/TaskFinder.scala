@@ -12,14 +12,14 @@ import scala.scalajs.js.annotation.JSImport
 
 object TaskFinder {
   def apply(newTask: LeagueTask, existingOptions: List[LeagueTask]): (L.Div, EventStream[LeagueTask]) = {
-    val nameFuse = new Fuse[LeagueTask](
+    val nameFuse = new Fuse(
       existingOptions,
       new FuseOptions {
         keys = js.defined(js.Array("name"))
       }
     )
 
-    val descriptionFuse = new Fuse[LeagueTask](
+    val descriptionFuse = new Fuse(
       existingOptions,
       new FuseOptions {
         keys = js.defined(js.Array("description"))
@@ -59,11 +59,14 @@ object TaskFinder {
     searchType: String
   ): (L.Div, Signal[Option[LeagueTask]]) = {
     val (search, label, results) =
-      FuseSearch(fuse, s"$searchType-search", default, maxResults = 20, defaultResults = List.empty)
+      FuseSearch(fuse, s"$searchType-search", default, maxResults = 20)
 
     val (radios, selection) = RadioGroup[LeagueTask](
       s"$searchType-radios",
-      results.map(_.map(task => RadioGroup.Opt(task, task.id.toString))),
+      results.map(
+        _.getOrElse(List.empty)
+          .map(task => RadioGroup.Opt(task, task.id.toString))
+      ),
       render = (task, checked, radio, label) => StylisedRadio(toNode(task), checked, radio, label)
     )
 

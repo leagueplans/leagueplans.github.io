@@ -10,7 +10,7 @@ import ddm.ui.model.player.skill.{Level, Stats}
 object MainGame extends Mode {
   val name: String = "Main game"
 
-  private val initialInventory: Map[(Item.ID, Boolean), Int] =
+  val initialInventory: Map[(Item.ID, Boolean), Int] =
     Map(
       Item.ID("7373d5e6-4448-405c-b0be-94d9281a95aa") -> 1, // Bronze axe
       Item.ID("42979c46-3789-4a4a-b3b9-c8c36083fc14") -> 1, // Bronze pickaxe
@@ -32,7 +32,7 @@ object MainGame extends Mode {
       Item.ID("3656ba5e-4024-480b-aac5-fd40a9216d00") -> 2 // Body rune
     ).map { case (id, quantity) => (id, false) -> quantity }
 
-  private val initialBank: Map[(Item.ID, Boolean), Int] =
+  val initialBank: Map[(Item.ID, Boolean), Int] =
     Map(
       (Item.ID("776d8d8a-c51e-459f-93ee-8dd468c4703e"), false) -> 25 // Coins
     )
@@ -48,7 +48,7 @@ object MainGame extends Mode {
       completedDiaryTasks = Set.empty,
       leagueStatus = LeagueStatus(
         multiplier = 1,
-        tasksCompleted = Set.empty,
+        completedTasks = Set.empty,
         skillsUnlocked = Skill.all.toSet
       )
     )

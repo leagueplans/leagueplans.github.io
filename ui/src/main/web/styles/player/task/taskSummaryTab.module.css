@@ -6,8 +6,6 @@
 
 .option {
   margin: 0.25rem;
-  height: 5.8rem;
-
   flex-grow: 1;
   flex-basis: 0;
 }
