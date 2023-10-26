@@ -31,7 +31,6 @@ object FontAwesome {
 
   private def toNamespacePrefix(key: String): Option[String] =
     key match {
-      case "xmlns" => Some("xmlns")
       case s"$prefix:$_" => Some(prefix)
       case _ => None
     }
