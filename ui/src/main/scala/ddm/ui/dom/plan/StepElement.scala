@@ -141,8 +141,8 @@ object StepElement {
       "Cut",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString))
-      }) --> closer,
+        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString), emitOnce = true)
+      }) --> closer
     )
 
   private def pasteButton(
@@ -162,8 +162,8 @@ object StepElement {
       "Paste",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.readText())
-      }) --> Observer.combine(stepMover, closer),
+        EventStream.fromJsPromise(window.navigator.clipboard.readText(), emitOnce = true)
+      }) --> Observer.combine(stepMover, closer)
     )
   }
 
