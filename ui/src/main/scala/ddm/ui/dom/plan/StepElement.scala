@@ -125,12 +125,15 @@ object StepElement {
       Signal
         .combine(editingEnabledSignal, isCompleteSignal)
         .map { case (editingEnabled, isComplete) =>
-          Option.when(editingEnabled)(
-            L.div(
-              cutButton(stepID, closer),
-              pasteButton(stepID, stepUpdater, closer),
-              changeStatusButton(isComplete, completionStatusObserver, closer)
-            )
+          Some(
+            if (editingEnabled)
+              L.div(
+                cutButton(stepID, closer),
+                pasteButton(stepID, stepUpdater, closer),
+                changeStatusButton(isComplete, completionStatusObserver, closer)
+              )
+            else
+              L.div(changeStatusButton(isComplete, completionStatusObserver, closer))
           )
         }
     )
