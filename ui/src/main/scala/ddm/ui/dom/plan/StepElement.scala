@@ -125,12 +125,15 @@ object StepElement {
       Signal
         .combine(editingEnabledSignal, isCompleteSignal)
         .map { case (editingEnabled, isComplete) =>
-          Option.when(editingEnabled)(
-            L.div(
-              cutButton(stepID, closer),
-              pasteButton(stepID, stepUpdater, closer),
-              changeStatusButton(isComplete, completionStatusObserver, closer)
-            )
+          Some(
+            if (editingEnabled)
+              L.div(
+                cutButton(stepID, closer),
+                pasteButton(stepID, stepUpdater, closer),
+                changeStatusButton(isComplete, completionStatusObserver, closer)
+              )
+            else
+              L.div(changeStatusButton(isComplete, completionStatusObserver, closer))
           )
         }
     )
@@ -141,8 +144,8 @@ object StepElement {
       "Cut",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString))
-      }) --> closer,
+        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString), emitOnce = true)
+      }) --> closer
     )
 
   private def pasteButton(
@@ -162,8 +165,8 @@ object StepElement {
       "Paste",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.readText())
-      }) --> Observer.combine(stepMover, closer),
+        EventStream.fromJsPromise(window.navigator.clipboard.readText(), emitOnce = true)
+      }) --> Observer.combine(stepMover, closer)
     )
   }
 
