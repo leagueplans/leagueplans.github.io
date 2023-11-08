@@ -111,9 +111,11 @@ object LeagueTaskList {
         tierFilter.forall(tier =>
           task.leagues1Props.contains(tier) ||
             task.leagues2Props.exists(_.tier == tier) ||
-            task.leagues3Props.exists(_.tier == tier)
+            task.leagues3Props.exists(_.tier == tier) ||
+            task.leagues4Props.exists(_.tier == tier)
         ) && areaFilter.forall(area =>
-          task.leagues2Props.exists(_.area == area)
+          task.leagues2Props.exists(_.area == area) ||
+          task.leagues4Props.exists(_.area == area)
         ) && leagues3CategoryFilter.forall(category =>
           task.leagues3Props.exists(_.category == category)
         )
