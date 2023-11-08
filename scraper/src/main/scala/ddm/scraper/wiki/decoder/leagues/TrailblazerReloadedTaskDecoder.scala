@@ -4,7 +4,7 @@ import ddm.common.model.{LeagueTask, LeagueTaskArea, LeagueTaskTier, Trailblazer
 import ddm.scraper.wiki.decoder._
 import ddm.scraper.wiki.parser.Term
 
-object TrailblazerTaskDecoder {
+object TrailblazerReloadedTaskDecoder {
   def decode(index: Int, tier: LeagueTaskTier, area: LeagueTaskArea, task: Term.Template): DecoderResult[LeagueTask] =
     task.anonParams match {
       case encodedName :: encodedDescription :: _ =>
@@ -16,9 +16,9 @@ object TrailblazerTaskDecoder {
           name.raw,
           description.raw,
           leagues1Props = None,
-          leagues2Props = Some(TrailblazerTaskProperties(tier, area)),
+          leagues2Props = None,
           leagues3Props = None,
-          leagues4Props = None
+          leagues4Props = Some(TrailblazerTaskProperties(tier, area))
         )
 
       case _ =>

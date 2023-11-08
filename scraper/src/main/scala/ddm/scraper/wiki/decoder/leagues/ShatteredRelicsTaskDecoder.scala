@@ -22,7 +22,8 @@ object ShatteredRelicsTaskDecoder {
           description.raw,
           leagues1Props = None,
           leagues2Props = None,
-          leagues3Props = Some(ShatteredRelicsTaskProperties(tier, category))
+          leagues3Props = Some(ShatteredRelicsTaskProperties(tier, category)),
+          leagues4Props = None
         )
 
       case _ =>
