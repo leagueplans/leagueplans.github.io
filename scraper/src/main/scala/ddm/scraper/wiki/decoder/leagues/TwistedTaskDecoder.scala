@@ -17,7 +17,8 @@ object TwistedTaskDecoder {
           description.raw,
           leagues1Props = Some(tier),
           leagues2Props = None,
-          leagues3Props = None
+          leagues3Props = None,
+          leagues4Props = None
         )
 
       case _ =>
