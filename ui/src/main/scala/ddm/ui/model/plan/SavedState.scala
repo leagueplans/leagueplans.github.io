@@ -8,14 +8,14 @@ import io.circe.generic.semiauto.deriveCodec
 import java.util.UUID
 import scala.annotation.nowarn
 
-object Plan {
-  implicit val codec: Codec[Plan] = {
+object SavedState {
+  implicit val codec: Codec[SavedState] = {
     @nowarn("msg=local val stepsCodec in value codec is never used")
     implicit val stepsCodec: Codec[Forest[UUID, Step]] = Forest.codec(_.id)
-    deriveCodec[Plan]
+    deriveCodec[SavedState]
   }
 
-  final case class Named(name: String, plan: Plan)
+  final case class Named(name: String, savedState: SavedState)
 }
 
-final case class Plan(mode: Mode, steps: Forest[UUID, Step])
+final case class SavedState(mode: Mode, steps: Forest[UUID, Step])

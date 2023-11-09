@@ -8,7 +8,7 @@ import ddm.common.model.{Item, LeagueTask}
 import ddm.ui.PlanStorage
 import ddm.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import ddm.ui.dom.plans.LandingPage
-import ddm.ui.model.plan.Plan
+import ddm.ui.model.plan.SavedState
 import ddm.ui.model.player.diary.DiaryTask
 import ddm.ui.model.player.{Cache, Quest}
 import io.circe.Decoder
@@ -26,7 +26,7 @@ object Bootstrap {
 
     val pageVar = Var[L.Node](L.emptyNode)
     val loadedPlanObserver =
-      pageVar.writer.contramap[Plan.Named](
+      pageVar.writer.contramap[SavedState.Named](
         PlanningPage(storage, _, loadCache(toastBus), contextMenuController, modalBus, toastBus)
       )
     pageVar.writer.onNext(LandingPage(storage, loadedPlanObserver, toastBus, modalBus))

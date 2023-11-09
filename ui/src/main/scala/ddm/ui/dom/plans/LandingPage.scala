@@ -7,7 +7,7 @@ import ddm.ui.PlanStorage
 import ddm.ui.PlanStorage.Result
 import ddm.ui.dom.common.ToastHub
 import ddm.ui.dom.common.ToastHub.Toast
-import ddm.ui.model.plan.Plan
+import ddm.ui.model.plan.SavedState
 import org.scalajs.dom.console
 
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -17,7 +17,7 @@ import scala.scalajs.js.annotation.JSImport
 object LandingPage {
   def apply(
     planStorage: PlanStorage,
-    planObserver: Observer[Plan.Named],
+    planObserver: Observer[SavedState.Named],
     toastBus: WriteBus[Toast],
     modalBus: WriteBus[Option[L.Element]]
   ): L.Div = {

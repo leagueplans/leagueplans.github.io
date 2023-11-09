@@ -2,7 +2,7 @@ package ddm.ui
 
 import com.raquo.airstream.state.{StrictSignal, Var}
 import ddm.ui.PlanStorage.Result
-import ddm.ui.model.plan.Plan
+import ddm.ui.model.plan.SavedState
 import io.circe.Error
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
@@ -14,7 +14,7 @@ object PlanStorage {
   sealed trait Result
 
   object Result {
-    final case class Success(plan: Plan.Named) extends Result
+    final case class Success(plan: SavedState.Named) extends Result
     final case class Failure(error: Error) extends Result
     case object None extends Result
   }
@@ -33,15 +33,15 @@ final class PlanStorage(delegate: Storage) {
       .collect { case s"${`planNamespace`}:$name" => name }
       .toSet
 
-  def savePlan(namedPlan: Plan.Named): Try[Unit] =
-    Try(delegate.setItem(toKey(namedPlan.name), namedPlan.plan.asJson.noSpaces)).map { _ =>
+  def savePlan(namedPlan: SavedState.Named): Try[Unit] =
+    Try(delegate.setItem(toKey(namedPlan.name), namedPlan.savedState.asJson.noSpaces)).map { _ =>
       plansVar.update(_ + namedPlan.name)
       ()
     }
 
   def loadPlan(name: String): Result =
-    rawPlanData(name).map(decode[Plan](_)) match {
-      case Some(Right(plan)) => Result.Success(Plan.Named(name, plan))
+    rawPlanData(name).map(decode[SavedState](_)) match {
+      case Some(Right(plan)) => Result.Success(SavedState.Named(name, plan))
       case Some(Left(error)) => Result.Failure(error)
       case None => Result.None
     }
