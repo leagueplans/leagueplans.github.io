@@ -11,14 +11,14 @@ object FormOpener {
     modalBus: WriteBus[Option[L.Element]],
     formObserver: Sink[T],
     toForm: () => (L.FormElement, Observable[T])
-  ): Observer[Command] = {
-    val (form, formSubmissions) = toForm()
-    val selfClosingForm =
-      form.amend(
-        formSubmissions --> formObserver,
-        formSubmissions.mapToStrict(None) --> modalBus
-      )
-
-    (modalBus.contramap[Command](_ => Some(selfClosingForm)))
-  }
+  ): Observer[Command] =
+    modalBus.contramap[Command] { _ =>
+      val (form, formSubmissions) = toForm()
+      val selfClosingForm =
+        form.amend(
+          formSubmissions --> formObserver,
+          formSubmissions.mapToStrict(None) --> modalBus
+        )
+      Some(selfClosingForm)
+    }
 }

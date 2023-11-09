@@ -26,14 +26,15 @@ object InventoryContextMenu {
     itemFuse: Fuse[Item],
     effectObserver: Observer[AddItem],
     modalBus: WriteBus[Option[L.Element]]
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalBus)
+  ): Observer[FormOpener.Command] =
     FormOpener(
       modalBus,
       effectObserver,
-      () => (form, formSubmissions.collect { case Some(effect) => effect })
+      () => {
+        val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalBus)
+        (form, formSubmissions.collect { case Some(effect) => effect })
+      }
     )
-  }
 
   private def toElement(
     addItemFormOpener: Observer[FormOpener.Command],
