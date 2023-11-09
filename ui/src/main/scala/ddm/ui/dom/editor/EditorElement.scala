@@ -108,16 +108,14 @@ object EditorElement {
     parentID: UUID,
     modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit]
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = NewStepForm()
+  ): Observer[FormOpener.Command] =
     FormOpener(
       modalBus,
       stepUpdater.contracollect[Option[Step]] { case Some(newStep) => forester =>
         forester.add(newStep, parentID)
       },
-      () => (form, formSubmissions)
+      () => NewStepForm()
     )
-  }
 
   private def toEffects(
     cache: Cache,
@@ -170,14 +168,12 @@ object EditorElement {
     stepID: UUID,
     modalBus: WriteBus[Option[L.Element]],
     stepUpdater: Observer[Forester[UUID, Step] => Unit]
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = NewRequirementForm(itemFuse)
+  ): Observer[FormOpener.Command] =
     FormOpener(
       modalBus,
       stepUpdater.contracollect[Option[Requirement]] { case Some(newRequirement) => forester =>
         forester.update(stepID, step => step.copy(requirements = step.requirements :+ newRequirement))
       },
-      () => (form, formSubmissions)
+      () => NewRequirementForm(itemFuse)
     )
-  }
 }
