@@ -14,7 +14,7 @@ import ddm.ui.dom.player.Visualiser
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
-import ddm.ui.model.plan.{Effect, Plan, Step}
+import ddm.ui.model.plan.{Effect, SavedState, Step}
 import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
@@ -29,7 +29,7 @@ import scala.util.{Failure, Success}
 object PlanningPage {
   def apply(
     planStorage: PlanStorage,
-    initialPlan: Plan.Named,
+    initialPlan: SavedState.Named,
     cache: Cache,
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]],
@@ -44,7 +44,7 @@ object PlanningPage {
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
-      initialPlan.plan.steps,
+      initialPlan.savedState.steps,
       focusedStepID.signal,
       editingEnabled = Val(true),
       contextMenuController,
@@ -54,10 +54,11 @@ object PlanningPage {
     val stateSignal =
       Signal
         .combine(forester.forestSignal, focusedStepID)
-        .map { case (forestSignal, focusedStep) => State(forestSignal, focusedStep, initialPlan.plan.mode) }
+        .map { case (forestSignal, focusedStep) => State(forestSignal, focusedStep, initialPlan.savedState.mode) }
 
     val visualiser = Visualiser(
       stateSignal.map(_.playerAtFocusedStep),
+      initialPlan.savedState.mode,
       cache,
       itemFuse,
       addEffectToFocus(focusedStepID.signal, forester),
@@ -83,9 +84,9 @@ object PlanningPage {
       ),
       planElement.amend(L.cls(Styles.plan)),
       HelpButton(modalBus).amend(L.cls(Styles.help)),
-      forester.forestSignal.map(steps =>
-        Plan.Named(initialPlan.name, Plan(initialPlan.plan.mode, steps))
-      ) --> Observer[Plan.Named](plan => planStorage.savePlan(plan) match {
+      forester.forestSignal.changes.debounce(ms = 500).map(steps =>
+        SavedState.Named(initialPlan.name, SavedState(initialPlan.savedState.mode, steps))
+      ) --> Observer[SavedState.Named](plan => planStorage.savePlan(plan) match {
         case Failure(error) =>
           console.log(message = s"Failed to save plan [${error.getMessage}]")
           toastBus.onNext(Toast(ToastHub.Type.Warning, 15.seconds, L.span("Failed to save plan")))

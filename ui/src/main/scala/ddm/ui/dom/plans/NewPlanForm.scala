@@ -5,7 +5,7 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.dom.common.form.{Form, Select, TextInput}
 import ddm.ui.model.common.forest.{Forest, Tree}
-import ddm.ui.model.plan.{Plan, Step}
+import ddm.ui.model.plan.{SavedState, Step}
 import ddm.ui.model.player.mode.Mode
 
 import java.util.UUID
@@ -13,7 +13,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object NewPlanForm {
-  def apply(existingPlansSignal: Signal[Set[String]]): (L.FormElement, EventStream[Plan.Named]) = {
+  def apply(existingPlansSignal: Signal[Set[String]]): (L.FormElement, EventStream[SavedState.Named]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (nameInput, nameLabel, nameSignal) = toNameInput(existingPlansSignal)
     val (modeSelect, modeLabel, modeSignal) = createModeSelect()
@@ -73,7 +73,7 @@ object NewPlanForm {
     formSubmissions: EventStream[Unit],
     nameSignal: Signal[String],
     modeSignal: Signal[Mode]
-  ): EventStream[Plan.Named] =
+  ): EventStream[SavedState.Named] =
     formSubmissions
       .sample(Signal.combine(nameSignal, modeSignal))
       .map { case (name, mode) =>
@@ -81,6 +81,6 @@ object NewPlanForm {
           List(Tree(Step(name), children = List.empty)),
           _.id
         )
-        Plan.Named(name, Plan(mode, steps))
+        SavedState.Named(name, SavedState(mode, steps))
       }
 }
