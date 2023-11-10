@@ -27,12 +27,8 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, cache)
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
       case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, cache)
-      case e: SetMultiplier => empty.validate(e)(player, cache)
       case e: CompleteLeagueTask => completeTaskValidator.validate(e)(player, cache)
     }
-
-  private def empty[E <: Effect]: EffectValidator[E] =
-    from(_ => List.empty, _ => List.empty)
 
   private val gainExpValidator: EffectValidator[GainExp] =
     from(
@@ -82,7 +78,7 @@ object EffectValidator extends EffectValidator[Effect] {
   ): EffectValidator[E] =
     new EffectValidator[E] {
       def validate(effect: E)(player: Player, cache: Cache): (List[String], Player) = {
-        val postEffectPlayer = EffectResolver.resolve(player, effect)
+        val postEffectPlayer = EffectResolver.resolve(player, cache, effect)
         val errors =
           collectErrors(pre(effect))(player, cache) ++
             collectErrors(post(effect))(postEffectPlayer, cache)

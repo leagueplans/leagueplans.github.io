@@ -54,7 +54,7 @@ object PlanningPage {
     val stateSignal =
       Signal
         .combine(forester.forestSignal, focusedStepID)
-        .map { case (forestSignal, focusedStep) => State(forestSignal, focusedStep, initialPlan.savedState.mode) }
+        .map { case (forestSignal, focusedStep) => State(cache, forestSignal, focusedStep, initialPlan.savedState.mode) }
 
     val visualiser = Visualiser(
       stateSignal.map(_.playerAtFocusedStep),
@@ -107,6 +107,7 @@ object PlanningPage {
   }
 
   private final case class State(
+    cache: Cache,
     plan: Forest[UUID, Step],
     focusedStepID: Option[UUID],
     mode: Mode
@@ -127,12 +128,14 @@ object PlanningPage {
     val playerPreFocusedStep: Player =
       EffectResolver.resolve(
         mode.initialPlayer,
+        cache,
         progressedSteps.flatMap(_.directEffects.underlying): _*
       )
 
     val playerAtFocusedStep: Player =
       EffectResolver.resolve(
         playerPreFocusedStep,
+        cache,
         focusedStep.toList.flatMap(_.directEffects.underlying): _*
       )
   }

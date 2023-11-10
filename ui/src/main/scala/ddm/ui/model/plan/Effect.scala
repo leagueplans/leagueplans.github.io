@@ -24,7 +24,6 @@ object Effect {
   ) extends Effect
 
   final case class UnlockSkill(skill: Skill) extends Effect
-  final case class SetMultiplier(multiplier: Int) extends Effect
 
   final case class CompleteQuest(quest: Int) extends Effect
   final case class CompleteDiaryTask(task: Int) extends Effect
