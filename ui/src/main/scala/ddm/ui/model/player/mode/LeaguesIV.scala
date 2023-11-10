@@ -1,10 +1,10 @@
 package ddm.ui.model.player.mode
 
+import ddm.common.model.Skill.{Agility, Herblore, Hitpoints, Runecraft}
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.Player
-import ddm.ui.model.player.league.LeagueStatus
-import ddm.common.model.Skill.{Agility, Herblore, Hitpoints, Runecraft}
 import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.league.{ExpMultiplierStrategy, LeagueStatus}
 import ddm.ui.model.player.skill.{Level, Stats}
 
 object LeaguesIV extends Mode.League {
@@ -76,9 +76,13 @@ object LeaguesIV extends Mode.League {
         406 // Smith and fletch ten rune darts within Varrock
       ),
       leagueStatus = LeagueStatus(
-        multiplier = 5,
+        leaguePoints = 0,
         completedTasks = Set.empty,
         skillsUnlocked = Skill.all.toSet
-      )
+      ),
+      mode = LeaguesIV
     )
+
+  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
+    ExpMultiplierStrategy.Fixed(5)
 }

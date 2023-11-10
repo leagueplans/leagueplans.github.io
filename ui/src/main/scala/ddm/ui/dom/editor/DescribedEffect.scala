@@ -59,9 +59,6 @@ object DescribedEffect {
           text("unlocked")
         )
 
-      case Effect.SetMultiplier(multiplier) =>
-        line(text(s"Multiplier set to ${multiplier}x"))
-
       case Effect.CompleteQuest(quest) =>
         line(text(s"Completed \"${cache.quests(quest).name}\""))
 

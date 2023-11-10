@@ -2,6 +2,7 @@ package ddm.ui.model.player.mode
 
 import ddm.common.model.Skill.{Agility, Herblore, Hitpoints}
 import ddm.ui.model.player.Player
+import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.skill.{Level, Stats}
 
 object LeaguesI extends Mode.League {
@@ -24,8 +25,9 @@ object LeaguesI extends Mode.League {
         256, // Travel to the fairy ring south of Mount Karuulm
         278 // Cast Monster Examine on a mountain troll south of Mount Quidamortem
       ),
-      leagueStatus = MainGame.initialPlayer.leagueStatus.copy(
-        multiplier = 5
-      )
+      mode = LeaguesI
     )
+
+  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
+    ExpMultiplierStrategy.Fixed(5)
 }

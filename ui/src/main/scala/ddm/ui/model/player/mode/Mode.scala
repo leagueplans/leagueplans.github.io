@@ -1,11 +1,13 @@
 package ddm.ui.model.player.mode
 
 import ddm.ui.model.player.Player
+import ddm.ui.model.player.league.ExpMultiplierStrategy
 import io.circe.{Decoder, Encoder}
 
 trait Mode {
   def name: String
   def initialPlayer: Player
+  def expMultiplierStrategy: ExpMultiplierStrategy
 }
 
 object Mode {

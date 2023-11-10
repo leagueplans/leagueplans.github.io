@@ -25,11 +25,11 @@ object Visualiser {
     val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, contextMenuController))
 
     mode match {
-      case league: Mode.League =>
+      case _: Mode.League =>
         View(
           characterTab,
           questTab,
-          View.Tab("League progress", LeagueTab(playerSignal, league, cache, effectObserverSignal, contextMenuController))
+          View.Tab("League progress", LeagueTab(playerSignal, cache, effectObserverSignal, contextMenuController))
         )
       case _ =>
         View(characterTab, questTab)

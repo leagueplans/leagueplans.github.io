@@ -1,10 +1,10 @@
 package ddm.ui.model.player.mode
 
+import ddm.common.model.Skill.Hitpoints
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.Player
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.league.LeagueStatus
-import ddm.common.model.Skill.Hitpoints
+import ddm.ui.model.player.league.{ExpMultiplierStrategy, LeagueStatus}
 import ddm.ui.model.player.skill.{Level, Stats}
 
 object MainGame extends Mode {
@@ -47,9 +47,13 @@ object MainGame extends Mode {
       completedQuests = Set.empty,
       completedDiaryTasks = Set.empty,
       leagueStatus = LeagueStatus(
-        multiplier = 1,
+        leaguePoints = 0,
         completedTasks = Set.empty,
         skillsUnlocked = Skill.all.toSet
-      )
+      ),
+      mode = MainGame
     )
+
+  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
+    ExpMultiplierStrategy.Fixed(1)
 }
