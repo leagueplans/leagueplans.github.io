@@ -5,7 +5,6 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.common.model.LeagueTask
 import ddm.ui.dom.common.form.JsonFileInput
-import io.circe.Error
 
 object TaskUploader {
   def apply(): (L.Div, Signal[(List[LeagueTask], List[LeagueTask])]) = {
@@ -21,14 +20,12 @@ object TaskUploader {
       existingTasksInput,
       newTasksLabel.amend("Tasks to merge in:"),
       newTasksInput,
-      rawExistingTasksSignal --> Observer[Option[Either[Error, List[LeagueTask]]]] {
-        case Some(Right(tasks)) => tasksVar.update { case (_, newTasks) => (tasks, newTasks) }
-        case Some(Left(error)) => throw error
+      rawExistingTasksSignal --> Observer[Option[List[LeagueTask]]] {
+        case Some(tasks) => tasksVar.update { case (_, newTasks) => (tasks, newTasks) }
         case None => ()
       },
-      rawNewTasksSignal --> Observer[Option[Either[Error, List[LeagueTask]]]] {
-        case Some(Right(tasks)) => tasksVar.update { case (existingTasks, _) => (existingTasks, tasks) }
-        case Some(Left(error)) => throw error
+      rawNewTasksSignal --> Observer[Option[List[LeagueTask]]] {
+        case Some(tasks) => tasksVar.update { case (existingTasks, _) => (existingTasks, tasks) }
         case None => ()
       }
     )

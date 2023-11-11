@@ -51,10 +51,7 @@
 }
 
 .infoIcon {
-  composes: margin;
-
-  display: inline;
-  color: dodgerblue;
+  margin: 0 0.25rem;
 }
 
 .checkbox {

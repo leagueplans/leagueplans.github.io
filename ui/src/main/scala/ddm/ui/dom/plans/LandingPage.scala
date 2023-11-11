@@ -33,6 +33,7 @@ object LandingPage {
     }
 
     val (newPlanForm, newPlanStream) = NewPlanForm(planStorage.plansSignal)
+    val newPlanSaver = Observer[SavedState.Named](planStorage.savePlan)
 
     L.div(
       L.cls(Styles.page),
@@ -52,7 +53,7 @@ object LandingPage {
           " browser's storage will delete your plans. No data is saved remotely."
         )
       ),
-      newPlanStream --> planObserver
+      newPlanStream --> Observer.combine(planObserver, newPlanSaver)
     )
   }
 
