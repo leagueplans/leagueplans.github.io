@@ -3,7 +3,8 @@ package ddm.ui.dom.plans
 import cats.data.NonEmptyList
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
-import ddm.ui.dom.common.form.{Form, Select, TextInput}
+import ddm.ui.dom.common.{InfoIcon, Tooltip}
+import ddm.ui.dom.common.form.{Form, JsonFileInput, Select, TextInput}
 import ddm.ui.model.common.forest.{Forest, Tree}
 import ddm.ui.model.plan.{SavedState, Step}
 import ddm.ui.model.player.mode.Mode
@@ -17,6 +18,7 @@ object NewPlanForm {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (nameInput, nameLabel, nameSignal) = toNameInput(existingPlansSignal)
     val (modeSelect, modeLabel, modeSignal) = createModeSelect()
+    val (importInput, importLabel, importSignal) = createImportInput()
 
     val form = emptyForm.amend(
       L.cls(Styles.form),
@@ -24,9 +26,18 @@ object NewPlanForm {
       nameInput.amend(L.cls(Styles.input)),
       modeLabel.amend(L.cls(Styles.label), "Game mode:"),
       modeSelect.amend(L.cls(Styles.input)),
+      L.div(
+        InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
+        importLabel.amend(L.cls(Styles.label), "Initial data:"),
+        Tooltip(L.p(
+          L.cls(Styles.tooltip),
+          "If you have a save file for an existing plan, then you can import it here. Otherwise, you can ignore this."
+        ))
+      ),
+      importInput.amend(L.cls(Styles.input)),
       submitButton.amend(L.cls(Styles.submit), L.value("Create plan"))
     )
-    val submissions = planSubmissions(formSubmissions, nameSignal, modeSignal)
+    val submissions = planSubmissions(formSubmissions, nameSignal, modeSignal, importSignal)
 
     (form, submissions)
   }
@@ -37,6 +48,9 @@ object NewPlanForm {
     val label: String = js.native
     val input: String = js.native
     val submit: String = js.native
+
+    val infoIcon: String = js.native
+    val tooltip: String = js.native
   }
 
   private def toNameInput(existingPlansSignal: Signal[Set[String]]): (L.Input, L.Label, Signal[String]) = {
@@ -69,18 +83,26 @@ object NewPlanForm {
       )
     )
 
+  private def createImportInput(): (L.Input, L.Label, Signal[Option[SavedState]]) =
+    JsonFileInput[SavedState](id = "import-existing-plan-input")
+
   private def planSubmissions(
     formSubmissions: EventStream[Unit],
     nameSignal: Signal[String],
-    modeSignal: Signal[Mode]
+    modeSignal: Signal[Mode],
+    importSignal: Signal[Option[SavedState]]
   ): EventStream[SavedState.Named] =
     formSubmissions
-      .sample(Signal.combine(nameSignal, modeSignal))
-      .map { case (name, mode) =>
-        val steps = Forest.fromTrees[UUID, Step](
-          List(Tree(Step(name), children = List.empty)),
-          _.id
-        )
-        SavedState.Named(name, SavedState(mode, steps))
+      .sample(Signal.combine(nameSignal, modeSignal, importSignal))
+      .map {
+        case (name, mode, None) =>
+          val steps = Forest.fromTrees[UUID, Step](
+            List(Tree(Step(name), children = List.empty)),
+            _.id
+          )
+          SavedState.Named(name, SavedState(mode, steps))
+
+        case (name, mode, Some(state)) =>
+          SavedState.Named(name, state.copy(mode = mode))
       }
 }

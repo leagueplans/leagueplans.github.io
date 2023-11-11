@@ -5,12 +5,10 @@ import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{CheckboxInput, Form, NumberInput}
-import ddm.ui.dom.common.{CancelModalButton, Tooltip}
+import ddm.ui.dom.common.{CancelModalButton, Tooltip, InfoIcon}
 import ddm.ui.dom.player.item.ItemSearch
-import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
-import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
 
 import scala.scalajs.js
@@ -112,10 +110,7 @@ object AddItemForm {
     val nodes = List(
       label.amend(
         L.cls(Styles.label),
-        L.div(
-          L.cls(Styles.infoIcon),
-          FontAwesome.icon(FreeSolid.faCircleInfo),
-        ),
+        InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
         Tooltip(L.p("This input will be ignored for items that cannot be noted.")),
         "Note:"
       ),
