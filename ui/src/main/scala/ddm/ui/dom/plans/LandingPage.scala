@@ -2,7 +2,7 @@ package ddm.ui.dom.plans
 
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.WriteBus
-import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode, optionToModifier}
+import com.raquo.laminar.api.{L, enrichSource, optionToModifier, seqToModifier, textToTextNode}
 import ddm.ui.PlanStorage
 import ddm.ui.PlanStorage.Result
 import ddm.ui.dom.common.ToastHub
@@ -10,6 +10,7 @@ import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.model.plan.SavedState
 import org.scalajs.dom.console
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -33,7 +34,7 @@ object LandingPage {
     }
 
     val (newPlanForm, newPlanStream) = NewPlanForm(planStorage.plansSignal)
-    val newPlanSaver = Observer[SavedState.Named](planStorage.savePlan)
+    val newPlanSaver = Observer[SavedState.Named](planStorage.savePlan(_): @nowarn("msg=discarded non-Unit value"))
 
     L.div(
       L.cls(Styles.page),
