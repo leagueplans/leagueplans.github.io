@@ -25,9 +25,9 @@ object LeaguesI extends Mode.League {
         256, // Travel to the fairy ring south of Mount Karuulm
         278 // Cast Monster Examine on a mountain troll south of Mount Quidamortem
       ),
+      leagueStatus = MainGame.initialPlayer.leagueStatus.copy(
+        expMultiplierStrategy = ExpMultiplierStrategy.Fixed(5)
+      ),
       mode = LeaguesI
     )
-
-  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
-    ExpMultiplierStrategy.Fixed(5)
 }

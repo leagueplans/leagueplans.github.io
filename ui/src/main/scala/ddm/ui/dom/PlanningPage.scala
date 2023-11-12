@@ -15,6 +15,7 @@ import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Effect, SavedState, Step}
+import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
@@ -51,16 +52,22 @@ object PlanningPage {
       stepUpdates,
       focusUpdater
     )
+
+    val expMultiplierStrategyVar = Var(initialPlan.savedState.mode.initialPlayer.leagueStatus.expMultiplierStrategy)
+
     val stateSignal =
       Signal
-        .combine(forester.forestSignal, focusedStepID)
-        .map { case (forestSignal, focusedStep) => State(cache, forestSignal, focusedStep, initialPlan.savedState.mode) }
+        .combine(forester.forestSignal, focusedStepID, expMultiplierStrategyVar.signal)
+        .map { case (forestSignal, focusedStep, expMultiplierStrategy) =>
+          State(cache, forestSignal, focusedStep, initialPlan.savedState.mode, expMultiplierStrategy)
+        }
 
     val visualiser = Visualiser(
       stateSignal.map(_.playerAtFocusedStep),
       initialPlan.savedState.mode,
       cache,
       itemFuse,
+      expMultiplierStrategyVar.writer,
       addEffectToFocus(focusedStepID.signal, forester),
       contextMenuController,
       modalBus
@@ -110,7 +117,8 @@ object PlanningPage {
     cache: Cache,
     plan: Forest[UUID, Step],
     focusedStepID: Option[UUID],
-    mode: Mode
+    mode: Mode,
+    expMultiplierStrategy: ExpMultiplierStrategy
   ) {
     private val allSteps: List[Step] = plan.toList
 
@@ -127,7 +135,11 @@ object PlanningPage {
 
     val playerPreFocusedStep: Player =
       EffectResolver.resolve(
-        mode.initialPlayer,
+        mode.initialPlayer.copy(
+          leagueStatus = mode.initialPlayer.leagueStatus.copy(
+            expMultiplierStrategy = expMultiplierStrategy
+          )
+        ),
         cache,
         progressedSteps.flatMap(_.directEffects.underlying): _*
       )

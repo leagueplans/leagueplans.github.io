@@ -1,8 +1,8 @@
 package ddm.ui.dom.player
 
 import cats.data.NonEmptyList
-import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier, textToTextNode}
+import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, optionToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.form.Select
 import ddm.ui.model.player.Player
@@ -14,7 +14,10 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object MultiplierElement {
-  def apply(playerSignal: Signal[Player]): L.HtmlElement = {
+  def apply(
+    playerSignal: Signal[Player],
+    strategyObserver: Observer[ExpMultiplierStrategy]
+  ): L.HtmlElement = {
     val contentSignal = playerSignal.splitOne(_.mode) {
       case (LeaguesIV, _, signal) =>
         val (strategySelect, strategyLabel, strategySignal) = createStrategySelect()
@@ -24,7 +27,8 @@ object MultiplierElement {
           L.child <--
             Signal
               .combine(strategySignal, signal.map(_.leagueStatus.leaguePoints))
-              .map { case (strategy, points) => toContent(strategy, points) }
+              .map { case (strategy, points) => toContent(strategy, points) },
+          strategySignal --> strategyObserver
         )
 
       case (mode, _, signal) =>
@@ -32,7 +36,7 @@ object MultiplierElement {
           L.child <-- signal
             .map(_.leagueStatus.leaguePoints)
             .distinct
-            .map(toContent(mode.expMultiplierStrategy, _))
+            .map(toContent(mode.initialPlayer.leagueStatus.expMultiplierStrategy, _))
         )
     }
 
@@ -70,7 +74,7 @@ object MultiplierElement {
         id = "multiplier-strategy-select",
         NonEmptyList.fromListUnsafe(
           Mode.League.all.filterNot(_ == LeaguesIV)
-        ).map(league => Select.Opt(league.expMultiplierStrategy, league.name))
+        ).map(league => Select.Opt(league.initialPlayer.leagueStatus.expMultiplierStrategy, league.name))
       )
 
     val annotatedLabel = label.amend(

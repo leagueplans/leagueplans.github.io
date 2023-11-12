@@ -11,7 +11,7 @@ object EffectResolver {
   def resolve(player: Player, effect: Effect, cache: Cache): Player =
     effect match {
       case Effect.GainExp(skill, exp) =>
-        val multiplier = player.mode.expMultiplierStrategy match {
+        val multiplier = player.leagueStatus.expMultiplierStrategy match {
           case ExpMultiplierStrategy.Fixed(multiplier) => multiplier
           case ems: ExpMultiplierStrategy.LeaguePointBased =>
             ems.multiplierAt(player.leagueStatus.leaguePoints)
