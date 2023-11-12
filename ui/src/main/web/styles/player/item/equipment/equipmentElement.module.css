@@ -2,7 +2,9 @@
   position: relative;
 }
 
-.background {}
+.background {
+  vertical-align: bottom;
+}
 
 .slot {
   position: absolute;

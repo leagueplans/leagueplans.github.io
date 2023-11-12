@@ -2,6 +2,7 @@ package ddm.ui.model
 
 import ddm.common.model.{LeagueTask, LeagueTaskTier}
 import ddm.ui.model.plan.Effect
+import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.mode._
 import ddm.ui.model.player.skill.Stats
 import ddm.ui.model.player.{Cache, Player}
@@ -10,7 +11,13 @@ object EffectResolver {
   def resolve(player: Player, effect: Effect, cache: Cache): Player =
     effect match {
       case Effect.GainExp(skill, exp) =>
-        val gainedExp = exp * player.leagueStatus.multiplierUsing(player.mode.expMultiplierStrategy)
+        val multiplier = player.mode.expMultiplierStrategy match {
+          case ExpMultiplierStrategy.Fixed(multiplier) => multiplier
+          case ems: ExpMultiplierStrategy.LeaguePointBased =>
+            ems.multiplierAt(player.leagueStatus.leaguePoints)
+        }
+
+        val gainedExp = exp * multiplier
         player.copy(stats =
           Stats(
             player.stats.raw + (skill -> (player.stats(skill) + gainedExp))

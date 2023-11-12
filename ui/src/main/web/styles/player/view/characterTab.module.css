@@ -1,22 +1,28 @@
 .tabContent {
   display: grid;
-  grid-template-rows: min-content 1fr;
-  grid-row-gap: 1rem;
+  grid-template-rows: auto auto auto 1fr;
+  grid-template-columns: auto min-content auto;
   justify-items: center;
 }
 
 .equipmentPanel {
   grid-row: 1;
+  margin-bottom: 1rem;
 }
 
 .inventoryPanel {
-  grid-row: 1 / 3;
+  grid-row: 1 / 4;
 }
 
 .bankPanel {
-  grid-row: 1 / 3;
+  grid-row: 1 / 5;
 }
 
 .statsPanel {
-  grid-row: 2;
+  grid-row: 2 / 5;
+}
+
+.multiplierPanel {
+  grid-row: 4;
+  margin-top: 1rem;
 }

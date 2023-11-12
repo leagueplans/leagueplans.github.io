@@ -34,7 +34,6 @@ object LeagueTab {
 
   private def stats(player: Player): ReactiveHtmlElement[DList] =
     KeyValuePairs(
-      L.span("Multiplier:") -> L.span(player.leagueStatus.multiplierUsing(player.mode.expMultiplierStrategy)),
       L.span("Tasks completed:") -> L.span(player.leagueStatus.completedTasks.size),
       L.span("League points:") -> L.span(player.leagueStatus.leaguePoints)
     ).amend(L.cls(Styles.junkPanel))
