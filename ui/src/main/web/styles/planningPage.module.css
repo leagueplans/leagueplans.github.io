@@ -4,10 +4,11 @@
 
 .lhs {
   height: 100vh;
-  width: 55%;
+  flex: 55;
 
   display: flex;
   flex-direction: column;
+  overflow-x: auto;
 }
 
 .state {
@@ -26,7 +27,7 @@
 }
 
 .plan {
-  flex: 1;
+  flex: 45;
   height: 100vh;
   overflow: auto;
   background-color: #00172e;
