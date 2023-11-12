@@ -5,6 +5,7 @@ import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
 import ddm.ui.dom.common._
+import ddm.ui.dom.player.MultiplierElement
 import ddm.ui.dom.player.item.bank.BankElement
 import ddm.ui.dom.player.item.equipment.EquipmentElement
 import ddm.ui.dom.player.item.inventory.InventoryElement
@@ -54,6 +55,7 @@ object CharacterTab {
         effectObserverSignal,
         contextMenuController
       ).amend(L.cls(Styles.statsPanel)),
+      MultiplierElement(playerSignal).amend(L.cls(Styles.multiplierPanel))
     )
 
   @js.native @JSImport("/styles/player/view/characterTab.module.css", JSImport.Default)
@@ -63,5 +65,6 @@ object CharacterTab {
     val inventoryPanel: String = js.native
     val bankPanel: String = js.native
     val statsPanel: String = js.native
+    val multiplierPanel: String = js.native
   }
 }
