@@ -12,6 +12,7 @@ import ddm.ui.dom.player.item.inventory.InventoryElement
 import ddm.ui.dom.player.stats.StatsElement
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
@@ -23,6 +24,7 @@ object CharacterTab {
     playerSignal: Signal[Player],
     cache: Cache,
     itemFuse: Fuse[Item],
+    expMultiplierStrategyObserver: Observer[ExpMultiplierStrategy],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalBus: WriteBus[Option[L.Element]]
@@ -55,7 +57,7 @@ object CharacterTab {
         effectObserverSignal,
         contextMenuController
       ).amend(L.cls(Styles.statsPanel)),
-      MultiplierElement(playerSignal).amend(L.cls(Styles.multiplierPanel))
+      MultiplierElement(playerSignal, expMultiplierStrategyObserver).amend(L.cls(Styles.multiplierPanel))
     )
 
   @js.native @JSImport("/styles/player/view/characterTab.module.css", JSImport.Default)

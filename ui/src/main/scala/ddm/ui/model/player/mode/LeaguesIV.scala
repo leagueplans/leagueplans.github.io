@@ -78,11 +78,9 @@ object LeaguesIV extends Mode.League {
       leagueStatus = LeagueStatus(
         leaguePoints = 0,
         completedTasks = Set.empty,
-        skillsUnlocked = Skill.all.toSet
+        skillsUnlocked = Skill.all.toSet,
+        ExpMultiplierStrategy.Fixed(5)
       ),
       mode = LeaguesIV
     )
-
-  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
-    ExpMultiplierStrategy.Fixed(5)
 }

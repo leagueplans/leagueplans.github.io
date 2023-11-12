@@ -16,11 +16,9 @@ object LeaguesIII extends Mode.League {
           Skill.Defence,
           Skill.Fishing,
           Skill.Thieving
-        )
+        ),
+        ExpMultiplierStrategy.LeaguePointBased(5, List(300 -> 8, 3000 -> 12, 15000 -> 16))
       ),
       mode = LeaguesIII
     )
-
-  val expMultiplierStrategy: ExpMultiplierStrategy.LeaguePointBased =
-    ExpMultiplierStrategy.LeaguePointBased(5, List(300 -> 8, 3000 -> 12, 15000 -> 16))
 }

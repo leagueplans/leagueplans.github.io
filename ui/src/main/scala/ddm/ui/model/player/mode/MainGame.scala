@@ -49,11 +49,9 @@ object MainGame extends Mode {
       leagueStatus = LeagueStatus(
         leaguePoints = 0,
         completedTasks = Set.empty,
-        skillsUnlocked = Skill.all.toSet
+        skillsUnlocked = Skill.all.toSet,
+        ExpMultiplierStrategy.Fixed(1)
       ),
       mode = MainGame
     )
-
-  val expMultiplierStrategy: ExpMultiplierStrategy.Fixed =
-    ExpMultiplierStrategy.Fixed(1)
 }
