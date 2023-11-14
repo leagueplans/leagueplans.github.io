@@ -2,6 +2,7 @@ package ddm.ui.model.validation
 
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.mode._
 import ddm.ui.model.player.skill.Level
 import ddm.ui.model.player.{Cache, Player}
 
@@ -81,5 +82,24 @@ object Validator {
           right = (),
           left = s"\"${cache.leagueTasks(taskID).description}\" has already been completed"
         )
+    }
+
+  def leagueTaskIsPartOfLeague(taskID: Int): Validator =
+    new Validator {
+      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+        val task = cache.leagueTasks(taskID)
+        val taskIsPartOfLeague = player.mode match {
+          case LeaguesI => task.leagues1Props.nonEmpty
+          case LeaguesII => task.leagues2Props.nonEmpty
+          case LeaguesIII => task.leagues3Props.nonEmpty
+          case LeaguesIV => task.leagues4Props.nonEmpty
+          case _ => false
+        }
+        Either.cond(
+          taskIsPartOfLeague,
+          right = (),
+          left = s"The task \"${task.description}\" is not available in ${player.mode.name}"
+        )
+      }
     }
 }

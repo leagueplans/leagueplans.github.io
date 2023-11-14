@@ -10,14 +10,12 @@ sealed trait EffectValidator[E <: Effect] {
 }
 
 object EffectValidator extends EffectValidator[Effect] {
-  def validate(effectList: EffectList)(player: Player, cache: Cache): List[String] = {
-    val (_, errors) = effectList.underlying.foldLeft((player, List.empty[String])) {
-      case ((preEffectPlayer, errorAcc), effect) =>
+  def validate(effectList: EffectList)(player: Player, cache: Cache): (List[String], Player) =
+    effectList.underlying.foldLeft((List.empty[String], player)) {
+      case ((errorAcc, preEffectPlayer), effect) =>
         val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, cache)
-        (postEffectPlayer, errorAcc ++ errors)
+        (errorAcc ++ errors, postEffectPlayer)
     }
-    errors
-  }
 
   def validate(effect: Effect)(player: Player, cache: Cache): (List[String], Player) =
     effect match {
@@ -27,7 +25,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: UnlockSkill => unlockSkillValidator.validate(e)(player, cache)
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
       case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, cache)
-      case e: CompleteLeagueTask => completeTaskValidator.validate(e)(player, cache)
+      case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(player, cache)
     }
 
   private val gainExpValidator: EffectValidator[GainExp] =
@@ -66,9 +64,9 @@ object EffectValidator extends EffectValidator[Effect] {
       post = _ => List.empty
     )
 
-  private val completeTaskValidator: EffectValidator[CompleteLeagueTask] =
+  private val completeLeagueTaskValidator: EffectValidator[CompleteLeagueTask] =
     from(
-      pre = effect => List(Validator.leagueTaskIncomplete(effect.task)),
+      pre = effect => List(Validator.leagueTaskIncomplete(effect.task), Validator.leagueTaskIsPartOfLeague(effect.task)),
       post = _ => List.empty
     )
 

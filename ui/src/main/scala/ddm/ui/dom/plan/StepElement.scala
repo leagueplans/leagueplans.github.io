@@ -24,6 +24,7 @@ object StepElement {
     subStepsSignal: Signal[List[L.Node]],
     isFocused: Signal[Boolean],
     isCompleteSignal: Signal[Boolean],
+    hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
@@ -40,12 +41,14 @@ object StepElement {
       )
 
     L.div(
-      L.cls <-- Signal.combine(isFocused, isCompleteSignal, isHovering).map {
-        case (true, _, _) => Styles.focused
-        case (false, false, false) => Styles.incomplete
-        case (false, false, true) => Styles.hoveredIncomplete
-        case (false, true, false) => Styles.complete
-        case (false, true, true) => Styles.hoveredComplete
+      L.cls <-- Signal.combine(isFocused, isCompleteSignal, hasErrorsSignal, isHovering).map {
+        case (true, _, _, _) => Styles.focused
+        case (false, true, _, false) => Styles.complete
+        case (false, true, _, true) => Styles.hoveredComplete
+        case (false, false, true, false) => Styles.errors
+        case (false, false, true, true) => Styles.hoveredErrors
+        case (false, false, false, false) => Styles.incomplete
+        case (false, false, false, true) => Styles.hoveredIncomplete
       },
       L.tabIndex(0),
       L.child <-- toDescription(step),
@@ -68,6 +71,8 @@ object StepElement {
     val focused: String = js.native
     val hoveredIncomplete: String = js.native
     val incomplete: String = js.native
+    val hoveredErrors: String = js.native
+    val errors: String = js.native
     val hoveredComplete: String = js.native
     val complete: String = js.native
 

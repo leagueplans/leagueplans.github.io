@@ -18,6 +18,7 @@ import ddm.ui.model.plan.{Effect, SavedState, Step}
 import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
+import ddm.ui.model.validation.StepValidator
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.console
 
@@ -49,6 +50,7 @@ object PlanningPage {
       focusedStepID.signal,
       editingEnabled = Val(true),
       contextMenuController,
+      findStepsWithErrors(_, initialPlan.savedState.mode.initialPlayer, cache),
       stepUpdates,
       focusUpdater
     )
@@ -163,4 +165,20 @@ object PlanningPage {
         )
       )
     ))
+
+  private def findStepsWithErrors(
+    plan: Forest[UUID, Step],
+    initialPlayer: Player,
+    cache: Cache
+  ): Set[UUID] = {
+    val (stepsWithErrors, _) =
+      plan.toList.foldLeft((Set.empty[UUID], initialPlayer)) { case ((acc, player), step) =>
+        val (errors, updatedPlayer) = StepValidator.validate(step)(player, cache)
+        if (errors.isEmpty)
+          (acc, updatedPlayer)
+        else
+          (acc + step.id, updatedPlayer)
+      }
+    stepsWithErrors
+  }
 }

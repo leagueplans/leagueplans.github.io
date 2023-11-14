@@ -88,10 +88,11 @@ object HelpButton {
           |- reorder substeps, effects, and requirements within the step by using the drag icons
           |
           |The editor section will also display a warning icon if the app detects a problem with the selected step. Here's a list of currently implemented validations:
-          |- requirements listed by the step must be met before taking into account the effects of the step.
+          |- requirements listed by the step must be met before taking into account the effects of the step
           |- when moving items around, the source location for the item must have enough of the item for the request move
           |- when moving items around, the target location for the item must have enough space to hold the item
           |- when completing a quest, diary task, or league task, the associated entry must not already be complete
+          |- when completing a league task, the task must be available in the league associated with the plan
           |
           |There is an additional validation only relevant to the Shattered Relics league:
           |- when unlocking a skill, the player must have enough renown available to afford it
