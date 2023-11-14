@@ -62,7 +62,7 @@ object EditorElement {
     Signal
       .combine(playerSignal, stepSignal)
       .map { case (player, step) =>
-        val errors = StepValidator.validate(step)(player, cache)
+        val (errors, _) = StepValidator.validate(step)(player, cache)
 
         if (errors.isEmpty)
           L.emptyNode

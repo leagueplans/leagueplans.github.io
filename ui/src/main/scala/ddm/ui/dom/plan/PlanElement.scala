@@ -16,23 +16,37 @@ object PlanElement {
     focusedStep: Signal[Option[UUID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
+    findStepsWithErrors: Forest[UUID, Step] => Set[UUID],
     stepUpdates: EventBus[Forester[UUID, Step] => Unit],
     focusObserver: Observer[UUID]
   ): (L.Div, Forester[UUID, Step]) = {
     val allStepsVar = Var(List.empty[UUID])
     val completionManager = new CompletionManager(allStepsVar.signal)
+    val stepsWithErrorsVar = Var(findStepsWithErrors(initialPlan))
 
     val forester = Forester[UUID, Step](
       initialPlan,
       _.id,
-      toElement(_, _, _, focusedStep, completionManager, editingEnabled, contextMenuController, stepUpdates.writer, focusObserver)
+      toElement(
+        _,
+        _,
+        _,
+        focusedStep,
+        completionManager,
+        stepsWithErrorsVar.signal,
+        editingEnabled,
+        contextMenuController,
+        stepUpdates.writer,
+        focusObserver
+      )
     )
 
     val dom =
       L.div(
         L.children <-- forester.domSignal,
         stepUpdates.events --> Observer[Forester[UUID, Step] => Unit](_.apply(forester)),
-        forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar
+        forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar,
+        forester.forestSignal.changes.debounce(1500).map(findStepsWithErrors) --> stepsWithErrorsVar.writer
       )
 
     (dom, forester)
@@ -44,6 +58,7 @@ object PlanElement {
     subSteps: Signal[List[L.Node]],
     focusedStep: Signal[Option[UUID]],
     completionManager: CompletionManager,
+    stepsWithErrorsSignal: Signal[Set[UUID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
@@ -58,6 +73,7 @@ object PlanElement {
         case _ => false
       },
       isCompleteSignal = completionManager.isCompleteSignal(stepID),
+      hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
       editingEnabled,
       contextMenuController,
       stepUpdater,

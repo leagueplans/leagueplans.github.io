@@ -20,6 +20,16 @@
   background-color: #082a4c;
 }
 
+.errors {
+  composes: step;
+  background-color: #5b0000;
+}
+
+.hoveredErrors {
+  composes: step;
+  background-color: #830000;
+}
+
 .complete {
   composes: step;
   background-color: #1b4302;
