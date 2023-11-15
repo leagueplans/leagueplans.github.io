@@ -29,7 +29,7 @@ object ShatteredRelicsTasksScraper {
       }
       .via(errorReportingFlow(reportError))
       .map { case (page, (category, terms)) =>
-        (page, taskRowExtractor.extract(terms).map(sections => (category, sections)))
+        (page, taskRowExtractor.extract(terms).map(tasks => (category, tasks)))
       }
       .via(errorReportingFlow(reportError))
       .mapConcat { case (page, (category, tasks)) =>

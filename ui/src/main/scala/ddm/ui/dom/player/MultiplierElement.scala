@@ -72,14 +72,15 @@ object MultiplierElement {
     val (select, label, signal) =
       Select(
         id = "multiplier-strategy-select",
-        NonEmptyList.fromListUnsafe(
-          Mode.League.all.filterNot(_ == LeaguesIV)
+        NonEmptyList.of(
+          LeaguesIV,
+          Mode.League.all.filterNot(_ == LeaguesIV): _*
         ).map(league => Select.Opt(league.initialPlayer.leagueStatus.expMultiplierStrategy, league.name))
       )
 
     val annotatedLabel = label.amend(
       L.cls(Styles.infoText, Styles.strategySelectLabel),
-      "While we don't know the point thresholds for leagues four, you can choose a previous league as a template:"
+      "You can choose a league as a template:"
     )
 
     (select.amend(L.cls(Styles.strategySelect)), annotatedLabel, signal)

@@ -79,7 +79,7 @@ object LeaguesIV extends Mode.League {
         leaguePoints = 0,
         completedTasks = Set.empty,
         skillsUnlocked = Skill.all.toSet,
-        ExpMultiplierStrategy.Fixed(5)
+        ExpMultiplierStrategy.LeaguePointBased(5, List(500 -> 8, 4000 -> 12, 15000 -> 16))
       ),
       mode = LeaguesIV
     )

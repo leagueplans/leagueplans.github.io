@@ -167,5 +167,5 @@ package object decoder {
   }
 
   private val ignoredTemplates: Set[String] =
-    Set("sic", "^")
+    Set("sic", "^", "scp")
 }
