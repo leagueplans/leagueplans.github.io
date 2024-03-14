@@ -36,24 +36,24 @@ object LeagueDetailsTab {
       TaskFilters.Filter(
         id = "tier",
         label = "Tier:",
-        LeagueTaskTier.all.map(tier => (tier, tier.toString)),
+        LeagueTaskTier.values.map(tier => (tier, tier.toString)).toList,
         tierVar
       ),
       TaskFilters.Filter(
         id = "area",
         label = "Area (TBL):",
-        LeagueTaskArea.all.map(area => (area, area.name)),
+        LeagueTaskArea.values.map(area => (area, area.name)).toList,
         areaVar
       ),
       TaskFilters.Filter(
         id = "category",
         label = "Category (SRL):",
-        ShatteredRelicsTaskProperties.Category.all.map(category => (category, category.name)),
+        ShatteredRelicsTaskProperties.Category.values.map(category => (category, category.name)).toList,
         leagues3CategoryVar
       )
     ))
 
-    val fuse = new Fuse(
+    val fuse = Fuse(
       cache.leagueTasks.values.toList.sortBy(_.id),
       new FuseOptions {
         keys = js.defined(js.Array("name", "description"))

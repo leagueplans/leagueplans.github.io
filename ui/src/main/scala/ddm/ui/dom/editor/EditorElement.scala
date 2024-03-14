@@ -26,9 +26,9 @@ object EditorElement {
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[Div] = {
-    val stepSignal = dataSignal.map { case (step, _, _) => step }
-    val subStepsSignal = dataSignal.map { case (_, subSteps, _) => subSteps }
-    val playerSignal = dataSignal.map { case (_, _, player) => player }
+    val stepSignal = dataSignal.map((step, _, _) => step)
+    val subStepsSignal = dataSignal.map((_, subSteps, _) => subSteps)
+    val playerSignal = dataSignal.map((_, _, player) => player)
 
     L.div(
       L.cls(Styles.editor),
@@ -61,7 +61,7 @@ object EditorElement {
   ): Signal[L.Node] =
     Signal
       .combine(playerSignal, stepSignal)
-      .map { case (player, step) =>
+      .map { (player, step) =>
         val (errors, _) = StepValidator.validate(step)(player, cache)
 
         if (errors.isEmpty)
@@ -83,7 +83,7 @@ object EditorElement {
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]],
   ): Signal[ReactiveHtmlElement[Div]] =
-    stepSignal.splitOne(_.id) { case (stepID, _, _) =>
+    stepSignal.splitOne(_.id)((stepID, _, _) =>
       Section[UUID, Step](
         title = "Steps",
         id = "substeps",
@@ -102,7 +102,7 @@ object EditorElement {
           DeletionConfirmer(modalBus, Observer[Unit](_ => forester.remove(deletedStep.id))).onNext(())
         )
       ).amend(L.cls(Styles.section))
-    }
+    )
 
   private def newSubStepObserver(
     parentID: UUID,
@@ -122,7 +122,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[UUID, Step] => Unit]
   ): Signal[ReactiveHtmlElement[Div]] =
-    stepSignal.splitOne(_.id) { case (stepID, _, stepSignal) =>
+    stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section[Effect, Effect](
         title = "Effects",
         id = "effects",
@@ -137,7 +137,7 @@ object EditorElement {
           forester.update(stepID, step => step.copy(directEffects = step.directEffects - deletedEffect))
         )
       ).amend(L.cls(Styles.section))
-    }
+    )
 
   private def toRequirements(
     cache: Cache,
@@ -146,7 +146,7 @@ object EditorElement {
     stepUpdater: Observer[Forester[UUID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
   ): Signal[ReactiveHtmlElement[Div]] =
-    stepSignal.splitOne(_.id) { case (stepID, _, stepSignal) =>
+    stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section[Requirement, Requirement](
         title = "Requirements",
         id = "requirements",
@@ -161,7 +161,7 @@ object EditorElement {
           forester.update(stepID, step => step.copy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
         )
       ).amend(L.cls(Styles.section))
-    }
+    )
 
   private def newRequirementObserver(
     itemFuse: Fuse[Item],

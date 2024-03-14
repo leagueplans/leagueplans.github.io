@@ -5,7 +5,7 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -33,11 +33,8 @@ object TaskPanel {
     )
   }
 
-  private sealed trait Tab
-
-  private object Tab {
-    case object Summary extends Tab
-    case object Details extends Tab
+  private enum Tab {
+    case Summary, Details
   }
 
   @js.native @JSImport("/styles/player/task/taskPanel.module.css", JSImport.Default)

@@ -44,7 +44,7 @@ object Term {
           case ((namedParams, anonParams), p: Parameter.Anonymous) =>
             (namedParams, anonParams :+ p.value)
         }
-        .pipe { case (namedParams, anonParams) => new Template(name, namedParams, anonParams) }
+        .pipe((namedParams, anonParams) => Template(name, namedParams, anonParams))
   }
 
   final class Template private (

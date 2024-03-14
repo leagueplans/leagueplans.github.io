@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Source}
 import ddm.common.model.LeagueTask
 import ddm.common.model.ShatteredRelicsTaskProperties.Category
-import ddm.common.model.Skill._
+import ddm.common.model.Skill.*
 import ddm.scraper.wiki.decoder.leagues.{ShatteredRelicsTaskDecoder, ShatteredRelicsTaskRowExtractor}
 import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
 import ddm.scraper.wiki.model.Page
@@ -14,15 +14,15 @@ object ShatteredRelicsTasksScraper {
   def scrape(
     client: MediaWikiClient,
     reportError: (Page, Throwable) => Unit
-  ): Source[LeagueTask, _] = {
+  ): Source[LeagueTask, ?] = {
     val taskRowExtractor = new ShatteredRelicsTaskRowExtractor
 
     Source(pagesWithCategories)
-      .flatMapConcat { case (category, pageName) =>
+      .flatMapConcat((category, pageName) =>
         client
           .fetch(MediaWikiSelector.Pages(List(pageName)), Some(MediaWikiContent.Revisions))
-          .map { case (page, result) => (page, result.map(content => (category, content))) }
-      }
+          .map((page, result) => (page, result.map(content => (category, content))))
+      )
       .via(errorReportingFlow(reportError))
       .map { case (page, (category, content)) =>
         (page, TermParser.parse(content).map(terms => (category, terms)))
@@ -33,12 +33,12 @@ object ShatteredRelicsTasksScraper {
       }
       .via(errorReportingFlow(reportError))
       .mapConcat { case (page, (category, tasks)) =>
-        tasks.map { case (index, task) =>
+        tasks.map((index, task) =>
           (page, ShatteredRelicsTaskDecoder.decode(index, category, task))
-        }
+        )
       }
       .via(errorReportingFlow(reportError))
-      .map { case (_, task) => task }
+      .map((_, task) => task)
   }
 
   private val pagesWithCategories: List[(Category, Page.Name)] =
@@ -70,7 +70,7 @@ object ShatteredRelicsTasksScraper {
       Category.Quest -> "Shattered_Relics_League/Tasks/Quests",
       Category.Clues -> "Shattered_Relics_League/Tasks/Clues",
       Category.General -> "Shattered_Relics_League/Tasks/General",
-    ).map { case (area, wikiName) => (area, Page.Name.from(wikiName)) }
+    ).map((area, wikiName) => (area, Page.Name.from(wikiName)))
 
   private def errorReportingFlow[T](
     reportError: (Page, Throwable) => Unit

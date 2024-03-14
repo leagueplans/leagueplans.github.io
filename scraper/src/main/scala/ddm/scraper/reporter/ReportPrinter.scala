@@ -5,10 +5,10 @@ import ddm.scraper.wiki.model.Page
 import scala.util.{Failure, Success, Try}
 
 object ReportPrinter {
-  def print(runStatus: Try[_], failedPages: List[(Page, Throwable)], baseURL: String): String =
+  def print(runStatus: Try[?], failedPages: List[(Page, Throwable)], baseURL: String): String =
     s"${printRunStatus(runStatus)}${printFailedPages(failedPages, baseURL)}"
 
-  private def printRunStatus(status: Try[_]): String =
+  private def printRunStatus(status: Try[?]): String =
     status match {
       case Success(_) =>
         """### Run status
@@ -30,7 +30,7 @@ object ReportPrinter {
     else
       s"""
          |### Failed pages
-         |${failures.map { case (page, error) => printFailedPage(page, error, baseURL) }.mkString("\n")}
+         |${failures.map((page, error) => printFailedPage(page, error, baseURL)).mkString("\n")}
          |""".stripMargin
 
   private def printFailedPage(page: Page, error: Throwable, baseURL: String): String = {

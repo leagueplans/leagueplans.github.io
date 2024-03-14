@@ -6,18 +6,16 @@ import akka.actor.typed.scaladsl.Behaviors
 import scala.util.Try
 
 object Cache {
-  sealed trait Message[+T]
-
-  object Message {
-    final case class NewEntry[T](entry: T) extends Message[T]
-    final case class Complete(runStatus: Try[_]) extends Message[Nothing]
+  enum Message[+T] {
+    case NewEntry(entry: T)
+    case Complete(runStatus: Try[?])
   }
 
-  def init[T](onComplete: (Try[_], List[T]) => Unit): Behavior[Message[T]] =
+  def init[T](onComplete: (Try[?], List[T]) => Unit): Behavior[Message[T]] =
     behavior[T](onComplete, acc = List.empty)
 
   private def behavior[T](
-    onComplete: (Try[_], List[T]) => Unit,
+    onComplete: (Try[?], List[T]) => Unit,
     acc: List[T]
   ): Behavior[Message[T]] =
     Behaviors.receiveMessage {

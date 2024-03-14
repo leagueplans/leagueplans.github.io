@@ -2,7 +2,7 @@ package ddm.scraper.wiki.parser
 
 import org.parboiled2.{CharPredicate, Parser, Rule0}
 
-trait ControlCharacters { _: Parser =>
+trait ControlCharacters { self: Parser =>
   final protected def templateStart: Rule0 = rule('{' ~ ws('{'))
   final protected def templateSeparator: Rule0 = ws('|')
   final protected def templateEnd: Rule0 = rule('}' ~ ws('}'))

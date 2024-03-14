@@ -1,7 +1,7 @@
 package ddm.scraper.wiki.parser
 
 import ddm.scraper.wiki.model.Page
-import org.parboiled2._
+import org.parboiled2.*
 
 final class LinkParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parse: Rule1[Term.Link] =

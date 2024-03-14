@@ -40,7 +40,7 @@ object RadioGroup {
   ): (L.Modifier[L.Element], Signal[Option[T]]) = {
     val selection = Var[Option[Selection[T]]](None)
     val rendering =
-      options.split(_.id) { case (_, opt, _) =>
+      options.split(_.id) { (_, opt, _) =>
         val checked = selection.signal.map(_.exists(_.opt == opt))
         val selector = selection.writer.contramap[Any](_ => Some(Selection(opt, autoSelected = false)))
         option(opt, groupName, checked, selector, render)

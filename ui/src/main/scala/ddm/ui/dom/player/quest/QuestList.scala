@@ -94,7 +94,7 @@ object QuestList {
 
 
   private def toFuse(quests: List[Quest]) =
-    new Fuse(
+    Fuse(
       quests,
       new FuseOptions {
         keys = js.defined(js.Array("name"))
@@ -125,7 +125,7 @@ object QuestList {
       L.children <--
         questsSignal
           .map(_.sorted(questOrdering))
-          .split(_.name) { case (_, quest, _) =>
+          .split(_.name)((_, quest, _) =>
             L.li(
               L.cls(Styles.quest),
               QuestElement(
@@ -135,7 +135,7 @@ object QuestList {
                 contextMenuController
               )
             )
-          }
+          )
     )
 
   private val questOrdering: Ordering[Quest] =

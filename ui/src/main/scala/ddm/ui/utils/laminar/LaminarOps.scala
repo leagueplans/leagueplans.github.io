@@ -8,7 +8,7 @@ import org.scalajs.dom.Event
 import scala.util.chaining.scalaUtilChainingOps
 
 object LaminarOps {
-  implicit final class RichEventProp[E <: Event](val self: EventProp[E]) extends AnyVal {
+  extension [E <: Event](self: EventProp[E]) {
     def handled: LockedEventKey[E, E, Unit] =
       handledAs(())
 

@@ -5,9 +5,9 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
-import ddm.ui.utils.airstream.ObservableOps.RichObserverTuple
+import ddm.ui.utils.airstream.ObservableOps.unzip
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.OList
 import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent, Event}
 
@@ -28,7 +28,7 @@ object DragSortableList {
     val children =
       orderSignal
         .map(_.zipWithIndex)
-        .split { case (data, _) => toID(data) } { case (itemID, (data, _), zippedSignal) =>
+        .split((data, _) => toID(data)) { case (itemID, (data, _), zippedSignal) =>
           val (dataSignal, indexSignal) = zippedSignal.unzip
           val (icon, draggableSignal) = dragIcon
 
@@ -39,7 +39,7 @@ object DragSortableList {
             onDragInto(itemID, dragTracker.signal, indexSignal, orderObserver),
             onDragEnd(dragTracker, orderObserver)
           )
-      }
+        }
 
     L.ol(
       L.cls(Styles.list),
@@ -80,7 +80,7 @@ object DragSortableList {
         _.filter(_.target == ctx.ref)
           .withCurrentValueOf(itemIndex, order)
       ) -->
-        dragTracker.contramap[(DragEvent, Int, List[T])] { case (event, originalIndex, originalOrder) =>
+        dragTracker.contramap[(DragEvent, Int, List[T])] { (event, originalIndex, originalOrder) =>
           // We don't use this, but it informs other apps not to receive the drop
           event.dataTransfer.setData(eventFormat, "placeholder")
           event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
@@ -106,13 +106,13 @@ object DragSortableList {
         })
 
     val orderMutator =
-      orderObserver.contramap[(Dragging[ID, T], Int)] { case (dragging, index) =>
+      orderObserver.contramap[(Dragging[ID, T], Int)]((dragging, index) =>
         move(
           dragging.originalOrder,
           from = dragging.originalIndex,
           to = index
         )
-      }
+      )
 
     List(
       L.onDragEnter.ifUnhandledF(streamMutator) --> orderMutator,

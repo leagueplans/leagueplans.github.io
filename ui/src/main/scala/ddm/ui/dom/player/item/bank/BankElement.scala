@@ -84,10 +84,10 @@ object BankElement {
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)
-        .map { case (maybeEffectObserver, stackSize) =>
+        .map((maybeEffectObserver, stackSize) =>
           maybeEffectObserver.map(effectObserver =>
             BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modalBus)
           )
-        }
+        )
     )
 }

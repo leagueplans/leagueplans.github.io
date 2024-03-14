@@ -2,7 +2,7 @@ package ddm.ui.dom.player.stats
 
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.dom.common._
+import ddm.ui.dom.common.*
 import ddm.ui.model.player.skill.Stats
 
 import scala.scalajs.js

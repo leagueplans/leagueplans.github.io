@@ -7,7 +7,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.PlanStorage
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.{Blob, BlobPropertyBag, HTMLOListElement, URL}
 
 import scala.scalajs.js
@@ -26,9 +26,9 @@ object PlansList {
         planStorage
           .plansSignal
           .map(_.toList.sorted)
-          .split(identity) { case (_, planName, _) =>
+          .split(identity)((_, planName, _) =>
             toNode(planName, planStorage, loadObserver, modalBus)
-          }
+          )
     )
 
   @js.native @JSImport("/styles/plans/plansList.module.css", JSImport.Default)
@@ -75,7 +75,7 @@ object PlansList {
 
   private def createDownloadURL(planName: String, planStorage: PlanStorage): String = {
     val data = planStorage.rawPlanData(planName).getOrElse("")
-    val blob = new Blob(
+    val blob = Blob(
       List(data).toJSIterable,
       new BlobPropertyBag { `type` = "application/json" }
     )

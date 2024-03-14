@@ -7,7 +7,7 @@ import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 object EquippedItemContextMenu {
   def apply(

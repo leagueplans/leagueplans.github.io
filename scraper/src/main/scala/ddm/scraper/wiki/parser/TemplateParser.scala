@@ -1,7 +1,7 @@
 package ddm.scraper.wiki.parser
 
 import ddm.scraper.wiki.parser.Term.Template
-import org.parboiled2._
+import org.parboiled2.*
 
 final class TemplateParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parse: Rule1[Template] =
@@ -54,8 +54,8 @@ final class TemplateParser(val input: ParserInput) extends Parser with ControlCh
     )
 
   private def anonymousParameter: Rule1[Template.Parameter.Anonymous] =
-    rule(parameterValue ~> Template.Parameter.Anonymous)
+    rule(parameterValue ~> Template.Parameter.Anonymous.apply)
 
   private def parameterValue: Rule1[List[Term]] =
-    rule(runSubParser(new TermParser(_).parseNested))
+    rule(runSubParser(TermParser(_).parseNested))
 }

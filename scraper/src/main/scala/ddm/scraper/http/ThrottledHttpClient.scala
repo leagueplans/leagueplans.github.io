@@ -17,7 +17,7 @@ final class ThrottledHttpClient(
   interval: FiniteDuration,
   bufferSize: Int,
   parallelism: Int
-)(implicit actorSystem: ActorSystem[_]) {
+)(using actorSystem: ActorSystem[?]) {
   private val http = Http()
   import actorSystem.executionContext
 
@@ -58,8 +58,8 @@ final class ThrottledHttpClient(
              .offer((request, pResponse))
              .map {
                case QueueOfferResult.Enqueued => pResponse
-               case QueueOfferResult.Dropped => pResponse.failure(new RuntimeException("WebClient buffer full"))
-               case QueueOfferResult.QueueClosed => pResponse.failure(new RuntimeException("WebClient stream closed"))
+               case QueueOfferResult.Dropped => pResponse.failure(RuntimeException("WebClient buffer full"))
+               case QueueOfferResult.QueueClosed => pResponse.failure(RuntimeException("WebClient stream closed"))
                case QueueOfferResult.Failure(t) => pResponse.failure(t)
              }
       response <- pResponse.future

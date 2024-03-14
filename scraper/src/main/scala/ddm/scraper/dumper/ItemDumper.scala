@@ -19,9 +19,9 @@ object ItemDumper {
     imagesDirectory: Path,
     idMapWriter: ActorRef[Cache.Message[(WikiKey, Item.ID)]],
     itemWriter: ActorRef[Cache.Message[Item]]
-  ): Sink[(Page, WikiItem), Future[_]] =
+  ): Sink[(Page, WikiItem), Future[?]] =
     Flow[(Page, WikiItem)]
-      .map { case (page, wikiItem) =>
+      .map { (page, wikiItem) =>
         val wikiKey = (page.id, wikiItem.infoboxes.version)
         val itemID = existingIDMap.getOrElse(wikiKey, Item.ID(UUID.randomUUID().toString))
         toOutput(itemID, page.id, wikiItem)
@@ -59,12 +59,12 @@ object ItemDumper {
     idMapWriter: ActorRef[Cache.Message[(WikiKey, Item.ID)]],
     itemWriter: ActorRef[Cache.Message[Item]],
     imagesDirectory: Path
-  ): Sink[Output, Future[_]] =
+  ): Sink[Output, Future[?]] =
     Flow[Output]
-      .alsoTo(dataSink(idMapWriter).contramap { case (wikiKey, item, _) => wikiKey -> item.id })
-      .alsoTo(dataSink(itemWriter).contramap { case (_, item, _) => item })
-      .mapConcat { case (_, _, images) => images.toList }
-      .map { case (subPath, data) => Path.of(subPath.raw) -> data }
+      .alsoTo(dataSink(idMapWriter).contramap((wikiKey, item, _) => wikiKey -> item.id))
+      .alsoTo(dataSink(itemWriter).contramap((_, item, _) => item))
+      .mapConcat((_, _, images) => images.toList)
+      .map((subPath, data) => Path.of(subPath.raw) -> data)
       // Values taken from https://oldschool.runescape.wiki/w/Items (2022/05/03)
       .toMat(imageSink(imagesDirectory, targetWidth = 36, targetHeight = 32))(Keep.right)
 }

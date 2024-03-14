@@ -3,7 +3,7 @@ package ddm.ui.dom.common
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 object ToggleButton {
   def apply[T](
@@ -18,9 +18,9 @@ object ToggleButton {
       L.button(
         L.`type`("button"),
         L.child <-- state.signal.map(t => if (t == initial) initialContent else alternativeContent),
-        L.onClick.handled --> state.updater[Unit] { case (t, _) =>
+        L.onClick.handled --> state.updater[Unit]((t, _) =>
           if (t == initial) alternative else initial
-        }
+        )
       )
 
     (button, state.signal)

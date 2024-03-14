@@ -16,7 +16,7 @@ object Forester {
   ): Forester[ID, T] = {
     val domForest = forest.map(initialise(_, _, toElement))
     domForest.foreachParent { case ((_, childrenState, _), children) =>
-      childrenState.set(children.map { case (_, _, element) => element })
+      childrenState.set(children.map((_, _, element) => element))
     }
     new Forester(Var(forest), mutable.Map.from(domForest.nodes), toID, toElement)
   }
@@ -47,7 +47,7 @@ final class Forester[ID, T](
     forestSignal.map(
       _.roots
         .flatMap(domState.get)
-        .map { case (_, _, element) => element }
+        .map((_, _, element) => element)
     )
 
   def add(data: T): Unit =
@@ -73,7 +73,7 @@ final class Forester[ID, T](
 
   private def run(f: ForestInterpreter[ID, T] => List[Update[ID, T]]): Unit =
     forestState.update { forest =>
-      val updates = f(new ForestInterpreter(toID, forest))
+      val updates = f(ForestInterpreter(toID, forest))
       updates.foreach(applyToDOM)
       ForestResolver.resolve(forest, updates)
     }
@@ -87,18 +87,18 @@ final class Forester[ID, T](
         domState -= id
 
       case Update.AddLink(child, parent) =>
-        val childNode = domState.get(child).map { case (_, _, node) => node }
-        domState.get(parent).foreach { case (_, writer, _) => writer.update(_ ++ childNode) }
+        val childNode = domState.get(child).map((_, _, node) => node)
+        domState.get(parent).foreach((_, writer, _) => writer.update(_ ++ childNode))
 
       case Update.RemoveLink(child, parent) =>
-        val childNode = domState.get(child).map { case (_, _, node) => node }
-        domState.get(parent).foreach { case (_, writer, _) => writer.update(_.filterNot(childNode.contains)) }
+        val childNode = domState.get(child).map((_, _, node) => node)
+        domState.get(parent).foreach((_, writer, _) => writer.update(_.filterNot(childNode.contains)))
 
       case Update.UpdateData(id, data) =>
-        domState.get(id).foreach { case (writer, _, _) => writer.onNext(data) }
+        domState.get(id).foreach((writer, _, _) => writer.onNext(data))
 
       case Update.Reorder(children, parent) =>
-        val childNodes = children.flatMap(domState.get).map { case (_, _, node) => node }
-        domState.get(parent).foreach { case (_, writer, _) => writer.set(childNodes) }
+        val childNodes = children.flatMap(domState.get).map((_, _, node) => node)
+        domState.get(parent).foreach((_, writer, _) => writer.set(childNodes))
     }
 }

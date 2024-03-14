@@ -1,33 +1,32 @@
 package ddm.scraper.wiki.http.response
 
-import ddm.common.utils.circe.RichJsonObject
+import ddm.common.utils.circe.JsonObjectOps.*
 import ddm.scraper.wiki.model.Page
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{CursorOp, Decoder, HCursor, JsonObject}
 
-sealed trait MediaWikiResponse
+enum MediaWikiResponse {
+  case Failure(error: Error)
 
-object MediaWikiResponse {
-  implicit val decoder: Decoder[MediaWikiResponse] =
-    Decoder[Failure].map(f => f: MediaWikiResponse)
-      .or(Decoder[Success].map(s => s: MediaWikiResponse))
-
-  final case class Failure(error: Error) extends MediaWikiResponse
-
-  object Failure {
-    implicit val decoder: Decoder[Failure] =
-      deriveDecoder[Failure]
-  }
-
-  final case class Success(
+  case Success(
     continueParams: Option[List[(String, String)]],
     warnings: Map[String, List[String]],
     pages: List[(Page, JsonObject)]
-  ) extends MediaWikiResponse
+  )
+}
+
+object MediaWikiResponse {
+  given Decoder[MediaWikiResponse] =
+    Decoder[Failure].map(f => f: MediaWikiResponse)
+      .or(Decoder[Success].map(s => s: MediaWikiResponse))
+
+  object Failure {
+    given Decoder[Failure] = deriveDecoder[Failure]
+  }
 
   object Success {
-    implicit val decoder: Decoder[Success] = {
-      implicit val customPageDecoder: Decoder[(Page, JsonObject)] =
+    given Decoder[Success] = {
+      given Decoder[(Page, JsonObject)] =
         (c: HCursor) =>
           Decoder[JsonObject]
             .apply(c)
@@ -56,9 +55,9 @@ object MediaWikiResponse {
         .flatMap {
           case Some(paramsJson) =>
             val (decodingFailures, params) =
-              paramsJson.toList.partitionMap { case (key, value) =>
+              paramsJson.toList.partitionMap((key, value) =>
                 value.as[String].map(key -> _)
-              }
+              )
 
             decodingFailures match {
               case Nil => Right(Some(params))
@@ -94,7 +93,7 @@ object MediaWikiResponse {
         .flatMap {
           case Some(warningsJson) =>
             val (decodingFailures, warnings) =
-              warningsJson.toList.partitionMap { case (key, warningContentJson) =>
+              warningsJson.toList.partitionMap((key, warningContentJson) =>
                 warningContentJson
                   .as[JsonObject]
                   .flatMap(warningContentObj =>
@@ -104,7 +103,7 @@ object MediaWikiResponse {
                     )
                   )
                   .map(allWarnings => key -> allWarnings.split("\n").toList)
-              }
+              )
 
             decodingFailures match {
               case Nil => Right(warnings.toMap)

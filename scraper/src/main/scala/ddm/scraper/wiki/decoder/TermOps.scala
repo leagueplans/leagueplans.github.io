@@ -1,18 +1,16 @@
-package ddm.scraper.wiki
+package ddm.scraper.wiki.decoder
 
 import ddm.scraper.wiki.parser.Term
-import ddm.scraper.wiki.parser.Term._
+import ddm.scraper.wiki.parser.Term.*
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
-package object decoder {
-  type DecoderResult[T] = Either[DecoderException, T]
-
-  implicit final class RichTemplateObject(val self: Template.Object) extends AnyVal {
+object TermOps {
+  extension (self: Template.Object) {
     def decode[T](name: String)(f: List[Term] => DecoderResult[T]): DecoderResult[T] =
       decodeOpt[T](name)(f).flatMap(
-        _.toRight(left = new DecoderException(s"Parameter [$name] not defined"))
+        _.toRight(left = DecoderException(s"Parameter [$name] not defined"))
       )
 
     def decodeOpt[T](name: String)(f: List[Term] => DecoderResult[T]): DecoderResult[Option[T]] =
@@ -21,23 +19,23 @@ package object decoder {
         case Some(terms) =>
           f(terms) match {
             case Right(t) => Right(Some(t))
-            case Left(error) => Left(new DecoderException(s"Decoding [$name] failed: $error"))
+            case Left(error) => Left(DecoderException(s"Decoding [$name] failed: $error"))
           }
       }
   }
 
-  implicit final class RichTerms(val self: List[Term]) extends AnyVal {
+  extension (self: List[Term]) {
     def as[T <: Term : ClassTag]: DecoderResult[T] =
       asOpt[T].flatMap(
-        _.toRight(left = new DecoderException("No terms defined"))
+        _.toRight(left = DecoderException("No terms defined"))
       )
 
     def asOpt[T <: Term : ClassTag]: DecoderResult[Option[T]] =
       self match {
         case Nil => Right(None)
         case (t: T) :: Nil => Right(Some(t))
-        case _ :: Nil => Left(new DecoderException("Unexpected term type"))
-        case _ => Left(new DecoderException("More than one term found"))
+        case _ :: Nil => Left(DecoderException("Unexpected term type"))
+        case _ => Left(DecoderException("More than one term found"))
       }
 
     def asBoolean: DecoderResult[Boolean] =
@@ -138,16 +136,16 @@ package object decoder {
   private val directConcatCharacters =
     Set(' ', ',', '.', ')', ':', ';', '?', '\'', '"', '!', '%')
 
-  implicit final class RichUnstructured(val self: Unstructured) extends AnyVal {
+  extension (self: Unstructured) {
     def asBoolean: DecoderResult[Boolean] =
       self.raw.toLowerCase match {
         case "yes" => Right(true)
         case "no" => Right(false)
-        case other => Left(new DecoderException(s"Expected boolean but found [$other]"))
+        case other => Left(DecoderException(s"Expected boolean but found [$other]"))
       }
   }
 
-  implicit final class RichStructured(val self: Structured) extends AnyVal {
+  extension (self: Structured) {
     def simplifiedText: Option[Term] =
       self match {
         case template: Template =>

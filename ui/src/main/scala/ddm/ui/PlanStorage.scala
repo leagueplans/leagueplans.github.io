@@ -11,12 +11,10 @@ import org.scalajs.dom.Storage
 import scala.util.Try
 
 object PlanStorage {
-  sealed trait Result
-
-  object Result {
-    final case class Success(plan: SavedState.Named) extends Result
-    final case class Failure(error: Error) extends Result
-    case object None extends Result
+  enum Result {
+    case Success(plan: SavedState.Named)
+    case Failure(error: Error)
+    case None
   }
 }
 

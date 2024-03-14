@@ -16,13 +16,13 @@ object TaskFilters {
     state: Var[Option[T]]
   )
 
-  def apply(id: String, filtersSignal: Signal[List[Filter[_]]]): L.Div =
+  def apply(id: String, filtersSignal: Signal[List[Filter[?]]]): L.Div =
     L.div(
       L.cls(Styles.section),
       L.h4(L.cls(PanelStyles.header, Styles.header), "Filters"),
-      L.children <-- filtersSignal.split(_.id) { case (_, filter, _) =>
+      L.children <-- filtersSignal.split(_.id)((_, filter, _) =>
         toNode(id, filter)
-      }
+      )
     )
 
   @js.native @JSImport("/styles/player/task/taskFilters.module.css", JSImport.Default)
@@ -44,9 +44,9 @@ object TaskFilters {
     val (input, label) =
       Select(
         id = s"task-filter-$id-${filter.id}",
-        Select.Opt(None, "Any") +: filter.opts.map { case (t, name) =>
+        Select.Opt(None, "Any") +: filter.opts.map((t, name) =>
           Select.Opt(Some(t), name)
-        },
+        ),
         filter.state
       )
 

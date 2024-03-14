@@ -14,7 +14,7 @@ object CachingWriter {
       Files.write(
         path,
         entries.sorted.asJson.noSpaces.getBytes,
-        options: _*
+        options*
       ): @nowarn("msg=discarded non-Unit value")
     }
 }

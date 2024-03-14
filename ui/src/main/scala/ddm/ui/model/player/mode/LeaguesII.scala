@@ -76,7 +76,7 @@ object LeaguesII extends Mode.League {
       leagueStatus = LeagueStatus(
         leaguePoints = 0,
         completedTasks = Set.empty,
-        skillsUnlocked = Skill.all.toSet,
+        skillsUnlocked = Skill.values.toSet,
         ExpMultiplierStrategy.LeaguePointBased(5, List(500 -> 8, 4000 -> 12, 15000 -> 16))
       ),
       mode = LeaguesII

@@ -4,18 +4,16 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.LeagueTask
 import io.circe.syntax.EncoderOps
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import io.circe.Printer
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object DecisionMaker {
-  sealed trait Decision
-
-  object Decision {
-    final case class New(task: LeagueTask) extends Decision
-    final case class Merge(existingTask: LeagueTask, newTask: LeagueTask, mergedTask: LeagueTask) extends Decision
+  enum Decision {
+    case New(task: LeagueTask)
+    case Merge(existingTask: LeagueTask, newTask: LeagueTask, mergedTask: LeagueTask)
   }
 
   def apply(
@@ -28,7 +26,7 @@ object DecisionMaker {
       L.children <--
         existingTaskStream
           .withCurrentValueOf(newTaskSignal)
-          .map { case (existingTask, newTask) =>
+          .map((existingTask, newTask) =>
             List(
               mergeChoice(
                 "Merge (prefer existing name/description)",
@@ -45,7 +43,7 @@ object DecisionMaker {
                 observer
               ),
             )
-          },
+          ),
       L.child <-- newTaskSignal.map(newButton(_, observer))
     )
 

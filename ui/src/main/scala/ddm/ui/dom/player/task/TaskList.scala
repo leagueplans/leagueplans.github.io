@@ -16,9 +16,9 @@ object TaskList {
   ): ReactiveHtmlElement[HTMLOListElement] =
     L.ol(
       L.cls(Styles.list),
-      L.children <-- tasksSignal.split(toID) { case (_, task, _) =>
+      L.children <-- tasksSignal.split(toID)((_, task, _) =>
         L.li(L.cls(Styles.entry), toNode(task))
-      }
+      )
     )
 
   @js.native @JSImport("/styles/player/task/taskList.module.css", JSImport.Default)

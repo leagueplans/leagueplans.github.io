@@ -30,7 +30,7 @@ object MainGame extends Mode {
       Item.ID("9f538721-45e7-4051-88f1-d12cd45db80b") -> 6, // Water rune
       Item.ID("6d0db6c2-f9f0-431b-af5b-60de0990184b") -> 4, // Earth rune
       Item.ID("3656ba5e-4024-480b-aac5-fd40a9216d00") -> 2 // Body rune
-    ).map { case (id, quantity) => (id, false) -> quantity }
+    ).map((id, quantity) => (id, false) -> quantity)
 
   val initialBank: Map[(Item.ID, Boolean), Int] =
     Map(
@@ -49,7 +49,7 @@ object MainGame extends Mode {
       leagueStatus = LeagueStatus(
         leaguePoints = 0,
         completedTasks = Set.empty,
-        skillsUnlocked = Skill.all.toSet,
+        skillsUnlocked = Skill.values.toSet,
         ExpMultiplierStrategy.Fixed(1)
       ),
       mode = MainGame

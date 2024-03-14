@@ -3,7 +3,7 @@ package ddm.ui.taskimporter
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.LeagueTask
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.{Blob, BlobPropertyBag, MouseEvent, URL}
 import io.circe.syntax.EncoderOps
 
@@ -22,7 +22,7 @@ object Downloader {
       L.`type`("button"),
       "Download updated tasks",
       L.onClick.ifUnhandledF(_.withCurrentValueOf(stateSignal)) -->
-        Observer[(MouseEvent, StateTracker.State)] { case (event, state) =>
+        Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
           event.preventDefault()
           val tasks = state.processedTasks ++ state.remainingExistingTasks.values
           triggerDownload(tasks, "updated-tasks")
@@ -34,7 +34,7 @@ object Downloader {
       L.`type`("button"),
       "Download remaining tasks",
       L.onClick.ifUnhandledF(_.withCurrentValueOf(stateSignal)) -->
-        Observer[(MouseEvent, StateTracker.State)] { case (event, state) =>
+        Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
           event.preventDefault()
           val tasks = state.remainingNewTasks.values.toList
           triggerDownload(tasks, "remaining-tasks")
@@ -48,7 +48,7 @@ object Downloader {
   }
 
   private def createDownloadURL(data: List[LeagueTask]): String = {
-    val blob = new Blob(
+    val blob = Blob(
       List(data.sorted.asJson.noSpaces).toJSIterable,
       new BlobPropertyBag { `type` = "application/json" }
     )

@@ -18,8 +18,8 @@ import scala.concurrent.duration.DurationInt
 import scala.util.chaining.scalaUtilChainingOps
 import scala.util.{Failure, Success}
 
-object Main extends App {
-  private val actorSystem = ActorSystem[Nothing](
+@main def run(args: String*): Unit = {
+  val actorSystem = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       import context.{executionContext, system}
 
@@ -35,8 +35,8 @@ object Main extends App {
       val userAgent = clArgs.get("user-agent")(`User-Agent`(_))
       val reportFile = clArgs.get("target-directory")(Path.of(_).resolve("report.md"))
 
-      val client = new MediaWikiClient(
-        new ThrottledHttpClient(
+      val client = MediaWikiClient(
+        ThrottledHttpClient(
           maxThroughput = 5,
           interval = 1.second,
           bufferSize = Int.MaxValue,
@@ -64,7 +64,7 @@ object Main extends App {
         case r: ScrapeItemsRunner => r.run(client, reporter, spawn, spawn)
         case r: ScrapeSkillIconsRunner => r.run(client, reporter)
         case r: ScrapeLeagueTasksRunner => r.run(client, reporter, spawn)
-        case _ => throw new RuntimeException("Unexpected runner returned")
+        case _ => throw RuntimeException("Unexpected runner returned")
       }
 
       Behaviors.receiveSignal[Nothing] { case (context, _: Terminated) =>
@@ -77,5 +77,5 @@ object Main extends App {
     name = "scraper"
   )
 
-  Await.result(actorSystem.whenTerminated, atMost = 5.hours)
+  Await.result(actorSystem.whenTerminated, atMost = 5.hours): @nowarn("msg=discarded non-Unit value of type akka.Done")
 }

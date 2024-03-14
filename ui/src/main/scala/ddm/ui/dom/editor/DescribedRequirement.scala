@@ -14,7 +14,7 @@ import scala.scalajs.js.annotation.JSImport
 object DescribedRequirement {
   def apply(requirement: Requirement, cache: Cache): L.HtmlElement =
     requirement match {
-      case Requirement.Level(skill, level) =>
+      case Requirement.SkillLevel(skill, level) =>
         line(
           text(level.toString),
           SkillIcon(skill).amend(L.cls(Styles.skillIcon)),

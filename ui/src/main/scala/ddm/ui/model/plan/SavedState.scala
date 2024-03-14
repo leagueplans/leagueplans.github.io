@@ -6,12 +6,10 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
 import java.util.UUID
-import scala.annotation.nowarn
 
 object SavedState {
-  implicit val codec: Codec[SavedState] = {
-    @nowarn("msg=local val stepsCodec in value codec is never used")
-    implicit val stepsCodec: Codec[Forest[UUID, Step]] = Forest.codec(_.id)
+  given Codec[SavedState] = {
+    given Codec[Forest[UUID, Step]] = Forest.codec(_.id)
     deriveCodec[SavedState]
   }
 

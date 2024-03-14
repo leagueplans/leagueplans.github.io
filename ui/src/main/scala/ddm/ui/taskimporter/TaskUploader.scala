@@ -21,11 +21,11 @@ object TaskUploader {
       newTasksLabel.amend("Tasks to merge in:"),
       newTasksInput,
       rawExistingTasksSignal --> Observer[Option[List[LeagueTask]]] {
-        case Some(tasks) => tasksVar.update { case (_, newTasks) => (tasks, newTasks) }
+        case Some(tasks) => tasksVar.update((_, newTasks) => (tasks, newTasks))
         case None => ()
       },
       rawNewTasksSignal --> Observer[Option[List[LeagueTask]]] {
-        case Some(tasks) => tasksVar.update { case (existingTasks, _) => (existingTasks, tasks) }
+        case Some(tasks) => tasksVar.update((existingTasks, _) => (existingTasks, tasks))
         case None => ()
       }
     )

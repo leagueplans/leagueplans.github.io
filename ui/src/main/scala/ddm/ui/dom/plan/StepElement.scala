@@ -8,7 +8,7 @@ import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.{ContextMenu, Forester}
 import ddm.ui.model.plan.Step
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.{OList, Paragraph}
 import org.scalajs.dom.{Event, KeyCode, window}
 
@@ -129,7 +129,7 @@ object StepElement {
     controller.bind(closer =>
       Signal
         .combine(editingEnabledSignal, isCompleteSignal)
-        .map { case (editingEnabled, isComplete) =>
+        .map((editingEnabled, isComplete) =>
           Some(
             if (editingEnabled)
               L.div(
@@ -140,7 +140,7 @@ object StepElement {
             else
               L.div(changeStatusButton(isComplete, completionStatusObserver, closer))
           )
-        }
+        )
     )
 
   private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): L.Button =

@@ -8,18 +8,17 @@ import scala.util.chaining.scalaUtilChainingOps
 
 object Forest {
   def empty[ID, T]: Forest[ID, T] =
-    new Forest(Map.empty, Map.empty, Map.empty, List.empty)
+    Forest(Map.empty, Map.empty, Map.empty, List.empty)
 
-  sealed trait Update[ID, +T]
-  object Update {
-    final case class AddNode[ID, T](id: ID, data: T) extends Update[ID, T]
-    final case class RemoveNode[ID](id: ID) extends Update[ID, Nothing]
+  enum Update[+ID, +T] {
+    case AddNode(id: ID, data: T)
+    case RemoveNode(id: ID)
 
-    final case class AddLink[ID](child: ID, parent: ID) extends Update[ID, Nothing]
-    final case class RemoveLink[ID](child: ID, parent: ID) extends Update[ID, Nothing]
+    case AddLink(child: ID, parent: ID)
+    case RemoveLink(child: ID, parent: ID)
 
-    final case class UpdateData[ID, T](id: ID, data: T) extends Update[ID, T]
-    final case class Reorder[ID](children: List[ID], parent: ID) extends Update[ID, Nothing]
+    case UpdateData(id: ID, data: T)
+    case Reorder(children: List[ID], parent: ID)
   }
 
   def codec[ID, T : Encoder : Decoder](toID: T => ID): Codec[Forest[ID, T]] =
@@ -41,7 +40,7 @@ object Forest {
       case Nil => forest
       case (maybeParent, child) :: tail =>
         val updatedForest =
-          new ForestInterpreter(toID, forest)
+          ForestInterpreter(toID, forest)
             .addOption(child.data, maybeParent)
             .pipe(ForestResolver.resolve(forest, _))
 
@@ -64,8 +63,8 @@ final class Forest[ID, T] private[forest](
   val roots: List[ID]
 ) {
   def map[S](f: (ID, T) => S): Forest[ID, S] =
-    new Forest(
-      nodes.map { case (id, t) => id -> f(id, t) },
+    Forest(
+      nodes.map((id, t) => id -> f(id, t)),
       toParent,
       toChildren,
       roots

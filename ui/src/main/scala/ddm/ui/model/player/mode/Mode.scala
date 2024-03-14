@@ -19,17 +19,17 @@ object Mode {
   val all: List[Mode] =
     MainGame +: League.all
 
-  implicit val encoder: Encoder[Mode] =
+  given Encoder[Mode] =
     Encoder[String].contramap {
       case MainGame => "main-game"
       case LeaguesI => "leagues-1"
       case LeaguesII => "leagues-2"
       case LeaguesIII => "leagues-3"
       case LeaguesIV => "leagues-4"
-      case other => throw new IllegalArgumentException(s"Could not encode unknown game mode: [$other]")
+      case other => throw IllegalArgumentException(s"Could not encode unknown game mode: [$other]")
     }
 
-  implicit val decoder: Decoder[Mode] =
+  given Decoder[Mode] =
     Decoder[String].emap {
       case "main-game" => Right(MainGame)
       case "leagues-1" => Right(LeaguesI)

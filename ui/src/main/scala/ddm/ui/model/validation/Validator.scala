@@ -2,9 +2,11 @@ package ddm.ui.model.validation
 
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.mode._
+import ddm.ui.model.player.mode.*
 import ddm.ui.model.player.skill.Level
 import ddm.ui.model.player.{Cache, Player}
+
+import scala.math.Ordering.Implicits.infixOrderingOps
 
 sealed trait Validator extends ((Player, Cache) => Either[String, Unit])
 
@@ -12,7 +14,7 @@ object Validator {
   def depositorySize(kind: Depository.Kind): Validator =
     new Validator {
       def apply(player: Player, cache: Cache): Either[String, Unit] = {
-        val size = cache.itemise(player.get(kind)).map { case (_, stacks) => stacks.size }.sum
+        val size = cache.itemise(player.get(kind)).map((_, stacks) => stacks.size).sum
         Either.cond(
           size <= kind.capacity,
           right = (),
@@ -43,11 +45,11 @@ object Validator {
         )
     }
 
-  def hasLevel(skill: Skill, level: Int): Validator =
+  def hasLevel(skill: Skill, level: Level): Validator =
     new Validator {
       def apply(player: Player, cache: Cache): Either[String, Unit] =
         Either.cond(
-          Level.of(player.stats(skill)).raw >= level,
+          Level.of(player.stats(skill)) >= level,
           right = (),
           left = s"$skill is less than level $level"
         )

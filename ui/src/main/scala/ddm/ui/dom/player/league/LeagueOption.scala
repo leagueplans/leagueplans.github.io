@@ -3,7 +3,7 @@ package ddm.ui.dom.player.league
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.model.player.mode.{LeaguesI, LeaguesII, LeaguesIII, LeaguesIV, Mode}
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -17,17 +17,17 @@ object LeagueOption {
       L.onClick.handled --> leagueObserver
     )
 
-  object Logos {
+  private object Logos {
     @js.native @JSImport("/images/league-logos/twisted.png", JSImport.Default)
     val twisted: String = js.native
 
-  @js.native @JSImport("/images/league-logos/trailblazer.png", JSImport.Default)
+    @js.native @JSImport("/images/league-logos/trailblazer.png", JSImport.Default)
     val trailblazer: String = js.native
 
-  @js.native @JSImport("/images/league-logos/shattered-relics.png", JSImport.Default)
+    @js.native @JSImport("/images/league-logos/shattered-relics.png", JSImport.Default)
     val shatteredRelics: String = js.native
 
-  @js.native @JSImport("/images/league-logos/trailblazer-reloaded.png", JSImport.Default)
+    @js.native @JSImport("/images/league-logos/trailblazer-reloaded.png", JSImport.Default)
     val trailblazerReloaded: String = js.native
   }
 

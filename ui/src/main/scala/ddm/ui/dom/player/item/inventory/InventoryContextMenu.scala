@@ -7,7 +7,7 @@ import ddm.common.model.Item
 import ddm.ui.dom.common.{ContextMenu, FormOpener}
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import ddm.ui.wrappers.fusejs.Fuse
 
 object InventoryContextMenu {

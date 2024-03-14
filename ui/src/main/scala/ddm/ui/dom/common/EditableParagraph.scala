@@ -4,8 +4,8 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
-import org.scalajs.dom._
+import ddm.ui.utils.laminar.LaminarOps.*
+import org.scalajs.dom.*
 import org.scalajs.dom.html.Paragraph
 
 object  EditableParagraph {

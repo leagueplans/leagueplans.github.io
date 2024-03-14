@@ -1,6 +1,7 @@
 package ddm.scraper.wiki.decoder.items
 
-import ddm.scraper.wiki.decoder._
+import ddm.scraper.wiki.decoder.*
+import ddm.scraper.wiki.decoder.TermOps.*
 import ddm.scraper.wiki.model.InfoboxVersion
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.Template
@@ -20,7 +21,7 @@ object ItemInfoboxObjectExtractor {
         case template: Template if (switchBoxes + infobox).contains(template.name.toLowerCase) =>
           recursivelyExtract(template, relativePath = List.empty)
       }
-      .getOrElse(List(Left(new DecoderException("No item infobox found"))))
+      .getOrElse(List(Left(DecoderException("No item infobox found"))))
 
   private def recursivelyExtract(
     template: Template,
@@ -31,7 +32,7 @@ object ItemInfoboxObjectExtractor {
     else if (switchBoxes.contains(template.name.toLowerCase))
       template.objects.toList.flatMap(unwrapSwitchBox(_, relativePath))
     else
-      List(Left(new DecoderException(
+      List(Left(DecoderException(
         s"Unexpected template when looking for item infobox: [${template.name}]"
       )))
 

@@ -26,7 +26,7 @@ object EquipmentElement {
         L.src(background)
       ),
       L.children <-- playerSignal.map(player =>
-        EquipmentSlot.all.map(slot =>
+        EquipmentSlot.values.toList.map(slot =>
           EquipmentSlotElement(
             slot,
             cache.itemise(player.get(slot)),

@@ -8,7 +8,7 @@ import ddm.ui.dom.common.{EditableParagraph, Forester}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
 
@@ -55,7 +55,7 @@ object StepDescription {
   ): Signal[ReactiveHtmlElement[Paragraph]] =
     Signal
       .combine(isEditing, stepSignal)
-      .splitOne { case (isEditing, _) => isEditing } {
+      .splitOne((isEditing, _) => isEditing) {
         case (false, (_, step), _) =>
           staticParagraph(step.description)
         case (true, (_, step), _) =>
@@ -76,9 +76,9 @@ object StepDescription {
     p.amend(
       L.cls(Styles.paragraph),
       descriptionSignal.withCurrentValueOf(stepSignal) -->
-        stepUpdater.contramap[(String, Step)] { case (description, step) => forester =>
+        stepUpdater.contramap[(String, Step)]((description, step) => forester =>
           forester.update(step.copy(description = description))
-        },
+        ),
       L.onMountCallback { ctx =>
         val ref = ctx.thisNode.ref
         ref.focus()

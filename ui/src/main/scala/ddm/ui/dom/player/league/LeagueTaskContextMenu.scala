@@ -6,7 +6,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.LeagueTask
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect.CompleteLeagueTask
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.Button
 
 object LeagueTaskContextMenu {
@@ -18,7 +18,7 @@ object LeagueTaskContextMenu {
     L.button(
       L.`type`("button"),
       "Complete",
-      L.onClick.handledAs(CompleteLeagueTask(leagueTask.id)) -->
+      L.onClick.handledAs[CompleteLeagueTask](CompleteLeagueTask(leagueTask.id)) -->
         Observer.combine(effectObserver, menuCloser)
     )
 }

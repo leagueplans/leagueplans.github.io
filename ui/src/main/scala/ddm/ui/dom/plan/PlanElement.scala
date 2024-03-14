@@ -21,7 +21,7 @@ object PlanElement {
     focusObserver: Observer[UUID]
   ): (L.Div, Forester[UUID, Step]) = {
     val allStepsVar = Var(List.empty[UUID])
-    val completionManager = new CompletionManager(allStepsVar.signal)
+    val completionManager = CompletionManager(allStepsVar.signal)
     val stepsWithErrorsVar = Var(findStepsWithErrors(initialPlan))
 
     val forester = Forester[UUID, Step](

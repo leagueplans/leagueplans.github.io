@@ -5,12 +5,7 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor}
 
 object TextInput {
-  sealed trait Type
-
-  object Type {
-    case object Search extends Type
-    case object Text extends Type
-  }
+  enum Type { case Search, Text }
 
   def apply(
     `type`: Type,

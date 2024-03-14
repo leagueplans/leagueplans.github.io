@@ -12,7 +12,7 @@ object TwistedTasksScraper {
   def scrape(
     client: MediaWikiClient,
     reportError: (Page, Throwable) => Unit
-  ): Source[LeagueTask, _] = {
+  ): Source[LeagueTask, ?] = {
     val taskRowExtractor = new LeagueTaskRowExtractor
 
     client
@@ -21,19 +21,19 @@ object TwistedTasksScraper {
         Some(MediaWikiContent.Revisions)
       )
       .via(errorReportingFlow(reportError))
-      .map { case (page, content) => (page, TermParser.parse(content)) }
+      .map((page, content) => (page, TermParser.parse(content)))
       .via(errorReportingFlow(reportError))
-      .map { case (page, terms) => (page, taskRowExtractor.extract(terms)) }
+      .map((page, terms) => (page, taskRowExtractor.extract(terms)))
       .via(errorReportingFlow(reportError))
-      .mapConcat { case (page, sections) =>
+      .mapConcat((page, sections) =>
         sections.flatMap(section =>
-          section.tasks.map { case (index, task) =>
+          section.tasks.map((index, task) =>
             (page, TwistedTaskDecoder.decode(index, section.tier, task))
-          }
+          )
         )
-      }
+      )
       .via(errorReportingFlow(reportError))
-      .map { case (_, task) => task }
+      .map((_, task) => task)
   }
 
   private def errorReportingFlow[T](

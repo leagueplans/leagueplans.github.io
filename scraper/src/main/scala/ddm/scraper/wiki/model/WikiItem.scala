@@ -4,12 +4,10 @@ import cats.data.NonEmptyList
 import ddm.common.model.Item
 
 object WikiItem {
-  sealed trait GameID
-
-  object GameID {
-    final case class Beta(raw: Int) extends GameID
-    final case class Historic(raw: Int) extends GameID
-    final case class Live(raw: Int) extends GameID
+  enum GameID {
+    case Beta(raw: Int)
+    case Historic(raw: Int)
+    case Live(raw: Int)
   }
 
   final case class Image(

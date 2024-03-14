@@ -4,18 +4,21 @@ import io.circe.{Decoder, Encoder}
 
 object Page {
   object ID {
-    implicit val decoder: Decoder[ID] = Decoder[Int].map(ID.apply)
-    implicit val encoder: Encoder[ID] = Encoder[Int].contramap(_.raw)
-    implicit val ordering: Ordering[ID] = Ordering[Int].on(_.raw)
+    given Decoder[ID] = Decoder[Int].map(ID.apply)
+    given Encoder[ID] = Encoder[Int].contramap(_.raw)
+    given Ordering[ID] = Ordering[Int].on(_.raw)
   }
 
-  final case class ID(raw: Int) {
+  final case class ID(raw: Int) extends AnyVal {
     override def toString: String =
       raw.toString
   }
 
-  sealed trait Name {
-    def wikiName: String
+  enum Name(val wikiName: String) {
+    case Category(raw: String) extends Name(s"Category:$raw")
+    case File(raw: String, extension: String) extends Name(s"File:$raw.$extension")
+    case Template(raw: String) extends Name(s"Template:$raw")
+    case Other(raw: String) extends Name(raw)
   }
 
   object Name {
@@ -29,21 +32,7 @@ object Page {
         case _ => Other(wikiName)
       }
 
-    final case class Category(raw: String) extends Name {
-      val wikiName: String = s"Category:$raw"
-    }
-
-    final case class File(raw: String, extension: String) extends Name {
-      val wikiName: String = s"File:$raw.$extension"
-    }
-
-    final case class Template(raw: String) extends Name {
-      val wikiName: String = s"Template:$raw"
-    }
-
-    final case class Other(wikiName: String) extends Name
-
-    implicit val decoder: Decoder[Name] = Decoder[String].map(from)
+    given Decoder[Name] = Decoder[String].map(from)
   }
 }
 

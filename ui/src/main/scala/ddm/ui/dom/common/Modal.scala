@@ -4,7 +4,7 @@ import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js
@@ -12,7 +12,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object Modal {
   def apply(): (ReactiveHtmlElement[HTMLDialogElement], WriteBus[Option[L.Element]]) = {
-    val content = new EventBus[Option[L.Element]]
+    val content = EventBus[Option[L.Element]]()
 
     val node =
       L.dialogTag(

@@ -9,8 +9,9 @@ import ddm.common.model.{Item, Skill}
 import ddm.ui.dom.common.form.{Form, NumberInput, Select}
 import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.model.plan.Requirement
-import ddm.ui.model.plan.Requirement._
+import ddm.ui.model.plan.Requirement.*
 import ddm.ui.model.player.item.Depository
+import ddm.ui.model.player.skill.Level
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 
@@ -33,7 +34,7 @@ object NewRequirementForm {
       ),
       L.child <-- typeSignal.splitOne(identity) {
         case (RequirementType.Tool, _, _) => toolSearch
-        case (RequirementType.Level, _, _) => levelInput
+        case (RequirementType.SkillLevel, _, _) => levelInput
       }
     )
 
@@ -48,18 +49,14 @@ object NewRequirementForm {
     val submit: String = js.native
   }
 
-  private sealed trait RequirementType
-  private object RequirementType {
-    case object Level extends RequirementType
-    case object Tool extends RequirementType
-  }
+  private enum RequirementType { case SkillLevel, Tool }
 
   private def effectTypeSelector(): (L.Select, L.Label, Signal[RequirementType]) =
     Select[RequirementType](
       id = "new-requirement-type-selection",
       NonEmptyList.of(
         Select.Opt(RequirementType.Tool, "Tool"),
-        Select.Opt(RequirementType.Level, "Level")
+        Select.Opt(RequirementType.SkillLevel, "Level")
       )
     )
 
@@ -90,13 +87,13 @@ object NewRequirementForm {
     (div, requirement)
   }
 
-  private def levelEntry(): (ReactiveHtmlElement[Div], Signal[Option[Level]]) = {
+  private def levelEntry(): (ReactiveHtmlElement[Div], Signal[Option[SkillLevel]]) = {
     val (skillInput, skillLabel, skillSignal) = Select[Skill](
       id = "new-requirement-skill-selection",
       NonEmptyList.fromListUnsafe(
-        Skill.all.map(skill =>
+        Skill.values.map(skill =>
           Select.Opt(skill, skill.toString)
-        )
+        ).toList
       )
     )
 
@@ -125,7 +122,7 @@ object NewRequirementForm {
     val requirementSignal =
       skillSignal
         .combineWith(levelSignal)
-        .map { case (skill, level) => Some(Level(skill, level)) }
+        .map((skill, level) => Some(SkillLevel(skill, Level(level)): SkillLevel))
 
     (div, requirementSignal)
   }
@@ -134,12 +131,12 @@ object NewRequirementForm {
     formSubmissions: EventStream[Unit],
     effectTypeSignal: Signal[RequirementType],
     toolSignal: Signal[Option[Requirement]],
-    levelSignal: Signal[Option[Level]]
+    levelSignal: Signal[Option[SkillLevel]]
   ): EventStream[Option[Requirement]] =
     formSubmissions.sample(
       effectTypeSignal.flatMap {
         case RequirementType.Tool => toolSignal
-        case RequirementType.Level => levelSignal.map(identity)
+        case RequirementType.SkillLevel => levelSignal.map(identity)
       }
     )
 }

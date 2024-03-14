@@ -12,13 +12,13 @@ object ItemPageObjectExtractor {
     maybeBonusesObject: Option[Template.Object],
   )
 
-  private val bonusesExtractor = new SimpleInfoboxObjectExtractor("bonuses")
+  private val bonusesExtractor = SimpleInfoboxObjectExtractor("bonuses")
 
   def extract(terms: List[Term]): List[DecoderResult[VersionedObjects]] = {
     val itemExtractions = ItemInfoboxObjectExtractor.extract(terms)
     bonusesExtractor.extractIfExists(terms) match {
       case None =>
-        itemExtractions.map(_.map { case (version, obj) => VersionedObjects(version, obj, None) })
+        itemExtractions.map(_.map((version, obj) => VersionedObjects(version, obj, None)))
 
       case Some(bonusesExtractions) =>
         val (_, bonusesObjects) = bonusesExtractions.partitionMap(identity)
@@ -31,12 +31,12 @@ object ItemPageObjectExtractor {
     bonusesObjects: List[(InfoboxVersion, Template.Object)],
     itemObjects: List[(InfoboxVersion, Template.Object)]
   ): List[DecoderResult[VersionedObjects]] =
-    itemObjects.map { case (itemVersion, itemObject) =>
+    itemObjects.map((itemVersion, itemObject) =>
       bonusesObjects.collectFirst {
         case (bonusesVersion, bonusesObject) if itemVersion.isSubVersionOf(bonusesVersion) =>
           VersionedObjects(itemVersion, itemObject, Some(bonusesObject))
-      }.toRight(left = new DecoderException(
+      }.toRight(left = DecoderException(
         s"Failed to pair item infobox version [${itemVersion.raw.mkString(", ")}] with a bonuses infobox version"
       ))
-    }
+    )
 }

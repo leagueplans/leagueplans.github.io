@@ -1,7 +1,7 @@
 package ddm.ui.model.player.skill
 
 import ddm.common.model.Skill
-import ddm.common.model.Skill._
+import ddm.common.model.Skill.*
 
 object Stats {
   def apply(levels: (Skill, Exp)*): Stats =
@@ -14,14 +14,14 @@ final case class Stats(raw: Map[Skill, Exp]) {
 
   lazy val totalLevel: Int =
     Skill
-      .all
+      .values
       .map(apply)
       .map(Level.of(_).raw)
       .sum
 
   lazy val totalExp: Exp =
     Skill
-      .all
+      .values
       .map(apply)
       .reduce(_ + _)
 

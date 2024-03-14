@@ -27,6 +27,6 @@ object ItemPageDecoder {
   private def decodePageName(name: Page.Name): DecoderResult[Page.Name.Other] =
     name match {
       case itemPageName: Page.Name.Other => Right(itemPageName)
-      case _ => Left(new DecoderException("Unexpected page name"))
+      case _ => Left(DecoderException("Unexpected page name"))
     }
 }

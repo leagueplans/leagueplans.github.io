@@ -107,10 +107,10 @@ object InventoryElement {
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(stackSizeSignal, effectObserverSignal)
-        .map { case (stackSize, maybeEffectObserver) =>
+        .map((stackSize, maybeEffectObserver) =>
           maybeEffectObserver.map(effectObserver =>
             InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modalBus)
           )
-        }
+        )
     )
 }

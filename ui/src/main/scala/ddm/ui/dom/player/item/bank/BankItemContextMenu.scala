@@ -10,7 +10,7 @@ import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.{Depository, Stack}
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.Div
 
 object BankItemContextMenu {

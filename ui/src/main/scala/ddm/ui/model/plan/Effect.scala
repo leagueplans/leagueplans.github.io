@@ -6,26 +6,26 @@ import ddm.ui.model.player.skill.Exp
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
-sealed trait Effect
+enum Effect {
+  case GainExp(skill: Skill, baseExp: Exp)
 
-object Effect {
-  implicit val codec: Codec[Effect] = deriveCodec[Effect]
-
-  final case class GainExp(skill: Skill, baseExp: Exp) extends Effect
-
-  final case class AddItem(item: Item.ID, count: Int, target: Depository.Kind, note: Boolean) extends Effect
-  final case class MoveItem(
+  case AddItem(item: Item.ID, count: Int, target: Depository.Kind, note: Boolean)
+  case MoveItem(
     item: Item.ID,
     count: Int,
     source: Depository.Kind,
     notedInSource: Boolean,
     target: Depository.Kind,
     noteInTarget: Boolean
-  ) extends Effect
+  )
 
-  final case class UnlockSkill(skill: Skill) extends Effect
+  case UnlockSkill(skill: Skill)
 
-  final case class CompleteQuest(quest: Int) extends Effect
-  final case class CompleteDiaryTask(task: Int) extends Effect
-  final case class CompleteLeagueTask(task: Int) extends Effect
+  case CompleteQuest(quest: Int)
+  case CompleteDiaryTask(task: Int)
+  case CompleteLeagueTask(task: Int)
+}
+
+object Effect {
+  given Codec[Effect] = deriveCodec[Effect]
 }

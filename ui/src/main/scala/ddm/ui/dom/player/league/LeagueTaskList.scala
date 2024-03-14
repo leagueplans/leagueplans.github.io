@@ -7,7 +7,7 @@ import ddm.ui.dom.common.ContextMenu
 import ddm.ui.dom.player.task.{TaskDetailsTab, TaskList}
 import ddm.ui.model.plan.Effect.CompleteLeagueTask
 import ddm.ui.model.player.Cache
-import ddm.ui.model.player.mode._
+import ddm.ui.model.player.mode.*
 import org.scalajs.dom.html.OList
 
 object LeagueTaskList {
@@ -34,7 +34,7 @@ object LeagueTaskList {
           leagues3CategoryFilterSignal,
           searchFilterSignal
         )
-        .map { case (completedTasks, leagueFilter, tierFilter, progressFilter, areaFilter, leagues3CategoryFilter, searchFilter) =>
+        .map((completedTasks, leagueFilter, tierFilter, progressFilter, areaFilter, leagues3CategoryFilter, searchFilter) =>
           enumerateTasks(
             cache,
             completedTasks,
@@ -45,7 +45,7 @@ object LeagueTaskList {
             leagues3CategoryFilter,
             searchFilter
           )
-        }
+        )
 
     TaskList[Int, LeagueTask](
       _.id,

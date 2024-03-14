@@ -7,35 +7,29 @@ import com.raquo.laminar.api.{L, enrichSource, seqToModifier}
 import ddm.ui.facades.fontawesome.commontypes.IconDefinition
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object ToastHub {
-  sealed trait Type
-
-  object Type {
-    case object Info extends Type
-    case object Warning extends Type
-    case object Error extends Type
-  }
+  enum Type { case Info, Warning, Error }
 
   final case class Toast(`type`: Type, duration: Duration, content: L.Node)
 
   def apply(): (L.Div, WriteBus[Toast]) = {
-    val bus = new EventBus[Toast]
+    val bus = EventBus[Toast]()
     val activeToastVar = Var(List.empty[Toast])
-    val filterer = activeToastVar.updater[Toast] { case (acc, toast) => acc.filterNot(_ == toast) }
+    val filterer = activeToastVar.updater[Toast]((acc, toast) => acc.filterNot(_ == toast))
 
     val node = L.div(
       L.cls(Styles.toastHub),
-      L.children <-- activeToastVar.signal.split(identity) { case (_, toast, _) =>
+      L.children <-- activeToastVar.signal.split(identity)((_, toast, _) =>
         toNode(toast, filterer.contramap[Unit](_ => toast))
-      },
+      ),
       bus.events.withCurrentValueOf(activeToastVar)
-        .map { case (toast, acc) => toast +: acc } --> activeToastVar,
+        .map((toast, acc) => toast +: acc) --> activeToastVar,
     )
 
     (node, bus.writer)

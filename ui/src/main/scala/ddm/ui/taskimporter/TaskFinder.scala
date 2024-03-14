@@ -12,14 +12,14 @@ import scala.scalajs.js.annotation.JSImport
 
 object TaskFinder {
   def apply(newTask: LeagueTask, existingOptions: List[LeagueTask]): (L.Div, EventStream[LeagueTask]) = {
-    val nameFuse = new Fuse(
+    val nameFuse = Fuse(
       existingOptions,
       new FuseOptions {
         keys = js.defined(js.Array("name"))
       }
     )
 
-    val descriptionFuse = new Fuse(
+    val descriptionFuse = Fuse(
       existingOptions,
       new FuseOptions {
         keys = js.defined(js.Array("description"))
