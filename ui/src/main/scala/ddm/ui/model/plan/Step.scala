@@ -9,7 +9,7 @@ object Step {
   def apply(description: String): Step =
     Step(UUID.randomUUID(), description, EffectList.empty, requirements = List.empty)
 
-  implicit val encoder: Encoder[Step] =
+  given Encoder[Step] =
     Encoder[JsonObject].contramap(step =>
       JsonObject(
         "description" -> step.description.asJson,
@@ -18,7 +18,7 @@ object Step {
       )
     )
 
-  implicit val decoder: Decoder[Step] =
+  given Decoder[Step] =
     Decoder[JsonObject].emap(obj =>
       for {
         description <- decodeField[String](obj, "description")

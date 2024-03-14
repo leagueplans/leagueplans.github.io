@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
-import ddm.ui.dom.common._
+import ddm.ui.dom.common.*
 import ddm.ui.dom.player.view.{CharacterTab, LeagueTab, QuestAndDiaryTab, View}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.league.ExpMultiplierStrategy

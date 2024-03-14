@@ -14,7 +14,7 @@ import scala.annotation.nowarn
 
 object ScrapeLeagueTasksRunner {
   def from(args: CommandLineArgs): ScrapeLeagueTasksRunner =
-    new ScrapeLeagueTasksRunner(
+    ScrapeLeagueTasksRunner(
       args.get("league")(_.toInt),
       args.get("target-directory")(Path.of(_).resolve("dump/data/tasks.json"))
     )
@@ -28,7 +28,7 @@ final class ScrapeLeagueTasksRunner(
     client: MediaWikiClient,
     reporter: ActorRef[Cache.Message[(Page, Throwable)]],
     spawnWriter: Spawn[Cache.Message[LeagueTask]]
-  )(implicit system: ActorSystem[_]): Unit = {
+  )(using system: ActorSystem[?]): Unit = {
     val source =
       league match {
         case 1 =>

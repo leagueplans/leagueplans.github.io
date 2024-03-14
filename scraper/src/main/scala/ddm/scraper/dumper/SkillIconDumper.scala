@@ -6,7 +6,7 @@ import java.nio.file.Path
 import scala.concurrent.Future
 
 object SkillIconDumper {
-  def dump(imagesRootTarget: Path): Sink[(String, Array[Byte]), Future[_]] =
+  def dump(imagesRootTarget: Path): Sink[(String, Array[Byte]), Future[?]] =
     imageSink(imagesRootTarget, targetWidth = 25, targetHeight = 25)
-      .contramap[(String, Array[Byte])] { case (name, data) => Path.of(name) -> data }
+      .contramap[(String, Array[Byte])]((name, data) => Path.of(name) -> data)
 }

@@ -1,9 +1,9 @@
-package ddm.common.utils
+package ddm.common.utils.circe
 
 import io.circe.{CursorOp, Decoder, DecodingFailure, JsonObject}
 
-package object circe {
-  implicit final class RichJsonObject(val self: JsonObject) extends AnyVal {
+object JsonObjectOps {
+  extension (self: JsonObject) {
     def decodeField[T : Decoder](key: String, ops: => List[CursorOp]): Decoder.Result[T] =
       decodeOptField[T](key).flatMap(
         _.toRight(left =
@@ -21,9 +21,8 @@ package object circe {
       keys.toList match {
         case key2 :: rest =>
           decodeField[JsonObject](key1, ops).flatMap(obj =>
-            obj.decodeNestedField[T](key2, rest: _*)(ops :+ CursorOp.Field(key1))
+            obj.decodeNestedField[T](key2, rest*)(ops :+ CursorOp.Field(key1))
           )
-
         case Nil =>
           decodeField[T](key1, ops)
       }

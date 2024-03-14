@@ -4,7 +4,7 @@ import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

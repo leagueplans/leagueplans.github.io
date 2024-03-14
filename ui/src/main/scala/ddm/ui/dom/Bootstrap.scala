@@ -87,9 +87,9 @@ object Bootstrap {
 
   private def underDevelopmentToast(): ToastHub.Toast =
     ToastHub.Toast(
-      ToastHub.Type.Warning,
+      ToastHub.Type.Error,
       30.seconds,
-      L.span("This site is under active development. It's likely that breaking changes will be made" +
-        " once the league ends, which will cause existing plans to fail to render.")
+      L.span("This site is under active development. Breaking changes are planned, which" +
+        " will cause existing plans to fail to render.")
     )
 }

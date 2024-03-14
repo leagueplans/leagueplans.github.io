@@ -10,6 +10,6 @@ object Main extends App {
   L.documentEvents(_.onDomContentLoaded).foreach { _ =>
     val container = document.createElement("div")
     document.body.appendChild(container)
-    L.render(container, Bootstrap(new PlanStorage(window.localStorage)))
+    L.render(container, Bootstrap(PlanStorage(window.localStorage)))
   }(L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
 }

@@ -5,7 +5,7 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

@@ -25,7 +25,7 @@ final case class Cache(
       .contents
       .toList
       .map { case ((id, noted), count) => (items(id), noted, count) }
-      .sortBy { case (item, noted, _) => (item.name, noted) }
+      .sortBy((item, noted, _) => (item.name, noted))
       .map {
         case (item, noted, count) if item.stackable || noted || depository.kind.autoStack =>
           Stack(item, noted) -> List(count)

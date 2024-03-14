@@ -1,7 +1,7 @@
 package ddm.ui.model.validation
 
 import ddm.ui.model.plan.Requirement
-import ddm.ui.model.plan.Requirement._
+import ddm.ui.model.plan.Requirement.*
 import ddm.ui.model.player.{Cache, Player}
 
 sealed trait RequirementValidator[R <: Requirement] {
@@ -14,15 +14,15 @@ object RequirementValidator {
 
   def validate(requirement: Requirement)(player: Player, cache: Cache): List[String] =
     requirement match {
-      case r: Level => levelValidator.validate(r)(player, cache)
+      case r: SkillLevel => levelValidator.validate(r)(player, cache)
       case r: Tool => toolValidator.validate(r)(player, cache)
       case r: And => andValidator.validate(r)(player, cache)
       case r: Or => orValidator.validate(r)(player, cache)
     }
 
-  private val levelValidator: RequirementValidator[Level] =
-    new RequirementValidator[Level] {
-      def validate(requirement: Level)(player: Player, cache: Cache): List[String] =
+  private val levelValidator: RequirementValidator[SkillLevel] =
+    new RequirementValidator[SkillLevel] {
+      def validate(requirement: SkillLevel)(player: Player, cache: Cache): List[String] =
         Validator.hasLevel(requirement.skill, requirement.level)(player, cache) match {
           case Left(error) => List(error)
           case Right(()) => List.empty

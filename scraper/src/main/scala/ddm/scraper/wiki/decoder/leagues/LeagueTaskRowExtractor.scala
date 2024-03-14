@@ -4,7 +4,7 @@ import ddm.common.model.LeagueTaskTier
 import ddm.scraper.wiki.decoder.leagues.LeagueTaskRowExtractor.Section
 import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult}
 import ddm.scraper.wiki.parser.Term
-import ddm.scraper.wiki.parser.Term._
+import ddm.scraper.wiki.parser.Term.*
 
 import scala.annotation.tailrec
 
@@ -25,7 +25,7 @@ final class LeagueTaskRowExtractor {
         ))
 
       case None =>
-        Left(new DecoderException("Failed to find any task tier headers"))
+        Left(DecoderException("Failed to find any task tier headers"))
     }
 
   @tailrec

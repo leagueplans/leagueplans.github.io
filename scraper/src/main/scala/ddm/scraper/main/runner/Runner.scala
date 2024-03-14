@@ -8,7 +8,7 @@ object Runner {
       case "items" => ScrapeItemsRunner.from(args)
       case "skill-icons" => ScrapeSkillIconsRunner.from(args)
       case "league-tasks" => ScrapeLeagueTasksRunner.from(args)
-      case other => throw new IllegalArgumentException(s"Unexpected scraper key [$other]")
+      case other => throw IllegalArgumentException(s"Unexpected scraper key [$other]")
     }
 }
 

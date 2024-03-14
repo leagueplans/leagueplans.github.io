@@ -5,7 +5,7 @@ import ddm.ui.model.common.forest.Forest.Update.{AddLink, AddNode, RemoveLink, R
 
 object ForestResolver {
   def resolve[ID, T](forest: Forest[ID, T], updates: List[Update[ID, T]]): Forest[ID, T] =
-    updates.foldLeft(forest)(new ForestResolver(_).resolve(_))
+    updates.foldLeft(forest)(ForestResolver(_).resolve(_))
 }
 
 final class ForestResolver[ID, T](forest: Forest[ID, T]) {
@@ -58,5 +58,5 @@ final class ForestResolver[ID, T](forest: Forest[ID, T]) {
     updatedToChildren: Map[ID, List[ID]] = forest.toChildren,
     updatedRoots: List[ID] = forest.roots
   ): Forest[ID, T] =
-    new Forest(updatedNodes, updatedToParent, updatedToChildren, updatedRoots)
+    Forest(updatedNodes, updatedToParent, updatedToChildren, updatedRoots)
 }

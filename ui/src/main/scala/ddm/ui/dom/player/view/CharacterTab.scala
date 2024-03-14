@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
-import ddm.ui.dom.common._
+import ddm.ui.dom.common.*
 import ddm.ui.dom.player.MultiplierElement
 import ddm.ui.dom.player.item.bank.BankElement
 import ddm.ui.dom.player.item.equipment.EquipmentElement

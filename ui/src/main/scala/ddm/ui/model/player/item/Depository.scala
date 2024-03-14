@@ -14,13 +14,13 @@ object Depository {
   }
 
   object Kind {
-    val kinds: Set[Kind] =
-      EquipmentSlot.all.toSet ++ Set[Kind](Inventory, Bank)
+    val kinds: Set[Kind] = 
+      EquipmentSlot.values.toSet ++ Set[Kind](Inventory, Bank)
 
-    implicit val encoder: Encoder[Kind] =
+    given Encoder[Kind] =
       Encoder[String].contramap(_.name)
 
-    implicit val decoder: Decoder[Kind] = {
+    given Decoder[Kind] = {
       val nameToKind = kinds.map(k => k.name -> k).toMap
 
       Decoder[String].emap(name =>
@@ -30,13 +30,13 @@ object Depository {
       )
     }
 
-    implicit val ordering: Ordering[Kind] = {
+    given Ordering[Kind] = {
       case (Inventory, Inventory) => 0
       case (Inventory, _) => -1
       case (Bank, Inventory) => 1
       case (Bank, Bank) => 0
       case (Bank, _: EquipmentSlot) => -1
-      case (slot1: EquipmentSlot, slot2: EquipmentSlot) => Ordering.String.compare(slot1.slotName, slot2.slotName)
+      case (slot1: EquipmentSlot, slot2: EquipmentSlot) => Ordering[Int].compare(slot1.ordinal, slot2.ordinal)
       case (_: EquipmentSlot, _) => 1
     }
 
@@ -52,30 +52,25 @@ object Depository {
       val capacity: Int = 820
     }
 
-    sealed trait EquipmentSlot extends Kind {
-      lazy val name: String = s"$slotName slot"
+    enum EquipmentSlot(slotName: String) extends Kind {
+      case Head extends EquipmentSlot("Head")
+      case Cape extends EquipmentSlot("Cape")
+      case Neck extends EquipmentSlot("Neck")
+      case Ammo extends EquipmentSlot("Ammo")
+      case Weapon extends EquipmentSlot("Weapon")
+      case Shield extends EquipmentSlot("Shield")
+      case Body extends EquipmentSlot("Body")
+      case Legs extends EquipmentSlot("Legs")
+      case Hands extends EquipmentSlot("Hands")
+      case Feet extends EquipmentSlot("Feet")
+      case Ring extends EquipmentSlot("Ring")
+
+      val name: String = s"$slotName slot"
       val autoStack: Boolean = false
       val capacity: Int = 1
-
-      def slotName: String
     }
 
     object EquipmentSlot {
-      case object Head extends EquipmentSlot { val slotName: String = "Head" }
-      case object Cape extends EquipmentSlot { val slotName: String = "Cape" }
-      case object Neck extends EquipmentSlot { val slotName: String = "Neck" }
-      case object Ammo extends EquipmentSlot { val slotName: String = "Ammo" }
-      case object Weapon extends EquipmentSlot { val slotName: String = "Weapon" }
-      case object Shield extends EquipmentSlot { val slotName: String = "Shield" }
-      case object Body extends EquipmentSlot { val slotName: String = "Body" }
-      case object Legs extends EquipmentSlot { val slotName: String = "Legs" }
-      case object Hands extends EquipmentSlot { val slotName: String = "Hands" }
-      case object Feet extends EquipmentSlot { val slotName: String = "Feet" }
-      case object Ring extends EquipmentSlot { val slotName: String = "Ring" }
-
-      val all: List[EquipmentSlot] =
-        List(Head, Cape, Neck, Ammo, Weapon, Shield, Body, Legs, Hands, Feet, Ring)
-
       def from(equipmentType: EquipmentType): EquipmentSlot =
         equipmentType match {
           case EquipmentType.Head => EquipmentSlot.Head

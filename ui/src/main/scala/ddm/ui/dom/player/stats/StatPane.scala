@@ -5,11 +5,11 @@ import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcess
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common._
+import ddm.ui.dom.common.*
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.UnlockSkill
 import ddm.ui.model.player.skill.Stat
-import ddm.ui.utils.airstream.ObserverOps.RichOptionObserver
+import ddm.ui.utils.airstream.ObserverOps.observer
 import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js
@@ -95,7 +95,7 @@ object StatPane {
           val remainingXP =
             nextLevelSignal
               .withCurrentValueOf(statSignal)
-              .map { case (next, stat) => next.bound - stat.exp }
+              .map((next, stat) => next.bound - stat.exp)
 
           List(
             L.span("Next level at:") -> xpValue(dynamicSpan(nextLevelSignal)(_.bound.toString)),
@@ -123,11 +123,11 @@ object StatPane {
     controller.bind(closer =>
       Signal
         .combine(statSignal, effectObserverSignal, gainXPFormOpenerSignal)
-        .map { case (stat, maybeEffectObserver, gainXPFormOpener) =>
+        .map((stat, maybeEffectObserver, gainXPFormOpener) =>
           maybeEffectObserver.map(observer =>
             toMenu(stat, gainXPFormOpener, observer, closer)
           )
-        }
+        )
     )
 
   private def toMenu(

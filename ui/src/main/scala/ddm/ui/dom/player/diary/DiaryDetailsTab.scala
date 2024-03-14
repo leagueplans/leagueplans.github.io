@@ -26,18 +26,18 @@ object DiaryDetailsTab {
       TaskFilters.Filter(
         id = "region",
         label = "Region:",
-        DiaryRegion.all.map(region => (region, region.name)),
+        DiaryRegion.values.map(region => (region, region.name)).toList,
         regionVar
       ),
       TaskFilters.Filter(
         id = "tier",
         label = "Tier:",
-        DiaryTier.all.map(tier => (tier, tier.toString)),
+        DiaryTier.values.map(tier => (tier, tier.toString)).toList,
         tierVar
       )
     ))
 
-    val fuse = new Fuse(
+    val fuse = Fuse(
       cache.diaryTasks.values.toList.sortBy(_.id),
       new FuseOptions {
         keys = js.defined(js.Array("description"))

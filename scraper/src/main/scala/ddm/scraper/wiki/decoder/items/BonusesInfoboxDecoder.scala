@@ -1,7 +1,8 @@
 package ddm.scraper.wiki.decoder.items
 
 import ddm.common.model.EquipmentType
-import ddm.scraper.wiki.decoder._
+import ddm.scraper.wiki.decoder.*
+import ddm.scraper.wiki.decoder.TermOps.*
 import ddm.scraper.wiki.model.BonusesInfobox
 import ddm.scraper.wiki.parser.Term
 
@@ -9,7 +10,7 @@ object BonusesInfoboxDecoder {
   def decode(obj: Term.Template.Object): DecoderResult[BonusesInfobox] =
     obj
       .decode("slot")(_.as[Term.Unstructured])
-      .flatMap( _.raw.toLowerCase match {
+      .flatMap(_.raw.toLowerCase match {
         case "head" => Right(BonusesInfobox(EquipmentType.Head))
         case "cape" => Right(BonusesInfobox(EquipmentType.Cape))
         case "neck" => Right(BonusesInfobox(EquipmentType.Neck))
@@ -22,6 +23,6 @@ object BonusesInfoboxDecoder {
         case "hands" => Right(BonusesInfobox(EquipmentType.Hands))
         case "feet" => Right(BonusesInfobox(EquipmentType.Feet))
         case "ring" => Right(BonusesInfobox(EquipmentType.Ring))
-        case other => Left(new DecoderException(s"Unexpected equipment type: [$other]"))
+        case other => Left(DecoderException(s"Unexpected equipment type: [$other]"))
       })
 }

@@ -27,7 +27,7 @@ object MultiplierElement {
           L.child <--
             Signal
               .combine(strategySignal, signal.map(_.leagueStatus.leaguePoints))
-              .map { case (strategy, points) => toContent(strategy, points) },
+              .map((strategy, points) => toContent(strategy, points)),
           strategySignal --> strategyObserver
         )
 
@@ -74,7 +74,7 @@ object MultiplierElement {
         id = "multiplier-strategy-select",
         NonEmptyList.of(
           LeaguesIV,
-          Mode.League.all.filterNot(_ == LeaguesIV): _*
+          Mode.League.all.filterNot(_ == LeaguesIV)*
         ).map(league => Select.Opt(league.initialPlayer.leagueStatus.expMultiplierStrategy, league.name))
       )
 
@@ -91,16 +91,16 @@ object MultiplierElement {
       case ExpMultiplierStrategy.Fixed(value) =>
         multiplier(value)
       case ems: ExpMultiplierStrategy.LeaguePointBased =>
-        val maybeNextThreshold = ems.thresholds.find { case (pointThreshold, _) => pointThreshold > leaguePoints }
+        val maybeNextThreshold = ems.thresholds.find((pointThreshold, _) => pointThreshold > leaguePoints)
 
         L.div(
           multiplier(ems.multiplierAt(leaguePoints)),
-          maybeNextThreshold.map { case (pointThreshold, multiplier) =>
+          maybeNextThreshold.map((pointThreshold, multiplier) =>
             L.p(
               L.cls(Styles.infoText),
               s"${multiplier}x in ${pointThreshold - leaguePoints} league points"
             )
-          }
+          )
         )
     }
 

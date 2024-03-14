@@ -1,7 +1,5 @@
-package ddm.scraper.main
+package ddm.scraper.main.runner
 
 import akka.actor.typed.{ActorRef, Behavior}
 
-package object runner {
-  type Spawn[T] = Behavior[T] => ActorRef[T]
-}
+type Spawn[T] = Behavior[T] => ActorRef[T]

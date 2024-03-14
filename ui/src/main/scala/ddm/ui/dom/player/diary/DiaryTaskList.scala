@@ -23,9 +23,9 @@ object DiaryTaskList {
     val tasksSignal =
       Signal
         .combine(completedTasksSignal, regionFilterSignal, tierFilterSignal, progressFilterSignal, searchFilterSignal)
-        .map { case (completedTasks, regionFilter, tierFilter, progressFilter, searchFilter) =>
+        .map((completedTasks, regionFilter, tierFilter, progressFilter, searchFilter) =>
           enumerateTasks(cache, completedTasks, regionFilter, tierFilter, progressFilter, searchFilter)
-        }
+        )
 
     TaskList[Int, DiaryTask](
       _.id,

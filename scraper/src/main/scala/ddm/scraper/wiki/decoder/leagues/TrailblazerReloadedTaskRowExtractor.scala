@@ -18,6 +18,6 @@ final class TrailblazerReloadedTaskRowExtractor {
     if (tasks.nonEmpty)
       Right(tasks)
     else
-      Left(new DecoderException("Failed to find any tasks"))
+      Left(DecoderException("Failed to find any tasks"))
   }
 }

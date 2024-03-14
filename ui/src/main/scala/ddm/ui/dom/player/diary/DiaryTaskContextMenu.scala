@@ -6,7 +6,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect.CompleteDiaryTask
 import ddm.ui.model.player.diary.DiaryTask
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.Button
 
 object DiaryTaskContextMenu {
@@ -18,7 +18,7 @@ object DiaryTaskContextMenu {
     L.button(
       L.`type`("button"),
       "Complete",
-      L.onClick.handledAs(CompleteDiaryTask(diaryTask.id)) -->
+      L.onClick.handledAs[CompleteDiaryTask](CompleteDiaryTask(diaryTask.id)) -->
         Observer.combine(effectObserver, menuCloser)
     )
 }

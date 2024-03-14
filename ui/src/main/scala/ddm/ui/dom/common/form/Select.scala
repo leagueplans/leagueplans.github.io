@@ -43,7 +43,7 @@ object Select {
         L.onChange.mapToValue.map(label =>
           options
             .find(_.uniqueLabel == label)
-            .getOrElse(throw new RuntimeException(s"Unexpected select [$id] option: [$label]"))
+            .getOrElse(throw RuntimeException(s"Unexpected select [$id] option: [$label]"))
         ) --> selectionObserver
       ),
       options.map(option)

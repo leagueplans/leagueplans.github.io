@@ -1,6 +1,7 @@
 package ddm.ui.model.plan
 
-import ddm.ui.model.plan.Effect._
+import ddm.ui.model.plan.Effect.*
+import ddm.ui.model.player.skill.Exp
 
 import scala.reflect.ClassTag
 
@@ -8,7 +9,7 @@ object EffectList {
   val empty: EffectList = EffectList(List.empty)
 }
 
-final case class EffectList(underlying: List[Effect]) {
+final case class EffectList(underlying: List[Effect]) extends AnyVal {
   def +(effect: Effect): EffectList =
     effect match {
       case e: GainExp => add(e)
@@ -24,7 +25,7 @@ final case class EffectList(underlying: List[Effect]) {
   private def add(effect: GainExp): EffectList =
     patch(effect)(_.skill == _.skill)((oldEffect, newEffect) =>
       Some(oldEffect.copy(baseExp = oldEffect.baseExp + newEffect.baseExp))
-        .filter(_.baseExp.raw != 0)
+        .filter(_.baseExp != Exp(0))
     )
 
   private def add(effect: AddItem): EffectList =

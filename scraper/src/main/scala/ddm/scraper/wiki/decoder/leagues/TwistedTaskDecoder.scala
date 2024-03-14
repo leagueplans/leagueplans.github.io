@@ -1,7 +1,8 @@
 package ddm.scraper.wiki.decoder.leagues
 
 import ddm.common.model.{LeagueTask, LeagueTaskTier}
-import ddm.scraper.wiki.decoder._
+import ddm.scraper.wiki.decoder.*
+import ddm.scraper.wiki.decoder.TermOps.*
 import ddm.scraper.wiki.parser.Term
 
 object TwistedTaskDecoder {
@@ -22,6 +23,6 @@ object TwistedTaskDecoder {
         )
 
       case _ =>
-        Left(new DecoderException("Failed to find both a name and description from anonymous terms"))
+        Left(DecoderException("Failed to find both a name and description from anonymous terms"))
     }
 }

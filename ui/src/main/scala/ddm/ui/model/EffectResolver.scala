@@ -3,7 +3,7 @@ package ddm.ui.model
 import ddm.common.model.{LeagueTask, LeagueTaskTier}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.league.ExpMultiplierStrategy
-import ddm.ui.model.player.mode._
+import ddm.ui.model.player.mode.*
 import ddm.ui.model.player.skill.Stats
 import ddm.ui.model.player.{Cache, Player}
 

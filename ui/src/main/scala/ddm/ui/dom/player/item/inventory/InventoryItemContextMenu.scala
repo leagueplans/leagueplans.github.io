@@ -12,7 +12,7 @@ import ddm.ui.model.plan.Effect.{AddItem, MoveItem}
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
 import ddm.ui.model.player.item.{Depository, Stack}
 import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
@@ -97,7 +97,7 @@ object InventoryItemContextMenu {
   ): L.Node =
     (stack.noted, stack.item.equipmentType) match {
       case (false, Some(tpe)) =>
-        val equipEffect = MoveItem(
+        val equipEffect: MoveItem = MoveItem(
           stack.item.id,
           stackSize,
           inventory,
@@ -106,11 +106,11 @@ object InventoryItemContextMenu {
           noteInTarget = false
         )
 
-        val unequipEffects = toConflicts(tpe).flatMap { case (slot, conflictTypes) =>
+        val unequipEffects = toConflicts(tpe).flatMap((slot, conflictTypes) =>
           player.get(slot).contents.flatMap { case ((currentlyEquipped, _), equippedStackSize) =>
             val sameStackableItem = stack.item.id == currentlyEquipped && stack.item.stackable
             val conflictedType = cache.items(currentlyEquipped).equipmentType.exists(conflictTypes.contains)
-            Option.when(!sameStackableItem && conflictedType)(
+            Option.when[MoveItem](!sameStackableItem && conflictedType)(
               MoveItem(
                 currentlyEquipped,
                 equippedStackSize,
@@ -121,7 +121,7 @@ object InventoryItemContextMenu {
               )
             )
           }
-        }
+        )
 
         val observer = Observer[Unit](_ =>
           (unequipEffects.toList :+ equipEffect).foreach(effectObserver.onNext)

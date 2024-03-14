@@ -5,12 +5,12 @@ import com.raquo.airstream.core.Source.SignalSource
 import com.raquo.airstream.ownership.Owner
 
 object ObserverOps {
-  implicit final class RichOptionObserver[T](val self: Option[Observer[T]]) extends AnyVal {
+  extension [T](self: Option[Observer[T]]) {
     def observer: Observer[T] =
       Observer[T](t => self.foreach(_.onNext(t)))
   }
 
-  implicit final class RichSignalObserver[T](val self: SignalSource[Observer[T]]) extends AnyVal {
+  extension [T](self: SignalSource[Observer[T]]) {
     def latest(owner: Owner): Observer[T] =
       Observer[T](t =>
         self.toObservable.observe(owner).tryNow().foreach(_.onNext(t))

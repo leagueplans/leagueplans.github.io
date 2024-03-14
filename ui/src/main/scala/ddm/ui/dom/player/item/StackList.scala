@@ -23,14 +23,14 @@ object StackList {
       L.children <--
         stacksSignal
           .map(mixedStacks =>
-            mixedStacks.flatMap { case (item, stacks) =>
-              stacks.zipWithIndex.map { case (stackSize, stackIndex) =>
+            mixedStacks.flatMap((item, stacks) =>
+              stacks.zipWithIndex.map((stackSize, stackIndex) =>
                 (item, stackSize, stackIndex)
-              }
-            }
+              )
+            )
           )
-          .split { case (item, _, stackIndex) => (item, stackIndex) } { case ((item, _), _, signal) =>
-            L.li(toElement(item, signal.map { case (_, stackSize, _) => stackSize }))
+          .split((item, _, stackIndex) => (item, stackIndex)) { case ((item, _), _, signal) =>
+            L.li(toElement(item, signal.map((_, stackSize, _) => stackSize)))
           }
     )
 }

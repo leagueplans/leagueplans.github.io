@@ -2,7 +2,7 @@ package ddm.ui.dom.player.view
 
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

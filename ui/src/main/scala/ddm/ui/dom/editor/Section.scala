@@ -7,7 +7,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement.Base
 import ddm.ui.dom.common.DragSortableList
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.{Button, Div}
 
 import scala.scalajs.js

@@ -1,44 +1,38 @@
 package ddm.common.model
 
 import ddm.common.model.ShatteredRelicsTaskProperties.Category
-import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Decoder, Encoder}
 
-import scala.util.Success
+import scala.util.{Success, Try}
 
 object ShatteredRelicsTaskProperties {
-  sealed trait Category {
-    def name: String
+  enum Category(val name: String) {
+    case SkillCat(skill: Skill) extends Category(skill.toString)
+    case Combat extends Category("Combat")
+    case Quest extends Category("Quest")
+    case Clues extends Category ("Clues")
+    case General extends Category ("General")
   }
 
   object Category {
-    final case class SkillCat(skill: Skill) extends Category { val name: String = skill.toString }
-    case object Combat extends Category { val name: String = "Combat" }
-    case object Quest extends Category { val name: String = "Quest" }
-    case object Clues extends Category { val name: String = "Clues" }
-    case object General extends Category { val name: String = "General" }
+    val values: Array[Category] =
+      Array(General, Quest, Clues, Combat) ++ Skill.values.map(SkillCat.apply)
 
-    val all: List[Category] =
-      List(General, Quest, Clues, Combat) ++ Skill.all.map(SkillCat)
-
-    implicit val encoder: Encoder[Category] =
+    given Encoder[Category] =
       Encoder[String].contramap(_.name)
 
-    implicit val decoder: Decoder[Category] =
+    given Decoder[Category] =
       Decoder[String].emapTry {
         case "Combat" => Success(Combat)
         case "Quest" => Success(Quest)
         case "Clues" => Success(Clues)
         case "General" => Success(General)
-        case other =>
-          Decoder[Skill]
-            .decodeJson(Json.fromString(other))
-            .map(SkillCat)
-            .toTry
+        case other => Try(Skill.valueOf(other)).map(SkillCat.apply)
       }
   }
 
-  implicit val codec: Codec[ShatteredRelicsTaskProperties] = deriveCodec
+  given Codec[ShatteredRelicsTaskProperties] = deriveCodec
 }
 
 final case class ShatteredRelicsTaskProperties(tier: LeagueTaskTier, category: Category)

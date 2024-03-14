@@ -3,7 +3,7 @@ package ddm.ui.dom.player.diary
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

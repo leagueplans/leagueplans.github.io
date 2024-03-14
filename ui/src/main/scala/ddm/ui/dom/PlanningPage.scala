@@ -6,7 +6,7 @@ import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.PlanStorage
 import ddm.ui.dom.common.ToastHub.Toast
-import ddm.ui.dom.common._
+import ddm.ui.dom.common.*
 import ddm.ui.dom.editor.EditorElement
 import ddm.ui.dom.help.HelpButton
 import ddm.ui.dom.plan.PlanElement
@@ -37,12 +37,12 @@ object PlanningPage {
     modalBus: WriteBus[Option[L.Element]],
     toastBus: WriteBus[Toast],
   ): L.Div = {
-    val itemFuse = new Fuse(
+    val itemFuse = Fuse(
       cache.items.values.toList,
       new FuseOptions { keys = js.defined(js.Array("name")) }
     )
 
-    val stepUpdates = new EventBus[Forester[UUID, Step] => Unit]
+    val stepUpdates = EventBus[Forester[UUID, Step] => Unit]()
     val focusedStepID = Var[Option[UUID]](None)
     val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
@@ -80,9 +80,9 @@ object PlanningPage {
         .map(state => state.focusedStep.map(step =>
           (step, state.plan.children(step.id), state.playerPreFocusedStep)
         ))
-        .split { case (step, _, _) => step.id } { case (_, _, signal) =>
+        .split((step, _, _) => step.id)((_, _, signal) =>
           EditorElement(cache, itemFuse, signal, stepUpdates.writer, modalBus)
-        }
+        )
 
     L.div(
       L.cls(Styles.page),
@@ -143,14 +143,14 @@ object PlanningPage {
           )
         ),
         cache,
-        progressedSteps.flatMap(_.directEffects.underlying): _*
+        progressedSteps.flatMap(_.directEffects.underlying)*
       )
 
     val playerAtFocusedStep: Player =
       EffectResolver.resolve(
         playerPreFocusedStep,
         cache,
-        focusedStep.toList.flatMap(_.directEffects.underlying): _*
+        focusedStep.toList.flatMap(_.directEffects.underlying)*
       )
   }
 

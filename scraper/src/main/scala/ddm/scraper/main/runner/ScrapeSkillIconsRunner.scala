@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 
 object ScrapeSkillIconsRunner {
   def from(args: CommandLineArgs): ScrapeSkillIconsRunner =
-    new ScrapeSkillIconsRunner(
+    ScrapeSkillIconsRunner(
       args.get("target-directory")(root =>
         Path.of(root).resolve("dump/dynamic/assets/images/skill-icons")
       )
@@ -24,7 +24,7 @@ final class ScrapeSkillIconsRunner(iconsDirectory: Path) extends Runner {
   def run(
     client: MediaWikiClient,
     reporter: ActorRef[Cache.Message[(Page, Throwable)]],
-  )(implicit mat: Materializer, ec: ExecutionContext): Unit =
+  )(using mat: Materializer, ec: ExecutionContext): Unit =
     SkillIconScraper
       .scrape(client, reporter)
       .runWith(SkillIconDumper.dump(iconsDirectory))

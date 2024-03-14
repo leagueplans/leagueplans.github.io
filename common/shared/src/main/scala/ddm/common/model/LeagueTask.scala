@@ -4,8 +4,8 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
 object LeagueTask {
-  implicit val codec: Codec[LeagueTask] = deriveCodec
-  implicit val ordering: Ordering[LeagueTask] = Ordering.by(_.id)
+  given Codec[LeagueTask] = deriveCodec
+  given Ordering[LeagueTask] = Ordering.by(_.id)
 }
 
 final case class LeagueTask(

@@ -2,7 +2,8 @@ package ddm.scraper.wiki.decoder.items
 
 import cats.data.NonEmptyList
 import ddm.common.model.Item
-import ddm.scraper.wiki.decoder._
+import ddm.scraper.wiki.decoder.*
+import ddm.scraper.wiki.decoder.TermOps.*
 import ddm.scraper.wiki.model.{ItemInfobox, Page, WikiItem}
 import ddm.scraper.wiki.parser.Term
 
@@ -28,7 +29,7 @@ object ItemInfoboxDecoder {
     )
 
   private def asID(raw: List[Term]): DecoderResult[WikiItem.GameID] =
-    raw.as[Term.Unstructured].flatMap { blob =>
+    raw.as[Term.Unstructured].flatMap(blob =>
       blob
         .raw
         .split(',')
@@ -44,8 +45,8 @@ object ItemInfoboxDecoder {
           case (_: WikiItem.GameID.Historic, _: WikiItem.GameID.Beta) => false
         }
         .headOption
-        .toRight(left = new DecoderException(s"Unexpected format - [$raw]"))
-    }
+        .toRight(left = DecoderException(s"Unexpected format - [$raw]"))
+    )
 
   private def parseID(raw: String): DecoderResult[WikiItem.GameID] = {
     val (constructor, intPartOfID) =
@@ -58,7 +59,7 @@ object ItemInfoboxDecoder {
 
     intPartOfID
       .toIntOption
-      .toRight(left = new DecoderException(s"Unexpected format - [$raw]"))
+      .toRight(left = DecoderException(s"Unexpected format - [$raw]"))
       .map(constructor.apply)
   }
 
@@ -67,12 +68,12 @@ object ItemInfoboxDecoder {
       .foldLeft[DecoderResult[List[Page.Name.File]]](Right(List.empty)) {
         case (Right(acc), Term.Link(file: Page.Name.File, _)) => Right(acc :+ file)
         case (Right(acc), _: Term.Unstructured) => Right(acc)
-        case (Right(_), _: Term) => Left(new DecoderException("Unexpected term"))
+        case (Right(_), _: Term) => Left(DecoderException("Unexpected term"))
         case (l @ Left(_), _) => l
       }
       .flatMap {
         case Nil =>
-          Left(new DecoderException("No content"))
+          Left(DecoderException("No content"))
 
         case single :: Nil =>
           Right(NonEmptyList.one((Item.Image.Bin(1), single)))
@@ -90,7 +91,7 @@ object ItemInfoboxDecoder {
   private def decodeFloor(link: Page.Name.File): DecoderResult[Item.Image.Bin] =
     link.raw.split("[ _]").last.toIntOption match {
       case Some(i) => Right(Item.Image.Bin(i))
-      case None => Left(new DecoderException("Unexpected format"))
+      case None => Left(DecoderException("Unexpected format"))
     }
 
   private def asBankable(

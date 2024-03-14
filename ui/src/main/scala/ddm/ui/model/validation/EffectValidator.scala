@@ -1,7 +1,7 @@
 package ddm.ui.model.validation
 
 import ddm.ui.model.EffectResolver
-import ddm.ui.model.plan.Effect._
+import ddm.ui.model.plan.Effect.*
 import ddm.ui.model.plan.{Effect, EffectList}
 import ddm.ui.model.player.{Cache, Player}
 

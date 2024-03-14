@@ -1,5 +1,6 @@
 package ddm.scraper.wiki.decoder
 
+import ddm.scraper.wiki.decoder.TermOps.*
 import ddm.scraper.wiki.model.InfoboxVersion
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.Template

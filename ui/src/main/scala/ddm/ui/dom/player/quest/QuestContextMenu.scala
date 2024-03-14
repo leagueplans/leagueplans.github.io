@@ -6,7 +6,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect.CompleteQuest
 import ddm.ui.model.player.Quest
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.Button
 
 object QuestContextMenu {
@@ -18,7 +18,7 @@ object QuestContextMenu {
     L.button(
       L.`type`("button"),
       "Complete",
-      L.onClick.handledAs(CompleteQuest(quest.id)) -->
+      L.onClick.handledAs[CompleteQuest](CompleteQuest(quest.id)) -->
         Observer.combine(effectObserver, menuCloser)
     )
 }

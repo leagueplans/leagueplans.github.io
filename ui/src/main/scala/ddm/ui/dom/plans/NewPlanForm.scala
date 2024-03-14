@@ -63,12 +63,12 @@ object NewPlanForm {
     val nameInput = baseInput.amend(
       L.required(true),
       L.inContext(node =>
-        Signal.combine(nameSignal, existingPlansSignal) --> Observer[(String, Set[String])] { case (input, existing) =>
+        Signal.combine(nameSignal, existingPlansSignal) --> Observer[(String, Set[String])]((input, existing) =>
           if (existing.contains(input))
             node.ref.setCustomValidity("Plan names must be unique")
           else
             node.ref.setCustomValidity("")
-        }
+        )
       )
     )
 

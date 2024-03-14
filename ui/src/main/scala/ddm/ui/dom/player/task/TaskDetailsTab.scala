@@ -14,7 +14,7 @@ object TaskDetailsTab {
   def apply[Task](
     taskType: String,
     fuse: Fuse[Task],
-    filtersSignal: Signal[List[Filter[_]]],
+    filtersSignal: Signal[List[Filter[?]]],
     toTaskList: (Signal[Option[Progress]], Signal[Option[List[Task]]]) => L.HtmlElement
   ): L.Div = {
     val progressVar = Var(Option.empty[Progress])
@@ -44,11 +44,8 @@ object TaskDetailsTab {
     )
   }
 
-  sealed trait Progress
-
-  object Progress {
-    case object Incomplete extends Progress
-    case object Complete extends Progress
+  enum Progress {
+    case Incomplete, Complete
   }
 
   @js.native @JSImport("/styles/player/task/taskDetailsTab.module.css", JSImport.Default)

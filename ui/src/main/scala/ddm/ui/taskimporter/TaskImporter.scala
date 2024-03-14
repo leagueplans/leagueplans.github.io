@@ -12,11 +12,11 @@ import scala.scalajs.js.annotation.JSImport
 object TaskImporter {
   def apply(): L.Div = {
     val (uploader, inputTasksSignal) = TaskUploader()
-    val decisionStream = new EventBus[DecisionMaker.Decision]
+    val decisionStream = EventBus[DecisionMaker.Decision]()
 
     L.div(
       uploader.amend(L.cls(Styles.uploader)),
-      L.child <-- inputTasksSignal.map { case (existingTasks, newTasks) =>
+      L.child <-- inputTasksSignal.map { (existingTasks, newTasks) =>
         val (stateBinder, stateSignal) = StateTracker(existingTasks, newTasks, decisionStream.events)
         L.div(
           stateBinder,
@@ -33,9 +33,9 @@ object TaskImporter {
         )
       },
       decisionStream --> Observer[DecisionMaker.Decision](println),
-      inputTasksSignal --> Observer[(List[LeagueTask], List[LeagueTask])] { case (existingTasks, newTasks) =>
+      inputTasksSignal --> Observer[(List[LeagueTask], List[LeagueTask])]((existingTasks, newTasks) =>
         TaskMerger.mergeExact(existingTasks, newTasks).foreach(decisionStream.writer.onNext)
-      }
+      )
     )
   }
 

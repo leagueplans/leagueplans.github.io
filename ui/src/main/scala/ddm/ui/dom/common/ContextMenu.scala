@@ -6,7 +6,7 @@ import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToPro
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.utils.laminar.LaminarOps.RichEventProp
+import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.{Element, MouseEvent}
 
@@ -28,17 +28,16 @@ object ContextMenu {
 
   def apply(): (ReactiveHtmlElement[Div], Controller) = {
     val status = Var[Status](Status.Closed)
-    val controller = new Controller(
+    val controller = Controller(
       opener(status.writer),
       closer = status.writer.contramap(_ => Status.Closed)
     )
     (toMenu(status), controller)
   }
 
-  private sealed trait Status
-  private object Status {
-    final case class Open(x: Double, y: Double, contents: L.Node) extends Status
-    case object Closed extends Status
+  private enum Status {
+    case Open(x: Double, y: Double, contents: L.Node)
+    case Closed
   }
 
   @js.native @JSImport("/styles/common/contextMenu.module.css", JSImport.Default)
@@ -72,14 +71,14 @@ object ContextMenu {
   private def toCoords(status: Signal[Status])(pick: Status.Open => Double): EventStream[String] =
     status.changes.collect { case open: Status.Open => s"${pick(open)}px" }
 
-  private def closeOnClickOutside(status: Observer[Status.Closed.type]): Binder[Base] =
+  private def closeOnClickOutside(status: Observer[Status]): Binder[Base] =
     L.documentEvents(
       _.onContextMenu
         .filter(!_.defaultPrevented)
         .mapTo(Status.Closed)
     ) --> status
 
-  private def closeIfAnotherMenuIsOpened(status: Observer[Status.Closed.type]): L.Modifier[Base] =
+  private def closeIfAnotherMenuIsOpened(status: Observer[Status]): L.Modifier[Base] =
     L.inContext(node =>
       L.documentEvents(
         _.onClick

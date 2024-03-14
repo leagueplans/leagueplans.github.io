@@ -99,10 +99,10 @@ object EquipmentSlotElement {
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)
-        .map { case (maybeEffectObserver, stackSize) =>
+        .map((maybeEffectObserver, stackSize) =>
           maybeEffectObserver.map(effectObserver =>
             EquippedItemContextMenu(item, stackSize, slot, effectObserver, menuCloser)
           )
-        }
+        )
     )
 }

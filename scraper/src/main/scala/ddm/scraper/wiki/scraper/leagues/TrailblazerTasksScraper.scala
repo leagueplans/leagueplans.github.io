@@ -12,15 +12,15 @@ object TrailblazerTasksScraper {
   def scrape(
     client: MediaWikiClient,
     reportError: (Page, Throwable) => Unit
-  ): Source[LeagueTask, _] = {
+  ): Source[LeagueTask, ?] = {
     val taskRowExtractor = new LeagueTaskRowExtractor
 
     Source(pagesWithAreas)
-      .flatMapConcat { case (area, pageName) =>
+      .flatMapConcat((area, pageName) =>
         client
           .fetch(MediaWikiSelector.Pages(List(pageName)), Some(MediaWikiContent.Revisions))
-          .map { case (page, result) => (page, result.map(content => (area, content))) }
-      }
+          .map((page, result) => (page, result.map(content => (area, content))))
+      )
       .via(errorReportingFlow(reportError))
       .map { case (page, (area, content)) =>
         (page, TermParser.parse(content).map(terms => (area, terms)))
@@ -32,13 +32,13 @@ object TrailblazerTasksScraper {
       .via(errorReportingFlow(reportError))
       .mapConcat { case (page, (area, sections)) =>
         sections.flatMap(section =>
-          section.tasks.map { case (index, task) =>
+          section.tasks.map((index, task) =>
             (page, TrailblazerTaskDecoder.decode(index, section.tier, area, task))
-          }
+          )
         )
       }
       .via(errorReportingFlow(reportError))
-      .map { case (_, task) => task }
+      .map((_, task) => task)
   }
 
   private val pagesWithAreas: List[(LeagueTaskArea, Page.Name)] =
@@ -53,7 +53,7 @@ object TrailblazerTasksScraper {
       LeagueTaskArea.Morytania -> "Trailblazer_League/Tasks/Morytania",
       LeagueTaskArea.Tirannwn -> "Trailblazer_League/Tasks/Tirannwn",
       LeagueTaskArea.Wilderness -> "Trailblazer_League/Tasks/Wilderness",
-    ).map { case (area, wikiName) => (area, Page.Name.from(wikiName)) }
+    ).map((area, wikiName) => (area, Page.Name.from(wikiName)))
 
   private def errorReportingFlow[T](
     reportError: (Page, Throwable) => Unit

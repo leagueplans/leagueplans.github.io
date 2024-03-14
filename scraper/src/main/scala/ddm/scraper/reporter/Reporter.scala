@@ -6,7 +6,7 @@ import ddm.scraper.dumper.Cache
 import ddm.scraper.wiki.model.Page
 
 object Reporter {
-  def pageFlow[T](reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]): Flow[(Page, Either[Throwable, T]), (Page, T), _] =
+  def pageFlow[T](reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]): Flow[(Page, Either[Throwable, T]), (Page, T), ?] =
     Flow[(Page, Either[Throwable, T])].mapConcat {
       case (page, Left(error)) =>
         reporter ! Cache.Message.NewEntry((page, error))

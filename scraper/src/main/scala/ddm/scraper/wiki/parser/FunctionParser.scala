@@ -1,6 +1,6 @@
 package ddm.scraper.wiki.parser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 final class FunctionParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parse: Rule1[Term.Function] =
@@ -22,5 +22,5 @@ final class FunctionParser(val input: ParserInput) extends Parser with ControlCh
     )
 
   private def parameter: Rule1[List[Term]] =
-    rule(runSubParser(new TermParser(_).parseNested))
+    rule(runSubParser(TermParser(_).parseNested))
 }

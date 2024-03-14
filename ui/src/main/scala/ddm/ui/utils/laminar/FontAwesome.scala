@@ -6,8 +6,6 @@ import com.raquo.laminar.modifiers.Setter
 import ddm.ui.facades.fontawesome.commontypes.IconDefinition
 import ddm.ui.facades.fontawesome.svgcore.{AbstractElement, FontAwesome => Facade}
 
-import scala.scalajs.js.|
-
 object FontAwesome {
   def icon(definition: IconDefinition): L.SvgElement = {
     val facadeIcon = Facade.icon(definition)
@@ -16,7 +14,7 @@ object FontAwesome {
 
   private def toSvgElement(element: AbstractElement): L.SvgElement = {
     val tag = L.svg.svgTag(element.tag)
-    val attributes = element.attributes.map((toAttr _).tupled).toList
+    val attributes = element.attributes.map(toAttr.tupled).toList
     val children = element.children.toList.flatten.map(toSvgElement)
     tag(attributes, children)
   }

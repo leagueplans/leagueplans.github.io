@@ -5,36 +5,36 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
 object Item {
-  final case class ID(raw: String)
+  final case class ID(raw: String) extends AnyVal
 
   object Image {
-    final case class Bin(floor: Int)
-    final case class Path(raw: String)
+    final case class Bin(floor: Int) extends AnyVal
+    final case class Path(raw: String) extends AnyVal
 
-    implicit val binEncoder: Encoder[Bin] = Encoder[Int].contramap(_.floor)
-    implicit val binDecoder: Decoder[Bin] = Decoder[Int].map(Bin)
-    implicit val pathEncoder: Encoder[Path] = Encoder[String].contramap(_.raw)
-    implicit val pathDecoder: Decoder[Path] = Decoder[String].map(Path)
+    given Encoder[Bin] = Encoder[Int].contramap(_.floor)
+    given Decoder[Bin] = Decoder[Int].map(Bin.apply)
+    given Encoder[Path] = Encoder[String].contramap(_.raw)
+    given Decoder[Path] = Decoder[String].map(Path.apply)
   }
 
-  sealed trait Bankable
+  enum Bankable {
+    case Yes(stacks: Boolean)
+    case No
+  }
 
   object Bankable {
-    final case class Yes(stacks: Boolean) extends Bankable
-    case object No extends Bankable
-
-    implicit val yesEncoder: Encoder[Yes] = Encoder[Boolean].contramap(_.stacks)
-    implicit val yesDecoder: Decoder[Yes] = Decoder[Boolean].map(Yes)
-    implicit val noCodec: Codec[No.type] = deriveCodec
-    implicit val bankableCodec: Codec[Bankable] = deriveCodec
+    given Encoder[Yes] = Encoder[Boolean].contramap(_.stacks)
+    given Decoder[Yes] = Decoder[Boolean].map(Yes.apply)
+    given Codec[No.type] = deriveCodec
+    given Codec[Bankable] = deriveCodec
   }
 
-  implicit val idOrdering: Ordering[ID] = Ordering.by(_.raw)
-  implicit val idEncoder: Encoder[ID] = Encoder[String].contramap(_.raw)
-  implicit val idDecoder: Decoder[ID] = Decoder[String].map(ID)
+  given Ordering[ID] = Ordering.by(_.raw)
+  given Encoder[ID] = Encoder[String].contramap(_.raw)
+  given Decoder[ID] = Decoder[String].map(ID.apply)
 
-  implicit val ordering: Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
-  implicit val codec: Codec[Item] = deriveCodec
+  given Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
+  given Codec[Item] = deriveCodec
 }
 
 final case class Item(
@@ -51,7 +51,7 @@ final case class Item(
     val (_, path) =
       images
         .toList
-        .takeWhile { case (bin, _) => bin.floor <= count }
+        .takeWhile((bin, _) => bin.floor <= count)
         .lastOption
         .getOrElse(images.head)
 

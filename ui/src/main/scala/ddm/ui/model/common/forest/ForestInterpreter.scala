@@ -1,7 +1,7 @@
 package ddm.ui.model.common.forest
 
 import ddm.ui.model.common.forest.Forest.Update
-import ddm.ui.model.common.forest.Forest.Update._
+import ddm.ui.model.common.forest.Forest.Update.*
 
 import scala.annotation.tailrec
 

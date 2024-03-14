@@ -16,7 +16,7 @@ object ScrapeItemsRunner {
   def from(args: CommandLineArgs): ScrapeItemsRunner = {
     val dumpDirectory = args.get("target-directory")(Path.of(_).resolve("dump"))
 
-    new ScrapeItemsRunner(
+    ScrapeItemsRunner(
       parseMode(args),
       idMapFile = args.get("id-map")(Path.of(_)),
       itemsFile = dumpDirectory.resolve("data/items.json"),
@@ -26,7 +26,12 @@ object ScrapeItemsRunner {
 
   private def parseMode(args: CommandLineArgs): ItemScraper.Mode =
     args
-      .getOpt("pages")(_.split('|').map(Page.Name.Other).toList.pipe(ItemScraper.Mode.Pages))
+      .getOpt("pages")(
+        _.split('|')
+          .map[Page.Name.Other](Page.Name.Other.apply)
+          .toList
+          .pipe(ItemScraper.Mode.Pages.apply)
+      )
       .orElse(args.getOpt("from")(name => ItemScraper.Mode.From(Page.Name.Other(name))))
       .getOrElse(ItemScraper.Mode.All)
 }
@@ -42,7 +47,7 @@ final class ScrapeItemsRunner(
     reporter: ActorRef[Cache.Message[(Page, Throwable)]],
     spawnIDMapWriter: Spawn[Cache.Message[((Page.ID, InfoboxVersion), Item.ID)]],
     spawnItemWriter: Spawn[Cache.Message[Item]]
-  )(implicit system: ActorSystem[_]): Unit = {
+  )(using system: ActorSystem[?]): Unit = {
     import system.executionContext
     val idMapWriterBehavior = CachingWriter.to[((Page.ID, InfoboxVersion), Item.ID)](idMapFile)
     val itemWriterBehavior = CachingWriter.to[Item](itemsFile, StandardOpenOption.CREATE_NEW)

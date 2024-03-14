@@ -16,21 +16,20 @@ import scala.util.{Failure, Success}
 object ItemScraper {
   private val infobox = "Infobox Item"
   private val ignoredCategories: Set[Page.Name.Category] =
-    Set("Inaccessible items").map(Page.Name.Category)
+    Set("Inaccessible items").map(Page.Name.Category.apply)
 
-  sealed trait Mode
-  object Mode {
+  enum Mode {
     /** Inclusive of the named page */
-    final case class From(page: Page.Name.Other) extends Mode
-    final case class Pages(raw: List[Page.Name.Other]) extends Mode
-    case object All extends Mode
+    case From(page: Page.Name.Other)
+    case Pages(raw: List[Page.Name.Other])
+    case All
   }
 
   def scrape(
     mode: Mode,
     client: MediaWikiClient,
     reportError: (Page, Throwable) => Unit
-  )(implicit mat: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), _] = {
+  )(using mat: Materializer, ec: ExecutionContext): Source[(Page, WikiItem), ?] = {
     val source =
       mode match {
         case Mode.Pages(raw) =>
@@ -42,7 +41,7 @@ object ItemScraper {
           Source
             .future(findPagesToIgnore(client))
             .flatMapConcat(ignoredPages => findItemPages(ignoredPages, client, reportError))
-            .dropWhile { case (page, _) => page.name != initialPage }
+            .dropWhile((page, _) => page.name != initialPage)
 
         case Mode.All =>
           Source
@@ -51,19 +50,19 @@ object ItemScraper {
       }
 
     source
-      .mapConcat { case (page, content) =>
+      .mapConcat { (page, content) =>
         val (errors, infoboxes) = decode(page, content)
         errors.foreach(reportError(page, _))
         infoboxes.map((page, _))
       }
-      .mapAsync(parallelism = 10) { case (page, infoboxes) =>
+      .mapAsync(parallelism = 10)((page, infoboxes) =>
         fetchImages(infoboxes.item.imageBins, client).transform {
           case Failure(error) =>
             Success((page, Left(error)))
           case Success(images) =>
             Success((page, Right(WikiItem(infoboxes, images))))
         }
-      }
+      )
       .via(errorReportingFlow(reportError))
   }
 
@@ -81,7 +80,7 @@ object ItemScraper {
 
   private def findPagesToIgnore(
     client: MediaWikiClient
-  )(implicit materializer: Materializer): Future[Set[Page.ID]] =
+  )(using materializer: Materializer): Future[Set[Page.ID]] =
     ignoredCategories
       .foldLeft(Source.empty[Page.ID])((acc, category) =>
         acc.concat(
@@ -96,13 +95,13 @@ object ItemScraper {
     ignoredPages: Set[Page.ID],
     client: MediaWikiClient,
     reportError: (Page, Throwable) => Unit
-  ): Source[(Page, String), _] =
+  ): Source[(Page, String), ?] =
     client
       .fetch(
         MediaWikiSelector.PagesThatTransclude(Page.Name.Template(infobox)),
         Some(MediaWikiContent.Revisions)
       )
-      .filterNot { case (page, _) => ignoredPages.contains(page.id) }
+      .filterNot((page, _) => ignoredPages.contains(page.id))
       .via(errorReportingFlow(reportError))
 
   private def decode(page: Page, content: String): (List[Throwable], List[WikiItem.Infoboxes]) = {
@@ -123,10 +122,10 @@ object ItemScraper {
   private def fetchImages(
     wikiBins: NonEmptyList[(Item.Image.Bin, Page.Name.File)],
     client: MediaWikiClient
-  )(implicit ec: ExecutionContext): Future[NonEmptyList[WikiItem.Image]] =
+  )(using ec: ExecutionContext): Future[NonEmptyList[WikiItem.Image]] =
     Future.sequence(
-      wikiBins.map { case (bin, fileName) =>
+      wikiBins.map((bin, fileName) =>
         client.fetchImage(fileName).map(data => WikiItem.Image(bin, fileName, data))
-      }.toList
+      ).toList
     ).map(bins => NonEmptyList.fromListUnsafe(bins))
 }

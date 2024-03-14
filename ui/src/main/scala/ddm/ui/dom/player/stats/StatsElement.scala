@@ -7,7 +7,7 @@ import ddm.common.model.Skill
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
-import ddm.common.model.Skill._
+import ddm.common.model.Skill.*
 import ddm.ui.model.player.skill.{Stat, Stats}
 import org.scalajs.dom.html.OList
 

@@ -18,7 +18,7 @@ object DiarySummaryTab {
     val groupedTasks = groupTasks(cache)
 
     TaskSummaryTab(
-      DiaryRegion.all.map { region =>
+      DiaryRegion.values.map { region =>
         val tiers = groupedTasks(region)
         DiaryOption(
           region,
@@ -29,7 +29,7 @@ object DiarySummaryTab {
           regionObserver = regionObserver.contramap[Unit](_ => region),
           tierObserver = tierObserver
         )
-      }
+      }.toList
     )
   }
 
@@ -38,12 +38,12 @@ object DiarySummaryTab {
       .diaryTasks
       .values
       .groupBy(_.region)
-      .map { case (region, tasks) =>
+      .map((region, tasks) =>
         tasks
           .groupBy(_.tier)
-          .map { case (tier, tasks) => tier -> tasks.toList.sortBy(_.id) }
+          .map((tier, tasks) => tier -> tasks.toList.sortBy(_.id))
           .pipe(region -> _)
-      }
+      )
 
   private def isTierComplete(tierTasks: Iterable[DiaryTask], completedTasks: Set[Int]): Boolean =
     tierTasks.forall(task => completedTasks.contains(task.id))

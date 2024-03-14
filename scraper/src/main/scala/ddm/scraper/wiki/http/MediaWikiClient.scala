@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.headers.`User-Agent`
 import akka.http.scaladsl.model.{HttpRequest, Uri}
 import akka.stream.scaladsl.{Flow, Source}
 import cats.data.NonEmptyList
-import ddm.common.utils.circe.RichJsonObject
+import ddm.common.utils.circe.JsonObjectOps.*
 import ddm.scraper.http.ThrottledHttpClient
 import ddm.scraper.wiki.http.response.MediaWikiResponse
 import ddm.scraper.wiki.model.Page
@@ -22,14 +22,14 @@ final class MediaWikiClient(
   httpClient: ThrottledHttpClient,
   userAgent: `User-Agent`,
   baseURL: String
-)(implicit ec: ExecutionContext) {
+)(using ec: ExecutionContext) {
   private val apiUrl = Uri(s"$baseURL/api.php")
   private val logger = getLogger
 
   def fetch(
     selector: MediaWikiSelector,
     maybeContent: Option[MediaWikiContent]
-  ): Source[(Page, Decoder.Result[String]), _] =
+  ): Source[(Page, Decoder.Result[String]), ?] =
     toParams(selector)
       .map(_ ++ maybeContent.fold(Map.empty[String, String])(toParams))
       .flatMapConcat(params => fetch(params))
@@ -52,7 +52,7 @@ final class MediaWikiClient(
   def fetchAllMembers(
     category: Page.Name.Category,
     maybeContent: Option[MediaWikiContent]
-  ): Source[(Page, Decoder.Result[String]), _] =
+  ): Source[(Page, Decoder.Result[String]), ?] =
     fetch(MediaWikiSelector.Members(category), maybeContent).flatMapConcat {
       case (Page(_, subCategory: Page.Name.Category), _) =>
         fetchAllMembers(subCategory, maybeContent)
@@ -60,7 +60,7 @@ final class MediaWikiClient(
         Source.single((page, data))
     }
 
-  private def toParams(selector: MediaWikiSelector): Source[Map[String, String], _] =
+  private def toParams(selector: MediaWikiSelector): Source[Map[String, String], ?] =
     selector match {
       case MediaWikiSelector.Members(category) =>
         Source.single(Map(
@@ -93,7 +93,7 @@ final class MediaWikiClient(
       case MediaWikiContent.Revisions => "revisions"
     }
 
-  private def fetch(params: Map[String, String]): Source[(Page, JsonObject), _] =
+  private def fetch(params: Map[String, String]): Source[(Page, JsonObject), ?] =
     Source
       .unfoldAsync(Option(params)) {
         case None =>
@@ -115,15 +115,15 @@ final class MediaWikiClient(
         case (statusCode, data) if statusCode.isSuccess() =>
           Future.successful(data)
         case (statusCode, body) =>
-          Future.failed(new RuntimeException(s"Bad response [${statusCode.value}], body: [${new String(body)}]"))
+          Future.failed(RuntimeException(s"Bad response [${statusCode.value}], body: [${String(body)}]"))
       }
 
   private def decodeResponse(response: Array[Byte]): Try[MediaWikiResponse.Success] =
     parser
-      .decode[MediaWikiResponse](new String(response))
+      .decode[MediaWikiResponse](String(response))
       .flatMap {
         case f: MediaWikiResponse.Failure =>
-          Left(new RuntimeException(s"Error response from wiki: [${f.error.code}] - [${f.error.info}]"))
+          Left(RuntimeException(s"Error response from wiki: [${f.error.code}] - [${f.error.info}]"))
         case s: MediaWikiResponse.Success =>
           Right(s)
       }
@@ -142,13 +142,13 @@ final class MediaWikiClient(
   private def buildRequest(uri: Uri): HttpRequest =
     HttpRequest(uri = uri, headers = List(userAgent))
 
-  private type DecodingFlow = Flow[(Page, JsonObject), (Page, Decoder.Result[String]), _]
+  private type DecodingFlow = Flow[(Page, JsonObject), (Page, Decoder.Result[String]), ?]
 
   private val noContentDecodingFlow: DecodingFlow =
-    Flow[(Page, JsonObject)].map { case (page, _) => (page, Right("")) }
+    Flow[(Page, JsonObject)].map((page, _) => (page, Right("")))
 
   private def decodingFlow(content: MediaWikiContent): DecodingFlow =
-    Flow[(Page, JsonObject)].collect(Function.unlift { case (page, rawData) =>
+    Flow[(Page, JsonObject)].collect(Function.unlift { (page, rawData) =>
       val prop = toProp(content)
 
       rawData.decodeOptField[NonEmptyList[JsonObject]](prop) match {
@@ -173,7 +173,7 @@ final class MediaWikiClient(
   def fetchImageUsingRest(encodedFileName: String): Future[Array[Byte]] =
     for {
       metadata <- execute(buildRequest(s"$baseURL/rest.php/v1/file/$encodedFileName"))
-      json <- Future.fromTry(parser.decode[JsonObject](new String(metadata)).toTry)
+      json <- Future.fromTry(parser.decode[JsonObject](String(metadata)).toTry)
       actualURL <- Future.fromTry(json.decodeNestedField[String]("preferred", "url")(List.empty).toTry)
       image <- execute(buildRequest(actualURL))
     } yield image

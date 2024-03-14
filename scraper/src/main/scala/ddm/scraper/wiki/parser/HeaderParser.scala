@@ -1,6 +1,6 @@
 package ddm.scraper.wiki.parser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 final class HeaderParser(val input: ParserInput) extends Parser with ControlCharacters {
   def parse: Rule1[Term.Header] =

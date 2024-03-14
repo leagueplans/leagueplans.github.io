@@ -4,7 +4,6 @@ import ddm.ui.facades.fontawesome.commontypes.{IconLookup, IconName}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import scala.scalajs.js.|
 
 object FontAwesome {
   @js.native @JSImport("@fortawesome/fontawesome-svg-core")
