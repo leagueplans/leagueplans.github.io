@@ -1,25 +1,23 @@
 package ddm.ui.model.common.forest
 
 import ddm.ui.model.common.forest.Forest.Update
-import ddm.ui.model.common.forest.Forest.Update.{AddLink, AddNode, RemoveLink, RemoveNode, Reorder, UpdateData}
+import ddm.ui.model.common.forest.Forest.Update.*
 
 object ForestResolver {
   def resolve[ID, T](forest: Forest[ID, T], updates: List[Update[ID, T]]): Forest[ID, T] =
-    updates.foldLeft(forest)(ForestResolver(_).resolve(_))
-}
+    updates.foldLeft(forest)(resolve)
 
-final class ForestResolver[ID, T](forest: Forest[ID, T]) {
-  def resolve(update: Update[ID, T]): Forest[ID, T] =
+  def resolve[ID, T](forest: Forest[ID, T], update: Update[ID, T]): Forest[ID, T] =
     update match {
       case AddNode(id, data) =>
-        make(
+        make(forest)(
           updatedNodes = forest.nodes + (id -> data),
           updatedToChildren = forest.toChildren + (id -> List.empty),
           updatedRoots = forest.roots :+ id
         )
 
       case RemoveNode(id) =>
-        make(
+        make(forest)(
           updatedNodes = forest.nodes - id,
           updatedToChildren = forest.toChildren - id,
           updatedRoots = forest.roots.filterNot(_ == id)
@@ -27,7 +25,7 @@ final class ForestResolver[ID, T](forest: Forest[ID, T]) {
 
       case AddLink(child, parent) =>
         val currentChildren = forest.toChildren.get(parent).toList.flatten
-        make(
+        make(forest)(
           updatedToParent = forest.toParent + (child -> parent),
           updatedToChildren = forest.toChildren + (parent -> (currentChildren :+ child)),
           updatedRoots = forest.roots.filterNot(_ == child)
@@ -35,24 +33,27 @@ final class ForestResolver[ID, T](forest: Forest[ID, T]) {
 
       case RemoveLink(child, parent) =>
         val currentChildren = forest.toChildren.get(parent).toList.flatten
-        make(
+        make(forest)(
           updatedToParent = forest.toParent - child,
           updatedToChildren = forest.toChildren + (parent -> currentChildren.filterNot(_ == child)),
           updatedRoots = forest.roots :+ child
         )
-
+        
+      case ChangeParent(child, oldParent, newParent) =>
+        resolve(forest, List(RemoveLink(child, oldParent), AddLink(child, newParent)))
+        
       case UpdateData(id, data) =>
-        make(
+        make(forest)(
           updatedNodes = forest.nodes + (id -> data)
         )
 
       case Reorder(children, parent) =>
-        make(
+        make(forest)(
           updatedToChildren = forest.toChildren + (parent -> children)
         )
     }
 
-  private def make(
+  private def make[ID, T](forest: Forest[ID, T])(
     updatedNodes: Map[ID, T] = forest.nodes,
     updatedToParent: Map[ID, ID] = forest.toParent,
     updatedToChildren: Map[ID, List[ID]] = forest.toChildren,

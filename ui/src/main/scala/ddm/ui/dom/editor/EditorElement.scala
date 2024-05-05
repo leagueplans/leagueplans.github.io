@@ -5,7 +5,8 @@ import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{Forester, FormOpener, Tooltip}
+import ddm.ui.dom.common.{FormOpener, Tooltip}
+import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import ddm.ui.model.player.{Cache, Player}

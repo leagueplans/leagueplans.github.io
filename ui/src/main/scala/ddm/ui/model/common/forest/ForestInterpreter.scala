@@ -14,21 +14,34 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
 
   def addOption(data: T, maybeParentID: Option[ID]): List[Update[ID, T]] = {
     val childID = toID(data)
-    val addLink = maybeParentID.filter(forest.nodes.contains).map(AddLink(childID, _))
+    val maybeAddLink = maybeParentID.filter(forest.nodes.contains).map(new AddLink(childID, _))
 
     forest.nodes.get(childID) match {
       case None =>
-        AddNode(childID, data) +: addLink.toList
+        AddNode(childID, data) +: maybeAddLink.toList
 
       case Some(existingData) =>
-        val updateData = Option.when(existingData != data)(UpdateData(childID, data))
+        val updateData = Option.when(existingData != data)(UpdateData(childID, data)).toList
         val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).map(toID).contains(childID)
 
         if (targetParentHasChildAsAncestor || maybeParentID.contains(childID))
-          updateData.toList
+          updateData
         else {
-          val removeLink = forest.toParent.get(childID).map(RemoveLink(childID, _))
-          removeLink.toList ++ updateData ++ addLink
+          val maybeRemoveLink = forest.toParent.get(childID).map(new RemoveLink(childID, _))
+
+          (maybeAddLink, maybeRemoveLink) match {
+            case (Some(addLink), Some(removeLink)) =>
+              ChangeParent(childID, removeLink.parent, addLink.parent) +: updateData
+              
+            case (Some(addLink), None) =>
+              updateData :+ addLink
+              
+            case (None, Some(removeLink)) =>
+              removeLink +: updateData
+              
+            case (None, None) =>
+              updateData
+          }
         }
     }
   }

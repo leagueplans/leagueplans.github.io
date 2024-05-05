@@ -16,6 +16,7 @@ object Forest {
 
     case AddLink(child: ID, parent: ID)
     case RemoveLink(child: ID, parent: ID)
+    case ChangeParent(childID: ID, oldParentID: ID, newParentID: ID)
 
     case UpdateData(id: ID, data: T)
     case Reorder(children: List[ID], parent: ID)

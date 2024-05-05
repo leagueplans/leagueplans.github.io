@@ -6,7 +6,8 @@ import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNod
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.{ContextMenu, Forester}
+import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.forest.Forester
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.{OList, Paragraph}

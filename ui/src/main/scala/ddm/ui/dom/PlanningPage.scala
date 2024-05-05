@@ -5,9 +5,10 @@ import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.PlanStorage
-import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.dom.common.*
+import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.dom.editor.EditorElement
+import ddm.ui.dom.forest.Forester
 import ddm.ui.dom.help.HelpButton
 import ddm.ui.dom.plan.PlanElement
 import ddm.ui.dom.player.Visualiser

@@ -4,7 +4,8 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.{EditableParagraph, Forester}
+import ddm.ui.dom.common.EditableParagraph
+import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.laminar.FontAwesome

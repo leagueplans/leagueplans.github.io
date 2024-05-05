@@ -4,7 +4,8 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
 import com.raquo.laminar.api.{L, enrichSource}
-import ddm.ui.dom.common.{ContextMenu, Forester}
+import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.forest.Forester
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.Step
 
