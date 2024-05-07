@@ -1,5 +1,6 @@
 package ddm.ui.model.plan
 
+import ddm.ui.utils.HasID
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, JsonObject}
 
@@ -9,6 +10,8 @@ object Step {
   def apply(description: String): Step =
     Step(UUID.randomUUID(), description, EffectList.empty, requirements = List.empty)
 
+  given HasID.Aux[Step, UUID] = HasID[Step, UUID](_.id)
+  
   given Encoder[Step] =
     Encoder[JsonObject].contramap(step =>
       JsonObject(

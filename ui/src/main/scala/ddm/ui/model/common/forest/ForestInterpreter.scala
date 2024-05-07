@@ -2,10 +2,11 @@ package ddm.ui.model.common.forest
 
 import ddm.ui.model.common.forest.Forest.Update
 import ddm.ui.model.common.forest.Forest.Update.*
+import ddm.ui.utils.HasID
 
 import scala.annotation.tailrec
 
-final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
+final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, ID]) {
   def add(data: T): List[Update[ID, T]] =
     addOption(data, None)
 
@@ -13,7 +14,7 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
     addOption(data, Some(parentID))
 
   def addOption(data: T, maybeParentID: Option[ID]): List[Update[ID, T]] = {
-    val childID = toID(data)
+    val childID = data.id
     val maybeAddLink = maybeParentID.filter(forest.nodes.contains).map(new AddLink(childID, _))
 
     forest.nodes.get(childID) match {
@@ -22,7 +23,7 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
 
       case Some(existingData) =>
         val updateData = Option.when(existingData != data)(UpdateData(childID, data)).toList
-        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).map(toID).contains(childID)
+        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).map(_.id).contains(childID)
 
         if (targetParentHasChildAsAncestor || maybeParentID.contains(childID))
           updateData
@@ -71,7 +72,7 @@ final class ForestInterpreter[ID, T](toID: T => ID, forest: Forest[ID, T]) {
     }.toList
 
   def update(data: T): List[Update[ID, T]] = {
-    val id = toID(data)
+    val id = data.id
     forest.nodes.get(id) match {
       case Some(existingData) => Option.when(data != existingData)(UpdateData(id, data)).toList
       case None => List(AddNode(id, data))

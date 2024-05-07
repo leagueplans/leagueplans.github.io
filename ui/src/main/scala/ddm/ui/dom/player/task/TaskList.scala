@@ -3,20 +3,20 @@ package ddm.ui.dom.player.task
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import ddm.ui.utils.HasID
 import org.scalajs.dom.HTMLOListElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object TaskList {
-  def apply[ID, Task](
-    toID: Task => ID,
+  def apply[Task](
     tasksSignal: Signal[List[Task]],
     toNode: Task => L.Node
-  ): ReactiveHtmlElement[HTMLOListElement] =
+  )(using hasID: HasID[Task]): ReactiveHtmlElement[HTMLOListElement] =
     L.ol(
       L.cls(Styles.list),
-      L.children <-- tasksSignal.split(toID)((_, task, _) =>
+      L.children <-- tasksSignal.split(_.id)((_, task, _) =>
         L.li(L.cls(Styles.entry), toNode(task))
       )
     )

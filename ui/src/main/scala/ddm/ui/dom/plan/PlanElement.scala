@@ -25,9 +25,8 @@ object PlanElement {
     val completionManager = CompletionManager(allStepsVar.signal)
     val stepsWithErrorsVar = Var(findStepsWithErrors(initialPlan))
 
-    val forester = Forester[UUID, Step](
+    val forester = Forester[Step](
       initialPlan,
-      _.id,
       toElement(
         _,
         _,

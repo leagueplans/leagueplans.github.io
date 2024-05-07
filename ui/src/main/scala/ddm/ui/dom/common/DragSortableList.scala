@@ -5,6 +5,7 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
+import ddm.ui.utils.HasID
 import ddm.ui.utils.airstream.ObservableOps.unzip
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.utils.laminar.LaminarOps.*
@@ -19,16 +20,15 @@ object DragSortableList {
     id: String,
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
-    toID: T => ID,
     toElement: (ID, T, Signal[T], L.Div) => L.Modifier[L.HtmlElement]
-  ): ReactiveHtmlElement[OList] = {
+  )(using HasID.Aux[T, ID]): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
     val dragTracker = Var[Option[Dragging[ID, T]]](None)
 
     val children =
       orderSignal
         .map(_.zipWithIndex)
-        .split((data, _) => toID(data)) { case (itemID, (data, _), zippedSignal) =>
+        .split((data, _) => data.id) { case (itemID, (data, _), zippedSignal) =>
           val (dataSignal, indexSignal) = zippedSignal.unzip
           val (icon, draggableSignal) = dragIcon
 

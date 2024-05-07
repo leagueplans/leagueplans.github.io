@@ -11,6 +11,7 @@ import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.model.validation.StepValidator
+import ddm.ui.utils.HasID
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
@@ -85,14 +86,13 @@ object EditorElement {
     modalBus: WriteBus[Option[L.Element]],
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, _) =>
-      Section[UUID, Step](
+      Section(
         title = "Steps",
         id = "substeps",
         subStepsSignal,
         stepUpdater.contramap[List[Step]](reordering => forester =>
           forester.reorder(reordering.map(_.id))
         ),
-        _.id,
         subStep => L.p(
           L.cls(Styles.subStepDescription),
           subStep.description
@@ -124,20 +124,19 @@ object EditorElement {
     stepUpdater: Observer[Forester[UUID, Step] => Unit]
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
-      Section[Effect, Effect](
+      Section(
         title = "Effects",
         id = "effects",
         stepSignal.map(_.directEffects.underlying),
         stepUpdater.contramap[List[Effect]](effectOrdering => forester =>
           forester.update(stepID, _.copy(directEffects = EffectList(effectOrdering)))
         ),
-        identity,
         DescribedEffect(_, cache),
         None,
         stepUpdater.contramap[Effect](deletedEffect => forester =>
           forester.update(stepID, step => step.copy(directEffects = step.directEffects - deletedEffect))
         )
-      ).amend(L.cls(Styles.section))
+      )(using HasID.identity).amend(L.cls(Styles.section))
     )
 
   private def toRequirements(
@@ -148,20 +147,19 @@ object EditorElement {
     modalBus: WriteBus[Option[L.Element]]
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
-      Section[Requirement, Requirement](
+      Section(
         title = "Requirements",
         id = "requirements",
         stepSignal.map(_.requirements),
         stepUpdater.contramap[List[Requirement]](requirementOrdering => forester =>
           forester.update(stepID, _.copy(requirements = requirementOrdering))
         ),
-        identity,
         DescribedRequirement(_, cache),
         Some(newRequirementObserver(itemFuse, stepID, modalBus, stepUpdater)),
         stepUpdater.contramap[Requirement](deletedRequirement => forester =>
           forester.update(stepID, step => step.copy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
         )
-      ).amend(L.cls(Styles.section))
+      )(using HasID.identity).amend(L.cls(Styles.section))
     )
 
   private def newRequirementObserver(

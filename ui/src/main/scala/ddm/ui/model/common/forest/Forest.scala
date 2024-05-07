@@ -1,6 +1,7 @@
 package ddm.ui.model.common.forest
 
 import cats.Monoid
+import ddm.ui.utils.HasID
 import io.circe.{Codec, Decoder, Encoder}
 
 import scala.annotation.tailrec
@@ -21,33 +22,32 @@ object Forest {
     case UpdateData(id: ID, data: T)
     case Reorder(children: List[ID], parent: ID)
   }
-
-  def codec[ID, T : Encoder : Decoder](toID: T => ID): Codec[Forest[ID, T]] =
+  
+  given codec[T : Encoder : Decoder](using hasID: HasID[T]): Codec[Forest[hasID.ID, T]] =
     Codec.from(
-      Decoder[List[Tree[T]]].map(fromTrees(_, toID)),
+      Decoder[List[Tree[T]]].map(fromTrees),
       Encoder[List[Tree[T]]].contramap(toTrees)
     )
 
-  def fromTrees[ID, T](trees: List[Tree[T]], toID: T => ID): Forest[ID, T] =
-    fromTreesHelper(Forest.empty, trees.map(None -> _), toID)
+  def fromTrees[T](trees: List[Tree[T]])(using hasID: HasID[T]): Forest[hasID.ID, T] =
+    fromTreesHelper(Forest.empty, trees.map(None -> _))
 
   @tailrec
   private def fromTreesHelper[ID, T](
     forest: Forest[ID, T],
-    remaining: List[(Option[ID], Tree[T])],
-    toID: T => ID
-  ): Forest[ID, T] =
+    remaining: List[(Option[ID], Tree[T])]
+  )(using HasID.Aux[T, ID]): Forest[ID, T] =
     remaining match {
       case Nil => forest
       case (maybeParent, child) :: tail =>
         val updatedForest =
-          ForestInterpreter(toID, forest)
+          ForestInterpreter(forest)
             .addOption(child.data, maybeParent)
             .pipe(ForestResolver.resolve(forest, _))
 
-        val childID = Some(toID(child.data))
+        val childID = Some(child.data.id)
         val descendants = child.children.map(grandchild => childID -> grandchild)
-        fromTreesHelper(updatedForest, tail ++ descendants, toID)
+        fromTreesHelper(updatedForest, tail ++ descendants)
     }
 
   private def toTrees[ID, T](forest: Forest[ID, T]): List[Tree[T]] =

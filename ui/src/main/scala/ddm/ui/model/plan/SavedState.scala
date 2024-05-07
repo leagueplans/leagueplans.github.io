@@ -8,10 +8,7 @@ import io.circe.generic.semiauto.deriveCodec
 import java.util.UUID
 
 object SavedState {
-  given Codec[SavedState] = {
-    given Codec[Forest[UUID, Step]] = Forest.codec(_.id)
-    deriveCodec[SavedState]
-  }
+  given Codec[SavedState] = deriveCodec[SavedState]
 
   final case class Named(name: String, savedState: SavedState)
 }

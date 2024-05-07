@@ -9,7 +9,6 @@ import ddm.ui.model.common.forest.{Forest, Tree}
 import ddm.ui.model.plan.{SavedState, Step}
 import ddm.ui.model.player.mode.Mode
 
-import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -96,9 +95,8 @@ object NewPlanForm {
       .sample(Signal.combine(nameSignal, modeSignal, importSignal))
       .map {
         case (name, mode, None) =>
-          val steps = Forest.fromTrees[UUID, Step](
-            List(Tree(Step(name), children = List.empty)),
-            _.id
+          val steps = Forest.fromTrees(
+            List(Tree(Step(name), children = List.empty))
           )
           SavedState.Named(name, SavedState(mode, steps))
 

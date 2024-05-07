@@ -8,9 +8,12 @@ import ddm.ui.dom.player.task.{TaskDetailsTab, TaskList}
 import ddm.ui.model.plan.Effect.CompleteLeagueTask
 import ddm.ui.model.player.Cache
 import ddm.ui.model.player.mode.*
+import ddm.ui.utils.HasID
 import org.scalajs.dom.html.OList
 
 object LeagueTaskList {
+  private given HasID.Aux[LeagueTask, Int] = HasID(_.id)
+  
   def apply(
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
@@ -47,8 +50,7 @@ object LeagueTaskList {
           )
         )
 
-    TaskList[Int, LeagueTask](
-      _.id,
+    TaskList(
       tasksSignal,
       task => LeagueTaskElement(
         task,

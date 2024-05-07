@@ -6,6 +6,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.raquo.laminar.nodes.ReactiveHtmlElement.Base
 import ddm.ui.dom.common.DragSortableList
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
+import ddm.ui.utils.HasID
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.{Button, Div}
@@ -14,24 +15,22 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Section {
-  def apply[ID, T](
+  def apply[T](
     title: String,
     id: String,
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
-    toID: T => ID,
     toDescription: T => L.Modifier[L.HtmlElement],
     maybeAdditionObserver: Option[Observer[Unit]],
     deletionObserver: Observer[T]
-  ): ReactiveHtmlElement[Div] =
+  )(using hasID: HasID[T]): ReactiveHtmlElement[Div] =
     L.div(
       L.cls(Styles.section),
       toHeader(title, maybeAdditionObserver),
-      DragSortableList[ID, T](
+      DragSortableList[hasID.ID, T](
         id = s"editor-$id",
         orderSignal,
         orderObserver,
-        toID,
         (_, t, _, dragIcon) => toItem(dragIcon, toDescription(t), deletionObserver.contramap(_ => t))
       ).amend(L.cls(Styles.list))
     )

@@ -27,8 +27,7 @@ object DiaryTaskList {
           enumerateTasks(cache, completedTasks, regionFilter, tierFilter, progressFilter, searchFilter)
         )
 
-    TaskList[Int, DiaryTask](
-      _.id,
+    TaskList(
       tasksSignal,
       task => DiaryTaskElement(
         task,

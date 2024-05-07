@@ -5,22 +5,25 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import ddm.ui.model.common.forest.Forest.Update
 import ddm.ui.model.common.forest.{Forest, ForestInterpreter, ForestResolver}
+import ddm.ui.utils.HasID
 
 object Forester {
-  def apply[ID, T](
-    forest: Forest[ID, T],
-    toID: T => ID,
-    createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
-  ): Forester[ID, T] =
-    new Forester(Var(forest), toID, DOMForestUpdateEvaluator(forest, createDOMNode))
+  def apply[T] = new PartiallyAppliedForester[T]
+
+  final class PartiallyAppliedForester[T](val dummy: Boolean = true) extends AnyVal {
+    def apply[ID](
+      forest: Forest[ID, T],
+      createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
+    )(using hasID: HasID.Aux[T, ID]): Forester[ID, T] =
+      new Forester(Var(forest), DOMForestUpdateEvaluator(forest, createDOMNode))
+  }
 }
 
 /** Optimises updates to the forest */
 final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
-  toID: T => ID,
   domEvaluator: DOMForestUpdateEvaluator[ID, T]
-) {
+)(using hasID: HasID.Aux[T, ID]) {
   val forestSignal: Signal[Forest[ID, T]] =
     forestState.signal.distinct
 
@@ -54,7 +57,7 @@ final class Forester[ID, T](
 
   private def run(f: ForestInterpreter[ID, T] => List[Update[ID, T]]): Unit =
     forestState.update { forest =>
-      val updates = f(ForestInterpreter(toID, forest))
+      val updates = f(ForestInterpreter(forest))
       domEvaluator.eval(updates)
       ForestResolver.resolve(forest, updates)
     }
