@@ -1,6 +1,7 @@
 package ddm.ui.wrappers.opfs
 
 import com.raquo.airstream.core.EventStream
+import ddm.ui.utils.airstream.JsPromiseOps.asObservable
 import ddm.ui.wrappers.opfs.FileSystemError.ParsingFailure
 import io.circe.Json
 import io.circe.scalajs.convertJsToJson
@@ -12,24 +13,25 @@ import scala.scalajs.js.typedarray.Int8Array
 import scala.util.chaining.given
 
 trait ByteArrayParser[T] {
-  def parse(bytes: Int8Array): EventStream[Either[ParsingFailure, T]]
+  def parse(fileName: String, bytes: Int8Array): EventStream[Either[ParsingFailure, T]]
 }
 
 object ByteArrayParser {
-  val json: ByteArrayParser[Json] = parseJson(_)
+  val json: ByteArrayParser[Json] = parseJson(_, _)
 
   def compressedJson(format: CompressionFormat): ByteArrayParser[Json] = {
     val decompressor = new DecompressionStream(format)
 
-    (bytes: Int8Array) =>
+    (fileName: String, bytes: Int8Array) =>
       new Blob(Iterable(bytes).toJSIterable)
         .stream()
         .pipeThrough(decompressor)
-        .pipe(parseJson)
+        .pipe(parseJson(fileName, _))
   }
 
-  private def parseJson(body: BodyInit): EventStream[Either[ParsingFailure, Json]] =
-    EventStream
-      .fromJsPromise(new Response(body).json(), emitOnce = true)
-      .map(convertJsToJson(_).left.map(ParsingFailure.apply))
+  private def parseJson(fileName: String, body: BodyInit): EventStream[Either[ParsingFailure, Json]] =
+    new Response(body)
+      .json()
+      .asObservable
+      .map(convertJsToJson(_).left.map(ex => ParsingFailure(fileName, ex)))
 }

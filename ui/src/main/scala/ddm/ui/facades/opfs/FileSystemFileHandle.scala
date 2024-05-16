@@ -5,7 +5,7 @@ import org.scalajs.dom.File
 import scala.scalajs.js
 
 @js.native
-trait FileSystemFileHandle extends js.Object {
+trait FileSystemFileHandle extends FileSystemHandle {
   def getFile(): js.Promise[File] = js.native
   
   def createSyncAccessHandle(): js.Promise[FileSystemSyncAccessHandle] = js.native

@@ -16,7 +16,6 @@ import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.html.Div
 
-import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -25,7 +24,7 @@ object EditorElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     dataSignal: Signal[(Step, List[Step], Player)],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
   ): ReactiveHtmlElement[Div] = {
     val stepSignal = dataSignal.map((step, _, _) => step)
@@ -82,7 +81,7 @@ object EditorElement {
   private def toSubSteps(
     stepSignal: Signal[Step],
     subStepsSignal: Signal[List[Step]],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]],
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, _) =>
@@ -106,9 +105,9 @@ object EditorElement {
     )
 
   private def newSubStepObserver(
-    parentID: UUID,
+    parentID: Step.ID,
     modalBus: WriteBus[Option[L.Element]],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Observer[FormOpener.Command] =
     FormOpener(
       modalBus,
@@ -121,7 +120,7 @@ object EditorElement {
   private def toEffects(
     cache: Cache,
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section(
@@ -143,7 +142,7 @@ object EditorElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalBus: WriteBus[Option[L.Element]]
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
@@ -164,9 +163,9 @@ object EditorElement {
 
   private def newRequirementObserver(
     itemFuse: Fuse[Item],
-    stepID: UUID,
+    stepID: Step.ID,
     modalBus: WriteBus[Option[L.Element]],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Observer[FormOpener.Command] =
     FormOpener(
       modalBus,

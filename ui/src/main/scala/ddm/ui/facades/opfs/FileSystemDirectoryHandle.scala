@@ -1,9 +1,13 @@
 package ddm.ui.facades.opfs
 
+import ddm.ui.facades.js.AsyncIterator
+
 import scala.scalajs.js
 
 @js.native
-trait FileSystemDirectoryHandle extends js.Object {
+trait FileSystemDirectoryHandle extends FileSystemHandle {
+  def values(): AsyncIterator[FileSystemHandle] = js.native
+
   def getDirectoryHandle(
     name: String,
     options: js.UndefOr[FileSystemGetDirectoryOptions] = js.native

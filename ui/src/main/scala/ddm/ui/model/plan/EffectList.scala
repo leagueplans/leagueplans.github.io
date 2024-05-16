@@ -2,11 +2,15 @@ package ddm.ui.model.plan
 
 import ddm.ui.model.plan.Effect.*
 import ddm.ui.model.player.skill.Exp
+import io.circe.{Decoder, Encoder}
 
 import scala.reflect.ClassTag
 
 object EffectList {
   val empty: EffectList = EffectList(List.empty)
+  
+  given Encoder[EffectList] = Encoder.encodeList[Effect].contramap(_.underlying)
+  given Decoder[EffectList] = Decoder.decodeList[Effect].map(EffectList(_))
 }
 
 final case class EffectList(underlying: List[Effect]) extends AnyVal {

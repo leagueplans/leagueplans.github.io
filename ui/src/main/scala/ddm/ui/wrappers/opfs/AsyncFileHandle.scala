@@ -2,13 +2,12 @@ package ddm.ui.wrappers.opfs
 
 import com.raquo.airstream.core.EventStream
 import ddm.ui.facades.opfs.FileSystemFileHandle
+import ddm.ui.utils.airstream.JsPromiseOps.asObservable
 import ddm.ui.utils.dom.DOMException
 import ddm.ui.utils.js.TypeError
 import ddm.ui.wrappers.opfs.FileSystemError.*
 
-import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{ArrayBuffer, ArrayBufferView, Int8Array}
-import scala.util.chaining.given
 import scala.util.{Failure, Success, Using}
 
 final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) {
@@ -30,7 +29,7 @@ final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) 
   private def acquireSyncHandle(): EventStream[Either[FileSystemError, SyncFileHandle]] =
     underlying
       .createSyncAccessHandle()
-      .pipe(liftPromise)
+      .asObservable
       .recoverToTry
       .map {
         case Failure(DOMException.NoModificationAllowed(message)) => Left(UnableToAcquireFileLock(fileName))
@@ -41,7 +40,7 @@ final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) 
   def rename(newName: String): EventStream[Either[FileSystemError, AsyncFileHandle]] =
     underlying
       .move(newName)
-      .pipe(liftPromise)
+      .asObservable
       .recoverToTry
       .map {
         case Failure(TypeError(_)) => Left(InvalidFileName(newName))
@@ -49,7 +48,4 @@ final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) 
         case Failure(ex) => Left(UnexpectedFileSystemError(ex))
         case Success(_) => Right(new AsyncFileHandle(newName, underlying))
       }
-
-  private def liftPromise[T](promise: Promise[T]): EventStream[T] =
-    EventStream.fromJsPromise(promise, emitOnce = true)
 }

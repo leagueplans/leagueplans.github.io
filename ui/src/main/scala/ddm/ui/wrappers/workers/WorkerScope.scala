@@ -1,9 +1,7 @@
 package ddm.ui.wrappers.workers
 
-import io.circe.{Decoder, Encoder}
-import org.scalajs.dom.DedicatedWorkerGlobalScope
+import ddm.ui.facades.opfs.WorkerNavigator
 
-object WorkerScope {
-  def apply[Out : Encoder, In : Decoder]: MessagePortClient[Out, In] =
-    MessagePortClient[Out, In](DedicatedWorkerGlobalScope.self)
+trait WorkerScope {
+  def navigator: WorkerNavigator
 }

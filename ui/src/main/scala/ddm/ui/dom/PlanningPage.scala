@@ -23,7 +23,6 @@ import ddm.ui.model.validation.StepValidator
 import ddm.ui.wrappers.fusejs.Fuse
 import org.scalajs.dom.console
 
-import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -43,9 +42,9 @@ object PlanningPage {
       new FuseOptions { keys = js.defined(js.Array("name")) }
     )
 
-    val stepUpdates = EventBus[Forester[UUID, Step] => Unit]()
-    val focusedStepID = Var[Option[UUID]](None)
-    val focusUpdater = focusedStepID.updater[UUID]((old, current) => Option.when(!old.contains(current))(current))
+    val stepUpdates = EventBus[Forester[Step.ID, Step] => Unit]()
+    val focusedStepID = Var[Option[Step.ID]](None)
+    val focusUpdater = focusedStepID.updater[Step.ID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
       initialPlan.savedState.steps,
       focusedStepID.signal,
@@ -118,8 +117,8 @@ object PlanningPage {
 
   private final case class State(
     cache: Cache,
-    plan: Forest[UUID, Step],
-    focusedStepID: Option[UUID],
+    plan: Forest[Step.ID, Step],
+    focusedStepID: Option[Step.ID],
     mode: Mode,
     expMultiplierStrategy: ExpMultiplierStrategy
   ) {
@@ -156,8 +155,8 @@ object PlanningPage {
   }
 
   private def addEffectToFocus(
-    focusedStepSignal: Signal[Option[UUID]],
-    forester: Forester[UUID, Step]
+    focusedStepSignal: Signal[Option[Step.ID]],
+    forester: Forester[Step.ID, Step]
   ): Signal[Option[Observer[Effect]]] =
     focusedStepSignal.map(_.map(focusedStepID =>
       Observer[Effect](effect =>
@@ -168,12 +167,12 @@ object PlanningPage {
     ))
 
   private def findStepsWithErrors(
-    plan: Forest[UUID, Step],
+    plan: Forest[Step.ID, Step],
     initialPlayer: Player,
     cache: Cache
-  ): Set[UUID] = {
+  ): Set[Step.ID] = {
     val (stepsWithErrors, _) =
-      plan.toList.foldLeft((Set.empty[UUID], initialPlayer)) { case ((acc, player), step) =>
+      plan.toList.foldLeft((Set.empty[Step.ID], initialPlayer)) { case ((acc, player), step) =>
         val (errors, updatedPlayer) = StepValidator.validate(step)(player, cache)
         if (errors.isEmpty)
           (acc, updatedPlayer)

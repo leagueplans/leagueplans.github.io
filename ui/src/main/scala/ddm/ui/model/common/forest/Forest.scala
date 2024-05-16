@@ -2,6 +2,7 @@ package ddm.ui.model.common.forest
 
 import cats.Monoid
 import ddm.ui.utils.HasID
+import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
 import scala.annotation.tailrec
@@ -10,6 +11,20 @@ import scala.util.chaining.scalaUtilChainingOps
 object Forest {
   def empty[ID, T]: Forest[ID, T] =
     Forest(Map.empty, Map.empty, Map.empty, List.empty)
+    
+  def from[ID, T](
+    nodes: Map[ID, T],
+    parentsToChildren: Map[ID, List[ID]]
+  ): Forest[ID, T] = {
+    val toParent = parentsToChildren.flatMap((parent, children) =>
+      children.map(_ -> parent)
+    )
+    val toChildren = nodes.map((id, _) => id -> parentsToChildren.getOrElse(id, List.empty))
+    val roots = nodes.collect {
+      case (id, _) if !toParent.contains(id) => id
+    }
+    new Forest(nodes, toParent, toChildren, roots.toList)
+  }
 
   enum Update[+ID, +T] {
     case AddNode(id: ID, data: T)
@@ -17,10 +32,15 @@ object Forest {
 
     case AddLink(child: ID, parent: ID)
     case RemoveLink(child: ID, parent: ID)
-    case ChangeParent(childID: ID, oldParentID: ID, newParentID: ID)
+    case ChangeParent(child: ID, oldParent: ID, newParent: ID)
 
     case UpdateData(id: ID, data: T)
     case Reorder(children: List[ID], parent: ID)
+  }
+  
+  object Update {
+    given codec[ID: Encoder : Decoder, T : Encoder : Decoder]: Codec[Update[ID, T]] = 
+      deriveCodec[Update[ID, T]]
   }
   
   given codec[T : Encoder : Decoder](using hasID: HasID[T]): Codec[Forest[hasID.ID, T]] =
@@ -60,7 +80,7 @@ object Forest {
 final class Forest[ID, T] private[forest](
   val nodes: Map[ID, T],
   private[forest] val toParent: Map[ID, ID],
-  private[forest] val toChildren: Map[ID, List[ID]],
+  val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
   def map[S](f: (ID, T) => S): Forest[ID, S] =

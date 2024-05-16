@@ -60,6 +60,8 @@ lazy val ui =
   project.in(file("ui"))
     .enablePlugins(ScalaJSPlugin)
     .settings(
+      // Needed for deriving a codec for StorageWorkerProtocol.ToClient
+      scalacOptions ++= List("-Xmax-inlines", "40"),
       libraryDependencies ++= List(
         "org.scala-js" %%% "scalajs-dom" % "2.8.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),

@@ -1,58 +1,87 @@
 package ddm.ui.wrappers.opfs
 
 import com.raquo.airstream.core.EventStream
+import ddm.ui.facades.js.AsyncIterator
 import ddm.ui.facades.opfs.*
+import ddm.ui.utils.airstream.JsPromiseOps.asObservable
 import ddm.ui.utils.dom.DOMException
 import ddm.ui.utils.js.TypeError
 import ddm.ui.wrappers.opfs.DirectoryHandle.*
 import ddm.ui.wrappers.opfs.FileSystemError.*
-import org.scalajs.dom.WorkerGlobalScope
+import ddm.ui.wrappers.opfs.FileSystemOpOps.andThen
 
-import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{ArrayBuffer, ArrayBufferView}
-import scala.util.chaining.given
 import scala.util.{Failure, Success}
 
 object DirectoryHandle {
-  extension [T] (self: EventStream[Either[FileSystemError, T]]) {
-    private def andThen[S](
-      f: T => EventStream[Either[FileSystemError, S]]
-    ): EventStream[Either[FileSystemError, S]] =
-      self.flatMap {
-        case Left(error) => liftValue(Left(error))
-        case Right(t) => f(t)
-      }
-  }
-
   private def liftValue[T](value: T): EventStream[T] =
     EventStream.fromValue(value, emitOnce = true)
 
-  private def liftPromise[T](promise: Promise[T]): EventStream[T] =
-    EventStream.fromJsPromise(promise, emitOnce = true)
-
   private def toTmpFileName(name: String): String =
     s"$name.tmp"
+
+  private val doNotCreateDirectory = new FileSystemGetDirectoryOptions { create = false }
+  private val createDirectory = new FileSystemGetDirectoryOptions { create = true }
+  private val createFile = new FileSystemGetFileOptions { create = true }
 }
 
 final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
-  private val createDirectory = new FileSystemGetDirectoryOptions { create = true }
-  private val createFile = new FileSystemGetFileOptions { create = true }
+  def listSubDirectories(): EventStream[Either[UnexpectedFileSystemError, List[(String, DirectoryHandle)]]] =
+    listContents(underlying.values(), List.empty).map(_.map(handles =>
+      handles.collect {
+        case handle if handle.kind == FileSystemHandleKind.directory =>
+          (handle.name, DirectoryHandle(handle.asInstanceOf[FileSystemDirectoryHandle]))
+      }
+    ))
 
-  def getOrCreateSubDirectory(name: String): EventStream[Either[FileSystemError, DirectoryHandle]] =
+  private def listContents(
+    iterator: AsyncIterator[FileSystemHandle],
+    acc: List[FileSystemHandle]
+  ): EventStream[Either[UnexpectedFileSystemError, List[FileSystemHandle]]] =
+    iterator
+      .next()
+      .asObservable
+      .recoverToTry
+      .flatMap {
+        case Success(entry) if entry.done => liftValue(Right(acc))
+        case Success(entry) => listContents(iterator, acc :+ entry.value)
+        case Failure(ex) => liftValue(Left(UnexpectedFileSystemError(ex)))
+      }
+
+  def getSubDirectory(name: String): EventStream[Either[FileSystemError, Option[DirectoryHandle]]] =
     underlying
-      .getDirectoryHandle(name, createDirectory)
-      .pipe(liftPromise)
+      .getDirectoryHandle(name, doNotCreateDirectory)
+      .asObservable
       .recoverToTry
       .map {
-        case Success(handle) => Right(new DirectoryHandle(handle))
+        case Success(handle) => Right(Some(DirectoryHandle(handle)))
+        case Failure(DOMException.NotFound(_)) => Right(None)
         case Failure(TypeError(_)) => Left(InvalidDirectoryName(name))
         case Failure(ex) => Left(UnexpectedFileSystemError(ex))
       }
 
-  def remove(name: String, recurse: Boolean): EventStream[Either[UnexpectedFileSystemError, Unit]] =
+  def acquireSubDirectory(name: String): EventStream[Either[FileSystemError, DirectoryHandle]] =
+    underlying
+      .getDirectoryHandle(name, createDirectory)
+      .asObservable
+      .recoverToTry
+      .map {
+        case Success(handle) => Right(DirectoryHandle(handle))
+        case Failure(TypeError(_)) => Left(InvalidDirectoryName(name))
+        case Failure(ex) => Left(UnexpectedFileSystemError(ex))
+      }
+
+  def removeDirectory(name: String): EventStream[Either[UnexpectedFileSystemError, Unit]] =
+    remove(name, recurse = true)
+
+  def removeFile(name: String): EventStream[Either[UnexpectedFileSystemError, Unit]] =
+    remove(toTmpFileName(name), recurse = false)
+      .andThen(_ => remove(name, recurse = false))
+
+  private def remove(name: String, recurse: Boolean): EventStream[Either[UnexpectedFileSystemError, Unit]] =
     underlying
       .removeEntry(name, new FileSystemRemoveOptions { recursive = recurse })
-      .pipe(liftPromise)
+      .asObservable
       .recoverToTry
       .map {
         case Failure(DOMException.NotFound(_)) => Right(())
@@ -74,20 +103,22 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
             case Some(fileHandle) => fileHandle.read()
             case None => liftValue(Left(FileDoesNotExist(name)))
           }
-          .andThen(parser.parse)
+          .andThen(parser.parse(name, _))
     }
 
   private def readTmpFile[T](
     name: String,
     parser: ByteArrayParser[T]
-  ): EventStream[Either[FileSystemError, Option[T]]] =
-    getAsyncFileHandle(toTmpFileName(name)).andThen {
+  ): EventStream[Either[FileSystemError, Option[T]]] = {
+    val tmpName = toTmpFileName(name)
+    
+    getAsyncFileHandle(tmpName).andThen {
       case None =>
         liftValue(Right(None))
 
       case Some(tmpFileHandle) =>
         tmpFileHandle.read().andThen(bytes =>
-          parser.parse(bytes).flatMap {
+          parser.parse(tmpName, bytes).flatMap {
             case Left(_: ParsingFailure) =>
               liftValue(Right(None))
 
@@ -98,13 +129,14 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
           }
         )
     }
+  }
 
   private def getAsyncFileHandle(
     name: String
   ): EventStream[Either[FileSystemError, Option[AsyncFileHandle]]] =
     underlying
       .getFileHandle(name)
-      .pipe(liftPromise)
+      .asObservable
       .recoverToTry
       .map {
         case Failure(DOMException.NotFound(_)) => Right(None)
@@ -137,7 +169,7 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
   ): EventStream[Either[FileSystemError, AsyncFileHandle]] =
     underlying
       .getFileHandle(name, createFile)
-      .pipe(liftPromise)
+      .asObservable
       .recoverToTry
       .map {
         case Failure(TypeError(_)) => Left(InvalidFileName(name))

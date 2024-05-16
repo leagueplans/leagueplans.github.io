@@ -13,14 +13,13 @@ import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
 
-import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepDescription {
   def apply(
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): L.Div = {
     val isEditing = Var(false)
 
@@ -52,7 +51,7 @@ object StepDescription {
   private def toParagraph(
     isEditing: Var[Boolean],
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit]
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Signal[ReactiveHtmlElement[Paragraph]] =
     Signal
       .combine(isEditing, stepSignal)
@@ -69,7 +68,7 @@ object StepDescription {
   private def liveEditingParagraph(
     initialDescription: String,
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     isEditingUpdater: Observer[Boolean]
   ): ReactiveHtmlElement[Paragraph] = {
     val (p, descriptionSignal) = EditableParagraph(initial = initialDescription)
