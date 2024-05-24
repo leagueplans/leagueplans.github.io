@@ -2,13 +2,10 @@ package ddm.ui.storage.worker
 
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Plan, Step}
-import ddm.ui.storage.model.errors.{DeletionError, FileSystemError, UpdateError}
+import ddm.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, UpdateError}
 import ddm.ui.storage.model.{LamportTimestamp, PlanID, PlanMetadata}
-import ddm.ui.utils.circe.FiniteDurationCodec.{decoder, encoder}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
-
-import scala.concurrent.duration.FiniteDuration
 
 object StorageProtocol {
   //TODO Importing a plan with an older schema version?
@@ -86,10 +83,7 @@ object StorageProtocol {
     final case class DeleteFailed(planID: PlanID, reason: DeletionError) extends ToClient with ToCoordinator
  
     final case class WorkerFailedToStart(error: FileSystemError) extends ToCoordinator
-    final case class ProtocolError(cause: ToCoordinator) extends ToClient with ToCoordinator
-    // This exists for the case where the user closes their browser window (thereby killing the worker)
-    // while the coordinator is waiting for a response from the worker
-    final case class WorkerFailedToRespond(duration: FiniteDuration) extends ToClient
+    final case class ProtocolFailure(reason: ProtocolError) extends ToClient
 
     object ToClient {
       given Codec[ToClient] = deriveCodec[ToClient]

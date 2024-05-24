@@ -5,7 +5,7 @@ import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner
 import ddm.ui.facades.workers.{CreateWorkerOptions, WorkerFactory}
 import ddm.ui.storage.model.LamportTimestamp
-import ddm.ui.storage.model.errors.{DeletionError, UpdateError}
+import ddm.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
 import ddm.ui.storage.worker.IdealisedStorageCoordinator.{InboundPort, Result, WorkerPort}
 import ddm.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import ddm.ui.utils.airstream.ObservableOps.flatMapConcat
@@ -156,7 +156,7 @@ private final class IdealisedStorageCoordinator(
     eventBus.events.map {
       case response: Response => handleResponse(response)
       case unexpectedMessage =>
-        val error = Outbound.ProtocolError(unexpectedMessage)
+        val error = Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage))
         subscriptions.all.flatMap { case (planID, (_, ports)) =>
           ports.flatMap(port =>
             subscriptions.deregister(port, planID)

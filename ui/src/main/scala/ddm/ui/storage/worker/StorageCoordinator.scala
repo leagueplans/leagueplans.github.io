@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner
 import ddm.ui.storage.model.LamportTimestamp
-import ddm.ui.storage.model.errors.{DeletionError, UpdateError}
+import ddm.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
 import ddm.ui.storage.worker.StorageCoordinator.*
 import ddm.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import ddm.ui.utils.airstream.ObservableOps.flatMapConcat
@@ -87,7 +87,7 @@ object StorageCoordinator {
     scope.setOnConnect(port =>
       setMessageHandler(port)(message =>
         onError(
-          Outbound.ProtocolError(message),
+          Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(message)),
           subscriptions
         ).foreach((port, message) => port.send(message))
       )
@@ -106,7 +106,7 @@ object StorageCoordinator {
       }
 
   private def onError(
-    error: Outbound.ProtocolError | Outbound.WorkerFailedToRespond,
+    error: Outbound.ProtocolFailure,
     subscriptions: PlanSubscriptions[MsgOut, MsgIn]
   ): Result = {
     subscriptions.all.flatMap { case (planID, (_, ports)) =>
@@ -221,12 +221,12 @@ private final class StorageCoordinator(
   private def deferToWorker[Response <: Outbound.ToCoordinator : ClassTag](
     port: Port, message: Inbound.ToWorker
   )(handleResponse: Response => Result): EventStream[Result] = {
-    val eventBus = EventBus[Outbound.ToCoordinator | Outbound.WorkerFailedToRespond]()
+    val eventBus = EventBus[Outbound.ToCoordinator | ProtocolError]()
     
     val timeout = 30.seconds
     val timer = timers.setTimeout(timeout) {
       setMessageHandler(port)(_ => ())
-      eventBus.writer.onNext(Outbound.WorkerFailedToRespond(timeout))
+      eventBus.writer.onNext(ProtocolError.Timeout(timeout))
     }
     
     setMessageHandler(port) { response =>
@@ -239,11 +239,11 @@ private final class StorageCoordinator(
       case response: Response =>
         handleResponse(response)
         
-      case timeout: Outbound.WorkerFailedToRespond => 
-        onError(timeout, subscriptions)
+      case error: ProtocolError => 
+        onError(Outbound.ProtocolFailure(error), subscriptions)
         
       case unexpectedMessage: Outbound.ToCoordinator => 
-        onError(Outbound.ProtocolError(unexpectedMessage), subscriptions)
+        onError(Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage)), subscriptions)
     }
   }
 

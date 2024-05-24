@@ -50,5 +50,3 @@ extension [Out, In](self: PlanSubscriptions[Out, In]) {
       self.update(planID, (lamport.increment, ports))
     }
 }
-
-

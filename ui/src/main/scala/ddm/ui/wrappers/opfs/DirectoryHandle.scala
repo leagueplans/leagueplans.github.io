@@ -148,7 +148,7 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
   // In order for this method to be safe, we need to check for the existence of the tmp
   // file when we go to read data. If it exists and is parseable, then that means that
   // we'd previously written to tmp but failed to complete the rename. In such a world,
-  // we must complete the rename of tmp before allowing access the parsed data.
+  // we must complete the rename of tmp before allowing access to the parsed data.
   //
   // These assumptions also rely on JSON objects being our serialisation format, since
   // such objects will fail to parse if they aren't written in their entirety.
