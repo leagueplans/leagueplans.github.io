@@ -3,7 +3,6 @@ package ddm.codec.parsing
 import ddm.codec.*
 
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 import scala.util.Try
 
@@ -40,8 +39,7 @@ object Parser {
         case Discriminant.Varint => parseVarint(input)
         case Discriminant.I64 => parseI64(input)
         case Discriminant.I32 => parseI32(input)
-        case Discriminant.String => parseString(input)
-        case Discriminant.Bytes => parseBytes(input)
+        case Discriminant.Len => parseLen(input)
         case Discriminant.Message => parseMessageField(input)
       }).map(fieldNumber -> _)
     )
@@ -116,22 +114,11 @@ object Parser {
       .scoped(takeOrFail(input, 4, "I32"))
       .map(bytes => Encoding.I32(ByteBuffer.wrap(bytes).getFloat))
 
-  private def parseString(input: ParserInput): Either[ParsingFailure, Encoding.String] =
+  private def parseLen(input: ParserInput): Either[ParsingFailure, Encoding.Len] =
     parseLength(input).flatMap(length =>
-      input.scoped(
-        takeOrFail(input, length, "String").map(bytes =>
-          Encoding.String(String(bytes, StandardCharsets.UTF_8))
-        )
-      )
-    )
-
-  private def parseBytes(input: ParserInput): Either[ParsingFailure, Encoding.Bytes] =
-    parseLength(input).flatMap(length =>
-      input.scoped(
-        takeOrFail(input, length, "Bytes").map(bytes =>
-          Encoding.Bytes(bytes)
-        )
-      )
+      input
+        .scoped(takeOrFail(input, length, "Bytes"))
+        .map(Encoding.Len.apply)
     )
 
   private def parseMessageField(input: ParserInput): Either[ParsingFailure, Encoding.Message] =

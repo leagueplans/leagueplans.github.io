@@ -2,6 +2,7 @@ package ddm.codec.encoding
 
 import ddm.codec.{BinaryString, Encoding, FieldNumber}
 
+import java.nio.charset.StandardCharsets
 import scala.deriving.Mirror
 
 sealed trait Encoder[T] {
@@ -66,16 +67,16 @@ object Encoder {
   given floatEncoder: Aux[Float, Encoding.I32] =
     Encoder(Encoding.I32.apply)
 
-  given byteEncoder: Aux[Byte, Encoding.Bytes] =
-    Encoder(b => Encoding.Bytes(Array(b)))
+  given byteEncoder: Aux[Byte, Encoding.Len] =
+    Encoder(b => Encoding.Len(Array(b)))
 
-  given stringEncoder: Aux[String, Encoding.String] =
-    Encoder(Encoding.String.apply)
+  given byteArrayEncoder: Aux[Array[Byte], Encoding.Len] =
+    Encoder(Encoding.Len.apply)
 
-  given byteArrayEncoder: Aux[Array[Byte], Encoding.Bytes] =
-    Encoder(Encoding.Bytes.apply)
+  given stringEncoder: Aux[String, Encoding.Len] =
+    byteArrayEncoder.contramap(_.getBytes(StandardCharsets.UTF_8))
 
-  given iterableOnceByteEncoder[F[X] <: IterableOnce[X]]: Aux[F[Byte], Encoding.Bytes] =
+  given iterableOnceByteEncoder[F[X] <: IterableOnce[X]]: Aux[F[Byte], Encoding.Len] =
     byteArrayEncoder.contramap(_.iterator.toArray)
 
   given iterableOnceEncoder[F[X] <: IterableOnce[X], T, Enc <: Encoding.Single](

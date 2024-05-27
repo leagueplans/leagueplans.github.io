@@ -1,9 +1,8 @@
 package ddm.codec.encoding
 
-import ddm.codec.{BinaryString, Discriminant, Encoding, FieldNumber, VarintSegmentLength}
+import ddm.codec.*
 
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 
 object Writer {
   def write(message: Encoding.Message): Array[Byte] =
@@ -29,11 +28,8 @@ object Writer {
   private def writeI32(i32: Float): Array[Byte] =
     ByteBuffer.wrap(Array.ofDim(4)).putFloat(i32).array()
 
-  private def writeString(string: String): Array[Byte] =
-    string.getBytes(StandardCharsets.UTF_8)
-
-  private def writeBytes(bytes: Array[Byte]): Array[Byte] =
-    bytes
+  private def writeLen(len: Array[Byte]): Array[Byte] =
+    len
 
   private def writeMessage(message: Map[FieldNumber, Encoding]): Array[Byte] =
     message.toArray.flatMap((fieldNumber, encoding) =>
@@ -53,10 +49,8 @@ object Writer {
         writeTag(fieldNumber, Discriminant.I64) ++ writeI64(i64.underlying)
       case i32: Encoding.I32 =>
         writeTag(fieldNumber, Discriminant.I32) ++ writeI32(i32.underlying)
-      case string: Encoding.String =>
-        writeTag(fieldNumber, Discriminant.String) ++ withLength(writeString(string.underlying))
-      case bytes: Encoding.Bytes =>
-        writeTag(fieldNumber, Discriminant.Bytes) ++ withLength(writeBytes(bytes.underlying))
+      case len: Encoding.Len =>
+        writeTag(fieldNumber, Discriminant.Len) ++ withLength(writeLen(len.underlying))
       case message: Encoding.Message =>
         writeTag(fieldNumber, Discriminant.Message) ++ withLength(writeMessage(message.underlying))
     }

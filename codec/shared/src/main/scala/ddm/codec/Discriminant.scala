@@ -1,12 +1,12 @@
 package ddm.codec
 
-enum Discriminant {
-  case Varint, I64, I32, String, Bytes, Message
+private[codec] enum Discriminant {
+  case Varint, I64, I32, Len, Message
 }
 
-object Discriminant {
+private[codec] object Discriminant {
   def from(i: Int): Option[Discriminant] =
     values.find(_.ordinal == i)
 
-  private[codec] val maxBitLength = 3
+  val maxBitLength = 3
 }

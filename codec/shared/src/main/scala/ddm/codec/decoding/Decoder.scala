@@ -4,6 +4,7 @@ import ddm.codec.{Encoding, FieldNumber}
 import ddm.codec.parsing.{Parser, ParsingFailure}
 
 import java.lang.Long as JLong
+import java.nio.charset.StandardCharsets
 import scala.collection.{Factory, mutable}
 import scala.deriving.Mirror
 import scala.reflect.ClassTag
@@ -60,8 +61,7 @@ object Decoder {
   given varintDecoder: Aux[Encoding.Varint, Encoding.Varint] = encodingDecoder
   given i64Decoder: Aux[Encoding.I64, Encoding.I64] = encodingDecoder
   given i32Decoder: Aux[Encoding.I32, Encoding.I32] = encodingDecoder
-  given stringEncodingDecoder: Aux[Encoding.String, Encoding.String] = encodingDecoder
-  given byteEncodingDecoder: Aux[Encoding.Bytes, Encoding.Bytes] = encodingDecoder
+  given lenDecoder: Aux[Encoding.Len, Encoding.Len] = encodingDecoder
   given messageDecoder: Aux[Encoding.Message, Encoding.Message] = encodingDecoder
 
   private def encodingDecoder[Enc <: Encoding : ClassTag]: Aux[Enc, Enc] =
@@ -124,25 +124,25 @@ object Decoder {
   given floatDecoder: Aux[Float, Encoding.I32] =
     i32Decoder.map(_.underlying)
 
-  given byteDecoder: Aux[Byte, Encoding.Bytes] =
-    byteEncodingDecoder.emap(bytes =>
+  given byteDecoder: Aux[Byte, Encoding.Len] =
+    lenDecoder.emap(len =>
       Either.cond(
-        bytes.underlying.length == 1,
-        bytes.underlying.head,
-        DecodingFailure(s"Expected a single byte but instead found ${bytes.underlying.length} bytes")
+        len.underlying.length == 1,
+        len.underlying.head,
+        DecodingFailure(s"Expected a single byte but instead found ${len.underlying.length} bytes")
       )
     )
 
-  given stringDecoder: Aux[String, Encoding.String] =
-    stringEncodingDecoder.map(_.underlying)
+  given byteArrayDecoder: Aux[Array[Byte], Encoding.Len] =
+    lenDecoder.map(_.underlying)
 
-  given byteArrayDecoder: Aux[Array[Byte], Encoding.Bytes] =
-    byteEncodingDecoder.map(_.underlying)
+  given stringDecoder: Aux[String, Encoding.Len] =
+    byteArrayDecoder.map(String(_, StandardCharsets.UTF_8))
 
   given iterableOnceByteDecoder[F[X] <: IterableOnce[X]](
     using factory: Factory[Byte, F[Byte]]
-  ): Aux[F[Byte], Encoding.Bytes] =
-    byteEncodingDecoder.map(_.underlying.to(factory))
+  ): Aux[F[Byte], Encoding.Len] =
+    lenDecoder.map(_.underlying.to(factory))
 
   given iterableOnceDecoder[F[X] <: IterableOnce[X], T, Enc <: Encoding.Single](
     using factory: Factory[T, F[T]], decoder: Aux[T, Enc]
@@ -157,11 +157,11 @@ object Decoder {
       ).map(_.result())
     }
 
-  given optionByteDecoder: Aux[Option[Byte], Encoding.Bytes] =
-    byteEncodingDecoder.emap(bytes =>
-      bytes.underlying.length match {
+  given optionByteDecoder: Aux[Option[Byte], Encoding.Len] =
+    lenDecoder.emap(len =>
+      len.underlying.length match {
         case 0 => Right(None)
-        case 1 => Right(Some(bytes.underlying.head))
+        case 1 => Right(Some(len.underlying.head))
         case n => Left(DecodingFailure(s"Expected up to a single byte but instead found $n bytes"))
       }
     )
