@@ -1,4 +1,4 @@
-package ddm.codec.parser
+package ddm.codec.parsing
 
 object ParserInput {
   final class Scope private[ParserInput]

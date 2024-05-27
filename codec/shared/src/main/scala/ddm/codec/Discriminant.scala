@@ -8,5 +8,5 @@ object Discriminant {
   def from(i: Int): Option[Discriminant] =
     values.find(_.ordinal == i)
 
-  val maxBitLength = 3
+  private[codec] val maxBitLength = 3
 }

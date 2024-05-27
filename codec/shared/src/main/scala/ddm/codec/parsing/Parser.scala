@@ -1,4 +1,4 @@
-package ddm.codec.parser
+package ddm.codec.parsing
 
 import ddm.codec.*
 
@@ -8,33 +8,33 @@ import scala.annotation.tailrec
 import scala.util.Try
 
 object Parser {
-  def parse(bytes: Array[Byte]): Either[ParsingFailure, WireFormat.Message] =
+  def parse(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Message] =
     parseMessageHelper(ParserInput(bytes), acc = Map.empty)
 
   @tailrec
   private def parseMessageHelper(
     input: ParserInput,
-    acc: Map[FieldNumber, WireFormat]
-  ): Either[ParsingFailure, WireFormat.Message] =
+    acc: Map[FieldNumber, Encoding]
+  ): Either[ParsingFailure, Encoding.Message] =
     if (input.fullyParsed)
-      Right(WireFormat.Message(acc))
+      Right(Encoding.Message(acc))
     else
       parseField(input) match {
         case Left(failure) =>
           Left(failure)
         case Right((fieldNumber, newFieldValue)) =>
           val updatedFieldValue = acc.get(fieldNumber) match {
-            case Some(single: WireFormat.Single) =>
-              WireFormat.Collection(List(single, newFieldValue))
-            case Some(coll: WireFormat.Collection) =>
-              WireFormat.Collection(coll.underlying :+ newFieldValue)
+            case Some(single: Encoding.Single) =>
+              Encoding.Collection(List(single, newFieldValue))
+            case Some(coll: Encoding.Collection) =>
+              Encoding.Collection(coll.underlying :+ newFieldValue)
             case None =>
               newFieldValue
           }
           parseMessageHelper(input, acc + (fieldNumber -> updatedFieldValue))
       }
 
-  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, WireFormat.Single)] =
+  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding.Single)] =
     parseTag(input).flatMap((fieldNumber, discriminant) =>
       (discriminant match {
         case Discriminant.Varint => parseVarint(input)
@@ -72,22 +72,22 @@ object Parser {
   private def parseDiscriminant(encoded: String): Either[ParsingFailure.Cause, Discriminant] = {
     val raw = Integer.parseUnsignedInt(encoded, 2)
     Discriminant.from(raw).toRight(
-      ParsingFailure.Cause(s"Unexpected format discriminant: $raw")
+      ParsingFailure.Cause(s"Unexpected encoding discriminant: $raw")
     )
   }
 
-  private def parseVarint(input: ParserInput): Either[ParsingFailure, WireFormat.Varint] =
+  private def parseVarint(input: ParserInput): Either[ParsingFailure, Encoding.Varint] =
     input.scoped(parseVarintScoped(input))
 
   private def parseVarintScoped(input: ParserInput)(
     using ParserInput.Scope
-  ): Either[ParsingFailure.Cause, WireFormat.Varint] = {
+  ): Either[ParsingFailure.Cause, Encoding.Varint] = {
     val encodedVarint = input.takeWhile(!isLastByteOfVarint(_)) ++ input.take(1)
     val hasLastByte = encodedVarint.lastOption.exists(isLastByteOfVarint)
 
     Either.cond(
       hasLastByte,
-      WireFormat.Varint(BinaryString.unsafe(
+      Encoding.Varint(BinaryString.unsafe(
         encodedVarint.map { b =>
           val binaryString = BinaryString(removeContinuationBit(b))
           s"${"0".repeat(VarintSegmentLength - binaryString.length)}$binaryString"
@@ -106,35 +106,35 @@ object Parser {
   private val varintContinuationBit: Byte =
     Integer.parseInt("10000000", 2).toByte
 
-  private def parseI64(input: ParserInput): Either[ParsingFailure, WireFormat.I64] =
+  private def parseI64(input: ParserInput): Either[ParsingFailure, Encoding.I64] =
     input
       .scoped(takeOrFail(input, 8, "I64"))
-      .map(bytes => WireFormat.I64(ByteBuffer.wrap(bytes).getDouble))
+      .map(bytes => Encoding.I64(ByteBuffer.wrap(bytes).getDouble))
 
-  private def parseI32(input: ParserInput): Either[ParsingFailure, WireFormat.I32] =
+  private def parseI32(input: ParserInput): Either[ParsingFailure, Encoding.I32] =
     input
       .scoped(takeOrFail(input, 4, "I32"))
-      .map(bytes => WireFormat.I32(ByteBuffer.wrap(bytes).getFloat))
+      .map(bytes => Encoding.I32(ByteBuffer.wrap(bytes).getFloat))
 
-  private def parseString(input: ParserInput): Either[ParsingFailure, WireFormat.String] =
+  private def parseString(input: ParserInput): Either[ParsingFailure, Encoding.String] =
     parseLength(input).flatMap(length =>
       input.scoped(
         takeOrFail(input, length, "String").map(bytes =>
-          WireFormat.String(String(bytes, StandardCharsets.UTF_8))
+          Encoding.String(String(bytes, StandardCharsets.UTF_8))
         )
       )
     )
 
-  private def parseBytes(input: ParserInput): Either[ParsingFailure, WireFormat.Bytes] =
+  private def parseBytes(input: ParserInput): Either[ParsingFailure, Encoding.Bytes] =
     parseLength(input).flatMap(length =>
       input.scoped(
         takeOrFail(input, length, "Bytes").map(bytes =>
-          WireFormat.Bytes(bytes)
+          Encoding.Bytes(bytes)
         )
       )
     )
 
-  private def parseMessageField(input: ParserInput): Either[ParsingFailure, WireFormat.Message] =
+  private def parseMessageField(input: ParserInput): Either[ParsingFailure, Encoding.Message] =
     parseLength(input).flatMap(length =>
       input
         .scoped(takeOrFail(input, length, "Message"))

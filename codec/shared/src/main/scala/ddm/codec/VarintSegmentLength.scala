@@ -1,3 +1,3 @@
 package ddm.codec
 
-val VarintSegmentLength = 7
+private[codec] val VarintSegmentLength = 7

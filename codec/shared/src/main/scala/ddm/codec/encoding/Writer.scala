@@ -1,10 +1,12 @@
-package ddm.codec
+package ddm.codec.encoding
+
+import ddm.codec.{BinaryString, Discriminant, Encoding, FieldNumber, VarintSegmentLength}
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 object Writer {
-  def write(message: WireFormat.Message): Array[Byte] =
+  def write(message: Encoding.Message): Array[Byte] =
     writeMessage(message.underlying)
 
   private def writeVarint(varint: BinaryString): Array[Byte] = {
@@ -33,29 +35,29 @@ object Writer {
   private def writeBytes(bytes: Array[Byte]): Array[Byte] =
     bytes
 
-  private def writeMessage(message: Map[FieldNumber, WireFormat]): Array[Byte] =
-    message.toArray.flatMap((fieldNumber, format) =>
-      format match {
-        case single: WireFormat.Single =>
+  private def writeMessage(message: Map[FieldNumber, Encoding]): Array[Byte] =
+    message.toArray.flatMap((fieldNumber, encoding) =>
+      encoding match {
+        case single: Encoding.Single =>
           writeField(fieldNumber, single)
-        case collection: WireFormat.Collection =>
+        case collection: Encoding.Collection =>
           collection.underlying.flatMap(writeField(fieldNumber, _)).toArray
       }
     )
 
-  private def writeField(fieldNumber: FieldNumber, format: WireFormat.Single): Array[Byte] =
-    format match {
-      case varint: WireFormat.Varint =>
+  private def writeField(fieldNumber: FieldNumber, encoding: Encoding.Single): Array[Byte] =
+    encoding match {
+      case varint: Encoding.Varint =>
         writeTag(fieldNumber, Discriminant.Varint) ++ writeVarint(varint.underlying)
-      case i64: WireFormat.I64 =>
+      case i64: Encoding.I64 =>
         writeTag(fieldNumber, Discriminant.I64) ++ writeI64(i64.underlying)
-      case i32: WireFormat.I32 =>
+      case i32: Encoding.I32 =>
         writeTag(fieldNumber, Discriminant.I32) ++ writeI32(i32.underlying)
-      case string: WireFormat.String =>
+      case string: Encoding.String =>
         writeTag(fieldNumber, Discriminant.String) ++ withLength(writeString(string.underlying))
-      case bytes: WireFormat.Bytes =>
+      case bytes: Encoding.Bytes =>
         writeTag(fieldNumber, Discriminant.Bytes) ++ withLength(writeBytes(bytes.underlying))
-      case message: WireFormat.Message =>
+      case message: Encoding.Message =>
         writeTag(fieldNumber, Discriminant.Message) ++ withLength(writeMessage(message.underlying))
     }
 

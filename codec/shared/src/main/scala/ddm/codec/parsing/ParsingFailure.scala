@@ -1,4 +1,4 @@
-package ddm.codec.parser
+package ddm.codec.parsing
 
 object ParsingFailure {
   opaque type Cause <: String = String
@@ -8,7 +8,7 @@ object ParsingFailure {
   }
 }
 
-final class ParsingFailure(
+final case class ParsingFailure(
   position: Int,
   cause: ParsingFailure.Cause,
   bytes: Array[Byte]

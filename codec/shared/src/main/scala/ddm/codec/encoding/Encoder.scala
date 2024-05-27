@@ -1,77 +1,91 @@
-package ddm.codec
+package ddm.codec.encoding
+
+import ddm.codec.{BinaryString, Encoding, FieldNumber}
 
 import scala.deriving.Mirror
 
 sealed trait Encoder[T] {
-  type Format <: WireFormat
+  type Enc <: Encoding
 
-  extension (t: T) def encoded: Format
+  extension (t: T) def encoded: Enc
 
-  final def contramap[S](f: S => T): Encoder.Aux[S, Format] =
+  final def contramap[S](f: S => T): Encoder.Aux[S, Enc] =
     Encoder(s => f(s).encoded)
 }
 
 object Encoder {
-  type Aux[T, F <: WireFormat] = Encoder[T] { type Format = F }
-  type Root[T] = Aux[T, WireFormat.Message]
+  type Aux[T, E <: Encoding] = Encoder[T] { type Enc = E }
+  type Root[T] = Aux[T, Encoding.Message]
 
   def apply[T](using encoder: Encoder[T]): encoder.type =
     encoder
 
-  def apply[T, F <: WireFormat](f: T => F): Aux[T, F] =
+  inline def apply[T, E <: Encoding](f: T => E): Aux[T, E] =
     new Encoder[T] {
-      type Format = F
-      extension (t: T) def encoded: Format = f(t)
+      type Enc = E
+      extension (t: T) def encoded: Enc = f(t)
     }
 
-  given longEncoder: Aux[Long, WireFormat.Varint] =
-    Encoder(l => WireFormat.Varint(
+  given encodingEncoder[T <: Encoding]: Aux[T, T] =
+    Encoder(identity)
+
+  given longEncoder: Aux[Long, Encoding.Varint] =
+    Encoder(l => Encoding.Varint(
       // Zigzag encoding
       BinaryString((l << 1) ^ (l >> 63))
     ))
 
-  given intEncoder: Aux[Int, WireFormat.Varint] =
-    Encoder(i => WireFormat.Varint(
+  val unsignedIntEncoder: Aux[Int, Encoding.Varint] =
+    Encoder(i => Encoding.Varint(BinaryString(i)))
+
+  given intEncoder: Aux[Int, Encoding.Varint] =
+    unsignedIntEncoder.contramap(i =>
       // Zigzag encoding
-      BinaryString((i << 1) ^ (i >> 31))
-    ))
+      (i << 1) ^ (i >> 31)
+    )
 
-  val unsignedIntEncoder: Aux[Int, WireFormat.Varint] =
-    Encoder(i => WireFormat.Varint(BinaryString(i)))
-
-  given shortEncoder: Aux[Short, WireFormat.Varint] =
-    Encoder(s => WireFormat.Varint(
+  given shortEncoder: Aux[Short, Encoding.Varint] =
+    unsignedIntEncoder.contramap(s =>
       // Zigzag encoding
-      BinaryString((s << 1) ^ (s >> 15))
-    ))
+      (s << 1) ^ (s >> 15)
+    )
 
-  given charEncoder: Aux[Char, WireFormat.Varint] =
+  given charEncoder: Aux[Char, Encoding.Varint] =
     // Characters are unsigned, so there's no benefit to zigzagging
     unsignedIntEncoder.contramap(_.toInt)
 
-  given booleanEncoder: Aux[Boolean, WireFormat.Varint] =
+  given booleanEncoder: Aux[Boolean, Encoding.Varint] =
     unsignedIntEncoder.contramap {
       case true => 1
       case false => 0
     }
 
-  given doubleEncoder: Aux[Double, WireFormat.I64] =
-    Encoder(WireFormat.I64.apply)
+  given doubleEncoder: Aux[Double, Encoding.I64] =
+    Encoder(Encoding.I64.apply)
 
-  given floatEncoder: Aux[Float, WireFormat.I32] =
-    Encoder(WireFormat.I32.apply)
+  given floatEncoder: Aux[Float, Encoding.I32] =
+    Encoder(Encoding.I32.apply)
 
-  given byteEncoder: Aux[Byte, WireFormat.Bytes] =
-    Encoder(b => WireFormat.Bytes(Array(b)))
+  given byteEncoder: Aux[Byte, Encoding.Bytes] =
+    Encoder(b => Encoding.Bytes(Array(b)))
 
-  given stringEncoder: Aux[String, WireFormat.String] =
-    Encoder(WireFormat.String.apply)
+  given stringEncoder: Aux[String, Encoding.String] =
+    Encoder(Encoding.String.apply)
 
-  given iterableOnceEncoder[F[X] <: IterableOnce[X], T, Format <: WireFormat.Single](
-    using encoder: Aux[T, Format]
-  ): Aux[F[T], WireFormat.Collection] =
+  given byteArrayEncoder: Aux[Array[Byte], Encoding.Bytes] =
+    Encoder(Encoding.Bytes.apply)
+
+  given iterableOnceByteEncoder[F[X] <: IterableOnce[X]]: Aux[F[Byte], Encoding.Bytes] =
+    byteArrayEncoder.contramap(_.iterator.toArray)
+
+  given iterableOnceEncoder[F[X] <: IterableOnce[X], T, Enc <: Encoding.Single](
+    using Aux[T, Enc]
+  ): Aux[F[T], Encoding] =
     Encoder(ts =>
-      WireFormat.Collection(ts.iterator.map(_.encoded).toList)
+      ts.iterator.toList match {
+        case single :: Nil => single.encoded
+        case other => Encoding.Collection(other.map(_.encoded))
+      }
     )
 
   inline def derived[T](using inline mirror: Mirror.Of[T]): Root[T] =
@@ -87,7 +101,7 @@ object Encoder {
 
   private inline def productEncoderImpl[T](fieldEncoders: => List[Encoder[?]]): Root[T] =
     Encoder(t =>
-      WireFormat.Message(
+      Encoding.Message(
         t.asInstanceOf[Product]
           .productIterator
           .to(Iterable)
