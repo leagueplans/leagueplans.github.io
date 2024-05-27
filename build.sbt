@@ -20,6 +20,9 @@ lazy val root =
 
 val circeVersion = "0.14.6"
 
+lazy val codec =
+  crossProject(JVMPlatform, JSPlatform).in(file("codec"))
+
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
     .settings(
@@ -29,6 +32,7 @@ lazy val common =
         "io.circe" %%% "circe-parser" % circeVersion
       )
     )
+    .dependsOn(codec)
 
 val akkaVersion = "2.6.18"
 val scrimageVersion = "4.1.1"
