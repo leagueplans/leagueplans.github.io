@@ -3,15 +3,15 @@ package ddm.codec
 import ddm.codec.decoding.{Decoder, DecodingFailure}
 import ddm.codec.encoding.Writer
 
-sealed trait Encoding
+sealed trait Encoding {
+  def as[T](using decoder: Decoder.Aux[T, ? >: this.type]): Either[DecodingFailure, T] =
+    decoder.decode(this)
+}
 
 object Encoding {
-  extension [Enc <: Encoding](enc: Enc) {
-    def as[T](using decoder: Decoder.Aux[T, Enc]): Either[DecodingFailure, T] =
-      decoder.decode(enc)
+  sealed trait Single extends Encoding {
+    def getBytes: Array[Byte] = Writer.write(this)
   }
-
-  sealed trait Single extends Encoding
 
   final case class Varint(underlying: BinaryString) extends Single
   final case class I64(underlying: Double) extends Single
@@ -19,8 +19,6 @@ object Encoding {
   final case class Len(underlying: Array[Byte]) extends Single
 
   final case class Message(underlying: Map[FieldNumber, Encoding]) extends Single {
-    def getBytes: Array[Byte] = Writer.write(this)
-
     def get(fieldNumber: FieldNumber): Encoding =
       underlying.getOrElse(fieldNumber, Collection.empty)
   }
@@ -34,6 +32,6 @@ object Encoding {
   // encoding. Likewise, for a List[List[T]], you can't tell where one of the inner
   // lists starts or ends.
   //
-  // That's why we restrict the underlying collection to only known single encodings.
+  // That's why we restrict the underlying collection to only other encoding types.
   final case class Collection(underlying: List[Single]) extends Encoding
 }

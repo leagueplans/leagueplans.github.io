@@ -5,8 +5,14 @@ import ddm.codec.*
 import java.nio.ByteBuffer
 
 object Writer {
-  def write(message: Encoding.Message): Array[Byte] =
-    writeMessage(message.underlying)
+  def write(encoding: Encoding.Single): Array[Byte] =
+    encoding match {
+      case Encoding.Varint(underlying) => writeVarint(underlying)
+      case Encoding.I64(underlying) => writeI64(underlying)
+      case Encoding.I32(underlying) => writeI32(underlying)
+      case Encoding.Len(underlying) => writeLen(underlying)
+      case Encoding.Message(underlying) => writeMessage(underlying)
+    }
 
   private def writeVarint(varint: BinaryString): Array[Byte] = {
     val remainder = (VarintSegmentLength - varint.length) % VarintSegmentLength

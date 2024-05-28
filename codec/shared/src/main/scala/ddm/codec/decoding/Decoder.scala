@@ -1,11 +1,12 @@
 package ddm.codec.decoding
 
-import ddm.codec.{Encoding, FieldNumber}
 import ddm.codec.parsing.{Parser, ParsingFailure}
+import ddm.codec.{Encoding, FieldNumber}
 
 import java.lang.Long as JLong
 import java.nio.charset.StandardCharsets
 import scala.collection.{Factory, mutable}
+import scala.compiletime.error
 import scala.deriving.Mirror
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -32,14 +33,18 @@ sealed trait Decoder[T] {
       case enc: Enc => decode(enc)
       case other =>
         Left(DecodingFailure(
-          s"Expected an instance of ${classTag.runtimeClass.getSimpleName}, but found [$other]"
+          s"Expected an instance of ${classTag.runtimeClass.getName}, but found [$other]"
         ))
     }
 }
 
 object Decoder {
   type Aux[T, E <: Encoding] = Decoder[T] { type Enc = E }
-  type Root[T] = Aux[T, Encoding.Message]
+  type Varint[T] = Aux[T, Encoding.Varint]
+  type I64[T] = Aux[T, Encoding.I64]
+  type I32[T] = Aux[T, Encoding.I32]
+  type Len[T] = Aux[T, Encoding.Len]
+  type Message[T] = Aux[T, Encoding.Message]
 
   def apply[T](using decoder: Decoder[T]): decoder.type =
     decoder
@@ -53,16 +58,27 @@ object Decoder {
       def decode(encoding: Enc): Either[DecodingFailure, T] = f(encoding)
     }
 
-  extension (bytes: Array[Byte]) {
-    def decodeAs[T](using Aux[T, Encoding.Message]): Either[ParsingFailure | DecodingFailure, T] =
-      Parser.parse(bytes).flatMap(_.as[T])
-  }
+  inline def decode[T](bytes: Array[Byte])(
+    using decoder: Aux[T, ? <: Encoding.Single]
+  ): Either[ParsingFailure | DecodingFailure, T] =
+    inline decoder match {
+      case d: Varint[T] => Parser.parseVarint(bytes).flatMap(d.decode)
+      case d: I64[T] => Parser.parseI64(bytes).flatMap(d.decode)
+      case d: I32[T] => Parser.parseI32(bytes).flatMap(d.decode)
+      case d: Len[T] => Parser.parseLen(bytes).flatMap(d.decode)
+      case d: Message[T] => Parser.parseMessage(bytes).flatMap(d.decode)
+      case _ => error(
+        "No type evidence available for the expected encoding format supported by the inferred decoder.\n" +
+          "You'll have to explicitly parse the byte array and decode it separately. For example:\n" +
+          "Parser.parseMessage(<bytes>).flatMap(_.as[<T>])\n "
+      )
+    }
 
-  given varintDecoder: Aux[Encoding.Varint, Encoding.Varint] = encodingDecoder
-  given i64Decoder: Aux[Encoding.I64, Encoding.I64] = encodingDecoder
-  given i32Decoder: Aux[Encoding.I32, Encoding.I32] = encodingDecoder
-  given lenDecoder: Aux[Encoding.Len, Encoding.Len] = encodingDecoder
-  given messageDecoder: Aux[Encoding.Message, Encoding.Message] = encodingDecoder
+  given varintDecoder: Varint[Encoding.Varint] = encodingDecoder
+  given i64Decoder: I64[Encoding.I64] = encodingDecoder
+  given i32Decoder: I32[Encoding.I32] = encodingDecoder
+  given lenDecoder: Len[Encoding.Len] = encodingDecoder
+  given messageDecoder: Message[Encoding.Message] = encodingDecoder
 
   private def encodingDecoder[Enc <: Encoding : ClassTag]: Aux[Enc, Enc] =
     Decoder(Right(_))
@@ -73,7 +89,7 @@ object Decoder {
       case single: Encoding.Single => Right(Encoding.Collection(List(single)))
     }
 
-  given longDecoder: Aux[Long, Encoding.Varint] =
+  given longDecoder: Varint[Long] =
     varintDecoder.emap(varint =>
       Try(JLong.parseUnsignedLong(varint.underlying, 2))
         .toEither
@@ -81,19 +97,19 @@ object Decoder {
         .left.map(_ => DecodingFailure(s"Failed to convert varint to a long: [$varint]"))
     )
 
-  val unsignedIntDecoder: Aux[Int, Encoding.Varint] =
+  val unsignedIntDecoder: Varint[Int] =
     varintDecoder.emap(varint =>
       Try(Integer.parseUnsignedInt(varint.underlying, 2))
         .toEither
         .left.map(_ => DecodingFailure(s"Failed to convert varint to an unsigned int: [$varint]"))
     )
 
-  given intDecoder: Aux[Int, Encoding.Varint] =
+  given intDecoder: Varint[Int] =
     unsignedIntDecoder.map(encoded =>
       (encoded >> 1) ^ -(encoded & 1)
     )
 
-  given shortDecoder: Aux[Short, Encoding.Varint] =
+  given shortDecoder: Varint[Short] =
     intDecoder.emap(i =>
       Either.cond(
         i.isValidShort,
@@ -102,7 +118,7 @@ object Decoder {
       )
     )
 
-  given charDecoder: Aux[Char, Encoding.Varint] =
+  given charDecoder: Varint[Char] =
     unsignedIntDecoder.emap(i =>
       Either.cond(
         i.isValidChar,
@@ -111,20 +127,20 @@ object Decoder {
       )
     )
 
-  given booleanDecoder: Aux[Boolean, Encoding.Varint] =
+  given booleanDecoder: Varint[Boolean] =
     unsignedIntDecoder.emap {
       case 1 => Right(true)
       case 0 => Right(false)
       case other => Left(DecodingFailure(s"Unexpected boolean int encoding: [$other]"))
     }
 
-  given doubleDecoder: Aux[Double, Encoding.I64] =
+  given doubleDecoder: I64[Double] =
     i64Decoder.map(_.underlying)
 
-  given floatDecoder: Aux[Float, Encoding.I32] =
+  given floatDecoder: I32[Float] =
     i32Decoder.map(_.underlying)
 
-  given byteDecoder: Aux[Byte, Encoding.Len] =
+  given byteDecoder: Len[Byte] =
     lenDecoder.emap(len =>
       Either.cond(
         len.underlying.length == 1,
@@ -133,19 +149,19 @@ object Decoder {
       )
     )
 
-  given byteArrayDecoder: Aux[Array[Byte], Encoding.Len] =
+  given byteArrayDecoder: Len[Array[Byte]] =
     lenDecoder.map(_.underlying)
 
-  given stringDecoder: Aux[String, Encoding.Len] =
+  given stringDecoder: Len[String] =
     byteArrayDecoder.map(String(_, StandardCharsets.UTF_8))
 
   given iterableOnceByteDecoder[F[X] <: IterableOnce[X]](
     using factory: Factory[Byte, F[Byte]]
-  ): Aux[F[Byte], Encoding.Len] =
+  ): Len[F[Byte]] =
     lenDecoder.map(_.underlying.to(factory))
 
-  given iterableOnceDecoder[F[X] <: IterableOnce[X], T, Enc <: Encoding.Single](
-    using factory: Factory[T, F[T]], decoder: Aux[T, Enc]
+  given iterableOnceDecoder[F[X] <: IterableOnce[X], T](
+    using factory: Factory[T, F[T]], decoder: Aux[T, ? <: Encoding.Single]
   ): Aux[F[T], Encoding] =
     collectionEncodingDecoder.emap { collection =>
       val zero: Either[DecodingFailure, mutable.Builder[T, F[T]]] = Right(factory.newBuilder)
@@ -157,7 +173,7 @@ object Decoder {
       ).map(_.result())
     }
 
-  given optionByteDecoder: Aux[Option[Byte], Encoding.Len] =
+  given optionByteDecoder: Len[Option[Byte]] =
     lenDecoder.emap(len =>
       len.underlying.length match {
         case 0 => Right(None)
@@ -166,7 +182,7 @@ object Decoder {
       }
     )
 
-  given optionDecoder[T, Enc <: Encoding.Single](using decoder: Aux[T, Enc]): Aux[Option[T], Encoding] =
+  given optionDecoder[T](using decoder: Aux[T, ? <: Encoding.Single]): Aux[Option[T], Encoding] =
     collectionEncodingDecoder.emap(collection =>
       collection.underlying match {
         case encoding :: Nil => decoder.widen[Encoding.Single].decode(encoding).map(Some.apply)
@@ -175,7 +191,7 @@ object Decoder {
       }
     )
 
-  inline def derived[T](using inline mirror: Mirror.Of[T]): Aux[T, Encoding.Message] =
+  inline def derived[T](using inline mirror: Mirror.Of[T]): Message[T] =
     inline mirror match {
       case product: Mirror.ProductOf[T] => productDecoder(using product)
       case sum: Mirror.SumOf[T] => sumDecoder(using sum)
@@ -183,12 +199,12 @@ object Decoder {
 
   // Not implicit because we don't want to magically generate decoders
   // for types we don't own (e.g. the `Some` case class)
-  inline def productDecoder[T](using mirror: Mirror.ProductOf[T]): Aux[T, Encoding.Message] =
+  inline def productDecoder[T](using mirror: Mirror.ProductOf[T]): Message[T] =
     productDecoderImpl(summonDecoders[mirror.MirroredElemTypes])(using mirror)
 
   private inline def productDecoderImpl[T](decoders: => List[Aux[?, Encoding]])(
     using mirror: Mirror.ProductOf[T]
-  ): Aux[T, Encoding.Message] =
+  ): Message[T] =
     messageDecoder.emap { message =>
       val zero: Either[DecodingFailure, Array[Any]] = Right(Array.empty)
       decoders
@@ -204,7 +220,7 @@ object Decoder {
 
   // Not implicit because we don't want to magically generate decoders
   // for types we don't own (e.g. the `Option` ADT)
-  inline def sumDecoder[T](using mirror: Mirror.SumOf[T]): Aux[T, Encoding.Message] = {
+  inline def sumDecoder[T](using mirror: Mirror.SumOf[T]): Message[T] = {
     lazy val subtypeDecoders = summonOrDeriveDecoders[mirror.MirroredElemTypes]
     productDecoderImpl[(Int, Encoding)](
       List(unsignedIntDecoder.widen[Encoding], encodingDecoder)
@@ -213,6 +229,6 @@ object Decoder {
     )
   }
 
-  inline given tupleDecoder[T <: Tuple : Mirror.ProductOf]: Aux[T, Encoding.Message] =
+  inline given tupleDecoder[T <: Tuple : Mirror.ProductOf]: Message[T] =
     productDecoder
 }

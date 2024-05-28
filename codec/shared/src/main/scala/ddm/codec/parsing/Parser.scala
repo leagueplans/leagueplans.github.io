@@ -7,72 +7,20 @@ import scala.annotation.tailrec
 import scala.util.Try
 
 object Parser {
-  def parse(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Message] =
+  def parseVarint(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Varint] =
+    parseVarint(ParserInput(bytes))
+
+  def parseI64(bytes: Array[Byte]): Either[ParsingFailure, Encoding.I64] =
+    parseI64(ParserInput(bytes))
+    
+  def parseI32(bytes: Array[Byte]): Either[ParsingFailure, Encoding.I32] =
+    parseI32(ParserInput(bytes))
+    
+  def parseLen(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Len] =
+    Right(Encoding.Len(bytes))
+    
+  def parseMessage(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Message] =
     parseMessageHelper(ParserInput(bytes), acc = Map.empty)
-
-  @tailrec
-  private def parseMessageHelper(
-    input: ParserInput,
-    acc: Map[FieldNumber, Encoding]
-  ): Either[ParsingFailure, Encoding.Message] =
-    if (input.fullyParsed)
-      Right(Encoding.Message(acc))
-    else
-      parseField(input) match {
-        case Left(failure) =>
-          Left(failure)
-        case Right((fieldNumber, newFieldValue)) =>
-          val updatedFieldValue = acc.get(fieldNumber) match {
-            case Some(single: Encoding.Single) =>
-              Encoding.Collection(List(single, newFieldValue))
-            case Some(coll: Encoding.Collection) =>
-              Encoding.Collection(coll.underlying :+ newFieldValue)
-            case None =>
-              newFieldValue
-          }
-          parseMessageHelper(input, acc + (fieldNumber -> updatedFieldValue))
-      }
-
-  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding.Single)] =
-    parseTag(input).flatMap((fieldNumber, discriminant) =>
-      (discriminant match {
-        case Discriminant.Varint => parseVarint(input)
-        case Discriminant.I64 => parseI64(input)
-        case Discriminant.I32 => parseI32(input)
-        case Discriminant.Len => parseLen(input)
-        case Discriminant.Message => parseMessageField(input)
-      }).map(fieldNumber -> _)
-    )
-
-  private def parseTag(input: ParserInput): Either[ParsingFailure, (FieldNumber, Discriminant)] =
-    input.scoped(
-      parseVarintScoped(input).flatMap { varint =>
-        val binary = varint.underlying
-        val (encodedFieldNumber, encodedDiscriminant) =
-          binary.splitAt(binary.length - Discriminant.maxBitLength)
-
-        for {
-          fieldNumber <- parseFieldNumber(encodedFieldNumber)
-          discriminant <- parseDiscriminant(encodedDiscriminant)
-        } yield (fieldNumber, discriminant)
-      }
-    )
-
-  private def parseFieldNumber(encoded: String): Either[ParsingFailure.Cause, FieldNumber] =
-    if (encoded.isEmpty)
-      Right(FieldNumber(0))
-    else
-      Try(Integer.parseUnsignedInt(encoded, 2))
-        .toEither
-        .map(FieldNumber.apply)
-        .left.map(_ => ParsingFailure.Cause(s"Could not parse field number - binary: [$encoded]"))
-
-  private def parseDiscriminant(encoded: String): Either[ParsingFailure.Cause, Discriminant] = {
-    val raw = Integer.parseUnsignedInt(encoded, 2)
-    Discriminant.from(raw).toRight(
-      ParsingFailure.Cause(s"Unexpected encoding discriminant: $raw")
-    )
-  }
 
   private def parseVarint(input: ParserInput): Either[ParsingFailure, Encoding.Varint] =
     input.scoped(parseVarintScoped(input))
@@ -114,7 +62,71 @@ object Parser {
       .scoped(takeOrFail(input, 4, "I32"))
       .map(bytes => Encoding.I32(ByteBuffer.wrap(bytes).getFloat))
 
-  private def parseLen(input: ParserInput): Either[ParsingFailure, Encoding.Len] =
+  @tailrec
+  private def parseMessageHelper(
+    input: ParserInput,
+    acc: Map[FieldNumber, Encoding]
+  ): Either[ParsingFailure, Encoding.Message] =
+    if (input.fullyParsed)
+      Right(Encoding.Message(acc))
+    else
+      parseField(input) match {
+        case Left(failure) =>
+          Left(failure)
+        case Right((fieldNumber, newFieldValue)) =>
+          val updatedFieldValue = acc.get(fieldNumber) match {
+            case Some(single: Encoding.Single) =>
+              Encoding.Collection(List(single, newFieldValue))
+            case Some(coll: Encoding.Collection) =>
+              Encoding.Collection(coll.underlying :+ newFieldValue)
+            case None =>
+              newFieldValue
+          }
+          parseMessageHelper(input, acc + (fieldNumber -> updatedFieldValue))
+      }
+
+  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding.Single)] =
+    parseTag(input).flatMap((fieldNumber, discriminant) =>
+      (discriminant match {
+        case Discriminant.Varint => parseVarint(input)
+        case Discriminant.I64 => parseI64(input)
+        case Discriminant.I32 => parseI32(input)
+        case Discriminant.Len => parseLenField(input)
+        case Discriminant.Message => parseMessageField(input)
+      }).map(fieldNumber -> _)
+    )
+
+  private def parseTag(input: ParserInput): Either[ParsingFailure, (FieldNumber, Discriminant)] =
+    input.scoped(
+      parseVarintScoped(input).flatMap { varint =>
+        val binary = varint.underlying
+        val (encodedFieldNumber, encodedDiscriminant) =
+          binary.splitAt(binary.length - Discriminant.maxBitLength)
+
+        for {
+          fieldNumber <- parseFieldNumber(encodedFieldNumber)
+          discriminant <- parseDiscriminant(encodedDiscriminant)
+        } yield (fieldNumber, discriminant)
+      }
+    )
+
+  private def parseFieldNumber(encoded: String): Either[ParsingFailure.Cause, FieldNumber] =
+    if (encoded.isEmpty)
+      Right(FieldNumber(0))
+    else
+      Try(Integer.parseUnsignedInt(encoded, 2))
+        .toEither
+        .map(FieldNumber.apply)
+        .left.map(_ => ParsingFailure.Cause(s"Could not parse field number - binary: [$encoded]"))
+
+  private def parseDiscriminant(encoded: String): Either[ParsingFailure.Cause, Discriminant] = {
+    val raw = Integer.parseUnsignedInt(encoded, 2)
+    Discriminant.from(raw).toRight(
+      ParsingFailure.Cause(s"Unexpected encoding discriminant: $raw")
+    )
+  }
+
+  private def parseLenField(input: ParserInput): Either[ParsingFailure, Encoding.Len] =
     parseLength(input).flatMap(length =>
       input
         .scoped(takeOrFail(input, length, "Bytes"))
