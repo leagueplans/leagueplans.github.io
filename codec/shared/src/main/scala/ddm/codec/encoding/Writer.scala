@@ -5,7 +5,7 @@ import ddm.codec.*
 import java.nio.ByteBuffer
 
 object Writer {
-  def write(encoding: Encoding.Single): Array[Byte] =
+  def write(encoding: Encoding): Array[Byte] =
     encoding match {
       case Encoding.Varint(underlying) => writeVarint(underlying)
       case Encoding.I64(underlying) => writeI64(underlying)
@@ -37,17 +37,12 @@ object Writer {
   private def writeLen(len: Array[Byte]): Array[Byte] =
     len
 
-  private def writeMessage(message: Map[FieldNumber, Encoding]): Array[Byte] =
-    message.toArray.flatMap((fieldNumber, encoding) =>
-      encoding match {
-        case single: Encoding.Single =>
-          writeField(fieldNumber, single)
-        case collection: Encoding.Collection =>
-          collection.underlying.flatMap(writeField(fieldNumber, _)).toArray
-      }
+  private def writeMessage(message: Map[FieldNumber, List[Encoding]]): Array[Byte] =
+    message.toArray.flatMap((fieldNumber, encodings) =>
+      encodings.flatMap(writeField(fieldNumber, _)).toArray
     )
 
-  private def writeField(fieldNumber: FieldNumber, encoding: Encoding.Single): Array[Byte] =
+  private def writeField(fieldNumber: FieldNumber, encoding: Encoding): Array[Byte] =
     encoding match {
       case varint: Encoding.Varint =>
         writeTag(fieldNumber, Discriminant.Varint) ++ writeVarint(varint.underlying)

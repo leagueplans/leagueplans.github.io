@@ -1,6 +1,7 @@
 package ddm.codec.parsing
 
 import ddm.codec.*
+import ddm.codec.parsing.ParsingFailure.Cause
 
 import java.nio.ByteBuffer
 import scala.annotation.tailrec
@@ -8,13 +9,30 @@ import scala.util.Try
 
 object Parser {
   def parseVarint(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Varint] =
-    parseVarint(ParserInput(bytes))
+    ensureFullParse(Discriminant.Varint, parseVarint)(bytes)
 
   def parseI64(bytes: Array[Byte]): Either[ParsingFailure, Encoding.I64] =
-    parseI64(ParserInput(bytes))
-    
+    ensureFullParse(Discriminant.I64, parseI64)(bytes)
+
   def parseI32(bytes: Array[Byte]): Either[ParsingFailure, Encoding.I32] =
-    parseI32(ParserInput(bytes))
+    ensureFullParse(Discriminant.I32, parseI32)(bytes)
+
+  private def ensureFullParse[T](
+    discriminant: Discriminant,
+    parse: ParserInput => Either[ParsingFailure, T]
+  ): Array[Byte] => Either[ParsingFailure, T] =
+    bytes => {
+      val input = ParserInput(bytes)
+      parse(input).flatMap(t =>
+        input.scoped(
+          Either.cond(
+            input.fullyParsed,
+            t,
+            Cause.IncompleteParse(discriminant)
+          )
+        )
+      )
+    }
     
   def parseLen(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Len] =
     Right(Encoding.Len(bytes))
@@ -27,7 +45,7 @@ object Parser {
 
   private def parseVarintScoped(input: ParserInput)(
     using ParserInput.Scope
-  ): Either[ParsingFailure.Cause, Encoding.Varint] = {
+  ): Either[Cause, Encoding.Varint] = {
     val encodedVarint = input.takeWhile(!isLastByteOfVarint(_)) ++ input.take(1)
     val hasLastByte = encodedVarint.lastOption.exists(isLastByteOfVarint)
 
@@ -39,7 +57,7 @@ object Parser {
           s"${"0".repeat(VarintSegmentLength - binaryString.length)}$binaryString"
         }.reduce((acc, s) => s"$s$acc")
       )),
-      ParsingFailure.Cause("No terminal byte for Varint")
+      Cause.VarintMissingTerminalByte
     )
   }
 
@@ -54,18 +72,18 @@ object Parser {
 
   private def parseI64(input: ParserInput): Either[ParsingFailure, Encoding.I64] =
     input
-      .scoped(takeOrFail(input, 8, "I64"))
+      .scoped(takeOrFail(input, 8, Discriminant.I64))
       .map(bytes => Encoding.I64(ByteBuffer.wrap(bytes).getDouble))
 
   private def parseI32(input: ParserInput): Either[ParsingFailure, Encoding.I32] =
     input
-      .scoped(takeOrFail(input, 4, "I32"))
+      .scoped(takeOrFail(input, 4, Discriminant.I32))
       .map(bytes => Encoding.I32(ByteBuffer.wrap(bytes).getFloat))
 
   @tailrec
   private def parseMessageHelper(
     input: ParserInput,
-    acc: Map[FieldNumber, Encoding]
+    acc: Map[FieldNumber, List[Encoding]]
   ): Either[ParsingFailure, Encoding.Message] =
     if (input.fullyParsed)
       Right(Encoding.Message(acc))
@@ -75,17 +93,13 @@ object Parser {
           Left(failure)
         case Right((fieldNumber, newFieldValue)) =>
           val updatedFieldValue = acc.get(fieldNumber) match {
-            case Some(single: Encoding.Single) =>
-              Encoding.Collection(List(single, newFieldValue))
-            case Some(coll: Encoding.Collection) =>
-              Encoding.Collection(coll.underlying :+ newFieldValue)
-            case None =>
-              newFieldValue
+            case Some(encodings) => encodings :+ newFieldValue
+            case None => List(newFieldValue)
           }
           parseMessageHelper(input, acc + (fieldNumber -> updatedFieldValue))
       }
 
-  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding.Single)] =
+  private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding)] =
     parseTag(input).flatMap((fieldNumber, discriminant) =>
       (discriminant match {
         case Discriminant.Varint => parseVarint(input)
@@ -110,46 +124,46 @@ object Parser {
       }
     )
 
-  private def parseFieldNumber(encoded: String): Either[ParsingFailure.Cause, FieldNumber] =
+  private def parseFieldNumber(encoded: String): Either[Cause, FieldNumber] =
     if (encoded.isEmpty)
       Right(FieldNumber(0))
     else
       Try(Integer.parseUnsignedInt(encoded, 2))
         .toEither
         .map(FieldNumber.apply)
-        .left.map(_ => ParsingFailure.Cause(s"Could not parse field number - binary: [$encoded]"))
+        .left.map(_ => Cause.FailedToParseFieldNumber(encoded))
 
-  private def parseDiscriminant(encoded: String): Either[ParsingFailure.Cause, Discriminant] = {
-    val raw = Integer.parseUnsignedInt(encoded, 2)
-    Discriminant.from(raw).toRight(
-      ParsingFailure.Cause(s"Unexpected encoding discriminant: $raw")
+  private def parseDiscriminant(encoded: String): Either[Cause, Discriminant] = {
+    val ordinal = Integer.parseUnsignedInt(encoded, 2)
+    Discriminant.from(ordinal).toRight(
+      Cause.UnrecognisedDiscriminant(ordinal)
     )
   }
 
   private def parseLenField(input: ParserInput): Either[ParsingFailure, Encoding.Len] =
     parseLength(input).flatMap(length =>
       input
-        .scoped(takeOrFail(input, length, "Bytes"))
+        .scoped(takeOrFail(input, length, Discriminant.Len))
         .map(Encoding.Len.apply)
     )
 
   private def parseMessageField(input: ParserInput): Either[ParsingFailure, Encoding.Message] =
     parseLength(input).flatMap(length =>
       input
-        .scoped(takeOrFail(input, length, "Message"))
+        .scoped(takeOrFail(input, length, Discriminant.Message))
         .flatMap(bytes =>
           parseMessageHelper(ParserInput(bytes), acc = Map.empty)
         )
     )
 
-  private def takeOrFail(input: ParserInput, n: Int, typeName: String)(
+  private def takeOrFail(input: ParserInput, n: Int, discriminant: Discriminant)(
     using ParserInput.Scope
-  ): Either[ParsingFailure.Cause, Array[Byte]] = {
+  ): Either[Cause, Array[Byte]] = {
     val bytes = input.take(n)
     Either.cond(
       bytes.length == n,
       bytes,
-      ParsingFailure.Cause(s"Fewer than $n bytes available for $typeName")
+      Cause.NotEnoughBytesRemaining(n, discriminant)
     )
   }
 
@@ -158,7 +172,7 @@ object Parser {
       parseVarintScoped(input).flatMap(varint =>
         Try(Integer.parseUnsignedInt(varint.underlying, 2))
           .toEither
-          .left.map(_ => ParsingFailure.Cause(s"Could not parse length - binary: [${varint.underlying}]"))
+          .left.map(_ => Cause.FailedToParseLength(varint.underlying))
       )
     )
 }

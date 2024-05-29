@@ -8,7 +8,7 @@ The project has three primary goals:
 * it should not be possible to create unsound encoders/decoders. 
 
 ### Compact encoding
-Our encodings have more or less the same properties as Protobuf encodings, and this turns out to be good enough for our purposes. [A section](#comparison-with-protobuf-encoding) has been included below that describes the main differences.
+Our encodings have more or less the same properties as Protobuf encodings, and this turns out to be good enough for our purposes. A section has been included [below](#comparison-with-protobuf-encoding) that describes the main differences.
 
 ### An intermediary AST
 A full AST implementation can be found in [Encoding.scala](shared/src/main/scala/ddm/codec/Encoding.scala).
@@ -39,34 +39,30 @@ In general, nested `Option`s and collections result in ambiguous encodings. As s
 ```scala 3
 import ddm.codec.encoding.Encoder
 
-given Encoder.Message[T] = ???
+given Encoder[T] = ???
 val t: T = ???
 
-val encoding: Encoding.Message = Encoder.encode(t)
+val encoding: Encoding = Encoder.encode(t)
 // Alternatively
-// val encoding: Encoding.Message = t.encoded
+// val encoding: Encoding = t.encoded
 val bytes: Array[Byte] = encoding.getBytes
 ```
-Encoding works in a straightforward manner. If we have an encoder for a given type `T` in implicit scope, then we can use either the `encode` method, defined on the `Encoder` companion object, or the `encoded` extension method, brought into scope by having an encoder instance in scope, to produce the `Encoding` AST. The return type of the `encode`/`encoded` methods is based on the type of encoder in scope. In the example above, we receive an `Encoding.Message` because our encoder has type `Encoder.Message[T]`. If we had an `Encoder.Varint[T]`, then we'd receive an `Encoding.Varint` instead for example.
-
-The `getBytes` method defined on `Encoding.Message` can then be used to convert our AST into the actual binary format.
-
-Note that the encoders provided for collections typically return `Encoding.Collection`s. This type does not define a `getBytes` method, as the actual binary encoding depends on the collection's position within a broader message.
+Encoding works in a straightforward manner. If we have an encoder for a given type `T` in implicit scope, then we can use either the `encode` method, defined on the `Encoder` companion object, or the `encoded` extension method, brought into scope by having an encoder instance in scope, to produce the `Encoding` AST. The `getBytes` method defined on `Encoding` can then be used to convert our AST into the actual binary format.
 
 ### Decoding
 ```scala 3
 import ddm.codec.decoding.{Decoder, DecodingFailure}
 import ddm.codec.parsing.{Parser, ParsingFailure}
 
-given Decoder.Message[T] = ???
+given Decoder[T] = ???
 val bytes: Array[Byte] = ???
 
-val maybeT: Either[ParsingFailure | DecodingFailure, T] = Decoder.decode(bytes)
+val maybeT: Either[ParsingFailure | DecodingFailure, T] = Decoder.decodeMessage(bytes)
 // Alternatively
-// val maybeEncoding: Either[ParsingFailure, Encoding.Message] = Parser.parseMessage(bytes)
+// val maybeEncoding: Either[ParsingFailure, Encoding] = Parser.parseMessage(bytes)
 // val maybeT: Either[ParsingFailure | DecodingFailure, T] = maybeEncoding.flatMap(_.as[T])
 ```
-Typically, when decoding we'll have a byte array representing a message. If we have a `Decoder.Message[T]` in scope for the type `T` that we wish to decode our byte array into, then we can use the `decode` method defined on the `Decoder` companion object to attempt to decode the bytes. The `decode` method can similarly be used to decode other kinds of encoded byte arrays, so long as we have the appropriate type of decoder in scope.
+Typically, when decoding we'll have a byte array representing a message. If we have a `Decoder[T]` in scope for the type `T` that we wish to decode our byte array into, then we can use the `decodeMessage` method defined on the `Decoder` companion object to attempt to decode the bytes. If we wanted to, we could use one of the other `decodeX` methods, which would interpret the parse the byte array as something other than a message.
 
 ### Auto-deriving encoders and decoders
 Encoders and decoders are predefined for frequently used Scala types. You can find their implementations in the respective companion objects, [Encoder.scala](shared/src/main/scala/ddm/codec/encoding/Encoder.scala) and [Decoder.scala](shared/src/main/scala/ddm/codec/decoding/Decoder.scala).
@@ -82,18 +78,18 @@ import ddm.codec.encoding.Encoder
 final case class A(f: Float, s: String, ds: Set[Double])
 
 object A {
-  given decoder: Decoder.Message[A] = Decoder.derived
-  given encoder: Encoder.Message[A] = Encoder.derived
+  given decoder: Decoder[A] = Decoder.derived
+  given encoder: Encoder[A] = Encoder.derived
 }
 
 final case class B(maybeA: Option[A])
 
 object B {
-  given decoder: Decoder.Message[B] = Decoder.derived
-  given encoder: Encoder.Message[B] = Encoder.derived
+  given decoder: Decoder[B] = Decoder.derived
+  given encoder: Encoder[B] = Encoder.derived
 }
 ```
-Note that if we did not define the decoder for `A`, then the compiler would fail to derive the decoder we tried to define for `B`. We have this restriction to limit the compilers ability to generate message-based encoders for types we wouldn't typically expect, such as the `Some` subtype for `Option`s. The same restriction exists for the pair of encoders.
+Note that if we did not define the decoder for `A`, then the compiler would fail to derive the decoder we tried to define for `B`. We have this restriction to limit the compilers ability to generate decoders for types we wouldn't typically expect, such as the `Some` subtype for `Option`s. The same restriction exists for the pair of encoders.
 
 #### Sums
 For a sum type `T` with subtypes `T1, ..., TN`, you can summon an `Encoder[T]` using `Encoder.derived` if the compiler can find, or derive itself, encoders with types `Encoder[T1], ..., Encoder[TN]`. Likewise for a `Decoder[T]`.
@@ -114,8 +110,8 @@ object A {
     final case class E(i: Int) extends D
   }
   
-  given decoder: Decoder.Message[A] = Decoder.derived
-  given encoder: Encoder.Message[A] = Encoder.derived
+  given decoder: Decoder[A] = Decoder.derived
+  given encoder: Encoder[A] = Encoder.derived
 }
 ```
 The encoder and decoder for `A` can then be used to encode or decode any of its subtypes.
@@ -137,15 +133,15 @@ object T {
   case object S1 extends T
   final case class S2(s1: S1.type) extends T
 
-  given decoder: Decoder.Message[T] = {
-    given decoderS1: Decoder.Message[S1.type] = Decoder.derived
-    given decoderS2: Decoder.Message[S2] = Decoder.derived
+  given decoder: Decoder[T] = {
+    given decoderS1: Decoder[S1.type] = Decoder.derived
+    given decoderS2: Decoder[S2] = Decoder.derived
     Decoder.derived
   }
 
-  given encoder: Encoder.Message[T] = {
-    given encoderS1: Encoder.Message[S1.type] = Encoder.derived
-    given encoderS2: Encoder.Message[S2] = Encoder.derived
+  given encoder: Encoder[T] = {
+    given encoderS1: Encoder[S1.type] = Encoder.derived
+    given encoderS2: Encoder[S2] = Encoder.derived
     Encoder.derived
   }
 }
@@ -226,7 +222,7 @@ object A {
 In this example, `A.D.E(25)` would encode to
 ```text
 Message(                 // the A sum type
-  Varint("00000010"),    // the ordinal of D in A, 2
+  Varint("00000100"),    // the ordinal of D in A, 2 (encoded as 4 due to zigzagging)
   Message(               // the D sum type
     Varint("00000000"),  // the ordinal of E in D, 0
     Message(             // the E case class
