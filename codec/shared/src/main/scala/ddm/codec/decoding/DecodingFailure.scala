@@ -1,7 +1,12 @@
 package ddm.codec.decoding
 
-opaque type DecodingFailure <: String = String
+trait DecodingFailure {
+  def description: String
+}
 
 object DecodingFailure {
-  inline def apply(s: String): DecodingFailure = s 
+  inline def apply(s: String): DecodingFailure =
+    new DecodingFailure {
+      val description: String = s
+    }
 }

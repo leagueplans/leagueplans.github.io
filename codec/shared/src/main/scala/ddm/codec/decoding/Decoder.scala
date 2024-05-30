@@ -3,26 +3,22 @@ package ddm.codec.decoding
 import ddm.codec.Encoding
 import ddm.codec.parsing.{Parser, ParsingFailure}
 
-import java.lang.Long as JLong
-import java.nio.charset.StandardCharsets
+import java.lang.{ThreadLocal, Long as JLong}
+import java.nio.ByteBuffer
+import java.nio.charset.*
 import scala.collection.Factory
 import scala.deriving.Mirror
 import scala.reflect.ClassTag
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait Decoder[T] {
   def decode(encoding: Encoding): Either[DecodingFailure, T]
 
   final def map[S](f: T => S): Decoder[S] =
-    Decoder(encoding => decode(encoding).map(f))
+    Decoder(decode(_).map(f))
 
   final def emap[S](f: T => Either[DecodingFailure, S]): Decoder[S] =
-    Decoder(encoding =>
-      for {
-        t <- decode(encoding)
-        s <- f(t)
-      } yield s
-    )
+    Decoder(decode(_).flatMap(f))
 }
 
 object Decoder {
@@ -31,21 +27,24 @@ object Decoder {
 
   inline def apply[T](f: Encoding => Either[DecodingFailure, T]): Decoder[T] =
     f(_)
+
+  def decode[T](encoding: Encoding)(using decoder: Decoder[T]): Either[DecodingFailure, T] =
+    decoder.decode(encoding)
     
   def decodeVarint[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
-    Parser.parseVarint(bytes).flatMap(_.as[T])
+    Parser.parseVarint(bytes).flatMap(decode)
     
   def decodeI64[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
-    Parser.parseI64(bytes).flatMap(_.as[T])
+    Parser.parseI64(bytes).flatMap(decode)
     
   def decodeI32[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
-    Parser.parseI32(bytes).flatMap(_.as[T])
+    Parser.parseI32(bytes).flatMap(decode)
     
   def decodeLen[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
-    Parser.parseLen(bytes).flatMap(_.as[T])
+    Parser.parseLen(bytes).flatMap(decode)
     
   def decodeMessage[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
-    Parser.parseMessage(bytes).flatMap(_.as[T])
+    Parser.parseMessage(bytes).flatMap(decode)
 
   inline def derived[T](using mirror: Mirror.Of[T]): Decoder[T] =
     inline mirror match {
@@ -71,22 +70,22 @@ object Decoder {
 
   given longDecoder: Decoder[Long] =
     varintDecoder.emap(varint =>
-      Try(JLong.parseUnsignedLong(varint.underlying, 2))
+      Try(JLong.parseUnsignedLong(varint.value, 2))
         .toEither
-        .map(encoded => (encoded >> 1) ^ -(encoded & 1))
+        .map(encoded => (encoded >>> 1) ^ -(encoded & 1))
         .left.map(_ => DecodingFailure(s"Failed to convert varint to a long: [$varint]"))
     )
 
   val unsignedIntDecoder: Decoder[Int] =
     varintDecoder.emap(varint =>
-      Try(Integer.parseUnsignedInt(varint.underlying, 2))
+      Try(Integer.parseUnsignedInt(varint.value, 2))
         .toEither
         .left.map(_ => DecodingFailure(s"Failed to convert varint to an unsigned int: [$varint]"))
     )
 
   given intDecoder: Decoder[Int] =
     unsignedIntDecoder.map(encoded =>
-      (encoded >> 1) ^ -(encoded & 1)
+      (encoded >>> 1) ^ -(encoded & 1)
     )
 
   given shortDecoder: Decoder[Short] =
@@ -111,17 +110,17 @@ object Decoder {
     unsignedIntDecoder.emap {
       case 1 => Right(true)
       case 0 => Right(false)
-      case other => Left(DecodingFailure(s"Unexpected boolean int encoding: [$other]"))
+      case other => Left(DecodingFailure(s"Unexpected boolean encoding: [$other]"))
     }
 
   given doubleDecoder: Decoder[Double] =
-    i64Decoder.map(_.underlying)
+    i64Decoder.map(_.value)
 
   given floatDecoder: Decoder[Float] =
-    i32Decoder.map(_.underlying)
+    i32Decoder.map(_.value)
 
   given byteArrayDecoder: Decoder[Array[Byte]] =
-    lenDecoder.map(_.underlying)
+    lenDecoder.map(_.value)
 
   given byteDecoder: Decoder[Byte] =
     byteArrayDecoder.emap(array =>
@@ -132,8 +131,32 @@ object Decoder {
       )
     )
 
-  given stringDecoder: Decoder[String] =
-    byteArrayDecoder.map(String(_, StandardCharsets.UTF_8))
+  given stringDecoder: Decoder[String] = {
+    val decoderCache = 
+      new ThreadLocal[CharsetDecoder] {
+        override protected def initialValue(): CharsetDecoder =
+          StandardCharsets.UTF_8
+            .newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+      }
+    
+    byteArrayDecoder.emap { bytes =>
+      val byteBuffer = ByteBuffer.wrap(bytes)
+      val decoder = decoderCache.get
+      
+      Try(decoder.decode(byteBuffer)) match {
+        case Success(chars) =>
+          Right(chars.toString)
+        case Failure(_: MalformedInputException) =>
+          Left(DecodingFailure(s"Cannot decode string. The input is malformed."))
+        case Failure(_: UnmappableCharacterException) =>
+          Left(DecodingFailure(s"Cannot decode string. It contains a character not mappable to UTF-8."))
+        case Failure(unexpected) =>
+          Left(DecodingFailure(s"Unexpected error when decoding a string: [${unexpected.getMessage}]"))
+      }
+    }
+  }
 
   given iterableOnceByteDecoder[F[X] <: IterableOnce[X]](
     using factory: Factory[Byte, F[Byte]]

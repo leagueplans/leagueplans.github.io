@@ -1,17 +1,17 @@
-package ddm.codec.encoding
+package ddm.codec.writing
 
 import ddm.codec.*
 
-import java.nio.ByteBuffer
+import java.nio.{ByteBuffer, ByteOrder}
 
 object Writer {
   def write(encoding: Encoding): Array[Byte] =
     encoding match {
-      case Encoding.Varint(underlying) => writeVarint(underlying)
-      case Encoding.I64(underlying) => writeI64(underlying)
-      case Encoding.I32(underlying) => writeI32(underlying)
-      case Encoding.Len(underlying) => writeLen(underlying)
-      case Encoding.Message(underlying) => writeMessage(underlying)
+      case Encoding.Varint(value) => writeVarint(value)
+      case Encoding.I64(value) => writeI64(value)
+      case Encoding.I32(value) => writeI32(value)
+      case Encoding.Len(value) => writeLen(value)
+      case Encoding.Message(value) => writeMessage(value)
     }
 
   private def writeVarint(varint: BinaryString): Array[Byte] = {
@@ -29,10 +29,18 @@ object Writer {
     Integer.parseInt(byteString, 2).toByte
 
   private def writeI64(i64: Double): Array[Byte] =
-    ByteBuffer.wrap(Array.ofDim(8)).putDouble(i64).array()
+    ByteBuffer
+      .wrap(Array.ofDim(8))
+      .order(ByteOrder.LITTLE_ENDIAN)
+      .putDouble(i64)
+      .array()
 
   private def writeI32(i32: Float): Array[Byte] =
-    ByteBuffer.wrap(Array.ofDim(4)).putFloat(i32).array()
+    ByteBuffer
+      .wrap(Array.ofDim(4))
+      .order(ByteOrder.LITTLE_ENDIAN)
+      .putFloat(i32)
+      .array()
 
   private def writeLen(len: Array[Byte]): Array[Byte] =
     len
@@ -45,15 +53,15 @@ object Writer {
   private def writeField(fieldNumber: FieldNumber, encoding: Encoding): Array[Byte] =
     encoding match {
       case varint: Encoding.Varint =>
-        writeTag(fieldNumber, Discriminant.Varint) ++ writeVarint(varint.underlying)
+        writeTag(fieldNumber, Discriminant.Varint) ++ writeVarint(varint.value)
       case i64: Encoding.I64 =>
-        writeTag(fieldNumber, Discriminant.I64) ++ writeI64(i64.underlying)
+        writeTag(fieldNumber, Discriminant.I64) ++ writeI64(i64.value)
       case i32: Encoding.I32 =>
-        writeTag(fieldNumber, Discriminant.I32) ++ writeI32(i32.underlying)
+        writeTag(fieldNumber, Discriminant.I32) ++ writeI32(i32.value)
       case len: Encoding.Len =>
-        writeTag(fieldNumber, Discriminant.Len) ++ withLength(writeLen(len.underlying))
+        writeTag(fieldNumber, Discriminant.Len) ++ withLength(writeLen(len.value))
       case message: Encoding.Message =>
-        writeTag(fieldNumber, Discriminant.Message) ++ withLength(writeMessage(message.underlying))
+        writeTag(fieldNumber, Discriminant.Message) ++ withLength(writeMessage(message.value))
     }
 
   private def writeTag(fieldNumber: FieldNumber, discriminant: Discriminant): Array[Byte] =

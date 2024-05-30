@@ -3,7 +3,7 @@ package ddm.codec.parsing
 import ddm.codec.*
 import ddm.codec.parsing.ParsingFailure.Cause
 
-import java.nio.ByteBuffer
+import java.nio.{ByteBuffer, ByteOrder}
 import scala.annotation.tailrec
 import scala.util.Try
 
@@ -73,12 +73,16 @@ object Parser {
   private def parseI64(input: ParserInput): Either[ParsingFailure, Encoding.I64] =
     input
       .scoped(takeOrFail(input, 8, Discriminant.I64))
-      .map(bytes => Encoding.I64(ByteBuffer.wrap(bytes).getDouble))
+      .map(bytes => Encoding.I64(
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getDouble
+      ))
 
   private def parseI32(input: ParserInput): Either[ParsingFailure, Encoding.I32] =
     input
       .scoped(takeOrFail(input, 4, Discriminant.I32))
-      .map(bytes => Encoding.I32(ByteBuffer.wrap(bytes).getFloat))
+      .map(bytes => Encoding.I32(
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getFloat
+      ))
 
   @tailrec
   private def parseMessageHelper(
@@ -113,7 +117,7 @@ object Parser {
   private def parseTag(input: ParserInput): Either[ParsingFailure, (FieldNumber, Discriminant)] =
     input.scoped(
       parseVarintScoped(input).flatMap { varint =>
-        val binary = varint.underlying
+        val binary = varint.value
         val (encodedFieldNumber, encodedDiscriminant) =
           binary.splitAt(binary.length - Discriminant.maxBitLength)
 
@@ -170,9 +174,9 @@ object Parser {
   private def parseLength(input: ParserInput): Either[ParsingFailure, Int] =
     input.scoped(
       parseVarintScoped(input).flatMap(varint =>
-        Try(Integer.parseUnsignedInt(varint.underlying, 2))
+        Try(Integer.parseUnsignedInt(varint.value, 2))
           .toEither
-          .left.map(_ => Cause.FailedToParseLength(varint.underlying))
+          .left.map(_ => Cause.FailedToParseLength(varint.value))
       )
     )
 }

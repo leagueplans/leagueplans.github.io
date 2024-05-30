@@ -16,12 +16,18 @@ ThisBuild / scalacOptions ++= List(
 
 lazy val root =
   (project in file("."))
-    .aggregate(common.jvm, common.js, wikiScraper, ui)
+    .aggregate(codec.jvm, codec.js, common.jvm, common.js, wikiScraper, ui)
 
 val circeVersion = "0.14.6"
 
 lazy val codec =
   crossProject(JVMPlatform, JSPlatform).in(file("codec"))
+    .settings(
+      libraryDependencies ++= List(
+        "org.scalatest" %%% "scalatest" % "3.2.18" % "test",
+        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.18.0" % "test"
+      )
+    )
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
