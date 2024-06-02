@@ -16,22 +16,16 @@ object ProductEncoderDeriver {
       )
     )
 
-  private inline def encodeFields[Fields <: Tuple](fields: Fields): List[List[Encoding]] =
-    // Pattern matching on the fields themselves doesn't work, because when we get
-    // down to the case where Fields == EmptyTuple, we can't write a sensible type
-    // for the nonempty case to be matched against. We need to be able to inline
-    // the match based on whether Fields is empty or non-empty.
-    inline erasedValue[Fields] match {
+  private inline def encodeFields[T <: Tuple](maybeFields: T): List[List[Encoding]] =
+    inline maybeFields match {
+      case fields: NonEmptyTuple => encodeField(fields.head) +: encodeFields(fields.tail)
       case _: EmptyTuple => List.empty
-      case _: (h *: t) =>
-        val typedFields = summonInline[Fields =:= (h *: t)](fields)
-        encodeField(typedFields.head) +: encodeFields(typedFields.tail)
     }
 
   private inline def encodeField[T](t: T): List[Encoding] =
     summonFrom {
-      case encoder: Encoder[T] => List(Encoder.encode(t)(using encoder))
-      case encoder: CollectionEncoder[T] => CollectionEncoder.encode(t)(using encoder)
+      case given Encoder[T] => List(Encoder.encode(t))
+      case given CollectionEncoder[T] => CollectionEncoder.encode(t)
     }
 
   // Equivalent to the implementation of Tuple.fromProductTyped

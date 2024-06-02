@@ -8,8 +8,10 @@ import scala.deriving.Mirror
 object SumDecoderDeriver {
   inline def derive[T](using mirror: Mirror.SumOf[T]): Decoder[T] = {
     lazy val decoders = summonOrDeriveDecoders[T, mirror.MirroredElemTypes]
-    Decoder[(Int, Encoding)].emap((ordinal, encoding) =>
-      decoders(ordinal).decode(encoding)
+    Decoder[(Encoding, Encoding)].emap((encodedOrdinal, encoding) =>
+      Decoder
+        .decode(encodedOrdinal)(using Decoder.unsignedIntDecoder)
+        .flatMap(ordinal => decoders(ordinal).decode(encoding))
     )
   }
 
@@ -24,6 +26,6 @@ object SumDecoderDeriver {
   private inline def summonOrDeriveDecoder[T]: Decoder[T] =
     summonFrom {
       case decoder: Decoder[T] => decoder
-      case mirror: Mirror.Of[T] => Decoder.derived(using mirror)
+      case given Mirror.Of[T] => Decoder.derived
     }
 }

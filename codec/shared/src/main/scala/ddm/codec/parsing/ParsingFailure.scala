@@ -12,6 +12,10 @@ object ParsingFailure {
       "No terminal byte for Varint"
     )
     
+    case NegativeFieldNumber(i: Int) extends Cause(
+      s"Parsed field number was negative: $i"
+    )
+    
     case FailedToParseFieldNumber(binary: String) extends Cause(
       s"Could not parse field number - binary: [$binary]"
     )
@@ -27,8 +31,15 @@ object ParsingFailure {
       s"Fewer than $bytesRequired bytes available for $discriminant"
     )
     
-    case FailedToParseLength(binary: String) extends Cause(
-      s"Could not parse length - binary: [$binary]"
+    case NegativeLength(i: Int, discriminant: Discriminant) extends Cause(
+      s"Parsed length of $discriminant was negative: $i"
+    )
+    
+    case FailedToParseLength(
+      binary: String,
+      discriminant: Discriminant
+    ) extends Cause(
+      s"Could not parse length of $discriminant - binary: [$binary]"
     )
   }
 }

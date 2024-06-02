@@ -158,9 +158,7 @@ object Decoder {
     }
   }
 
-  given iterableOnceByteDecoder[F[X] <: IterableOnce[X]](
-    using factory: Factory[Byte, F[Byte]]
-  ): Decoder[F[Byte]] =
+  given byteFactoryDecoder[T](using factory: Factory[Byte, T]): Decoder[T] =
     byteArrayDecoder.map(_.to(factory))
 
   given optionByteDecoder: Decoder[Option[Byte]] =

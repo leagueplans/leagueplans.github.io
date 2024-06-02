@@ -5,7 +5,7 @@ import ddm.codec.parsing.ParsingFailure.Cause
 
 import java.nio.{ByteBuffer, ByteOrder}
 import scala.annotation.tailrec
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object Parser {
   def parseVarint(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Varint] =
@@ -44,7 +44,7 @@ object Parser {
     input.scoped(parseVarintScoped(input))
 
   private def parseVarintScoped(input: ParserInput)(
-    using ParserInput.Scope
+    using input.Scope
   ): Either[Cause, Encoding.Varint] = {
     val encodedVarint = input.takeWhile(!isLastByteOfVarint(_)) ++ input.take(1)
     val hasLastByte = encodedVarint.lastOption.exists(isLastByteOfVarint)
@@ -132,10 +132,11 @@ object Parser {
     if (encoded.isEmpty)
       Right(FieldNumber(0))
     else
-      Try(Integer.parseUnsignedInt(encoded, 2))
-        .toEither
-        .map(FieldNumber.apply)
-        .left.map(_ => Cause.FailedToParseFieldNumber(encoded))
+      Try(Integer.parseUnsignedInt(encoded, 2)) match {
+        case Success(i) if i >= 0 => Right(FieldNumber(i))
+        case Success(i) => Left(Cause.NegativeFieldNumber(i))
+        case Failure(_) => Left(Cause.FailedToParseFieldNumber(encoded))
+      }
 
   private def parseDiscriminant(encoded: String): Either[Cause, Discriminant] = {
     val ordinal = Integer.parseUnsignedInt(encoded, 2)
@@ -145,14 +146,14 @@ object Parser {
   }
 
   private def parseLenField(input: ParserInput): Either[ParsingFailure, Encoding.Len] =
-    parseLength(input).flatMap(length =>
+    parseLength(input, Discriminant.Len).flatMap(length =>
       input
         .scoped(takeOrFail(input, length, Discriminant.Len))
         .map(Encoding.Len.apply)
     )
 
   private def parseMessageField(input: ParserInput): Either[ParsingFailure, Encoding.Message] =
-    parseLength(input).flatMap(length =>
+    parseLength(input, Discriminant.Message).flatMap(length =>
       input
         .scoped(takeOrFail(input, length, Discriminant.Message))
         .flatMap(bytes =>
@@ -161,7 +162,7 @@ object Parser {
     )
 
   private def takeOrFail(input: ParserInput, n: Int, discriminant: Discriminant)(
-    using ParserInput.Scope
+    using input.Scope
   ): Either[Cause, Array[Byte]] = {
     val bytes = input.take(n)
     Either.cond(
@@ -171,12 +172,17 @@ object Parser {
     )
   }
 
-  private def parseLength(input: ParserInput): Either[ParsingFailure, Int] =
+  private def parseLength(
+    input: ParserInput,
+    discriminant: Discriminant
+  ): Either[ParsingFailure, Int] =
     input.scoped(
       parseVarintScoped(input).flatMap(varint =>
-        Try(Integer.parseUnsignedInt(varint.value, 2))
-          .toEither
-          .left.map(_ => Cause.FailedToParseLength(varint.value))
+        Try(Integer.parseUnsignedInt(varint.value, 2)) match {
+          case Success(length) if length >= 0 => Right(length)
+          case Success(length) => Left(Cause.NegativeLength(length, discriminant))
+          case Failure(_) => Left(Cause.FailedToParseLength(varint.value, discriminant))
+        }
       )
     )
 }

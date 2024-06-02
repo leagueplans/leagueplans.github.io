@@ -2,14 +2,13 @@ package ddm.codec.codecs
 
 import ddm.codec.Encoding
 import ddm.codec.decoding.{Decoder, DecodingFailure}
-import ddm.codec.encoding.Encoder
 import org.scalatest.Assertion
 
 final class ByteCodecTest extends CodecSpec {
   "ByteCodec" - {
     "encoding values to and decoding values from an expected encoding" - {
       def test(byte: Byte): Assertion =
-        testRoundTripSerialisation(byte, Decoder.decodeLen, Array(byte))
+        testRoundTripEncoding(byte, Encoding.Len(Array(byte)))
 
       "0x0" in test(0x0)
 

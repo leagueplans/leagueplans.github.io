@@ -65,8 +65,12 @@ object Writer {
     }
 
   private def writeTag(fieldNumber: FieldNumber, discriminant: Discriminant): Array[Byte] =
-    writeVarint(BinaryString(
-      (fieldNumber << Discriminant.maxBitLength) | discriminant.ordinal
+    writeVarint(BinaryString.unsafe(
+      BinaryString(fieldNumber) + 
+        BinaryString(discriminant.ordinal)
+          .reverse
+          .padTo(Discriminant.maxBitLength, '0')
+          .reverse
     ))
 
   private def withLength(bytes: Array[Byte]): Array[Byte] =

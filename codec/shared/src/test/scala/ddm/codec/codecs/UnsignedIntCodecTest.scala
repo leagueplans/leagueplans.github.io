@@ -11,18 +11,21 @@ final class UnsignedIntCodecTest extends CodecSpec {
 
   "UnsignedIntCodec" - {
     "encoding values to and decoding values from an expected encoding" - {
-      def test(i: Int, expectedEncoding: Array[Byte]): Assertion =
-        testRoundTripSerialisation(i, Decoder.decodeVarint, expectedEncoding)
+      "0" in testRoundTripEncoding(0, Encoding.Varint(BinaryString.unsafe("0")))
 
-      "0" in test(0, Array(0x0))
+      "1" in testRoundTripEncoding(1, Encoding.Varint(BinaryString.unsafe("1")))
+      "2" in testRoundTripEncoding(2, Encoding.Varint(BinaryString.unsafe("10")))
+      "Int.MaxValue" in testRoundTripEncoding(
+        Int.MaxValue, 
+        Encoding.Varint(BinaryString.unsafe("1".repeat(31)))
+      )
 
-      "1" in test(1, Array(0x1))
-      "2" in test(2, Array(0x2))
-      "Int.MaxValue" in test(Int.MaxValue, Array(-0x1, -0x1, -0x1, -0x1, 0x7))
-
-      "-1" in test(-1, Array(-0x1, -0x1, -0x1, -0x1, 0xf))
-      "-2" in test(-2, Array(-0x2, -0x1, -0x1, -0x1, 0xf))
-      "Int.MinValue" in test(Int.MinValue, Array(-0x80, -0x80, -0x80, -0x80, 0x8))
+      "-1" in testRoundTripEncoding(-1, Encoding.Varint(BinaryString.unsafe("1".repeat(32))))
+      "-2" in testRoundTripEncoding(-2, Encoding.Varint(BinaryString.unsafe(s"${"1".repeat(31)}0")))
+      "Int.MinValue" in testRoundTripEncoding(
+        Int.MinValue, 
+        Encoding.Varint(BinaryString.unsafe(s"1${"0".repeat(31)}"))
+      )
     }
 
     "should receive back the same values after round-trip serialisation for generator-driven values" in

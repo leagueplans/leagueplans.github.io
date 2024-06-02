@@ -2,25 +2,27 @@ package ddm.codec.codecs
 
 import ddm.codec.{BinaryString, Encoding}
 import ddm.codec.decoding.{Decoder, DecodingFailure}
-import ddm.codec.encoding.Encoder
 import org.scalatest.Assertion
 
 final class LongCodecTest extends CodecSpec {
   "LongCodec" - {
     "encoding values to and decoding values from an expected encoding" - {
-      def test(l: Long, expectedEncoding: Array[Byte]): Assertion =
-        testRoundTripSerialisation(l, Decoder.decodeVarint, expectedEncoding)
-
-      "0" in test(0L, Array(0x0))
+      "0" in testRoundTripEncoding(0L, Encoding.Varint(BinaryString.unsafe("0")))
 
       // The long encoder should use zigzag encoding
-      "1" in test(1L, Array(0x2))
-      "2" in test(2L, Array(0x4))
-      "Long.MaxValue" in test(Long.MaxValue, Array(-0x2, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, 0x1))
+      "1" in testRoundTripEncoding(1L, Encoding.Varint(BinaryString.unsafe("10")))
+      "2" in testRoundTripEncoding(2L, Encoding.Varint(BinaryString.unsafe("100")))
+      "Long.MaxValue" in testRoundTripEncoding(
+        Long.MaxValue,
+        Encoding.Varint(BinaryString.unsafe(s"${"1".repeat(63)}0"))
+      )
 
-      "-1" in test(-1L, Array(0x1))
-      "-2" in test(-2L, Array(0x3))
-      "Long.MinValue" in test(Long.MinValue, Array(-0x1, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, -0x1, 0x1))
+      "-1" in testRoundTripEncoding(-1L, Encoding.Varint(BinaryString.unsafe("1")))
+      "-2" in testRoundTripEncoding(-2L, Encoding.Varint(BinaryString.unsafe("11")))
+      "Long.MinValue" in testRoundTripEncoding(
+        Long.MinValue,
+        Encoding.Varint(BinaryString.unsafe("1".repeat(64)))
+      )
     }
 
     "should receive back the same values after round-trip serialisation for generator-driven values" in

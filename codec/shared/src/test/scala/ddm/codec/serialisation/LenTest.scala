@@ -1,14 +1,14 @@
-package ddm.codec.codecs
+package ddm.codec.serialisation
 
+import ddm.codec.parsing.Parser
 import ddm.codec.Encoding
-import ddm.codec.decoding.Decoder
 import org.scalatest.Assertion
 
-final class ByteArrayCodecTest extends CodecSpec {
-  "ByteArrayCodec" - {
-    "encoding values to and decoding values from an expected encoding" - {
-      def test(array: Array[Byte]): Assertion =
-        testRoundTripEncoding(array, Encoding.Len(array))
+final class LenTest extends SerialisationSpec {
+  "Len" - {
+    "writing values to and parsing values from an expected binary" - {
+      def test(bytes: Array[Byte]): Assertion =
+        testRoundTripSerialisation(Encoding.Len(bytes), Parser.parseLen, bytes)
 
       "Array.empty" in test(Array.empty)
       "Array(0x0)" in test(Array(0x0))
@@ -18,6 +18,6 @@ final class ByteArrayCodecTest extends CodecSpec {
     }
 
     "should receive back the same values after round-trip serialisation for generator-driven values" in
-      forAll(testRoundTripSerialisation[Array[Byte]](_, Decoder.decodeLen))
+      forAll(Generators.lenGenerator)(testRoundTripSerialisation(_, Parser.parseLen))
   }
 }
