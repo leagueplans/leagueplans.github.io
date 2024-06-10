@@ -1,6 +1,7 @@
 package ddm.ui.model.player.skill
 
-import io.circe.{Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 object Exp {
   def apply(i: Int): Exp =
@@ -11,8 +12,8 @@ object Exp {
 
   given Ordering[Exp] = Ordering.by(_.raw)
 
-  given Encoder[Exp] = Encoder[Int].contramap(_.raw)
-  given Decoder[Exp] = Decoder[Int].map(new Exp(_) {})
+  given Encoder[Exp] = Encoder.intEncoder.contramap(_.raw)
+  given Decoder[Exp] = Decoder.intDecoder.map(new Exp(_) {})
 }
 
 sealed abstract case class Exp(raw: Int) {

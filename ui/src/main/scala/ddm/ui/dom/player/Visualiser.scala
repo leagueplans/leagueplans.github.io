@@ -1,7 +1,6 @@
 package ddm.ui.dom.player
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
 import ddm.ui.dom.common.*
@@ -21,9 +20,9 @@ object Visualiser {
     expMultiplierStrategyObserver: Observer[ExpMultiplierStrategy],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Div = {
-    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, expMultiplierStrategyObserver, effectObserverSignal, contextMenuController, modalBus))
+    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, expMultiplierStrategyObserver, effectObserverSignal, contextMenuController, modalController))
     val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, contextMenuController))
 
     mode match {

@@ -1,6 +1,7 @@
 package ddm.ui.model.player.skill
 
-import io.circe.{Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 import scala.math.Ordering.Implicits.infixOrderingOps
 
@@ -132,6 +133,6 @@ object Level {
 
   given Ordering[Level] = Ordering.by(_.raw)
 
-  given Encoder[Level] = Encoder[Int].contramap(_.raw)
-  given Decoder[Level] = Decoder[Int].map(Level.apply)
+  given Encoder[Level] = Encoder.derived
+  given Decoder[Level] = Decoder.derived
 }

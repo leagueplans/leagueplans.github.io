@@ -22,7 +22,7 @@ object StatPane {
     contextMenuController: ContextMenu.Controller
   ): (ReactiveHtmlElement[HTMLDialogElement], L.Div) = {
     val pane = toPane(stat).amend(toTooltip(stat))
-    val (modal, modalBus) = Modal()
+    val (modal, modalController) = Modal()
 
     val gainXPFormOpener =
       stat
@@ -31,7 +31,7 @@ object StatPane {
         .map { case (skill, maybeObserver) =>
           val (form, formSubmissions) = GainXPForm(skill)
           FormOpener(
-            modalBus,
+            modalController,
             maybeObserver.observer,
             () => (form, formSubmissions.collect { case Some(effect) => effect })
           )

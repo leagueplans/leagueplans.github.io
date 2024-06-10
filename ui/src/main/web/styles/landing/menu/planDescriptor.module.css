@@ -1,0 +1,15 @@
+.name {
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.2rem;
+}
+
+.timestamp {
+  margin-top: 0.1rem;
+
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}

@@ -21,11 +21,7 @@ def dataSink[T : Encoder : Ordering](cache: ActorRef[Cache.Message[T]]): Sink[T,
       onFailureMessage = cause => Cache.Message.Complete(Failure(cause))
     ))
 
-def imageSink(
-  rootPath: Path,
-  targetWidth: Int,
-  targetHeight: Int
-): Sink[(Path, Array[Byte]), Future[?]] =
+def imageSink(rootPath: Path): Sink[(Path, Array[Byte]), Future[?]] =
   Sink.lazySink { () =>
     val imageLoader = ImmutableImage.loader()
 
@@ -36,7 +32,6 @@ def imageSink(
       // Potential issue here - what if the file wasn't a PNG?
       imageLoader
         .fromBytes(data)
-        .resizeTo(targetWidth, targetHeight)
         .output(PngWriter.MaxCompression, path): @nowarn("msg=discarded non-Unit value")
     }
   }.mapMaterializedValue(_.flatten)

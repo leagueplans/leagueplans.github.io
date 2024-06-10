@@ -27,7 +27,7 @@ object StackElement {
   private def tooltip(item: Item, sizeSignal: Signal[Int]): L.Modifier[L.HtmlElement] =
     Tooltip(KeyValuePairs(
       L.span("Name:") -> L.span(item.name),
-      L.span("ID prefix:") -> L.span(item.id.raw.take(8)),
+      L.span("ID:") -> L.span(item.id),
       L.span("Quantity:") -> L.span(L.child.text <-- sizeSignal)
     ))
 }

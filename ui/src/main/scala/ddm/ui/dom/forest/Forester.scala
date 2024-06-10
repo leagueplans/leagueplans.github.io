@@ -1,6 +1,7 @@
 package ddm.ui.dom.forest
 
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import ddm.ui.model.common.forest.Forest.Update
@@ -34,6 +35,9 @@ final class Forester[ID, T](
         .map((_, _, node) => node)
     )
 
+  private val updateBus = EventBus[Update[ID, T]]()
+  val updateStream: EventStream[Update[ID, T]] = updateBus.events
+
   def add(data: T): Unit =
     run(_.add(data))
 
@@ -58,7 +62,14 @@ final class Forester[ID, T](
   private def run(f: ForestInterpreter[ID, T] => List[Update[ID, T]]): Unit =
     forestState.update { forest =>
       val updates = f(ForestInterpreter(forest))
+      updates.foreach(updateBus.emit)
       domEvaluator.eval(updates)
       ForestResolver.resolve(forest, updates)
+    }
+
+  def process(update: Update[ID, T]): Unit =
+    forestState.update { forest =>
+      domEvaluator.eval(update)
+      ForestResolver.resolve(forest, update)
     }
 }

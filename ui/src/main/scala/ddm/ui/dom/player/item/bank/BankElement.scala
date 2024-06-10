@@ -1,12 +1,11 @@
 package ddm.ui.dom.player.item.bank
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import ddm.common.model.Item
-import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.common.{ContextMenu, Modal}
 import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Cache
@@ -21,7 +20,7 @@ object BankElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Div =
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
@@ -32,7 +31,7 @@ object BankElement {
       ),
       StackList(
         bankSignal.map(cache.itemise),
-        toStackElement(effectObserverSignal, contextMenuController, modalBus)
+        toStackElement(effectObserverSignal, contextMenuController, modalController)
       ).amend(L.cls(Styles.contents, DepositoryStyles.contents))
     )
 
@@ -62,7 +61,7 @@ object BankElement {
   private def toStackElement(
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
     StackElement(stack, stackSizeSignal).amend(
       bindContextMenu(
@@ -70,7 +69,7 @@ object BankElement {
         stackSizeSignal,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       )
     )
 
@@ -79,14 +78,14 @@ object BankElement {
     stackSizeSignal: Signal[Int],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)
         .map((maybeEffectObserver, stackSize) =>
           maybeEffectObserver.map(effectObserver =>
-            BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modalBus)
+            BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modalController)
           )
         )
     )

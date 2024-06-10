@@ -1,12 +1,11 @@
 package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import ddm.common.model.Item
-import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.common.{ContextMenu, Modal}
 import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.item.{Depository, Stack}
@@ -23,7 +22,7 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Div =
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
@@ -34,9 +33,9 @@ object InventoryElement {
       ),
       StackList(
         playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory))),
-        toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modalBus)
+        toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modalController)
       ).amend(L.cls(Styles.contents, DepositoryStyles.contents)),
-      bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modalBus)
+      bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modalController)
     )
 
   @js.native @JSImport("/images/inventory-icon.png", JSImport.Default)
@@ -67,7 +66,7 @@ object InventoryElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
     StackElement(stack, stackSizeSignal).amend(
       bindItemContextMenu(
@@ -77,7 +76,7 @@ object InventoryElement {
         playerSignal,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       )
     )
 
@@ -85,12 +84,12 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
       effectObserverSignal.map(maybeEffectObserver =>
         maybeEffectObserver.map(effectObserver =>
-          InventoryContextMenu(itemFuse, effectObserver, menuCloser, modalBus)
+          InventoryContextMenu(itemFuse, effectObserver, menuCloser, modalController)
         )
       )
     )
@@ -102,14 +101,14 @@ object InventoryElement {
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Binder[Base] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(stackSizeSignal, effectObserverSignal)
         .map((stackSize, maybeEffectObserver) =>
           maybeEffectObserver.map(effectObserver =>
-            InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modalBus)
+            InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modalController)
           )
         )
     )

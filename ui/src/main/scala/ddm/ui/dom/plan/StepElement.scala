@@ -1,6 +1,6 @@
 package ddm.ui.dom.plan
 
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
@@ -9,18 +9,17 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.ContextMenu
 import ddm.ui.dom.forest.Forester
 import ddm.ui.model.plan.Step
+import ddm.ui.utils.airstream.JsPromiseOps.asObservable
 import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.{OList, Paragraph}
 import org.scalajs.dom.{Event, KeyCode, window}
 
-import java.util.UUID
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import scala.util.Try
 
 object StepElement {
   def apply(
-    stepID: UUID,
+    stepID: Step.ID,
     step: Signal[Step],
     subStepsSignal: Signal[List[L.Node]],
     isFocused: Signal[Boolean],
@@ -28,9 +27,9 @@ object StepElement {
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     completionStatusObserver: Observer[Boolean],
-    focusObserver: Observer[UUID]
+    focusObserver: Observer[Step.ID]
   ): L.Div = {
     val (hoverListeners, isHovering) = hoverControls
     val subSteps =
@@ -85,8 +84,8 @@ object StepElement {
   private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
     val hovering = Var(false)
     val listeners = List(
-      L.onMouseOver.handledAs(true) --> hovering.writer,
-      L.onMouseOut.handledAs(false) --> hovering.writer
+      L.onMouseOver.handledAs(true) --> hovering,
+      L.onMouseOut.handledAs(false) --> hovering
     )
     (listeners, hovering.signal)
   }
@@ -105,8 +104,8 @@ object StepElement {
     )
 
   private def focusListeners(
-    stepID: UUID,
-    focusObserver: Observer[UUID]
+    stepID: Step.ID,
+    focusObserver: Observer[Step.ID]
   ): List[Binder[Base]] = {
     val handler = focusObserver.contramap[Event] { event =>
       event.preventDefault()
@@ -123,8 +122,8 @@ object StepElement {
     controller: ContextMenu.Controller,
     isCompleteSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
-    stepID: UUID,
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepID: Step.ID,
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     completionStatusObserver: Observer[Boolean]
   ): Binder[Base] =
     controller.bind(closer =>
@@ -144,26 +143,24 @@ object StepElement {
         )
     )
 
-  private def cutButton(stepID: UUID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
+  private def cutButton(stepID: Step.ID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
     L.button(
       L.`type`("button"),
       "Cut",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.writeText(stepID.toString), emitOnce = true)
+        window.navigator.clipboard.writeText(stepID).asObservable
       }) --> closer
     )
 
   private def pasteButton(
-    stepID: UUID,
-    stepUpdater: Observer[Forester[UUID, Step] => Unit],
+    stepID: Step.ID,
+    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     closer: Observer[ContextMenu.CloseCommand]
   ): L.Button = {
     val stepMover =
       stepUpdater.contramap[String](rawChildID => forester =>
-        Try(UUID.fromString(rawChildID)).foreach(childID =>
-          forester.move(child = childID, maybeParent = Some(stepID))
-        )
+        forester.move(child = Step.ID.fromString(rawChildID), maybeParent = Some(stepID))
       )
 
     L.button(
@@ -171,7 +168,7 @@ object StepElement {
       "Paste",
       L.onClick.ifUnhandledF(_.flatMap { event =>
         event.preventDefault()
-        EventStream.fromJsPromise(window.navigator.clipboard.readText(), emitOnce = true)
+        window.navigator.clipboard.readText().asObservable
       }) --> Observer.combine(stepMover, closer)
     )
   }

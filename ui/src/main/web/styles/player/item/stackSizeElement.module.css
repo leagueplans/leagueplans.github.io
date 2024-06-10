@@ -1,5 +1,6 @@
 .stackSize {
   composes: osrs-font from "../../fonts.module.css";
+  text-shadow: 1px 1px black;
 }
 
 .under100K {

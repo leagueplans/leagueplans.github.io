@@ -41,6 +41,7 @@ export default defineConfig(({ command, mode }) => {
     publicDir: "dynamic",
     resolve: { alias: [ { find: "@linkOutputDir", replacement: linkOutputDir } ] },
     json: { stringify: true },
+    worker: { format: "es" },
     server: { port: 5173, strictPort: true },
     preview: { port: 5173, strictPort: true },
     build: { outDir: "../../../target/vite", emptyOutDir: true }

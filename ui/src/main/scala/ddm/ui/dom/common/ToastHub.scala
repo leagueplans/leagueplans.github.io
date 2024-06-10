@@ -1,6 +1,6 @@
 package ddm.ui.dom.common
 
-import com.raquo.airstream.core.{EventStream, Observer}
+import com.raquo.airstream.core.{EventStream, Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier}
@@ -17,8 +17,18 @@ object ToastHub {
   enum Type { case Info, Warning, Error }
 
   final case class Toast(`type`: Type, duration: Duration, content: L.Node)
+  
+  final class Publisher(underlying: WriteBus[Toast]) extends Sink[Toast] {
+    export underlying.toObserver
+    
+    def publish(`type`: Type, duration: Duration, content: L.Node): Unit =
+      publish(Toast(`type`, duration, content))
+    
+    def publish(toast: Toast): Unit =
+      underlying.onNext(toast)
+  }
 
-  def apply(): (L.Div, WriteBus[Toast]) = {
+  def apply(): (L.Div, Publisher) = {
     val bus = EventBus[Toast]()
     val activeToastVar = Var(List.empty[Toast])
     val filterer = activeToastVar.updater[Toast]((acc, toast) => acc.filterNot(_ == toast))
@@ -32,7 +42,7 @@ object ToastHub {
         .map((toast, acc) => toast +: acc) --> activeToastVar,
     )
 
-    (node, bus.writer)
+    (node, Publisher(bus.writer))
   }
 
   @js.native @JSImport("/styles/common/toastHub.module.css", JSImport.Default)

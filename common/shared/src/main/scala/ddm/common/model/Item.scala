@@ -1,20 +1,32 @@
 package ddm.common.model
 
 import cats.data.NonEmptyList
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.{Codec, Decoder as JsonDecoder, Encoder as JsonEncoder}
 
 object Item {
-  final case class ID(raw: String) extends AnyVal
+  opaque type ID <: Int = Int
+  
+  object ID {
+    inline def apply(id: Int): ID = id
+    
+    given Ordering[ID] = Ordering.Int
+    given JsonEncoder[ID] = JsonEncoder.encodeInt
+    given JsonDecoder[ID] = JsonDecoder.decodeInt
+    given Encoder[ID] = Encoder.unsignedIntEncoder
+    given Decoder[ID] = Decoder.unsignedIntDecoder
+  }
 
   object Image {
     final case class Bin(floor: Int) extends AnyVal
     final case class Path(raw: String) extends AnyVal
 
-    given Encoder[Bin] = Encoder[Int].contramap(_.floor)
-    given Decoder[Bin] = Decoder[Int].map(Bin.apply)
-    given Encoder[Path] = Encoder[String].contramap(_.raw)
-    given Decoder[Path] = Decoder[String].map(Path.apply)
+    given JsonEncoder[Bin] = JsonEncoder[Int].contramap(_.floor)
+    given JsonDecoder[Bin] = JsonDecoder[Int].map(Bin.apply)
+    given JsonEncoder[Path] = JsonEncoder[String].contramap(_.raw)
+    given JsonDecoder[Path] = JsonDecoder[String].map(Path.apply)
   }
 
   enum Bankable {
@@ -23,15 +35,11 @@ object Item {
   }
 
   object Bankable {
-    given Encoder[Yes] = Encoder[Boolean].contramap(_.stacks)
-    given Decoder[Yes] = Decoder[Boolean].map(Yes.apply)
+    given JsonEncoder[Yes] = JsonEncoder[Boolean].contramap(_.stacks)
+    given JsonDecoder[Yes] = JsonDecoder[Boolean].map(Yes.apply)
     given Codec[No.type] = deriveCodec
     given Codec[Bankable] = deriveCodec
   }
-
-  given Ordering[ID] = Ordering.by(_.raw)
-  given Encoder[ID] = Encoder[String].contramap(_.raw)
-  given Decoder[ID] = Decoder[String].map(ID.apply)
 
   given Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
   given Codec[Item] = deriveCodec

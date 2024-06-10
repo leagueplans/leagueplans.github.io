@@ -9,7 +9,7 @@ object Form {
   def apply(): (L.FormElement, L.Input, EventStream[Unit]) = {
     val onSubmit = EventBus[Unit]()
     val submit = L.input(L.`type`("submit"))
-    val form = L.form(L.onSubmit.handled --> onSubmit.writer)
+    val form = L.form(L.onSubmit.handled --> onSubmit)
     (form, submit, onSubmit.events)
   }
 }

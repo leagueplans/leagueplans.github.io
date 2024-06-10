@@ -1,0 +1,49 @@
+.page {
+  background-color: #00172e;
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  align-self: center;
+  max-height: 90%;
+  width: min-content;
+
+  border-radius: 2rem;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.5);
+
+  background-color: #06365d;
+  color: white;
+  font-size: 1.8rem;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.intro {
+  margin: 1rem 1rem 0 1rem;
+  text-align: center;
+}
+
+.loadingIcon {
+  font-size: 4rem;
+}
+
+.menu {
+  display: contents;
+}
+
+.menuContent {
+  overflow-y: auto;
+}
+
+.disclaimer {
+  margin: 1rem;
+  text-align: center;
+  font-size: 1rem;
+}

@@ -33,6 +33,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleInfo")
   object faCircleInfo extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleNotch")
+  object faCircleNotch extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCrosshairs")
   object faCrosshairs extends IconDefinition
 

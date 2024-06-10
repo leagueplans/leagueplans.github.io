@@ -1,13 +1,24 @@
 .icon {
+  height: 32px;
+  width: 36px;
+
+  align-content: center;
+  text-align: center;
+}
+
+.rootIcon {
   position: relative;
 }
 
-.itemImage {
+.noteIcon {
+  position: absolute;
+  top: 0;
+}
+
+.item {
   vertical-align: bottom;
 }
 
 .noted {
   scale: 0.7;
-  position: absolute;
-  left: 0;
 }

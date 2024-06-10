@@ -1,24 +1,23 @@
 package ddm.ui.dom.editor
 
-import com.raquo.airstream.core.{Observable, Observer, Sink}
-import com.raquo.airstream.eventbus.WriteBus
+import com.raquo.airstream.core.{Observable, Observer}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.ui.dom.common.form.Form
-import ddm.ui.dom.common.{CancelModalButton, FormOpener}
+import ddm.ui.dom.common.{CancelModalButton, FormOpener, Modal}
 
 object DeletionConfirmer {
   def apply(
-    modalBus: WriteBus[Option[L.Element]],
-    deletionObserver: Sink[Unit]
+    modalController: Modal.Controller,
+    deletionObserver: Observer[Unit]
   ): Observer[FormOpener.Command] =
     FormOpener(
-      modalBus,
+      modalController,
       deletionObserver,
-      () => createForm(modalBus)
+      () => createForm(modalController)
     )
 
   private def createForm(
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): (L.FormElement, Observable[Unit]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
 
@@ -27,7 +26,7 @@ object DeletionConfirmer {
         "Are you sure you want to delete this step?\n" +
           "This will also delete any nested steps."
       ),
-      CancelModalButton(modalBus).amend(L.onMountFocus),
+      CancelModalButton(modalController).amend(L.onMountFocus),
       submitButton.amend(L.value("Confirm"))
     )
 
