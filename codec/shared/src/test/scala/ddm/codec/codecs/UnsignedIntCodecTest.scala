@@ -3,7 +3,6 @@ package ddm.codec.codecs
 import ddm.codec.{BinaryString, Encoding}
 import ddm.codec.decoding.{Decoder, DecodingFailure}
 import ddm.codec.encoding.Encoder
-import org.scalatest.Assertion
 
 final class UnsignedIntCodecTest extends CodecSpec {
   private given encoder: Encoder[Int] = Encoder.unsignedIntEncoder

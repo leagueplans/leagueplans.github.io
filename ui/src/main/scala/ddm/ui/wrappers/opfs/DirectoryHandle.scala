@@ -1,16 +1,18 @@
 package ddm.ui.wrappers.opfs
 
 import com.raquo.airstream.core.EventStream
+import ddm.codec.decoding.{Decoder, DecodingFailure}
+import ddm.codec.encoding.Encoder
+import ddm.codec.parsing.ParsingFailure as CParsingFailure
 import ddm.ui.facades.js.AsyncIterator
 import ddm.ui.facades.opfs.*
+import ddm.ui.utils.airstream.EventStreamOps.andThen
 import ddm.ui.utils.airstream.JsPromiseOps.asObservable
 import ddm.ui.utils.dom.DOMException
 import ddm.ui.utils.js.TypeError
 import ddm.ui.wrappers.opfs.DirectoryHandle.*
 import ddm.ui.wrappers.opfs.FileSystemError.*
-import ddm.ui.wrappers.opfs.FileSystemOpOps.andThen
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, ArrayBufferView}
 import scala.util.{Failure, Success}
 
 object DirectoryHandle {
@@ -19,6 +21,12 @@ object DirectoryHandle {
 
   private def toTmpFileName(name: String): String =
     s"$name.tmp"
+    
+  private def nonTmpFileName(name: String): String =
+    if (name.endsWith(".tmp"))
+      name.substring(0, name.length - 4)
+    else
+      name
 
   private val doNotCreateDirectory = new FileSystemGetDirectoryOptions { create = false }
   private val createDirectory = new FileSystemGetDirectoryOptions { create = true }
@@ -32,6 +40,14 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
         case handle if handle.kind == FileSystemHandleKind.directory =>
           (handle.name, DirectoryHandle(handle.asInstanceOf[FileSystemDirectoryHandle]))
       }
+    ))
+    
+  def listFiles(): EventStream[Either[UnexpectedFileSystemError, List[String]]] =
+    listContents(underlying.values(), List.empty).map(_.map(handles =>
+      handles.collect {
+        case handle if handle.kind == FileSystemHandleKind.file =>
+          nonTmpFileName(handle.name)
+      }.distinct
     ))
 
   private def listContents(
@@ -92,8 +108,8 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
 
   // See the comment above `replaceFileContent` to understand why we're checking for a
   // parsable tmp file first.
-  def read[T](name: String, parser: ByteArrayParser[T]): EventStream[Either[FileSystemError, T]] =
-    readTmpFile(name, parser).andThen {
+  def read[T : Decoder](name: String): EventStream[Either[FileSystemError, T]] =
+    readTmpFile(name).andThen {
       case Some(data) =>
         liftValue(Right(data))
 
@@ -103,13 +119,10 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
             case Some(fileHandle) => fileHandle.read()
             case None => liftValue(Left(FileDoesNotExist(name)))
           }
-          .andThen(parser.parse(name, _))
+          .map(_.flatMap(decode(name, _)))
     }
 
-  private def readTmpFile[T](
-    name: String,
-    parser: ByteArrayParser[T]
-  ): EventStream[Either[FileSystemError, Option[T]]] = {
+  private def readTmpFile[T : Decoder](name: String): EventStream[Either[FileSystemError, Option[T]]] = {
     val tmpName = toTmpFileName(name)
     
     getAsyncFileHandle(tmpName).andThen {
@@ -118,9 +131,12 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
 
       case Some(tmpFileHandle) =>
         tmpFileHandle.read().andThen(bytes =>
-          parser.parse(tmpName, bytes).flatMap {
+          decode[T](tmpName, bytes) match {
             case Left(_: ParsingFailure) =>
               liftValue(Right(None))
+
+            case Left(error: DecodingError) =>
+              liftValue(Left(error))
 
             case Right(data) =>
               remove(name, recurse = false)
@@ -130,6 +146,15 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
         )
     }
   }
+  
+  private def decode[T : Decoder](
+    fileName: String, 
+    bytes: Array[Byte]
+  ): Either[ParsingFailure | DecodingError, T] =
+    Decoder.decodeMessage(bytes).left.map {
+      case f: CParsingFailure => ParsingFailure(fileName, f)
+      case f: DecodingFailure => DecodingError(fileName, f)
+    }
 
   private def getAsyncFileHandle(
     name: String
@@ -152,14 +177,14 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
   //
   // These assumptions also rely on JSON objects being our serialisation format, since
   // such objects will fail to parse if they aren't written in their entirety.
-  def replaceFileContent(
+  def replaceFileContent[T : Encoder](
     name: String,
-    content: ArrayBufferView | ArrayBuffer
+    content: T
   ): EventStream[Either[FileSystemError, ?]] =
     getOrCreateAsyncFileHandle(toTmpFileName(name))
       .andThen(tmpFileHandle =>
         tmpFileHandle
-          .setContents(content)
+          .setContents(content.encoded.getBytes)
           .andThen(_ => remove(name, recurse = false))
           .andThen(_ => tmpFileHandle.rename(name))
       )

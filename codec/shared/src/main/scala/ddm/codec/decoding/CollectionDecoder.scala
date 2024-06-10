@@ -37,6 +37,9 @@ object CollectionDecoder {
   ): CollectionDecoder[F[T]] =
     factoryDecoder
 
+  given mapDecoder[K, V](using Decoder[(K, V)]): CollectionDecoder[Map[K, V]] =
+    iterableOnceDecoder[List, (K, V)].map(_.toMap)
+
   given optionDecoder[T : Decoder]: CollectionDecoder[Option[T]] =
     iterableOnceDecoder[List, T].emap {
       case t :: Nil => Right(Some(t))

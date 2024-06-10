@@ -7,8 +7,9 @@ import java.lang.{ThreadLocal, Long as JLong}
 import java.nio.ByteBuffer
 import java.nio.charset.*
 import scala.collection.Factory
+import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.deriving.Mirror
-import scala.reflect.ClassTag
+import scala.reflect.TypeTest
 import scala.util.{Failure, Success, Try}
 
 trait Decoder[T] {
@@ -53,27 +54,29 @@ object Decoder {
     }
 
   given encodingDecoder: Decoder[Encoding] = Decoder(Right(_))
-  given varintDecoder: Decoder[Encoding.Varint] = mkEncodingDecoder
-  given i64Decoder: Decoder[Encoding.I64] = mkEncodingDecoder
-  given i32Decoder: Decoder[Encoding.I32] = mkEncodingDecoder
-  given lenDecoder: Decoder[Encoding.Len] = mkEncodingDecoder
-  given messageDecoder: Decoder[Encoding.Message] = mkEncodingDecoder
+  given varintDecoder: Decoder[Encoding.Varint] = mkEncodingDecoder("Encoding.Varint")
+  given i64Decoder: Decoder[Encoding.I64] = mkEncodingDecoder("Encoding.I64")
+  given i32Decoder: Decoder[Encoding.I32] = mkEncodingDecoder("Encoding.I32")
+  given lenDecoder: Decoder[Encoding.Len] = mkEncodingDecoder("Encoding.Len")
+  given messageDecoder: Decoder[Encoding.Message] = mkEncodingDecoder("Encoding.Message")
 
-  private def mkEncodingDecoder[Enc <: Encoding](using classTag: ClassTag[Enc]): Decoder[Enc] =
+  private def mkEncodingDecoder[Enc <: Encoding](name: String)(using TypeTest[Encoding, Enc]): Decoder[Enc] =
     Decoder {
       case enc: Enc => Right(enc)
       case other =>
-        Left(DecodingFailure(
-          s"Expected an instance of ${classTag.runtimeClass.getName}, but found [$other]"
-        ))
+        Left(DecodingFailure(s"Expected an instance of $name, but found [$other]"))
     }
 
-  given longDecoder: Decoder[Long] =
+  val unsignedLongDecoder: Decoder[Long] =
     varintDecoder.emap(varint =>
       Try(JLong.parseUnsignedLong(varint.value, 2))
         .toEither
-        .map(encoded => (encoded >>> 1) ^ -(encoded & 1))
-        .left.map(_ => DecodingFailure(s"Failed to convert varint to a long: [$varint]"))
+        .left.map(_ => DecodingFailure(s"Failed to convert varint to an unsigned long: [$varint]"))
+    )
+
+  given longDecoder: Decoder[Long] =
+    unsignedLongDecoder.map(encoded =>
+      (encoded >>> 1) ^ -(encoded & 1)
     )
 
   val unsignedIntDecoder: Decoder[Int] =
@@ -140,7 +143,7 @@ object Decoder {
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)
       }
-    
+
     byteArrayDecoder.emap { bytes =>
       val byteBuffer = ByteBuffer.wrap(bytes)
       val decoder = decoderCache.get
@@ -172,4 +175,16 @@ object Decoder {
 
   inline given tupleDecoder[T <: Tuple : Mirror.ProductOf]: Decoder[T] =
     ProductDecoderDeriver.derive
+  
+  given eitherDecoder[L : Decoder, R : Decoder]: Decoder[Either[L, R]] =
+    Decoder[(Boolean, Encoding)].emap {
+      case (false, encoding) => decode[L](encoding).map(Left.apply)
+      case (true, encoding) => decode[R](encoding).map(Right.apply)
+    }
+
+  given finiteDurationDecoder: Decoder[FiniteDuration] =
+    unsignedLongDecoder.emap {
+      case Long.MinValue => Left(DecodingFailure("Long.MinValue is not a valid finite duration"))
+      case l => Right(l.nanoseconds)
+    }
 }

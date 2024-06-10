@@ -5,17 +5,17 @@ import ddm.ui.utils.dom.DOMException
 import ddm.ui.wrappers.opfs.FileSystemError.*
 
 import scala.annotation.tailrec
-import scala.scalajs.js.typedarray.{ArrayBuffer, ArrayBufferView, Int8Array}
+import scala.scalajs.js.typedarray.{AB2TA, Int8Array}
 import scala.util.{Failure, Success, Try}
 
 final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHandle) extends AutoCloseable {
   export underlying.close
 
-  def read(): Either[FileSystemError, Int8Array] =
+  def read(): Either[FileSystemError, Array[Byte]] =
     for {
       size <- getSize()
       data <- readRecursively(startAt = 0, remaining = size, acc = new Int8Array(size))
-    } yield data
+    } yield data.toArray
 
   private def getSize(): Either[FileSystemError, Int] =
     // We convert to int because we can't create a buffer larger 
@@ -48,9 +48,9 @@ final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHan
         )
     }
 
-  def setContents(content: ArrayBufferView | ArrayBuffer): Either[FileSystemError, Unit] =
+  def setContents(content: Array[Byte]): Either[FileSystemError, Unit] =
     for {
-      _ <- truncate(sizeOf(content))
+      _ <- truncate(content.length)
       _ <- write(content, startAt = 0)
       _ <- flush()
     } yield ()
@@ -62,10 +62,15 @@ final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHan
       case Success(_) => Right(())
     }
 
-  private def write(content: ArrayBufferView | ArrayBuffer, startAt: Int): Either[FileSystemError, Unit] = {
-    val size = sizeOf(content)
+  private def write(content: Array[Byte], startAt: Int): Either[FileSystemError, Unit] = {
+    val size = content.length
 
-    Try(underlying.write(content, new FileSystemReadWriteOptions { var at: Double = startAt })) match {
+    Try(
+      underlying.write(
+        content.toTypedArray, 
+        new FileSystemReadWriteOptions { var at: Double = startAt }
+      )
+    ) match {
       case Failure(DOMException.QuotaExceeded) => Left(StorageQuotaExceeded)
       case Failure(ex) => Left(UnexpectedFileSystemError(ex))
       case Success(`size`) => Right(())
@@ -85,10 +90,4 @@ final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHan
       .toEither
       .left
       .map(UnexpectedFileSystemError.apply)
-
-  private def sizeOf(content: ArrayBufferView | ArrayBuffer): Int =
-    content match {
-      case buffer: ArrayBuffer => buffer.byteLength
-      case view => view.asInstanceOf[ArrayBufferView].byteLength
-    }
 }

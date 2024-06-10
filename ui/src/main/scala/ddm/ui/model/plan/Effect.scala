@@ -1,10 +1,10 @@
 package ddm.ui.model.plan
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.skill.Exp
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
 
 enum Effect {
   case GainExp(skill: Skill, baseExp: Exp)
@@ -27,5 +27,6 @@ enum Effect {
 }
 
 object Effect {
-  given Codec[Effect] = deriveCodec[Effect]
+  given Encoder[Effect] = Encoder.derived
+  given Decoder[Effect] = Decoder.derived
 }

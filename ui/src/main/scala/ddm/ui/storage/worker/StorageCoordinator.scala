@@ -8,11 +8,10 @@ import ddm.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
 import ddm.ui.storage.worker.StorageCoordinator.*
 import ddm.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import ddm.ui.utils.airstream.ObservableOps.flatMapConcat
-import ddm.ui.utils.circe.OrCodec.{orDecoder, orEncoder}
 import ddm.ui.wrappers.workers.{MessagePortClient, SharedWorkerScope}
 
 import scala.concurrent.duration.DurationInt
-import scala.reflect.ClassTag
+import scala.reflect.TypeTest
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.timers
 
@@ -58,17 +57,14 @@ import scala.scalajs.js.timers
 //   timer elapses before the receipt of M5, then the coordinator aborts and
 //   proceeds to the next message.
 object StorageCoordinator {
-  type MsgIn = Inbound.ToCoordinator | Outbound.ToCoordinator
-  type MsgOut = Outbound.ToClient | Inbound.ToWorker
+  type MsgIn = Either[Inbound.ToCoordinator, Outbound.ToCoordinator]
+  type MsgOut = Either[Outbound.ToClient, Inbound.ToWorker]
   private type Port = MessagePortClient[MsgOut, MsgIn]
   private type Result = Iterable[(Port, Outbound.ToClient)]
 
   @JSExportTopLevel("run", moduleID = "storagecoordinator")
   def run(): Unit = {
-    val scope = new SharedWorkerScope[MsgOut, MsgIn](
-      using orEncoder[Outbound.ToClient, Inbound.ToWorker], 
-      orDecoder[Inbound.ToCoordinator, Outbound.ToCoordinator]
-    )
+    val scope = new SharedWorkerScope[MsgOut, MsgIn]
     val messageBus = EventBus[(Port, Inbound.ToCoordinator)]()
 
     val subscriptions = PlanSubscriptions.empty[MsgOut, MsgIn]
@@ -81,7 +77,7 @@ object StorageCoordinator {
       .events
       .flatMapConcat(coordinator.handle)
       .addObserver(
-        Observer(_.foreach((port, msg) => port.send(msg)))
+        Observer(_.foreach((port, msg) => port.send(Left(msg))))
       )(using new ManualOwner)
 
     scope.setOnConnect(port =>
@@ -89,7 +85,7 @@ object StorageCoordinator {
         onError(
           Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(message)),
           subscriptions
-        ).foreach((port, message) => port.send(message))
+        ).foreach((port, message) => port.send(Left(message)))
       )
     )
   }
@@ -99,10 +95,8 @@ object StorageCoordinator {
   ): Port => (Outbound.ToCoordinator => ?) => Unit =
     port => onOutboundToCoordinator =>
       port.setMessageHandler {
-        case message: Inbound.ToCoordinator =>
-          onInboundToCoordinator(port, message)
-        case message: Outbound.ToCoordinator =>
-          onOutboundToCoordinator(message)
+        case Left(message) => onInboundToCoordinator(port, message)
+        case Right(message) => onOutboundToCoordinator(message)
       }
 
   private def onError(
@@ -126,6 +120,7 @@ private final class StorageCoordinator(
     message match {
       case Inbound.ListPlans => handleListPlans(port)
       case create: Inbound.Create => handleCreate(port, create)
+      case fetch: Inbound.Fetch => handleFetch(port, fetch)
       case subscribe: Inbound.Subscribe => handleSubscribe(port, subscribe)
       case unsubscribe: Inbound.Unsubscribe => handleUnsubscribe(port, unsubscribe)
       case update: Inbound.Update => handleUpdate(port, update)
@@ -139,6 +134,11 @@ private final class StorageCoordinator(
 
   private def handleCreate(port: Port, message: Inbound.Create): EventStream[Result] =
     deferToWorker[Outbound.CreateFailed | Outbound.CreateSucceeded](port, message)(resp =>
+      List((port, resp))
+    )
+
+  private def handleFetch(port: Port, message: Inbound.Fetch): EventStream[Result] =
+    deferToWorker[Outbound.FetchFailed | Outbound.FetchSucceeded](port, message)(resp =>
       List((port, resp))
     )
 
@@ -218,9 +218,9 @@ private final class StorageCoordinator(
         List((port, resp))
       )
 
-  private def deferToWorker[Response <: Outbound.ToCoordinator : ClassTag](
-    port: Port, message: Inbound.ToWorker
-  )(handleResponse: Response => Result): EventStream[Result] = {
+  private def deferToWorker[Response <: Outbound.ToCoordinator](port: Port, message: Inbound.ToWorker)(
+    handleResponse: Response => Result
+  )(using TypeTest[Outbound.ToCoordinator | ProtocolError, Response]): EventStream[Result] = {
     val eventBus = EventBus[Outbound.ToCoordinator | ProtocolError]()
     
     val timeout = 30.seconds
@@ -233,14 +233,14 @@ private final class StorageCoordinator(
       timers.clearTimeout(timer)
       eventBus.writer.onNext(response)
     }
-    port.send(message)
+    port.send(Right(message))
 
     eventBus.events.map {
+      case error: ProtocolError =>
+        onError(Outbound.ProtocolFailure(error), subscriptions)
+
       case response: Response =>
         handleResponse(response)
-        
-      case error: ProtocolError => 
-        onError(Outbound.ProtocolFailure(error), subscriptions)
         
       case unexpectedMessage: Outbound.ToCoordinator => 
         onError(Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage)), subscriptions)

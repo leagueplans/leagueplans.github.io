@@ -45,7 +45,7 @@ object StepDescription {
       },
       L.onClick.ifUnhandledF(
         _.map(_.preventDefault()).sample(isEditingState).map(!_)
-      ) --> isEditingState.writer
+      ) --> isEditingState
     )
 
   private def toParagraph(
@@ -77,7 +77,7 @@ object StepDescription {
       L.cls(Styles.paragraph),
       descriptionSignal.withCurrentValueOf(stepSignal) -->
         stepUpdater.contramap[(String, Step)]((description, step) => forester =>
-          forester.update(step.copy(description = description))
+          forester.update(step.deepCopy(description = description))
         ),
       L.onMountCallback { ctx =>
         val ref = ctx.thisNode.ref

@@ -1,6 +1,7 @@
 package ddm.ui.storage.model
 
-import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 import java.util.UUID
 
@@ -13,9 +14,6 @@ object PlanID {
   def fromString(planID: String): PlanID =
     planID
     
-  given Encoder[PlanID] = Encoder.encodeString
-  given Decoder[PlanID] = Decoder.decodeString
-  
-  given KeyEncoder[PlanID] = KeyEncoder.encodeKeyString
-  given KeyDecoder[PlanID] = KeyDecoder.decodeKeyString
+  given Encoder[PlanID] = Encoder.stringEncoder
+  given Decoder[PlanID] = Decoder.stringDecoder
 }

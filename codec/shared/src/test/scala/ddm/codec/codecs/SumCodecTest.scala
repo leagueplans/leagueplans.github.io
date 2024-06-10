@@ -106,7 +106,7 @@ final class SumCodecTest extends CodecSpec {
       codeOf(decoder) should compile
     }
 
-    "should not be able to derive codecs for types that are subtypes" in {
+    "should not be able to derive codecs for types that are not subtypes" in {
       final case class A(i: Int)
       
       sealed trait B

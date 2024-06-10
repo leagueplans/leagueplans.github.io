@@ -1,6 +1,6 @@
 package ddm.ui.taskimporter
 
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.common.model.LeagueTask
@@ -20,11 +20,11 @@ object TaskUploader {
       existingTasksInput,
       newTasksLabel.amend("Tasks to merge in:"),
       newTasksInput,
-      rawExistingTasksSignal --> Observer[Option[List[LeagueTask]]] {
+      rawExistingTasksSignal --> {
         case Some(tasks) => tasksVar.update((_, newTasks) => (tasks, newTasks))
         case None => ()
       },
-      rawNewTasksSignal --> Observer[Option[List[LeagueTask]]] {
+      rawNewTasksSignal --> {
         case Some(tasks) => tasksVar.update((existingTasks, _) => (existingTasks, tasks))
         case None => ()
       }

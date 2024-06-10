@@ -1,7 +1,6 @@
 package ddm.ui.dom.player.view
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
 import ddm.ui.dom.common.*
@@ -27,7 +26,7 @@ object CharacterTab {
     expMultiplierStrategyObserver: Observer[ExpMultiplierStrategy],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
@@ -43,14 +42,14 @@ object CharacterTab {
         itemFuse,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       ).amend(L.cls(Styles.inventoryPanel)),
       BankElement(
         playerSignal.map(_.get(Depository.Kind.Bank)),
         cache,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       ).amend(L.cls(Styles.bankPanel)),
       StatsElement.from(
         playerSignal,

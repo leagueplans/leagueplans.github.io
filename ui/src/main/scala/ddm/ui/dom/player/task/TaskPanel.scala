@@ -67,6 +67,6 @@ object TaskPanel {
             case Tab.Summary => Tab.Details
             case Tab.Details => Tab.Summary
           }
-      ) --> tabVar.writer
+      ) --> tabVar
     )
 }

@@ -1,35 +1,17 @@
 package ddm.ui.wrappers.opfs
 
-import io.circe.DecodingFailure
+import ddm.codec.decoding.DecodingFailure
+import ddm.codec.parsing.ParsingFailure as PFailure
 
-//TODO Enum?
-sealed trait FileSystemError
-
-object FileSystemError {
-  final case class DecodingError(cause: DecodingFailure) extends FileSystemError
-
-  final case class FileDoesNotExist(name: String) extends FileSystemError
-  
-  final case class InvalidDirectoryName(name: String) extends FileSystemError
-  final case class InvalidFileName(name: String) extends FileSystemError
-  
-  final case class PartialFileRead(
-    name: String,
-    bytesRead: Int,
-    bytesLost: Int
-  ) extends FileSystemError
-  
-  final case class PartialFileWrite(
-    name: String,
-    bytesWritten: Int,
-    bytesLost: Int
-  ) extends FileSystemError
-  
-  final case class ParsingFailure(fileName: String, cause: Throwable) extends FileSystemError
-  
-  case object StorageQuotaExceeded extends FileSystemError
-  
-  final case class UnableToAcquireFileLock(name: String) extends FileSystemError
-  
-  final case class UnexpectedFileSystemError(cause: Throwable) extends FileSystemError
+enum FileSystemError {
+  case DecodingError(fileName: String, cause: DecodingFailure)
+  case FileDoesNotExist(name: String)
+  case InvalidDirectoryName(name: String)
+  case InvalidFileName(name: String)
+  case PartialFileRead(name: String, bytesRead: Int, bytesLost: Int)
+  case PartialFileWrite(name: String, bytesWritten: Int, bytesLost: Int)
+  case ParsingFailure(fileName: String, cause: PFailure)
+  case StorageQuotaExceeded
+  case UnableToAcquireFileLock(name: String)
+  case UnexpectedFileSystemError(cause: Throwable)
 }

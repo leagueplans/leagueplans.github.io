@@ -1,29 +1,23 @@
 package ddm.ui.storage.opfs
 
 import com.raquo.airstream.core.EventStream
-import ddm.ui.model.plan.Step
-import ddm.ui.model.plan.Step.ID
+import ddm.codec.Encoding
+import ddm.ui.model.plan.{Step, StepDetails}
 import ddm.ui.storage.opfs.StepsDirectory.*
-import ddm.ui.utils.circe.JsonByteEncoder
-import ddm.ui.wrappers.opfs.FileSystemOpOps.{andThen, readJson}
+import ddm.ui.utils.airstream.EventStreamOps.andThen
 import ddm.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
-import io.circe.Encoder
 
 object StepsDirectory {
-  private val stepEncoder =  {
-    given Encoder[Step] = Step.minimisedEncoder
-    JsonByteEncoder[Step](predictSize = true)
-  }
+  private def toFileName(id: Step.ID): String =
+    s"$id.bin"
   
-  private def toFileName(id: Step.ID): String = s"$id.json"
+  private def toStepID(fileName: String): Step.ID =
+    Step.ID.fromString(fileName.takeWhile(_ != '.'))
 }
 
 final class StepsDirectory(underlying: DirectoryHandle) {
   def write(step: Step): EventStream[Either[FileSystemError, ?]] =
-    underlying.replaceFileContent(
-      toFileName(step.id),
-      stepEncoder.encode(step)
-    )
+    underlying.replaceFileContent(toFileName(step.id), step.details)
   
   def write(steps: Iterable[Step]): EventStream[Either[FileSystemError, ?]] = {
     val zero = EventStream.fromValue[Either[FileSystemError, ?]](Right(()), emitOnce = true)
@@ -37,9 +31,11 @@ final class StepsDirectory(underlying: DirectoryHandle) {
     underlying.removeFile(toFileName(id))
   
   def read(id: Step.ID): EventStream[Either[FileSystemError, Step]] =
-    underlying.readJson[Step](toFileName(id))(using Step.minimisedDecoder(() => id))
+    underlying
+      .read[StepDetails](toFileName(id))
+      .map(_.map(Step(id, _)))
   
-  def read(ids: Iterable[Step.ID]): EventStream[Either[FileSystemError, Map[ID, Step]]] = {
+  def read(ids: Iterable[Step.ID]): EventStream[Either[FileSystemError, Map[Step.ID, Step]]] = {
     val zero = EventStream.fromValue[Either[FileSystemError, Map[Step.ID, Step]]](Right(Map.empty), emitOnce = true)
     
     ids.foldLeft(zero)((streamAcc, id) =>
@@ -48,4 +44,18 @@ final class StepsDirectory(underlying: DirectoryHandle) {
       )
     )
   }
+
+  def fetch(): EventStream[Either[FileSystemError, Map[Step.ID, Encoding]]] =
+    underlying.listFiles().andThen { fileNames =>
+      val zero = EventStream.fromValue(Map.empty[Step.ID, Encoding], emitOnce = true)
+      
+      fileNames.foldLeft(zero)((streamAcc, fileName) =>
+        streamAcc.flatMap(acc =>
+          underlying.read[Encoding](fileName).map {
+            case Left(_) => acc
+            case Right(encoding) => acc + (toStepID(fileName) -> encoding)  
+          }
+        )
+      ).map(Right(_))
+    }
 }

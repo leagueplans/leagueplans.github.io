@@ -11,7 +11,7 @@ import ddm.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import ddm.ui.utils.airstream.ObservableOps.flatMapConcat
 import ddm.ui.wrappers.workers.{MessagePortClient, SharedWorkerScope}
 
-import scala.reflect.ClassTag
+import scala.reflect.TypeTest
 
 // This worker attempts to create its own dedicated worker for accessing OPFS. This
 // currently isn't supported by any browser, but I've left the code around in case
@@ -54,6 +54,7 @@ private final class IdealisedStorageCoordinator(
     message match {
       case Inbound.ListPlans => handleListPlans(port)
       case create: Inbound.Create => handleCreate(port, create)
+      case fetch: Inbound.Fetch => handleFetch(port, fetch)
       case subscribe: Inbound.Subscribe => handleSubscribe(port, subscribe)
       case unsubscribe: Inbound.Unsubscribe => handleUnsubscribe(port, unsubscribe)
       case update: Inbound.Update => handleUpdate(port, update)
@@ -67,6 +68,11 @@ private final class IdealisedStorageCoordinator(
 
   private def handleCreate(port: InboundPort, message: Inbound.Create): EventStream[Result] =
     deferToWorker[Outbound.CreateFailed | Outbound.CreateSucceeded](message)(resp =>
+      List((port, resp))
+    )
+
+  private def handleFetch(port: InboundPort, message: Inbound.Fetch): EventStream[Result] =
+    deferToWorker[Outbound.FetchFailed | Outbound.FetchSucceeded](message)(resp =>
       List((port, resp))
     )
 
@@ -146,9 +152,9 @@ private final class IdealisedStorageCoordinator(
         List((port, resp))
       )
 
-  private def deferToWorker[Response <: Outbound.ToCoordinator : ClassTag](
-    message: Inbound.ToWorker
-  )(handleResponse: Response => Result): EventStream[Result] = {
+  private def deferToWorker[Response <: Outbound.ToCoordinator](message: Inbound.ToWorker)(
+    handleResponse: Response => Result
+  )(using TypeTest[Outbound.ToCoordinator, Response]): EventStream[Result] = {
     val eventBus = EventBus[Outbound.ToCoordinator]()
     storageWorker.setMessageHandler(eventBus.writer.onNext)
     storageWorker.send(message)

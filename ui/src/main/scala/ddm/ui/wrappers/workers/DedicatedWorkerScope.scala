@@ -1,7 +1,8 @@
 package ddm.ui.wrappers.workers
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.ui.facades.opfs.WorkerNavigator
-import io.circe.{Decoder, Encoder}
 import org.scalajs.dom.DedicatedWorkerGlobalScope
 
 final class DedicatedWorkerScope[Out : Encoder, In : Decoder] extends WorkerScope {

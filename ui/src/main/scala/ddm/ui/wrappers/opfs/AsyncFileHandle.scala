@@ -7,14 +7,13 @@ import ddm.ui.utils.dom.DOMException
 import ddm.ui.utils.js.TypeError
 import ddm.ui.wrappers.opfs.FileSystemError.*
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, ArrayBufferView, Int8Array}
 import scala.util.{Failure, Success, Using}
 
 final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) {
-  def read(): EventStream[Either[FileSystemError, Int8Array]] =
+  def read(): EventStream[Either[FileSystemError, Array[Byte]]] =
     usingSyncHandle(_.read())
   
-  def setContents(content: ArrayBufferView | ArrayBuffer): EventStream[Either[FileSystemError, Unit]] =
+  def setContents(content: Array[Byte]): EventStream[Either[FileSystemError, Unit]] =
     usingSyncHandle(_.setContents(content))
     
   private def usingSyncHandle[T](

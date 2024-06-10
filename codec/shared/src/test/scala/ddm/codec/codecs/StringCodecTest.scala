@@ -2,7 +2,6 @@ package ddm.codec.codecs
 
 import ddm.codec.Encoding
 import ddm.codec.decoding.{Decoder, DecodingFailure}
-import org.scalatest.Assertion
 
 final class StringCodecTest extends CodecSpec {
   "StringCodec" - {

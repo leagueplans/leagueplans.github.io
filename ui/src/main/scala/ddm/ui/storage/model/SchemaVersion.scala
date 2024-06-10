@@ -1,13 +1,13 @@
 package ddm.ui.storage.model
 
-import io.circe.{Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 import scala.scalajs.js.Date
-import scala.util.Try
 
 object SchemaVersion {
-  given Encoder[SchemaVersion] = Encoder.encodeInt.contramap(_.ordinal)
-  given Decoder[SchemaVersion] = Decoder.decodeInt.emapTry(i => Try(fromOrdinal(i)))
+  given Encoder[SchemaVersion] = Encoder.derived
+  given Decoder[SchemaVersion] = Decoder.derived
 }
 
 // TODO - Remove this comment once migrations are solved

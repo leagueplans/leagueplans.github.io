@@ -1,11 +1,11 @@
 package ddm.ui.wrappers.workers
 
-import ddm.ui.utils.circe.{JsonByteDecoder, JsonByteEncoder}
-import io.circe.{Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import org.scalajs.dom.MessageEvent
 
 import scala.scalajs.js.JSConverters.iterableOnceConvertible2JSRichIterableOnce
-import scala.scalajs.js.typedarray.Int8Array
+import scala.scalajs.js.typedarray.{AB2TA, Int8Array}
 
 trait MessagePortClient[-Out, +In] {
   def setMessageHandler(f: In => ?): Unit
@@ -20,29 +20,18 @@ object MessagePortClient {
   final class PartiallyAppliedMessagePortClient[Out, In](val dummy: Boolean = true) extends AnyVal {
     def apply[Port : MessagePortLike](
       port: Port
-    )(using Encoder[Out], Decoder[In]): MessagePortClient[Out, In] = {
-      val encoder = JsonByteEncoder[Out](predictSize = true)
-      new Impl[Out, In, Port](port, encoder)
-    }
-
-    def apply[Port : MessagePortLike](
-      port: Port,
-      encoder: JsonByteEncoder[Out]
-    )(using Decoder[In]): MessagePortClient[Out, In] =
-      new Impl[Out, In, Port](port, encoder)
+    )(using Encoder[Out], Decoder[In]): MessagePortClient[Out, In] =
+      Impl[Out, In, Port](port)
   }
 
-  private final class Impl[Out, In : Decoder, Port : MessagePortLike](
-    port: Port,
-    encoder: JsonByteEncoder[Out]
+  private final class Impl[Out : Encoder, In : Decoder, Port : MessagePortLike](
+    port: Port
   ) extends MessagePortClient[Out, In] {
     def setMessageHandler(onMessage: In => ?): Unit =
       port.setMessageHandler(msg =>
-        JsonByteDecoder[In](getBytes(msg)) match {
+        Decoder.decodeMessage[In](getBytes(msg).toArray) match {
           case Right(message) => onMessage(message)
-          case Left(error) => 
-            println(new String(getBytes(msg).toArray))
-            throw error
+          case Left(error) => throw error
         }
       )
 
@@ -53,7 +42,7 @@ object MessagePortClient {
       }
 
     def send(message: Out): Unit = {
-      val bytes = encoder.encode(message)
+      val bytes = message.encoded.getBytes.toTypedArray
       port.postMessage(bytes, Array(bytes.buffer).toJSArray)
     }
     

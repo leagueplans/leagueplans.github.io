@@ -3,6 +3,7 @@ package ddm.codec.encoding
 import ddm.codec.{BinaryString, Encoding}
 
 import java.nio.charset.StandardCharsets
+import scala.concurrent.duration.FiniteDuration
 import scala.deriving.Mirror
 
 trait Encoder[T] {
@@ -32,12 +33,15 @@ object Encoder {
 
   given encodingEncoder[T <: Encoding]: Encoder[T] =
     Encoder(identity)
+    
+  val unsignedLongEncoder: Encoder[Long] =
+    Encoder(l => Encoding.Varint(BinaryString(l)))
 
   given longEncoder: Encoder[Long] =
-    Encoder(l => Encoding.Varint(
+    unsignedLongEncoder.contramap(l =>
       // Zigzag encoding
-      BinaryString((l << 1) ^ (l >> 63))
-    ))
+      (l << 1) ^ (l >> 63)
+    )
 
   val unsignedIntEncoder: Encoder[Int] =
     Encoder(i => Encoding.Varint(BinaryString(i)))
@@ -84,4 +88,13 @@ object Encoder {
 
   inline given tupleEncoder[T <: Tuple : Mirror.ProductOf]: Encoder[T] =
     ProductEncoderDeriver.derive
+    
+  given eitherEncoder[L : Encoder, R : Encoder]: Encoder[Either[L, R]] =
+    Encoder[(Boolean, Encoding)].contramap {
+      case Left(l) => (false, l.encoded)
+      case Right(r) => (true, r.encoded)
+    }  
+  
+  given finiteDurationEncoder: Encoder[FiniteDuration] =
+    unsignedLongEncoder.contramap(_.toNanos)
 }

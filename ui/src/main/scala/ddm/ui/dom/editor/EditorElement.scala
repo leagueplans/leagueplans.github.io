@@ -1,11 +1,10 @@
 package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{FormOpener, Tooltip}
+import ddm.ui.dom.common.{FormOpener, Modal, Tooltip}
 import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
@@ -25,7 +24,7 @@ object EditorElement {
     itemFuse: Fuse[Item],
     dataSignal: Signal[(Step, List[Step], Player)],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): ReactiveHtmlElement[Div] = {
     val stepSignal = dataSignal.map((step, _, _) => step)
     val subStepsSignal = dataSignal.map((_, subSteps, _) => subSteps)
@@ -37,9 +36,9 @@ object EditorElement {
       L.child <-- toWarnings(cache, playerSignal, stepSignal),
       L.div(
         L.cls(Styles.sections),
-        L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalBus),
+        L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalController),
         L.child <-- toEffects(cache, stepSignal, stepUpdater),
-        L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalBus)
+        L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalController)
       )
     )
   }
@@ -82,7 +81,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     subStepsSignal: Signal[List[Step]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    modalBus: WriteBus[Option[L.Element]],
+    modalController: Modal.Controller,
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, _) =>
       Section(
@@ -96,21 +95,21 @@ object EditorElement {
           L.cls(Styles.subStepDescription),
           subStep.description
         ),
-        Some(newSubStepObserver(stepID, modalBus, stepUpdater)),
+        Some(newSubStepObserver(stepID, modalController, stepUpdater)),
         stepUpdater.contramap[Step](deletedStep => forester =>
           // Bit messy, but it works for now
-          DeletionConfirmer(modalBus, Observer[Unit](_ => forester.remove(deletedStep.id))).onNext(())
+          DeletionConfirmer(modalController, Observer[Unit](_ => forester.remove(deletedStep.id))).onNext(())
         )
       ).amend(L.cls(Styles.section))
     )
 
   private def newSubStepObserver(
     parentID: Step.ID,
-    modalBus: WriteBus[Option[L.Element]],
+    modalController: Modal.Controller,
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Observer[FormOpener.Command] =
     FormOpener(
-      modalBus,
+      modalController,
       stepUpdater.contracollect[Option[Step]] { case Some(newStep) => forester =>
         forester.add(newStep, parentID)
       },
@@ -128,12 +127,12 @@ object EditorElement {
         id = "effects",
         stepSignal.map(_.directEffects.underlying),
         stepUpdater.contramap[List[Effect]](effectOrdering => forester =>
-          forester.update(stepID, _.copy(directEffects = EffectList(effectOrdering)))
+          forester.update(stepID, _.deepCopy(directEffects = EffectList(effectOrdering)))
         ),
         DescribedEffect(_, cache),
         None,
         stepUpdater.contramap[Effect](deletedEffect => forester =>
-          forester.update(stepID, step => step.copy(directEffects = step.directEffects - deletedEffect))
+          forester.update(stepID, step => step.deepCopy(directEffects = step.directEffects - deletedEffect))
         )
       )(using HasID.identity).amend(L.cls(Styles.section))
     )
@@ -143,7 +142,7 @@ object EditorElement {
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Signal[ReactiveHtmlElement[Div]] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section(
@@ -151,12 +150,12 @@ object EditorElement {
         id = "requirements",
         stepSignal.map(_.requirements),
         stepUpdater.contramap[List[Requirement]](requirementOrdering => forester =>
-          forester.update(stepID, _.copy(requirements = requirementOrdering))
+          forester.update(stepID, _.deepCopy(requirements = requirementOrdering))
         ),
         DescribedRequirement(_, cache),
-        Some(newRequirementObserver(itemFuse, stepID, modalBus, stepUpdater)),
+        Some(newRequirementObserver(itemFuse, stepID, modalController, stepUpdater)),
         stepUpdater.contramap[Requirement](deletedRequirement => forester =>
-          forester.update(stepID, step => step.copy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
+          forester.update(stepID, step => step.deepCopy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
         )
       )(using HasID.identity).amend(L.cls(Styles.section))
     )
@@ -164,13 +163,13 @@ object EditorElement {
   private def newRequirementObserver(
     itemFuse: Fuse[Item],
     stepID: Step.ID,
-    modalBus: WriteBus[Option[L.Element]],
+    modalController: Modal.Controller,
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
   ): Observer[FormOpener.Command] =
     FormOpener(
-      modalBus,
+      modalController,
       stepUpdater.contracollect[Option[Requirement]] { case Some(newRequirement) => forester =>
-        forester.update(stepID, step => step.copy(requirements = step.requirements :+ newRequirement))
+        forester.update(stepID, step => step.deepCopy(requirements = step.requirements :+ newRequirement))
       },
       () => NewRequirementForm(itemFuse)
     )

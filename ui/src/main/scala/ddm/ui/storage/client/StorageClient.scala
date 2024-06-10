@@ -1,19 +1,18 @@
 package ddm.ui.storage.client
 
+import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.EventBus
+import com.raquo.airstream.state.{StrictSignal, Var}
 import ddm.ui.facades.workers.{CreateWorkerOptions, WorkerFactory}
 import ddm.ui.model.plan.Plan
 import ddm.ui.storage.model.errors.{DeletionError, FileSystemError}
-import ddm.ui.storage.model.{PlanID, PlanMetadata}
+import ddm.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import ddm.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
-import ddm.ui.storage.worker.{StorageCoordinator, StorageProtocol}
-import ddm.ui.utils.circe.OrCodec.{orDecoder, orEncoder}
+import ddm.ui.storage.worker.StorageCoordinator
 import ddm.ui.wrappers.workers.MessagePortClient
-import io.circe.{Decoder, Encoder}
 
 import java.util.UUID
 import scala.collection.mutable
-import scala.concurrent.Promise
 
 object StorageClient {
   def apply(): StorageClient = {
@@ -23,27 +22,26 @@ object StorageClient {
         WorkerFactory.storageWorker(CreateWorkerOptions.storageWorker)
       )
       
-    worker.setMessageHandler(coordinator.send)
+    worker.setMessageHandler(message => coordinator.send(Right(message)))
 
-    new StorageClient(coordinator.send, toSetMessageHandler(coordinator, worker))
+    new StorageClient(
+      message => coordinator.send(Left(message)),
+      toSetMessageHandler(coordinator, worker)
+    )
   }
   
-  private def startCoordinator(): MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut] = {
-    given Encoder[StorageCoordinator.MsgIn] = orEncoder[Inbound.ToCoordinator, Outbound.ToCoordinator]
-    given Decoder[StorageCoordinator.MsgOut] = orDecoder[Outbound.ToClient, Inbound.ToWorker]
-    
+  private def startCoordinator(): MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut] =
     MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut](
       WorkerFactory.storageCoordinator(CreateWorkerOptions.storageCoordinator)
     )
-  }
   
   private def toSetMessageHandler(
     coordinator: MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut],
     worker: MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator]
   ): (Outbound.ToClient => ?) => Unit =
     onResponse => coordinator.setMessageHandler {
-      case message: Inbound.ToWorker => worker.send(message)
-      case message: Outbound.ToClient => onResponse(message)
+      case Right(message) => worker.send(message)
+      case Left(message) => onResponse(message)
     }
 }
 
@@ -52,78 +50,107 @@ final class StorageClient(
   setMessageHandler: (Outbound.ToClient => ?) => Unit
 ) {
   private object requests {
-    val listPlans: mutable.Set[Promise[Either[FileSystemError, Map[PlanID, PlanMetadata]]]] =
+    val refreshPlans: mutable.Set[Observer[Either[FileSystemError, Unit]]] =
       mutable.Set.empty
-
-    val creates: mutable.Map[String, Promise[Either[FileSystemError, PlanID]]] =
+    
+    val creates: mutable.Map[String, Observer[Either[FileSystemError, PlanID]]] =
       mutable.Map.empty
 
-    val deletes: mutable.Map[PlanID, List[Promise[Either[DeletionError, Unit]]]] =
+    val fetches: mutable.Map[PlanID, List[Observer[Either[FileSystemError, PlanExport]]]] =
       mutable.Map.empty
 
-    val subscriptions: mutable.Map[PlanID, List[Promise[Either[FileSystemError, (Plan, PlanSubscription)]]]] =
+    val deletes: mutable.Map[PlanID, List[Observer[Either[DeletionError, Unit]]]] =
+      mutable.Map.empty
+
+    val subscriptions: mutable.Map[PlanID, List[Observer[Either[FileSystemError, (Plan, PlanSubscription)]]]] =
       mutable.Map.empty
   }
 
   private val subscriptionBus = EventBus[(PlanID, PlanSubscription.Message) | PlanSubscription.Message]()
+  private val plansVar = Var[Map[PlanID, PlanMetadata]](Map.empty)
+  
+  val plansSignal: StrictSignal[Map[PlanID, PlanMetadata]] =
+    plansVar.signal
 
-  def listPlans(): Promise[Either[FileSystemError, Map[PlanID, PlanMetadata]]] = {
-    val promise = Promise[Either[FileSystemError, Map[PlanID, PlanMetadata]]]()
-    requests.listPlans += promise
+  def refreshPlans(): StrictSignal[Option[Either[FileSystemError, Unit]]] = {
+    val promise = Var[Option[Either[FileSystemError, Unit]]](None)
+    requests.refreshPlans += promise.someWriter
     send(Inbound.ListPlans)
-    promise
+    promise.signal
   }
 
-  def create(name: String, plan: Plan): Promise[Either[FileSystemError, PlanID]] = {
+  def create(metadata: PlanMetadata, plan: Plan): StrictSignal[Option[Either[FileSystemError, PlanID]]] = {
     val requestID = UUID.randomUUID().toString
-    val promise = Promise[Either[FileSystemError, PlanID]]()
-    requests.creates += requestID -> promise
-    send(Inbound.Create(requestID, name, plan))
-    promise
+    val promise = Var[Option[Either[FileSystemError, PlanID]]](None)
+    requests.creates += requestID -> promise.someWriter
+    send(Inbound.Create(requestID, metadata, plan))
+    send(Inbound.ListPlans)
+    promise.signal
   }
 
-  def delete(id: PlanID): Promise[Either[DeletionError, Unit]] = {
-    val promise = Promise[Either[DeletionError, Unit]]()
-    requests.deletes += id -> (requests.deletes.getOrElse(id, List.empty) :+ promise)
+  def fetch(id: PlanID): StrictSignal[Option[Either[FileSystemError, PlanExport]]] = {
+    val promise = Var[Option[Either[FileSystemError, PlanExport]]](None)
+    requests.fetches += id -> (requests.fetches.getOrElse(id, List.empty) :+ promise.someWriter)
+    send(Inbound.Fetch(id))
+    promise.signal
+  }
+
+  def delete(id: PlanID): StrictSignal[Option[Either[DeletionError, Unit]]] = {
+    val promise = Var[Option[Either[DeletionError, Unit]]](None)
+    requests.deletes += id -> (requests.deletes.getOrElse(id, List.empty) :+ promise.someWriter)
     send(Inbound.Delete(id))
-    promise
+    send(Inbound.ListPlans)
+    promise.signal
   }
 
-  def subscribe(id: PlanID): Promise[Either[FileSystemError, (Plan, PlanSubscription)]] = {
-    val promise = Promise[Either[FileSystemError, (Plan, PlanSubscription)]]()
-    requests.subscriptions += id -> (requests.subscriptions.getOrElse(id, List.empty) :+ promise)
+  def subscribe(id: PlanID): StrictSignal[Option[Either[FileSystemError, (Plan, PlanSubscription)]]] = {
+    val promise = Var[Option[Either[FileSystemError, (Plan, PlanSubscription)]]](None)
+    requests.subscriptions += id -> (requests.subscriptions.getOrElse(id, List.empty) :+ promise.someWriter)
     send(Inbound.Subscribe(id))
-    promise
+    promise.signal
   }
 
   setMessageHandler {
     case Outbound.Plans(data) =>
-      requests.listPlans.foreach { promise =>
-        promise.success(Right(data))
-        requests.listPlans -= promise
+      requests.refreshPlans.foreach { observer =>
+        observer.onNext(Right(()))
+        requests.refreshPlans -= observer
       }
+      plansVar.writer.onNext(data)
 
     case Outbound.ListPlansFailed(reason) =>
-      requests.listPlans.foreach { promise =>
-        promise.success(Left(reason))
-        requests.listPlans -= promise
+      requests.refreshPlans.foreach { observer =>
+        observer.onNext(Left(reason))
+        requests.refreshPlans -= observer
       }
 
     case Outbound.CreateSucceeded(requestID, planID) =>
-      requests.creates.get(requestID).foreach { promise =>
-        promise.success(Right(planID))
+      requests.creates.get(requestID).foreach { observer =>
+        observer.onNext(Right(planID))
         requests.creates -= requestID
       }
 
     case Outbound.CreateFailed(requestID, reason) =>
-      requests.creates.get(requestID).foreach { promise =>
-        promise.success(Left(reason))
+      requests.creates.get(requestID).foreach { observer =>
+        observer.onNext(Left(reason))
         requests.creates -= requestID
       }
 
+    case Outbound.FetchSucceeded(planID, plan) =>
+      requests.fetches.get(planID).foreach { observers =>
+        observers.foreach(_.onNext(Right(plan)))
+        requests.fetches -= planID
+      }
+
+    case Outbound.FetchFailed(planID, reason) =>
+      requests.fetches.get(planID).foreach { observers =>
+        observers.foreach(_.onNext(Left(reason)))
+        requests.fetches -= planID
+      }
+
     case Outbound.Subscription(planID, lamport, plan) =>
-      requests.subscriptions.get(planID).foreach { promises =>
-        promises.foreach { promise =>
+      requests.subscriptions.get(planID).foreach { observers =>
+        observers.foreach { observer =>
           val subscription = new PlanSubscription(
             lamport,
             subscriptionBus.events.collect {
@@ -133,14 +160,14 @@ final class StorageClient(
             save = (lamport, update) => send(Inbound.Update(planID, lamport, update)),
             unsubscribe = () => send(Inbound.Unsubscribe(planID))
           )
-          promise.success(Right((plan, subscription)))
+          observer.onNext(Right((plan, subscription)))
         }
         requests.subscriptions -= planID
       }
 
     case Outbound.SubscriptionFailed(planID, reason) =>
-      requests.subscriptions.get(planID).foreach { promises =>
-        promises.foreach(_.success(Left(reason)))
+      requests.subscriptions.get(planID).foreach { observers =>
+        observers.foreach(_.onNext(Left(reason)))
         requests.subscriptions -= planID
       }
 
@@ -165,14 +192,14 @@ final class StorageClient(
       )
 
     case Outbound.DeleteSucceeded(planID) =>
-      requests.deletes.get(planID).foreach { promises =>
-        promises.foreach(_.success(Right(())))
+      requests.deletes.get(planID).foreach { observers =>
+        observers.foreach(_.onNext(Right(())))
         requests.deletes -= planID
       }
 
     case Outbound.DeleteFailed(planID, reason) =>
-      requests.deletes.get(planID).foreach { promises =>
-        promises.foreach(_.success(Left(reason)))
+      requests.deletes.get(planID).foreach { observers =>
+        observers.foreach(_.onNext(Left(reason)))
         requests.deletes -= planID
       }
 

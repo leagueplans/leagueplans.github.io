@@ -45,8 +45,8 @@ private object StorageWorker {
 
   private def convert(error: OPFSError): UIError =
     error match {
-      case OPFSError.DecodingError(cause) =>
-        UIError.Decoding(cause.getMessage)
+      case OPFSError.DecodingError(name, cause) =>
+        UIError.Decoding(s"Failed to decode a file: [$name] - [${cause.getMessage}]")
       case OPFSError.FileDoesNotExist(name) =>
         UIError.Unexpected(s"Tried to open a file that does not exist: [$name]")
       case OPFSError.InvalidDirectoryName(name) =>
@@ -59,7 +59,7 @@ private object StorageWorker {
         UIError.Unexpected(s"Could not complete the write for a file: [$name]")
       case OPFSError.ParsingFailure(name, cause) =>
         UIError.Unexpected(
-          s"Failed to parse a file: [$name] - [${cause.getClass.getName}: ${cause.getMessage}]"
+          s"Failed to parse a file: [$name] - [${cause.getMessage}]"
         )
       case OPFSError.StorageQuotaExceeded =>
         UIError.OutOfSpace
@@ -75,6 +75,7 @@ private final class StorageWorker(directory: PlansDirectory) {
     message match {
       case Inbound.ListPlans => handleListPlans()
       case create: Inbound.Create => handleCreate(create)
+      case fetch: Inbound.Fetch => handleFetch(fetch)
       case read: Inbound.Read => handleRead(read)
       case update: Inbound.Update => handleUpdate(update)
       case delete: Inbound.Delete => handleDelete(delete)
@@ -87,9 +88,15 @@ private final class StorageWorker(directory: PlansDirectory) {
     }
 
   private def handleCreate(message: Inbound.Create): EventStream[Outbound.ToCoordinator] =
-    directory.create(message.name, message.plan).map {
+    directory.create(message.metadata, message.plan).map {
       case Left(error) => Outbound.CreateFailed(message.requestID, convert(error))
       case Right(planID) => Outbound.CreateSucceeded(message.requestID, planID)
+    }
+
+  private def handleFetch(message: Inbound.Fetch): EventStream[Outbound.ToCoordinator] =
+    directory.fetch(message.planID).map {
+      case Left(error) => Outbound.FetchFailed(message.planID, convert(error))
+      case Right(plan) => Outbound.FetchSucceeded(message.planID, plan)
     }
 
   private def handleRead(message: Inbound.Read): EventStream[Outbound.ToCoordinator] =

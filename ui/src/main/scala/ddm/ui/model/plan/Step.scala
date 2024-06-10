@@ -1,15 +1,14 @@
 package ddm.ui.model.plan
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.ui.utils.HasID
-import io.circe.syntax.EncoderOps
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.*
 
 import java.util.UUID
 
 object Step {
   def apply(description: String): Step =
-    Step(ID.generate(), description, EffectList.empty, requirements = List.empty)
+    Step(ID.generate(), StepDetails(description))
 
   opaque type ID <: String = String
 
@@ -20,44 +19,24 @@ object Step {
     def fromString(stepID: String): ID =
       stepID
 
-    given Encoder[ID] = Encoder.encodeString
-    given Decoder[ID] = Decoder.decodeString
-
-    given KeyEncoder[ID] = KeyEncoder.encodeKeyString
-    given KeyDecoder[ID] = KeyDecoder.decodeKeyString
+    given Encoder[ID] = Encoder.stringEncoder
+    given Decoder[ID] = Decoder.stringDecoder
   }
   
   given HasID.Aux[Step, ID] = HasID[Step, ID](_.id)
   
-  val comprehensiveCodec: Codec[Step] = deriveCodec[Step]
-  
-  val minimisedEncoder: Encoder[Step] =
-    Encoder[JsonObject].contramap(step =>
-      JsonObject(
-        "description" -> step.description.asJson,
-        "directEffects" -> step.directEffects.underlying.asJson,
-        "requirements" -> step.requirements.asJson
-      )
-    )
-
-  def minimisedDecoder(generateID: () => ID): Decoder[Step] =
-    Decoder[JsonObject].emap(obj =>
-      for {
-        description <- decodeField[String](obj, "description")
-        directEffects <- decodeField[List[Effect]](obj, "directEffects")
-        requirements <- decodeField[List[Requirement]](obj, "requirements")
-      } yield Step(generateID(), description, EffectList(directEffects), requirements)
-    )
-
-  private def decodeField[T : Decoder](obj: JsonObject, key: String): Either[String, T] =
-    obj(key)
-      .toRight(left = s"Missing key: [$key]")
-      .flatMap(_.as[T].left.map(_.message))
+  given Encoder[Step] = Encoder.derived
+  given Decoder[Step] = Decoder.derived
 }
 
-final case class Step(
-  id: Step.ID,
-  description: String,
-  directEffects: EffectList,
-  requirements: List[Requirement]
-)
+final case class Step(id: Step.ID, details: StepDetails) {
+  export details.{description, directEffects, requirements}
+  
+  def deepCopy(
+    id: Step.ID = id,
+    description: String = details.description,
+    directEffects: EffectList = details.directEffects,
+    requirements: List[Requirement] = details.requirements
+  ): Step =
+    Step(id, StepDetails(description, directEffects, requirements))
+}

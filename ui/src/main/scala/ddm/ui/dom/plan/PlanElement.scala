@@ -43,9 +43,9 @@ object PlanElement {
     val dom =
       L.div(
         L.children <-- forester.domSignal,
-        stepUpdates.events --> Observer[Forester[Step.ID, Step] => Unit](_.apply(forester)),
+        stepUpdates.events --> (_.apply(forester)),
         forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar,
-        forester.forestSignal.changes.debounce(1500).map(findStepsWithErrors) --> stepsWithErrorsVar.writer
+        forester.forestSignal.changes.debounce(1500).map(findStepsWithErrors) --> stepsWithErrorsVar
       )
 
     (dom, forester)

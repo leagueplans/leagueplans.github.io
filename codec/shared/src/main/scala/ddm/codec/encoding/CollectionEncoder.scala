@@ -23,4 +23,7 @@ object CollectionEncoder {
 
   given iterableOnceEncoder[F[X] <: IterableOnce[X], T : Encoder]: CollectionEncoder[F[T]] =
     CollectionEncoder(_.iterator.toList.map(_.encoded))
+    
+  given mapEncoder[K, V](using Encoder[(K, V)]): CollectionEncoder[Map[K, V]] =
+    iterableOnceEncoder[List, (K, V)].contramap(_.toList)
 }

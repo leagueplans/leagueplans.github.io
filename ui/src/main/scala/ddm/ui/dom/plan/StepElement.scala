@@ -84,8 +84,8 @@ object StepElement {
   private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
     val hovering = Var(false)
     val listeners = List(
-      L.onMouseOver.handledAs(true) --> hovering.writer,
-      L.onMouseOut.handledAs(false) --> hovering.writer
+      L.onMouseOver.handledAs(true) --> hovering,
+      L.onMouseOut.handledAs(false) --> hovering
     )
     (listeners, hovering.signal)
   }

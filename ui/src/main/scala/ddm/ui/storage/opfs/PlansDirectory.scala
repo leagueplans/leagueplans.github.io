@@ -3,9 +3,9 @@ package ddm.ui.storage.opfs
 import com.raquo.airstream.core.EventStream
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Plan, Step}
-import ddm.ui.storage.model.{PlanID, PlanMetadata}
+import ddm.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
+import ddm.ui.utils.airstream.EventStreamOps.andThen
 import ddm.ui.wrappers.opfs.FileSystemError.*
-import ddm.ui.wrappers.opfs.FileSystemOpOps.andThen
 import ddm.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
 
 final class PlansDirectory(underlying: DirectoryHandle) {
@@ -26,14 +26,14 @@ final class PlansDirectory(underlying: DirectoryHandle) {
         }.map(Right(_))
       }
   
-  def create(name: String, plan: Plan): EventStream[Either[FileSystemError, PlanID]] = {
+  def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, PlanID]] = {
     val planID = PlanID.generate()
     
     getPlanDirectory(planID).andThen {
       case None =>
         underlying
           .acquireSubDirectory(planID)
-          .andThen(handle => PlanDirectory(handle).create(name, plan))
+          .andThen(handle => PlanDirectory(handle).create(metadata, plan))
           .map(_.map(_ => planID))
 
       // This shouldn't ever happen since plan IDs are UUIDs, but just to be sure we
@@ -46,6 +46,12 @@ final class PlansDirectory(underlying: DirectoryHandle) {
         )
     }
   }
+
+  def fetch(planID: PlanID): EventStream[Either[FileSystemError, PlanExport]] =
+    getPlanDirectory(planID).andThen {
+      case None => EventStream.fromValue(Left(FileDoesNotExist(planID)), emitOnce = true)
+      case Some(planDirectory) => planDirectory.fetch()
+    }
   
   def read(planID: PlanID): EventStream[Either[FileSystemError, Plan]] =
     getPlanDirectory(planID).andThen {

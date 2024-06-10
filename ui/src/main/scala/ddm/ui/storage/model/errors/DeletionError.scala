@@ -1,13 +1,14 @@
 package ddm.ui.storage.model.errors
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
-enum DeletionError {
-  case PlanOpenInAnotherWindow
-  case FileSystem(error: FileSystemError)
+enum DeletionError(val message: String) {
+  case PlanOpenInAnotherWindow extends DeletionError("Cannot delete plans that are open in other windows")
+  case FileSystem(error: FileSystemError) extends DeletionError(error.message)
 }
 
 object DeletionError {
-  given Codec[DeletionError] = deriveCodec[DeletionError]
+  given Encoder[DeletionError] = Encoder.derived
+  given Decoder[DeletionError] = Decoder.derived
 }

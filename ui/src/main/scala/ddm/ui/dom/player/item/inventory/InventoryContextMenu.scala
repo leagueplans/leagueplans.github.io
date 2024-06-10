@@ -1,10 +1,9 @@
 package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.Observer
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.Item
-import ddm.ui.dom.common.{ContextMenu, FormOpener}
+import ddm.ui.dom.common.{ContextMenu, FormOpener, Modal}
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
 import ddm.ui.utils.laminar.LaminarOps.*
@@ -15,23 +14,23 @@ object InventoryContextMenu {
     itemFuse: Fuse[Item],
     effectObserver: Observer[AddItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Button =
     toElement(
-      toAddItemFormOpener(itemFuse, effectObserver, modalBus),
+      toAddItemFormOpener(itemFuse, effectObserver, modalController),
       menuCloser
     )
 
   private def toAddItemFormOpener(
     itemFuse: Fuse[Item],
     effectObserver: Observer[AddItem],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Observer[FormOpener.Command] =
     FormOpener(
-      modalBus,
+      modalController,
       effectObserver,
       () => {
-        val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalBus)
+        val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalController)
         (form, formSubmissions.collect { case Some(effect) => effect })
       }
     )

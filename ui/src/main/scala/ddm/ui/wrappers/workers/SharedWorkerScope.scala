@@ -1,8 +1,8 @@
 package ddm.ui.wrappers.workers
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.ui.facades.opfs.WorkerNavigator
-import ddm.ui.utils.circe.JsonByteEncoder
-import io.circe.{Decoder, Encoder}
 import org.scalajs.dom.SharedWorkerGlobalScope
 
 final class SharedWorkerScope[Out : Encoder, In : Decoder] extends WorkerScope {
@@ -13,8 +13,7 @@ final class SharedWorkerScope[Out : Encoder, In : Decoder] extends WorkerScope {
   
   def setOnConnect(f: MessagePortClient[Out, In] => Unit): Unit =
     underlying.onconnect = connection => {
-      val encoder = JsonByteEncoder[Out](predictSize = true)
-      val client = MessagePortClient[Out, In](connection.ports(0), encoder)
+      val client = MessagePortClient[Out, In](connection.ports(0))
       f(client)
     }
 }

@@ -1,16 +1,24 @@
 package ddm.ui.model.plan
 
+import ddm.codec.decoding.CollectionDecoder
+import ddm.codec.encoding.CollectionEncoder
 import ddm.ui.model.plan.Effect.*
 import ddm.ui.model.player.skill.Exp
-import io.circe.{Decoder, Encoder}
 
-import scala.reflect.ClassTag
+import scala.reflect.TypeTest
 
 object EffectList {
   val empty: EffectList = EffectList(List.empty)
   
-  given Encoder[EffectList] = Encoder.encodeList[Effect].contramap(_.underlying)
-  given Decoder[EffectList] = Decoder.decodeList[Effect].map(EffectList(_))
+  given CollectionEncoder[EffectList] =
+    CollectionEncoder
+      .iterableOnceEncoder[List, Effect]
+      .contramap(_.underlying)
+
+  given CollectionDecoder[EffectList] =
+    CollectionDecoder
+      .iterableOnceDecoder[List, Effect]
+      .map(EffectList.apply)
 }
 
 final case class EffectList(underlying: List[Effect]) extends AnyVal {
@@ -85,11 +93,11 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
   private def ignoreDuplicates(effect: Effect): EffectList =
     patch(effect)(_ == _)((oldEffect, _) => Some(oldEffect))
 
-  private def patch[E <: Effect : ClassTag](target: E)(
+  private def patch[E <: Effect](target: E)(
     conflictIdentifier: (E, E) => Boolean
   )(
     conflictResolver: (E, E) => Option[E]
-  ): EffectList = {
+  )(using TypeTest[Effect, E]): EffectList = {
     var maybeConflict: Option[E] = None
 
     val conflictIndex = underlying.indexWhere {

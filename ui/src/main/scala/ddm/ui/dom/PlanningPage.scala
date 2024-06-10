@@ -1,12 +1,10 @@
 package ddm.ui.dom
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.{EventBus, WriteBus}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
-import ddm.ui.PlanStorage
 import ddm.ui.dom.common.*
-import ddm.ui.dom.common.ToastHub.Toast
 import ddm.ui.dom.editor.EditorElement
 import ddm.ui.dom.forest.Forester
 import ddm.ui.dom.help.HelpButton
@@ -15,27 +13,28 @@ import ddm.ui.dom.player.Visualiser
 import ddm.ui.facades.fusejs.FuseOptions
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.common.forest.Forest
-import ddm.ui.model.plan.{Effect, SavedState, Step}
+import ddm.ui.model.plan.{Effect, Plan, Step}
 import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.model.validation.StepValidator
+import ddm.ui.storage.client.PlanSubscription
+import ddm.ui.storage.model.errors.{ProtocolError, UpdateError}
 import ddm.ui.wrappers.fusejs.Fuse
-import org.scalajs.dom.console
+import org.scalajs.dom.window
 
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import scala.util.{Failure, Success}
 
 object PlanningPage {
   def apply(
-    planStorage: PlanStorage,
-    initialPlan: SavedState.Named,
+    initialPlan: Plan,
+    subscription: PlanSubscription,
     cache: Cache,
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]],
-    toastBus: WriteBus[Toast],
+    modalController: Modal.Controller,
+    toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val itemFuse = Fuse(
       cache.items.values.toList,
@@ -46,33 +45,33 @@ object PlanningPage {
     val focusedStepID = Var[Option[Step.ID]](None)
     val focusUpdater = focusedStepID.updater[Step.ID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
-      initialPlan.savedState.steps,
+      initialPlan.steps,
       focusedStepID.signal,
       editingEnabled = Val(true),
       contextMenuController,
-      findStepsWithErrors(_, initialPlan.savedState.mode.initialPlayer, cache),
+      findStepsWithErrors(_, initialPlan.settings.mode.initialPlayer, cache),
       stepUpdates,
       focusUpdater
     )
 
-    val expMultiplierStrategyVar = Var(initialPlan.savedState.mode.initialPlayer.leagueStatus.expMultiplierStrategy)
+    val expMultiplierStrategyVar = Var(initialPlan.settings.mode.initialPlayer.leagueStatus.expMultiplierStrategy)
 
     val stateSignal =
       Signal
         .combine(forester.forestSignal, focusedStepID, expMultiplierStrategyVar.signal)
         .map { case (forestSignal, focusedStep, expMultiplierStrategy) =>
-          State(cache, forestSignal, focusedStep, initialPlan.savedState.mode, expMultiplierStrategy)
+          State(cache, forestSignal, focusedStep, initialPlan.settings.mode, expMultiplierStrategy)
         }
 
     val visualiser = Visualiser(
       stateSignal.map(_.playerAtFocusedStep),
-      initialPlan.savedState.mode,
+      initialPlan.settings.mode,
       cache,
       itemFuse,
       expMultiplierStrategyVar.writer,
       addEffectToFocus(focusedStepID.signal, forester),
       contextMenuController,
-      modalBus
+      modalController
     )
 
     val editorElement =
@@ -81,7 +80,7 @@ object PlanningPage {
           (step, state.plan.children(step.id), state.playerPreFocusedStep)
         ))
         .split((step, _, _) => step.id)((_, _, signal) =>
-          EditorElement(cache, itemFuse, signal, stepUpdates.writer, modalBus)
+          EditorElement(cache, itemFuse, signal, stepUpdates.writer, modalController)
         )
 
     L.div(
@@ -92,16 +91,11 @@ object PlanningPage {
         L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
       ),
       planElement.amend(L.cls(Styles.plan)),
-      HelpButton(modalBus).amend(L.cls(Styles.help)),
-      forester.forestSignal.changes.debounce(ms = 500).map(steps =>
-        SavedState.Named(initialPlan.name, SavedState(initialPlan.savedState.mode, steps))
-      ) --> Observer[SavedState.Named](plan => planStorage.savePlan(plan) match {
-        case Failure(error) =>
-          console.log(message = s"Failed to save plan [${error.getMessage}]")
-          toastBus.onNext(Toast(ToastHub.Type.Warning, 15.seconds, L.span("Failed to save plan")))
-        case Success(_) =>
-          ()
-      })
+      HelpButton(modalController).amend(L.cls(Styles.help)),
+      forester.updateStream --> subscription.save,
+      subscription.updates --> forester.process,
+      subscription.status.changes --> createStatusObserver(toastPublisher),
+      L.onUnmountCallback(_ => subscription.close())
     )
   }
 
@@ -154,18 +148,6 @@ object PlanningPage {
       )
   }
 
-  private def addEffectToFocus(
-    focusedStepSignal: Signal[Option[Step.ID]],
-    forester: Forester[Step.ID, Step]
-  ): Signal[Option[Observer[Effect]]] =
-    focusedStepSignal.map(_.map(focusedStepID =>
-      Observer[Effect](effect =>
-        forester.update(focusedStepID, step =>
-          step.copy(directEffects = step.directEffects + effect)
-        )
-      )
-    ))
-
   private def findStepsWithErrors(
     plan: Forest[Step.ID, Step],
     initialPlayer: Player,
@@ -181,4 +163,39 @@ object PlanningPage {
       }
     stepsWithErrors
   }
+
+  private def addEffectToFocus(
+    focusedStepSignal: Signal[Option[Step.ID]],
+    forester: Forester[Step.ID, Step]
+  ): Signal[Option[Observer[Effect]]] =
+    focusedStepSignal.map(_.map(focusedStepID =>
+      Observer[Effect](effect =>
+        forester.update(focusedStepID, step =>
+          step.deepCopy(directEffects = step.directEffects + effect)
+        )
+      )
+    ))
+
+  private def createStatusObserver(toastPublisher: ToastHub.Publisher): Observer[PlanSubscription.Status] =
+    Observer {
+      case PlanSubscription.Status.Busy =>
+        window.onbeforeunload = _.preventDefault()
+        
+      case PlanSubscription.Status.Closed | PlanSubscription.Status.Idle =>
+        window.onbeforeunload = _ => ()
+        
+      case PlanSubscription.Status.Failed(cause) =>
+        window.onbeforeunload = _ => ()
+        
+        val errorMessage = cause match {
+          case error: UpdateError => error.message
+          case error: ProtocolError => error.description
+        }
+        
+        toastPublisher.publish(
+          ToastHub.Type.Error,
+          1.minute,
+          s"Lost connection with the file system. Cannot save changes to the plan. Cause: [$errorMessage]"
+        )
+    }
 }

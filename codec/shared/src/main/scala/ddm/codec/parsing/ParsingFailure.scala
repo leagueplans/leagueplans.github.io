@@ -48,4 +48,6 @@ final case class ParsingFailure(
   position: Int,
   cause: ParsingFailure.Cause,
   bytes: Array[Byte]
+) extends RuntimeException(
+  s"Parsing failed at position $position because: [$cause], bytes: [${bytes.mkString(" ")}]"
 )

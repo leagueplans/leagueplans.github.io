@@ -74,6 +74,28 @@ final class ProductCodecTest extends CodecSpec {
             ))
           )
         }
+
+        "with map fields" - {
+          final case class A(i: Map[Int, Double], s: String)
+
+          given Encoder[A] = Encoder.derived
+          given Decoder[A] = Decoder.derived
+
+          "should defer to the underlying codec for the values" in testRoundTripEncoding(
+            A(Map(1 -> 34.2, 4 -> 231.0), "test"),
+            Encoding.Message(Map(
+              FieldNumber(0) -> List(Encoder.encode(1 -> 34.2), Encoder.encode(4 -> 231.0)),
+              FieldNumber(1) -> List(Encoder.encode("test"))
+            ))
+          )
+
+          "should ignore the field when there are no values" in testRoundTripEncoding(
+            A(Map.empty, "test"),
+            Encoding.Message(Map(
+              FieldNumber(1) -> List(Encoder.encode("test"))
+            ))
+          )
+        }
       }
     }
 

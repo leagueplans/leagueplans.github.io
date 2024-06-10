@@ -10,7 +10,7 @@ import ddm.ui.utils.airstream.ObservableOps.unzip
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.utils.laminar.LaminarOps.*
 import org.scalajs.dom.html.OList
-import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent, Event}
+import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -60,8 +60,8 @@ object DragSortableList {
     val icon = L.div(
       L.cls(Styles.icon),
       FontAwesome.icon(FreeSolid.faGripVertical),
-      L.onMouseOver --> mouseOver.writer.contramap[Event](_ => true),
-      L.onMouseLeave --> mouseOver.writer.contramap[Event](_ => false)
+      L.onMouseOver.mapToStrict(true) --> mouseOver,
+      L.onMouseLeave.mapToStrict(false) --> mouseOver
     )
     (icon, mouseOver.signal)
   }

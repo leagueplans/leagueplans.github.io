@@ -1,10 +1,8 @@
 package ddm.ui.taskimporter
 
-import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, enrichSource}
-import ddm.common.model.LeagueTask
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -32,8 +30,8 @@ object TaskImporter {
           Downloader(stateSignal).amend(L.cls(Styles.downloader))
         )
       },
-      decisionStream --> Observer[DecisionMaker.Decision](println),
-      inputTasksSignal --> Observer[(List[LeagueTask], List[LeagueTask])]((existingTasks, newTasks) =>
+      decisionStream --> (println(_)),
+      inputTasksSignal --> ((existingTasks, newTasks) =>
         TaskMerger.mergeExact(existingTasks, newTasks).foreach(decisionStream.writer.onNext)
       )
     )

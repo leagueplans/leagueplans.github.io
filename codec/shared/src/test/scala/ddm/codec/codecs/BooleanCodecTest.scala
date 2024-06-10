@@ -2,7 +2,6 @@ package ddm.codec.codecs
 
 import ddm.codec.decoding.{Decoder, DecodingFailure}
 import ddm.codec.{BinaryString, Encoding}
-import org.scalatest.Assertion
 
 final class BooleanCodecTest extends CodecSpec {
   "BooleanCodec" - {

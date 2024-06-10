@@ -54,6 +54,23 @@ final class TupleCodecTest extends CodecSpec {
           )
         }
 
+        "with map fields" - {
+          "should defer to the underlying codec for the values" in testRoundTripEncoding(
+            (Map(1 -> 34.2, 4 -> 231.0), "test"),
+            Encoding.Message(Map(
+              FieldNumber(0) -> List(Encoder.encode(1 -> 34.2), Encoder.encode(4 -> 231.0)),
+              FieldNumber(1) -> List(Encoder.encode("test"))
+            ))
+          )
+
+          "should ignore the field when there are no values" in testRoundTripEncoding(
+            (Map.empty[Int, Double], "test"),
+            Encoding.Message(Map(
+              FieldNumber(1) -> List(Encoder.encode("test"))
+            ))
+          )
+        }
+
         "with nested tuple fields" in testRoundTripEncoding(
           ((5, "test"), (5.6, "some")),
           Encoding.Message(Map(

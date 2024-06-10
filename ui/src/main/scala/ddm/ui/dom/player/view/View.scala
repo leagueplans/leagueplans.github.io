@@ -42,6 +42,6 @@ object View {
       ),
       L.`type`("button"),
       tab.name,
-      L.onClick.handledAs(tab) --> tabVar.writer
+      L.onClick.handledAs(tab) --> tabVar
     )
 }

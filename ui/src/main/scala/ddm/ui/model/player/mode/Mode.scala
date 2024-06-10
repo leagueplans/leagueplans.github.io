@@ -1,7 +1,8 @@
 package ddm.ui.model.player.mode
 
+import ddm.codec.decoding.{Decoder, DecodingFailure}
+import ddm.codec.encoding.Encoder
 import ddm.ui.model.player.Player
-import io.circe.{Decoder, Encoder}
 
 trait Mode {
   def name: String
@@ -36,6 +37,6 @@ object Mode {
       case "leagues-2" => Right(LeaguesII)
       case "leagues-3" => Right(LeaguesIII)
       case "leagues-4" => Right(LeaguesIV)
-      case other => Left(s"Could not decode unknown game mode: [$other]")
+      case other => Left(DecodingFailure(s"Could not decode unknown game mode: [$other]"))
     }
 }

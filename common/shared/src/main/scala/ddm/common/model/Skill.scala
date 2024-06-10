@@ -1,6 +1,8 @@
 package ddm.common.model
 
-import io.circe.{Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
+import io.circe.{Decoder as JsonDecoder, Encoder as JsonEncoder}
 
 import scala.util.Try
 
@@ -11,8 +13,11 @@ enum Skill {
 }
 
 object Skill {
-  given Encoder[Skill] = Encoder[String].contramap(_.toString)
-  given Decoder[Skill] = Decoder[String].emapTry(s =>
+  given JsonEncoder[Skill] = JsonEncoder[String].contramap(_.toString)
+  given JsonDecoder[Skill] = JsonDecoder[String].emapTry(s =>
     Try(Skill.valueOf(s))
   )
+
+  given Encoder[Skill] = Encoder.derived
+  given Decoder[Skill] = Decoder.derived
 }

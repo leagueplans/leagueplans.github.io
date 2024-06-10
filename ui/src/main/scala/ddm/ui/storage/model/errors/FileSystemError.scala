@@ -1,14 +1,15 @@
 package ddm.ui.storage.model.errors
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
-enum FileSystemError {
-  case Decoding(message: String)
-  case OutOfSpace
-  case Unexpected(message: String)
+enum FileSystemError(val message: String) {
+  case Decoding(override val message: String) extends FileSystemError(message)
+  case OutOfSpace extends FileSystemError("Not enough space left in the file system")
+  case Unexpected(override val message: String) extends FileSystemError(message)
 }
 
 object FileSystemError {
-  given Codec[FileSystemError] = deriveCodec[FileSystemError]
+  given Encoder[FileSystemError] = Encoder.derived
+  given Decoder[FileSystemError] = Decoder.derived
 }

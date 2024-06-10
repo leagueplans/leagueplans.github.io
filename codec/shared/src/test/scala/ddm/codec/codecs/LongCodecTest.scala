@@ -2,14 +2,13 @@ package ddm.codec.codecs
 
 import ddm.codec.{BinaryString, Encoding}
 import ddm.codec.decoding.{Decoder, DecodingFailure}
-import org.scalatest.Assertion
 
 final class LongCodecTest extends CodecSpec {
   "LongCodec" - {
     "encoding values to and decoding values from an expected encoding" - {
       "0" in testRoundTripEncoding(0L, Encoding.Varint(BinaryString.unsafe("0")))
 
-      // The long encoder should use zigzag encoding
+      // The default long encoder should use zigzag encoding
       "1" in testRoundTripEncoding(1L, Encoding.Varint(BinaryString.unsafe("10")))
       "2" in testRoundTripEncoding(2L, Encoding.Varint(BinaryString.unsafe("100")))
       "Long.MaxValue" in testRoundTripEncoding(

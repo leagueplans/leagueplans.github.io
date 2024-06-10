@@ -1,6 +1,7 @@
 package ddm.ui.storage.model
 
-import io.circe.{Encoder, Decoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 opaque type LamportTimestamp <: Int = Int
 
@@ -12,6 +13,6 @@ object LamportTimestamp {
       self + 1
   }
 
-  given Encoder[LamportTimestamp] = Encoder.encodeInt
-  given Decoder[LamportTimestamp] = Decoder.decodeInt
+  given Encoder[LamportTimestamp] = Encoder.unsignedIntEncoder
+  given Decoder[LamportTimestamp] = Decoder.unsignedIntDecoder
 }

@@ -1,18 +1,17 @@
 package ddm.ui.model.plan
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.player.mode.Mode
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Decoder, Encoder}
 
 object Plan {
-  given Codec[Plan] = {
-    given Codec[Step] = Step.comprehensiveCodec
-    deriveCodec[Plan]
-  }
+  given Encoder[Plan] = Encoder.derived
+  given Decoder[Plan] = Decoder.derived
 
   object Settings {
-    given Codec[Settings] = deriveCodec[Settings]
+    given Encoder[Settings] = Encoder.derived
+    given Decoder[Settings] = Decoder.derived
   }
 
   final case class Settings(mode: Mode)

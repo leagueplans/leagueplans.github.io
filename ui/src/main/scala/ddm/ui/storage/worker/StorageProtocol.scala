@@ -1,15 +1,13 @@
 package ddm.ui.storage.worker
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Plan, Step}
 import ddm.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, UpdateError}
-import ddm.ui.storage.model.{LamportTimestamp, PlanID, PlanMetadata}
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Decoder, Encoder}
+import ddm.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata}
 
 object StorageProtocol {
-  //TODO Importing a plan with an older schema version?
-  //TODO Exporting a plan - support arbitrary JSON to allow fixing schema mistakes
   object Inbound {
     sealed trait ToCoordinator
     sealed trait ToWorker
@@ -18,12 +16,14 @@ object StorageProtocol {
 
     final case class Create(
       requestID: String,
-      name: String,
+      metadata: PlanMetadata,
       plan: Plan
     ) extends ToCoordinator with ToWorker
     
     final case class Read(planID: PlanID) extends ToWorker
     
+    final case class Fetch(planID: PlanID) extends ToCoordinator with ToWorker
+
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
@@ -37,11 +37,13 @@ object StorageProtocol {
     final case class Unsubscribe(planID: PlanID) extends ToCoordinator
 
     object ToCoordinator {
-      given Codec[ToCoordinator] = deriveCodec[ToCoordinator]
+      given Encoder[ToCoordinator] = Encoder.derived
+      given Decoder[ToCoordinator] = Decoder.derived
     }
 
     object ToWorker {
-      given Codec[ToWorker] = deriveCodec[ToWorker]
+      given Encoder[ToWorker] = Encoder.derived
+      given Decoder[ToWorker] = Decoder.derived
     }
   }
 
@@ -54,6 +56,9 @@ object StorageProtocol {
  
     final case class CreateSucceeded(requestID: String, planID: PlanID) extends ToClient with ToCoordinator
     final case class CreateFailed(requestID: String, reason: FileSystemError) extends ToClient with ToCoordinator
+
+    final case class FetchSucceeded(planID: PlanID, plan: PlanExport) extends ToClient with ToCoordinator
+    final case class FetchFailed(planID: PlanID, reason: FileSystemError) extends ToClient with ToCoordinator
  
     final case class Subscription(planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
     final case class SubscriptionFailed(planID: PlanID, reason: FileSystemError) extends ToClient
@@ -86,11 +91,13 @@ object StorageProtocol {
     final case class ProtocolFailure(reason: ProtocolError) extends ToClient
 
     object ToClient {
-      given Codec[ToClient] = deriveCodec[ToClient]
+      given Encoder[ToClient] = Encoder.derived
+      given Decoder[ToClient] = Decoder.derived
     }
 
     object ToCoordinator {
-      given Codec[ToCoordinator] = deriveCodec[ToCoordinator]
+      given Encoder[ToCoordinator] = Encoder.derived
+      given Decoder[ToCoordinator] = Decoder.derived
     }
   }
 }
