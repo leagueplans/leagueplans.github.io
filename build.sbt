@@ -49,8 +49,8 @@ lazy val wikiScraper =
       libraryDependencies ++= List(
         "ch.qos.logback" % "logback-classic" % "1.4.14",
         "org.log4s" %% "log4s" % "1.10.0",
-        "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-        "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
+        ("com.typesafe.akka" %% "akka-actor-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
+        ("com.typesafe.akka" %% "akka-stream-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
         ("com.typesafe.akka" %% "akka-http" % "10.2.9").cross(CrossVersion.for3Use2_13),
         "org.parboiled" %% "parboiled" % "2.5.1",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,

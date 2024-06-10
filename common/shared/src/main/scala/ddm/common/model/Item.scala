@@ -7,7 +7,17 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder as JsonDecoder, Encoder as JsonEncoder}
 
 object Item {
-  final case class ID(raw: String) extends AnyVal
+  opaque type ID <: Int = Int
+  
+  object ID {
+    inline def apply(id: Int): ID = id
+    
+    given Ordering[ID] = Ordering.Int
+    given JsonEncoder[ID] = JsonEncoder.encodeInt
+    given JsonDecoder[ID] = JsonDecoder.decodeInt
+    given Encoder[ID] = Encoder.unsignedIntEncoder
+    given Decoder[ID] = Decoder.unsignedIntDecoder
+  }
 
   object Image {
     final case class Bin(floor: Int) extends AnyVal
@@ -30,12 +40,6 @@ object Item {
     given Codec[No.type] = deriveCodec
     given Codec[Bankable] = deriveCodec
   }
-
-  given Ordering[ID] = Ordering.by(_.raw)
-  given JsonEncoder[ID] = JsonEncoder[String].contramap(_.raw)
-  given JsonDecoder[ID] = JsonDecoder[String].map(ID.apply)
-  given Encoder[ID] = Encoder.stringEncoder.contramap(_.raw)
-  given Decoder[ID] = Decoder.stringDecoder.map(ID.apply)
 
   given Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
   given Codec[Item] = deriveCodec

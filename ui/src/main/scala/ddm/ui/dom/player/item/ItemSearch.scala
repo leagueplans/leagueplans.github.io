@@ -43,7 +43,7 @@ object ItemSearch {
   ): (L.Modifier[L.Element], Signal[Option[Item]]) =
     RadioGroup[Item](
       s"$id-radios",
-      options.map(_.map(item => RadioGroup.Opt(item, item.id.raw))),
+      options.map(_.map(item => RadioGroup.Opt(item, item.id.toString))),
       render = (item, checked, radio, label) =>
         StylisedRadio(toItemElement(item, noteSignal, quantitySignal), checked, radio, label)
     )
@@ -61,7 +61,7 @@ object ItemSearch {
 
   private def tooltip(item: Item): L.Modifier[L.HtmlElement] =
     Tooltip(KeyValuePairs(
-      L.span("ID prefix:") -> L.span(item.id.raw.take(8)),
+      L.span("ID:") -> L.span(item.id),
       L.span("Examine:") -> L.span(item.examine)
     ))
 }

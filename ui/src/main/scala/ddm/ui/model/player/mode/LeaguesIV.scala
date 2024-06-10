@@ -20,7 +20,7 @@ object LeaguesIV extends Mode.League {
       ),
       depositories = MainGame.initialPlayer.depositories + (
         Depository.Kind.Inventory -> Depository(
-          MainGame.initialInventory + ((Item.ID("77ce3f14-9a1c-46c1-8ec1-b11440095206"), false) -> 1), // Dramen staff
+          MainGame.initialInventory + ((Item.ID(3737), false) -> 1), // Dramen staff
           Depository.Kind.Inventory
         )
       ),
