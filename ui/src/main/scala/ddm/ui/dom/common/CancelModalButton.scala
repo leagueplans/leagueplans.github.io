@@ -1,14 +1,13 @@
 package ddm.ui.dom.common
 
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handledAs
 
 object CancelModalButton {
-  def apply(modalBus: WriteBus[Option[L.Element]]): L.Button =
+  def apply(modalController: Modal.Controller): L.Button =
     L.button(
       L.`type`("button"),
       "Cancel",
-      L.onClick.handledAs(None) --> modalBus
+      L.onClick.handledAs(None) --> modalController
     )
 }

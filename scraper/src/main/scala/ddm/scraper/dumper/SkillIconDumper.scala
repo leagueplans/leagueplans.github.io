@@ -7,6 +7,5 @@ import scala.concurrent.Future
 
 object SkillIconDumper {
   def dump(imagesRootTarget: Path): Sink[(String, Array[Byte]), Future[?]] =
-    imageSink(imagesRootTarget, targetWidth = 25, targetHeight = 25)
-      .contramap[(String, Array[Byte])]((name, data) => Path.of(name) -> data)
+    imageSink(imagesRootTarget).contramap((name, data) => Path.of(name) -> data)
 }

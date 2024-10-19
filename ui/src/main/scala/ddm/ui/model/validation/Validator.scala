@@ -8,12 +8,12 @@ import ddm.ui.model.player.{Cache, Player}
 
 import scala.math.Ordering.Implicits.infixOrderingOps
 
-sealed trait Validator extends ((Player, Cache) => Either[String, Unit])
+sealed trait Validator extends ((Player, Option[Mode.League], Cache) => Either[String, Unit])
 
 object Validator {
   def depositorySize(kind: Depository.Kind): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         val size = cache.itemise(player.get(kind)).map((_, stacks) => stacks.size).sum
         Either.cond(
           size <= kind.capacity,
@@ -25,7 +25,7 @@ object Validator {
 
   def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         val heldCount = player.get(kind).contents.getOrElse((itemID, noted), 0)
         Either.cond(
           heldCount >= requiredCount,
@@ -37,7 +37,7 @@ object Validator {
 
   def skillUnlocked(skill: Skill): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] =
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
         Either.cond(
           player.leagueStatus.skillsUnlocked.contains(skill),
           right = (),
@@ -47,7 +47,7 @@ object Validator {
 
   def hasLevel(skill: Skill, level: Level): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] =
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
         Either.cond(
           Level.of(player.stats(skill)) >= level,
           right = (),
@@ -57,7 +57,7 @@ object Validator {
 
   def questIncomplete(questID: Int): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] =
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
         Either.cond(
           !player.completedQuests.contains(questID),
           right = (),
@@ -67,7 +67,7 @@ object Validator {
 
   def diaryTaskIncomplete(taskID: Int): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         Either.cond(
           !player.completedDiaryTasks.contains(taskID),
           right = (),
@@ -78,7 +78,7 @@ object Validator {
 
   def leagueTaskIncomplete(taskID: Int): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] =
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
         Either.cond(
           !player.leagueStatus.completedTasks.contains(taskID),
           right = (),
@@ -88,19 +88,19 @@ object Validator {
 
   def leagueTaskIsPartOfLeague(taskID: Int): Validator =
     new Validator {
-      def apply(player: Player, cache: Cache): Either[String, Unit] = {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         val task = cache.leagueTasks(taskID)
-        val taskIsPartOfLeague = player.mode match {
-          case LeaguesI => task.leagues1Props.nonEmpty
-          case LeaguesII => task.leagues2Props.nonEmpty
-          case LeaguesIII => task.leagues3Props.nonEmpty
-          case LeaguesIV => task.leagues4Props.nonEmpty
+        val taskIsPartOfLeague = league match {
+          case Some(LeaguesI) => task.leagues1Props.nonEmpty
+          case Some(LeaguesII) => task.leagues2Props.nonEmpty
+          case Some(LeaguesIII) => task.leagues3Props.nonEmpty
+          case Some(LeaguesIV) => task.leagues4Props.nonEmpty
           case _ => false
         }
         Either.cond(
           taskIsPartOfLeague,
           right = (),
-          left = s"The task \"${task.description}\" is not available in ${player.mode.name}"
+          left = s"The task \"${task.description}\" is not available in your configured game mode"
         )
       }
     }

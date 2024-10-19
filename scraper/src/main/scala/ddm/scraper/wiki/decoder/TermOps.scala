@@ -4,7 +4,7 @@ import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.*
 
 import scala.annotation.tailrec
-import scala.reflect.ClassTag
+import scala.reflect.TypeTest
 
 object TermOps {
   extension (self: Template.Object) {
@@ -25,12 +25,12 @@ object TermOps {
   }
 
   extension (self: List[Term]) {
-    def as[T <: Term : ClassTag]: DecoderResult[T] =
+    def as[T <: Term](using TypeTest[Term, T]): DecoderResult[T] =
       asOpt[T].flatMap(
         _.toRight(left = DecoderException("No terms defined"))
       )
 
-    def asOpt[T <: Term : ClassTag]: DecoderResult[Option[T]] =
+    def asOpt[T <: Term](using TypeTest[Term, T]): DecoderResult[Option[T]] =
       self match {
         case Nil => Right(None)
         case (t: T) :: Nil => Right(Some(t))

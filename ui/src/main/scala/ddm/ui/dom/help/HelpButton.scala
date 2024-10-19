@@ -1,7 +1,7 @@
 package ddm.ui.dom.help
 
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, textToTextNode}
+import ddm.ui.dom.common.Modal
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.utils.laminar.LaminarOps.*
@@ -10,12 +10,12 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object HelpButton {
-  def apply(modalBus: WriteBus[Option[L.Element]]): L.Button = {
+  def apply(modalController: Modal.Controller): L.Button = {
     L.button(
       L.cls(Styles.button),
       L.`type`("button"),
       FontAwesome.icon(FreeRegular.faCircleQuestion).amend(L.svg.cls(Styles.icon)),
-      L.onClick.handledAs(Some(modalContents())) --> modalBus
+      L.onClick.handledAs(Some(modalContents())) --> modalController
     )
   }
 

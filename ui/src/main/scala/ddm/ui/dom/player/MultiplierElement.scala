@@ -1,13 +1,9 @@
 package ddm.ui.dom.player
 
-import cats.data.NonEmptyList
-import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, optionToModifier, textToTextNode}
+import com.raquo.airstream.core.Signal
+import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.form.Select
-import ddm.ui.model.player.Player
-import ddm.ui.model.player.league.ExpMultiplierStrategy
-import ddm.ui.model.player.mode.{LeaguesIV, Mode}
+import ddm.ui.model.plan.ExpMultiplierStrategy
 import org.scalajs.dom.HTMLParagraphElement
 
 import scala.scalajs.js
@@ -15,30 +11,14 @@ import scala.scalajs.js.annotation.JSImport
 
 object MultiplierElement {
   def apply(
-    playerSignal: Signal[Player],
-    strategyObserver: Observer[ExpMultiplierStrategy]
+    strategySignal: Signal[ExpMultiplierStrategy],
+    leaguePointsSignal: Signal[Int]
   ): L.HtmlElement = {
-    val contentSignal = playerSignal.splitOne(_.mode) {
-      case (LeaguesIV, _, signal) =>
-        val (strategySelect, strategyLabel, strategySignal) = createStrategySelect()
-        L.div(
-          strategyLabel,
-          strategySelect,
-          L.child <--
-            Signal
-              .combine(strategySignal, signal.map(_.leagueStatus.leaguePoints))
-              .map((strategy, points) => toContent(strategy, points)),
-          strategySignal --> strategyObserver
-        )
-
-      case (mode, _, signal) =>
-        L.div(
-          L.child <-- signal
-            .map(_.leagueStatus.leaguePoints)
-            .distinct
-            .map(toContent(mode.initialPlayer.leagueStatus.expMultiplierStrategy, _))
-        )
-    }
+    val contentSignal =
+      Signal
+        .combine(strategySignal, leaguePointsSignal)
+        .distinct
+        .map(toContent)
 
     L.div(
       L.cls(Styles.panel, PanelStyles.panel),
@@ -57,9 +37,6 @@ object MultiplierElement {
 
     val multiplier: String = js.native
     val infoText: String = js.native
-
-    val strategySelectLabel: String = js.native
-    val strategySelect: String = js.native
   }
 
   @js.native @JSImport("/styles/shared/player/panel.module.css", JSImport.Default)
@@ -68,28 +45,11 @@ object MultiplierElement {
     val header: String = js.native
   }
 
-  private def createStrategySelect(): (L.Select, L.Label, Signal[ExpMultiplierStrategy]) = {
-    val (select, label, signal) =
-      Select(
-        id = "multiplier-strategy-select",
-        NonEmptyList.of(
-          LeaguesIV,
-          Mode.League.all.filterNot(_ == LeaguesIV)*
-        ).map(league => Select.Opt(league.initialPlayer.leagueStatus.expMultiplierStrategy, league.name))
-      )
-
-    val annotatedLabel = label.amend(
-      L.cls(Styles.infoText, Styles.strategySelectLabel),
-      "You can choose a league as a template:"
-    )
-
-    (select.amend(L.cls(Styles.strategySelect)), annotatedLabel, signal)
-  }
-
   private def toContent(strategy: ExpMultiplierStrategy, leaguePoints: Int): L.HtmlElement =
     strategy match {
       case ExpMultiplierStrategy.Fixed(value) =>
         multiplier(value)
+
       case ems: ExpMultiplierStrategy.LeaguePointBased =>
         val maybeNextThreshold = ems.thresholds.find((pointThreshold, _) => pointThreshold > leaguePoints)
 

@@ -1,10 +1,10 @@
 package ddm.ui.model.plan
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.skill.Level
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
 
 enum Requirement {
   case SkillLevel(skill: Skill, level: Level)
@@ -14,5 +14,6 @@ enum Requirement {
 }
 
 object Requirement {
-  given Codec[Requirement] = deriveCodec[Requirement]
+  given Encoder[Requirement] = Encoder.derived
+  given Decoder[Requirement] = Decoder.derived
 }

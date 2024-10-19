@@ -1,7 +1,6 @@
 package ddm.ui.dom.player.view
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.L
 import ddm.common.model.Item
 import ddm.ui.dom.common.*
@@ -10,9 +9,8 @@ import ddm.ui.dom.player.item.bank.BankElement
 import ddm.ui.dom.player.item.equipment.EquipmentElement
 import ddm.ui.dom.player.item.inventory.InventoryElement
 import ddm.ui.dom.player.stats.StatsElement
-import ddm.ui.model.plan.Effect
+import ddm.ui.model.plan.{Effect, ExpMultiplierStrategy}
 import ddm.ui.model.player.item.Depository
-import ddm.ui.model.player.league.ExpMultiplierStrategy
 import ddm.ui.model.player.{Cache, Player}
 import ddm.ui.wrappers.fusejs.Fuse
 
@@ -22,12 +20,12 @@ import scala.scalajs.js.annotation.JSImport
 object CharacterTab {
   def apply(
     playerSignal: Signal[Player],
+    expMultiplierStrategySignal: Signal[ExpMultiplierStrategy],
     cache: Cache,
     itemFuse: Fuse[Item],
-    expMultiplierStrategyObserver: Observer[ExpMultiplierStrategy],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
@@ -43,21 +41,24 @@ object CharacterTab {
         itemFuse,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       ).amend(L.cls(Styles.inventoryPanel)),
       BankElement(
         playerSignal.map(_.get(Depository.Kind.Bank)),
         cache,
         effectObserverSignal,
         contextMenuController,
-        modalBus
+        modalController
       ).amend(L.cls(Styles.bankPanel)),
       StatsElement.from(
         playerSignal,
         effectObserverSignal,
         contextMenuController
       ).amend(L.cls(Styles.statsPanel)),
-      MultiplierElement(playerSignal, expMultiplierStrategyObserver).amend(L.cls(Styles.multiplierPanel))
+      MultiplierElement(
+        expMultiplierStrategySignal,
+        playerSignal.map(_.leagueStatus.leaguePoints),
+      ).amend(L.cls(Styles.multiplierPanel))
     )
 
   @js.native @JSImport("/styles/player/view/characterTab.module.css", JSImport.Default)

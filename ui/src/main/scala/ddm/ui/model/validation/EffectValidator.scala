@@ -3,29 +3,45 @@ package ddm.ui.model.validation
 import ddm.ui.model.EffectResolver
 import ddm.ui.model.plan.Effect.*
 import ddm.ui.model.plan.{Effect, EffectList}
+import ddm.ui.model.player.mode.Mode
 import ddm.ui.model.player.{Cache, Player}
 
 sealed trait EffectValidator[E <: Effect] {
-  def validate(effect: E)(player: Player, cache: Cache): (List[String], Player)
+  def validate(effect: E)(
+    player: Player,
+    resolver: EffectResolver,
+    league: Option[Mode.League],
+    cache: Cache
+  ): (List[String], Player)
 }
 
 object EffectValidator extends EffectValidator[Effect] {
-  def validate(effectList: EffectList)(player: Player, cache: Cache): (List[String], Player) =
+  def validate(effectList: EffectList)(
+    player: Player,
+    resolver: EffectResolver,
+    league: Option[Mode.League],
+    cache: Cache
+  ): (List[String], Player) =
     effectList.underlying.foldLeft((List.empty[String], player)) {
       case ((errorAcc, preEffectPlayer), effect) =>
-        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, cache)
+        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, resolver, league, cache)
         (errorAcc ++ errors, postEffectPlayer)
     }
 
-  def validate(effect: Effect)(player: Player, cache: Cache): (List[String], Player) =
+  def validate(effect: Effect)(
+    player: Player,
+    resolver: EffectResolver,
+    league: Option[Mode.League],
+    cache: Cache
+  ): (List[String], Player) =
     effect match {
-      case e: GainExp => gainExpValidator.validate(e)(player, cache)
-      case e: AddItem => addItemValidator.validate(e)(player, cache)
-      case e: MoveItem => moveItemValidator.validate(e)(player, cache)
-      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, cache)
-      case e: CompleteQuest => completeQuestValidator.validate(e)(player, cache)
-      case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, cache)
-      case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(player, cache)
+      case e: GainExp => gainExpValidator.validate(e)(player, resolver, league, cache)
+      case e: AddItem => addItemValidator.validate(e)(player, resolver, league, cache)
+      case e: MoveItem => moveItemValidator.validate(e)(player, resolver, league, cache)
+      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, resolver, league, cache)
+      case e: CompleteQuest => completeQuestValidator.validate(e)(player, resolver, league, cache)
+      case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, resolver, league, cache)
+      case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(player, resolver, league, cache)
     }
 
   private val gainExpValidator: EffectValidator[GainExp] =
@@ -75,18 +91,27 @@ object EffectValidator extends EffectValidator[Effect] {
     post: E => List[Validator]
   ): EffectValidator[E] =
     new EffectValidator[E] {
-      def validate(effect: E)(player: Player, cache: Cache): (List[String], Player) = {
-        val postEffectPlayer = EffectResolver.resolve(player, cache, effect)
+      def validate(effect: E)(
+        player: Player,
+        resolver: EffectResolver,
+        league: Option[Mode.League],
+        cache: Cache
+      ): (List[String], Player) = {
+        val postEffectPlayer = resolver.resolve(player, effect)
         val errors =
-          collectErrors(pre(effect))(player, cache) ++
-            collectErrors(post(effect))(postEffectPlayer, cache)
+          collectErrors(pre(effect))(player, league, cache) ++
+            collectErrors(post(effect))(postEffectPlayer, league, cache)
 
         (errors, postEffectPlayer)
       }
 
-      private def collectErrors(validators: List[Validator])(player: Player, cache: Cache): List[String] =
+      private def collectErrors(validators: List[Validator])(
+        player: Player,
+        league: Option[Mode.League],
+        cache: Cache
+      ): List[String] =
         validators
-          .map(_.apply(player, cache))
+          .map(_.apply(player, league, cache))
           .collect { case Left(error) => error }
     }
 }

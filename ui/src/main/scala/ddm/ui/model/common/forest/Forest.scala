@@ -1,15 +1,25 @@
 package ddm.ui.model.common.forest
 
 import cats.Monoid
-import ddm.ui.utils.HasID
-import io.circe.{Codec, Decoder, Encoder}
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 import scala.annotation.tailrec
-import scala.util.chaining.scalaUtilChainingOps
 
 object Forest {
-  def empty[ID, T]: Forest[ID, T] =
-    Forest(Map.empty, Map.empty, Map.empty, List.empty)
+  def from[ID, T](
+    nodes: Map[ID, T],
+    parentsToChildren: Map[ID, List[ID]]
+  ): Forest[ID, T] = {
+    val toParent = parentsToChildren.flatMap((parent, children) =>
+      children.map(_ -> parent)
+    )
+    val toChildren = nodes.map((id, _) => id -> parentsToChildren.getOrElse(id, List.empty))
+    val roots = nodes.collect {
+      case (id, _) if !toParent.contains(id) => id
+    }
+    new Forest(nodes, toParent, toChildren, roots.toList)
+  }
 
   enum Update[+ID, +T] {
     case AddNode(id: ID, data: T)
@@ -17,52 +27,46 @@ object Forest {
 
     case AddLink(child: ID, parent: ID)
     case RemoveLink(child: ID, parent: ID)
-    case ChangeParent(childID: ID, oldParentID: ID, newParentID: ID)
+    case ChangeParent(child: ID, oldParent: ID, newParent: ID)
 
     case UpdateData(id: ID, data: T)
     case Reorder(children: List[ID], parent: ID)
   }
   
-  given codec[T : Encoder : Decoder](using hasID: HasID[T]): Codec[Forest[hasID.ID, T]] =
-    Codec.from(
-      Decoder[List[Tree[T]]].map(fromTrees),
-      Encoder[List[Tree[T]]].contramap(toTrees)
+  object Update {
+    given [ID : Encoder, T : Encoder]: Encoder[Update[ID, T]] = Encoder.derived
+    given [ID : Decoder, T : Decoder]: Decoder[Update[ID, T]] = Decoder.derived
+  }
+
+  given [ID : Encoder, T : Encoder]: Encoder[Forest[ID, T]] =
+    Encoder[(Map[ID, T], Map[ID, List[ID]])].contramap(forest =>
+      (forest.nodes, forest.toChildren)
     )
 
-  def fromTrees[T](trees: List[Tree[T]])(using hasID: HasID[T]): Forest[hasID.ID, T] =
-    fromTreesHelper(Forest.empty, trees.map(None -> _))
-
-  @tailrec
-  private def fromTreesHelper[ID, T](
-    forest: Forest[ID, T],
-    remaining: List[(Option[ID], Tree[T])]
-  )(using HasID.Aux[T, ID]): Forest[ID, T] =
-    remaining match {
-      case Nil => forest
-      case (maybeParent, child) :: tail =>
-        val updatedForest =
-          ForestInterpreter(forest)
-            .addOption(child.data, maybeParent)
-            .pipe(ForestResolver.resolve(forest, _))
-
-        val childID = Some(child.data.id)
-        val descendants = child.children.map(grandchild => childID -> grandchild)
-        fromTreesHelper(updatedForest, tail ++ descendants)
-    }
-
-  private def toTrees[ID, T](forest: Forest[ID, T]): List[Tree[T]] =
-    forest.roots.map(toTree(_, forest))
-
-  private def toTree[ID, T](id: ID, forest: Forest[ID, T]): Tree[T] =
-    Tree(forest.nodes(id), forest.toChildren(id).map(toTree(_, forest)))
+  given [ID : Decoder, T : Decoder]: Decoder[Forest[ID, T]] =
+    Decoder[(Map[ID, T], Map[ID, List[ID]])].map((nodes, toChildren) =>
+      from(nodes, toChildren)
+    )
 }
 
 final class Forest[ID, T] private[forest](
   val nodes: Map[ID, T],
   private[forest] val toParent: Map[ID, ID],
-  private[forest] val toChildren: Map[ID, List[ID]],
+  val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
+  override def equals(obj: Any): Boolean =
+    obj match {
+      case forest: Forest[?, ?] => this.asProduct == forest.asProduct
+      case _ => false
+    }
+
+  override def hashCode(): Int =
+    asProduct.hashCode()
+
+  private def asProduct: Product =
+    (nodes, toParent, toChildren, roots)
+
   def map[S](f: (ID, T) => S): Forest[ID, S] =
     Forest(
       nodes.map((id, t) => id -> f(id, t)),

@@ -1,11 +1,10 @@
 package ddm.ui.dom.player.item.bank
 
 import com.raquo.airstream.core.Observer
-import com.raquo.airstream.eventbus.WriteBus
 import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{ContextMenu, FormOpener}
+import ddm.ui.dom.common.{ContextMenu, FormOpener, Modal}
 import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.MoveItem
@@ -19,12 +18,12 @@ object BankItemContextMenu {
     stackSize: Int,
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): ReactiveHtmlElement[Div] =
     L.div(
-      withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modalBus),
+      withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modalController),
       Option.when(item.noteable)(
-        withdrawButton(item, stackSize, note = true, effectObserver, menuCloser, modalBus)
+        withdrawButton(item, stackSize, note = true, effectObserver, menuCloser, modalController)
       )
     )
 
@@ -34,11 +33,11 @@ object BankItemContextMenu {
     note: Boolean,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): L.Node = {
     val observer =
       if (stackSize > 1)
-        toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modalBus)
+        toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modalController)
       else
         effectObserver.contramap[Unit](_ =>
           MoveItem(
@@ -63,7 +62,7 @@ object BankItemContextMenu {
     heldQuantity: Int,
     note: Boolean,
     effectObserver: Observer[MoveItem],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): Observer[FormOpener.Command] = {
     val (form, formSubmissions) = MoveItemForm(
       Stack(item, noted = false),
@@ -73,7 +72,7 @@ object BankItemContextMenu {
       note
     )
     FormOpener(
-      modalBus,
+      modalController,
       effectObserver,
       () => (form, formSubmissions.collect { case Some(effect) => effect })
     )

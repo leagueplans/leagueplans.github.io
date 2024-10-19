@@ -3,7 +3,7 @@ on: push
 
 jobs:
   update-docs:
-    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout project
@@ -16,6 +16,8 @@ jobs:
         base: ${{ github.ref }}
         filters: |
           sources:
+          - 'codec/js/src/main/**'
+          - 'codec/shared/src/main/**'
           - 'common/js/src/main/**'
           - 'common/shared/src/main/**'
           - 'ui/src/main/**'
@@ -39,7 +41,7 @@ jobs:
       id: bundle-js
       if: steps.identify-changes.outputs.sources == 'true'
       run: |
-        sbt ui/test
+        sbt codecJS/test commonJS/test ui/test
         cd ui
         npm install
         npm run build

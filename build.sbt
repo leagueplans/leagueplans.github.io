@@ -2,23 +2,32 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.4.0"
+ThisBuild / scalaVersion := "3.5.0"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
   "-explain-types",
   "-feature",
   "-unchecked",
+  "-Wsafe-init",
   "-Wunused:all",
-  "-Wvalue-discard",
-  "-Ysafe-init"
+  "-Wvalue-discard"
 )
 
 lazy val root =
   (project in file("."))
-    .aggregate(common.jvm, common.js, wikiScraper, ui)
+    .aggregate(codec.jvm, codec.js, common.jvm, common.js, wikiScraper, ui)
 
 val circeVersion = "0.14.6"
+
+lazy val codec =
+  crossProject(JVMPlatform, JSPlatform).in(file("codec"))
+    .settings(
+      libraryDependencies ++= List(
+        "org.scalatest" %%% "scalatest" % "3.2.18" % "test",
+        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.18.0" % "test"
+      )
+    )
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -29,6 +38,7 @@ lazy val common =
         "io.circe" %%% "circe-parser" % circeVersion
       )
     )
+    .dependsOn(codec % "compile->compile;test->test")
 
 val akkaVersion = "2.6.18"
 val scrimageVersion = "4.1.1"
@@ -39,8 +49,8 @@ lazy val wikiScraper =
       libraryDependencies ++= List(
         "ch.qos.logback" % "logback-classic" % "1.4.14",
         "org.log4s" %% "log4s" % "1.10.0",
-        "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-        "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
+        ("com.typesafe.akka" %% "akka-actor-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
+        ("com.typesafe.akka" %% "akka-stream-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
         ("com.typesafe.akka" %% "akka-http" % "10.2.9").cross(CrossVersion.for3Use2_13),
         "org.parboiled" %% "parboiled" % "2.5.1",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
@@ -83,4 +93,7 @@ lazy val ui =
         (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
       }
     )
-    .dependsOn(common.js)
+    .dependsOn(
+      common.js,
+      codec.js % "test->test"
+    )

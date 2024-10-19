@@ -1,6 +1,6 @@
 package ddm.ui.dom.common
 
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -17,16 +17,16 @@ object  EditableParagraph {
         initial,
         L.contentEditable(true),
         L.inContext(ctx => List(
-          L.onInput.handledAs(ctx.ref.innerText) --> content.writer,
+          L.onInput.handledAs(ctx.ref.innerText) --> content,
           // Kind of hacky... but I want something to trigger blurring and the enter
           // key seems the best choice
-          L.eventProp[InputEvent]("beforeinput").ifUnhandled --> Observer[InputEvent](event =>
+          L.eventProp[InputEvent]("beforeinput").ifUnhandled --> (event =>
             if (event.inputType == InputType.insertParagraph && event.target == ctx.ref) {
               event.preventDefault()
               ctx.ref.blur()
             }
           ),
-          L.onKeyDown.ifUnhandledF(_.filter(_.keyCode == KeyCode.Escape)) --> Observer[KeyboardEvent] { event =>
+          L.onKeyDown.ifUnhandledF(_.filter(_.keyCode == KeyCode.Escape)) --> { event =>
             event.preventDefault()
             ctx.ref.blur()
           }

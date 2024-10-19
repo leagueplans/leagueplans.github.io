@@ -41,8 +41,7 @@ object DiaryTaskElement {
     val completed: String = js.native
   }
 
-  @js.native
-  @JSImport("/styles/player/diary/diaryTaskElement.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/player/diary/diaryTaskElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val element: String = js.native
     val icon: String = js.native

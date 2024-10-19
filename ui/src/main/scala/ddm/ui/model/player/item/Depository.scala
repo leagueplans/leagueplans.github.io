@@ -1,7 +1,8 @@
 package ddm.ui.model.player.item
 
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 import ddm.common.model.{EquipmentType, Item}
-import io.circe.{Decoder, Encoder}
 
 object Depository {
   def empty(kind: Kind): Depository =
@@ -14,21 +15,8 @@ object Depository {
   }
 
   object Kind {
-    val kinds: Set[Kind] = 
-      EquipmentSlot.values.toSet ++ Set[Kind](Inventory, Bank)
-
-    given Encoder[Kind] =
-      Encoder[String].contramap(_.name)
-
-    given Decoder[Kind] = {
-      val nameToKind = kinds.map(k => k.name -> k).toMap
-
-      Decoder[String].emap(name =>
-        nameToKind.get(name).toRight(
-          s"Unexpected depository: $name"
-        )
-      )
-    }
+    given Encoder[Kind] = Encoder.derived
+    given Decoder[Kind] = Decoder.derived
 
     given Ordering[Kind] = {
       case (Inventory, Inventory) => 0
@@ -88,6 +76,9 @@ object Depository {
         }
     }
   }
+
+  given Encoder[Depository] = Encoder.derived
+  given Decoder[Depository] = Decoder.derived
 }
 
 /** @param contents

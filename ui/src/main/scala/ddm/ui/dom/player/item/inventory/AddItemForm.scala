@@ -1,11 +1,10 @@
 package ddm.ui.dom.player.item.inventory
 
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.airstream.eventbus.WriteBus
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode}
 import ddm.common.model.Item
 import ddm.ui.dom.common.form.{CheckboxInput, Form, NumberInput}
-import ddm.ui.dom.common.{CancelModalButton, Tooltip, InfoIcon}
+import ddm.ui.dom.common.{CancelModalButton, InfoIcon, Modal, Tooltip}
 import ddm.ui.dom.player.item.ItemSearch
 import ddm.ui.model.plan.Effect.AddItem
 import ddm.ui.model.player.item.Depository
@@ -18,7 +17,7 @@ object AddItemForm {
   def apply(
     target: Depository.Kind,
     items: Fuse[Item],
-    modalBus: WriteBus[Option[L.Element]]
+    modalController: Modal.Controller
   ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (quantityNodes, quantitySignal) = quantityInput()
@@ -37,7 +36,7 @@ object AddItemForm {
       L.div(
         L.cls(Styles.modalButtons),
         submitButton.amend(L.cls(Styles.modalButton)),
-        CancelModalButton(modalBus).amend(L.cls(Styles.modalButton))
+        CancelModalButton(modalController).amend(L.cls(Styles.modalButton))
       )
     )
     val submissions = effectSubmissions(target, formSubmissions, itemSignal, quantitySignal, noteSignal)
@@ -93,7 +92,7 @@ object AddItemForm {
         L.cls(Styles.input),
         L.required(true),
         L.inContext(node =>
-          itemSignal --> Observer[Option[Item]] {
+          itemSignal --> {
             case Some(_) => node.ref.setCustomValidity("")
             case None => node.ref.setCustomValidity("Please enter a valid item name")
           }

@@ -1,11 +1,16 @@
 package ddm.ui.model.player.skill
 
+import ddm.codec.decoding.CollectionDecoder
+import ddm.codec.encoding.CollectionEncoder
 import ddm.common.model.Skill
 import ddm.common.model.Skill.*
 
 object Stats {
   def apply(levels: (Skill, Exp)*): Stats =
     Stats(levels.toMap)
+
+  given CollectionEncoder[Stats] = CollectionEncoder.mapEncoder[Skill, Exp].contramap(_.raw)
+  given CollectionDecoder[Stats] = CollectionDecoder.mapDecoder[Skill, Exp].map(Stats(_))
 }
 
 final case class Stats(raw: Map[Skill, Exp]) {

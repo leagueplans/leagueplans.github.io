@@ -1,6 +1,6 @@
 package ddm.ui.dom.common
 
-import com.raquo.airstream.core.Observer
+import com.raquo.airstream.core.{Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -11,7 +11,17 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Modal {
-  def apply(): (ReactiveHtmlElement[HTMLDialogElement], WriteBus[Option[L.Element]]) = {
+  final class Controller(underlying: WriteBus[Option[L.Element]]) extends Sink[Option[L.Element]] {
+    export underlying.toObserver
+    
+    def show(content: L.Element): Unit =
+      underlying.onNext(Some(content))
+
+    def close(): Unit =
+      underlying.onNext(None)
+  }
+  
+  def apply(): (ReactiveHtmlElement[HTMLDialogElement], Modal.Controller) = {
     val content = EventBus[Option[L.Element]]()
 
     val node =
@@ -23,21 +33,21 @@ object Modal {
         ),
         L.inContext(node =>
           List(
-            content.events.map(_.nonEmpty) --> Observer[Boolean] {
+            content.events.map(_.nonEmpty) --> {
               case true => if (!node.ref.open) node.ref.showModal()
               case false => if (node.ref.open) node.ref.close()
             },
             L.onClick.ifUnhandledF(
               _.filter(_.target == node.ref)
                 .map(_.preventDefault())
-                .mapTo(None)
-            ) --> content.writer
+                .mapToStrict(None)
+            ) --> content
           )
         ),
-        L.eventProp("close").mapTo(None) --> content.writer
+        L.eventProp("close").mapToStrict(None) --> content
       )
 
-    (node, content.writer)
+    (node, Controller(content.writer))
   }
 
   @js.native @JSImport("/styles/common/modal.module.css", JSImport.Default)
