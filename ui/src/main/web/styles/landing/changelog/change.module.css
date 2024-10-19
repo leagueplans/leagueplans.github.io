@@ -1,0 +1,14 @@
+.title {
+  font-size: 1.2rem;
+}
+
+.summaryList {
+  list-style-type: disc;
+  padding: 0 0 0 1rem;
+  font-size: 1rem;
+}
+
+.summary {
+  margin-top: 0.3rem;
+  font-size: 1rem;
+}

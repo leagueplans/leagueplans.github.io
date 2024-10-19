@@ -4,6 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import ddm.ui.dom.common.{LoadingIcon, Modal, ToastHub}
+import ddm.ui.dom.landing.changelog.Changelog
 import ddm.ui.dom.landing.form.NewPlanForm
 import ddm.ui.dom.landing.menu.PlansMenu
 import ddm.ui.model.plan.Plan
@@ -19,25 +20,12 @@ object LandingPage {
     planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
     modalController: Modal.Controller
-  ): L.Div = {
-    val storage = StorageClient()
-    val newPlanForm = NewPlanForm(storage, planObserver, toastPublisher)
-
+  ): L.Div =
     L.div(
       L.cls(Styles.page),
-      L.div(
-        L.cls(Styles.content),
-        L.p(L.cls(Styles.intro), "Start a new plan from scratch"),
-        newPlanForm,
-        L.child <-- toExistingPlans(storage, planObserver, toastPublisher, modalController),
-        L.p(
-          L.cls(Styles.disclaimer),
-          "Plans are saved against your browser's local storage. As a result, wiping your" +
-          " browser's storage will delete your plans. No data is saved remotely."
-        )
-      )
+      changeLog(),
+      plansForm(planObserver, toastPublisher, modalController)
     )
-  }
 
   @js.native @JSImport("/styles/landing/landingPage.module.css", JSImport.Default)
   private object Styles extends js.Object {
@@ -48,6 +36,34 @@ object LandingPage {
     val menu: String = js.native
     val menuContent: String = js.native
     val disclaimer: String = js.native
+  }
+  
+  private def changeLog(): L.Div =
+    L.div(
+      L.cls(Styles.content),
+      L.p(L.cls(Styles.intro), "Recent changes"),
+      Changelog()
+    )
+  
+  private def plansForm(
+    planObserver: Observer[(Plan, PlanSubscription)],
+    toastPublisher: ToastHub.Publisher,
+    modalController: Modal.Controller
+  ): L.Div = {
+    val storage = StorageClient()
+    val newPlanForm = NewPlanForm(storage, planObserver, toastPublisher)
+
+    L.div(
+      L.cls(Styles.content),
+      L.p(L.cls(Styles.intro), "Start a new plan from scratch"),
+      newPlanForm,
+      L.child <-- toExistingPlans(storage, planObserver, toastPublisher, modalController),
+      L.p(
+        L.cls(Styles.disclaimer),
+        "Plans are saved against your browser's local storage. As a result, wiping your" +
+          " browser's storage will delete your plans. No data is saved remotely."
+      )
+    )
   }
 
   private def toExistingPlans(
