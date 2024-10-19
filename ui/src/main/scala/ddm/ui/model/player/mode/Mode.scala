@@ -35,6 +35,13 @@ object Mode {
       }
   }
 
+  trait Deadman extends Mode
+
+  object Deadman {
+    val all: List[Deadman] =
+      List(Armageddon)
+  }
+
   val all: List[Mode] =
-    MainGame +: League.all
+    (MainGame +: League.all) ++ Deadman.all
 }
