@@ -8,8 +8,7 @@ import ddm.ui.dom.common.{FormOpener, Modal, Tooltip}
 import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.model.validation.StepValidator
+import ddm.ui.model.player.Cache
 import ddm.ui.utils.HasID
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
@@ -22,18 +21,16 @@ object EditorElement {
   def apply(
     cache: Cache,
     itemFuse: Fuse[Item],
-    dataSignal: Signal[(Step, List[Step], Player)],
+    stepSignal: Signal[Step],
+    subStepsSignal: Signal[List[Step]],
+    warningsSignal: Signal[List[String]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller
-  ): ReactiveHtmlElement[Div] = {
-    val stepSignal = dataSignal.map((step, _, _) => step)
-    val subStepsSignal = dataSignal.map((_, subSteps, _) => subSteps)
-    val playerSignal = dataSignal.map((_, _, player) => player)
-
+  ): ReactiveHtmlElement[Div] =
     L.div(
       L.cls(Styles.editor),
       StepDescription(stepSignal, stepUpdater).amend(L.cls(Styles.description)),
-      L.child <-- toWarnings(cache, playerSignal, stepSignal),
+      L.child <-- warningsSignal.map(toWarningIcon),
       L.div(
         L.cls(Styles.sections),
         L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalController),
@@ -41,7 +38,6 @@ object EditorElement {
         L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalController)
       )
     )
-  }
 
   @js.native @JSImport("/styles/editor/editor.module.css", JSImport.Default)
   private object Styles extends js.Object {
@@ -54,28 +50,18 @@ object EditorElement {
     val subStepDescription: String = js.native
   }
 
-  private def toWarnings(
-    cache: Cache,
-    playerSignal: Signal[Player],
-    stepSignal: Signal[Step]
-  ): Signal[L.Node] =
-    Signal
-      .combine(playerSignal, stepSignal)
-      .map { (player, step) =>
-        val (errors, _) = StepValidator.validate(step)(player, cache)
-
-        if (errors.isEmpty)
-          L.emptyNode
-        else
-          L.div(
-            L.cls(Styles.warningIcon),
-            Tooltip(L.div(
-              L.cls(Styles.tooltip),
-              errors.map(L.p(_))
-            )),
-            FontAwesome.icon(FreeSolid.faTriangleExclamation)
-          )
-      }
+  private def toWarningIcon(warnings: List[String]): L.Node =
+    if (warnings.isEmpty)
+      L.emptyNode
+    else
+      L.div(
+        L.cls(Styles.warningIcon),
+        Tooltip(L.div(
+          L.cls(Styles.tooltip),
+          warnings.map(L.p(_))
+        )),
+        FontAwesome.icon(FreeSolid.faTriangleExclamation)
+      )
 
   private def toSubSteps(
     stepSignal: Signal[Step],

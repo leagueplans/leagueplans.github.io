@@ -10,14 +10,14 @@ final class ByteCodecTest extends CodecSpec {
       def test(byte: Byte): Assertion =
         testRoundTripEncoding(byte, Encoding.Len(Array(byte)))
 
-      "0x0" in test(0x0)
+      "0b0" in test(0b0)
 
-      "0x1" in test(0x1)
-      "0x2" in test(0x2)
+      "0b1" in test(0b1)
+      "0b11" in test(0b11)
       "Byte.MaxValue" in test(Byte.MaxValue)
 
-      "-0x1" in test(-0x1)
-      "-0x2" in test(-0x2)
+      "-0b0" in test(-0b0)
+      "-0b1" in test(-0b1)
       "Byte.MinValue" in test(Byte.MinValue)
     }
 
@@ -29,7 +29,7 @@ final class ByteCodecTest extends CodecSpec {
         Decoder.decode[Byte](len).left.value shouldBe a[DecodingFailure]
 
       "an empty len" in test(Encoding.Len(Array.empty))
-      "a multibyte len" in test(Encoding.Len(Array(0x0, 0x1)))
+      "a multibyte len" in test(Encoding.Len(Array(0b0, 0b1)))
     }
   }
 }

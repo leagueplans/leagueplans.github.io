@@ -2,16 +2,16 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion := "3.5.0"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
   "-explain-types",
   "-feature",
   "-unchecked",
+  "-Wsafe-init",
   "-Wunused:all",
-  "-Wvalue-discard",
-  "-Ysafe-init"
+  "-Wvalue-discard"
 )
 
 lazy val root =
@@ -38,7 +38,7 @@ lazy val common =
         "io.circe" %%% "circe-parser" % circeVersion
       )
     )
-    .dependsOn(codec)
+    .dependsOn(codec % "compile->compile;test->test")
 
 val akkaVersion = "2.6.18"
 val scrimageVersion = "4.1.1"
@@ -93,4 +93,7 @@ lazy val ui =
         (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
       }
     )
-    .dependsOn(common.js)
+    .dependsOn(
+      common.js,
+      codec.js % "test->test"
+    )

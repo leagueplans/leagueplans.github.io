@@ -6,12 +6,11 @@ import ddm.codec.encoding.Encoder
 import org.scalatest.Assertion
 
 import scala.collection
-import scala.collection.{immutable, mutable}
 import scala.compiletime.summonFrom
 
 final class IterableCodecTest extends CodecSpec {
   private final class Mock
-  private given Encoder[Mock] = Encoder(_ => Encoding.Len(Array(0x0)))
+  private given Encoder[Mock] = Encoder(_ => Encoding.Len(Array(0b0)))
   private given Decoder[Mock] = Decoder(_ => Right(new Mock))
 
   // The justification for these tests is a little weird. In essence,
@@ -88,7 +87,7 @@ final class IterableCodecTest extends CodecSpec {
           case _: Decoder[collection.mutable.Map[Mock, Mock]] => failColl("collection.mutable.Map")
           case _: Decoder[Option[Mock]] => failColl("Option")
           // Make sure that we can find the mock decoder, as if we were to implement generic
-          // iterable encoders we'd likely need an decoder for the underlying collection type
+          // iterable decoders we'd likely need a decoder for the underlying collection type
           case _: Decoder[Mock] => succeed
           case _ => fail("Did not find the mock decoder for the collection member type")
         }

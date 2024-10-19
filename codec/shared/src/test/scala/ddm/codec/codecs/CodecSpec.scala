@@ -1,9 +1,10 @@
 package ddm.codec.codecs
 
-import ddm.codec.{Encoding, EncodingEqualities}
 import ddm.codec.decoding.{Decoder, DecodingFailure}
 import ddm.codec.encoding.Encoder
 import ddm.codec.parsing.ParsingFailure
+import ddm.codec.{Encoding, EncodingEqualities}
+import org.scalactic.Equality
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, EitherValues}
@@ -19,7 +20,7 @@ abstract class CodecSpec
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000)
 
-  final def testRoundTripEncoding[T : Encoder : Decoder](
+  final def testRoundTripEncoding[T : Encoder : Decoder : Equality](
     value: T,
     expectedEncoding: Encoding
   ): Assertion = {
@@ -32,7 +33,7 @@ abstract class CodecSpec
     )
   }
   
-  final def testRoundTripSerialisation[T : Encoder : Decoder](
+  final def testRoundTripSerialisation[T : Encoder : Decoder : Equality](
     value: T,
     decode: Array[Byte] => Decoder[T] ?=> Either[ParsingFailure | DecodingFailure, T],
     expectedEncoding: Array[Byte]
@@ -46,7 +47,7 @@ abstract class CodecSpec
     )
   }
 
-  final def testRoundTripSerialisation[T : Encoder : Decoder](
+  final def testRoundTripSerialisation[T : Encoder : Decoder : Equality](
     value: T,
     decode: Array[Byte] => Decoder[T] ?=> Either[ParsingFailure | DecodingFailure, T]
   ): Assertion = {

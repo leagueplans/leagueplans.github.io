@@ -11,10 +11,10 @@ final class EitherCodecTest extends CodecSpec {
         testRoundTripEncoding(either, expectedEncoding)
 
       "Left" in test(
-        Left(0x4b),
+        Left(0b1001011),
         Encoding.Message(Map(
           FieldNumber(0) -> List(Encoding.Varint(BinaryString.unsafe("0"))),
-          FieldNumber(1) -> List(Encoder.encode(0x4b.toByte))
+          FieldNumber(1) -> List(Encoder.encode(0b1001011.toByte))
         ))
       )
 

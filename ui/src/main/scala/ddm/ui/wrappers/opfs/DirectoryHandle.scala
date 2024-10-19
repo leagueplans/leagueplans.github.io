@@ -106,8 +106,8 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
         case Success(_) => Right(())
       }
 
-  // See the comment above `replaceFileContent` to understand why we're checking for a
-  // parsable tmp file first.
+  // Writing to an existing file is complicated and places requirements on how we read
+  // files as well. There's a write-up on this stuff against the `FileEncoding` type.
   def read[T : Decoder](name: String): EventStream[Either[FileSystemError, T]] =
     readTmpFile(name).andThen {
       case Some(data) =>
@@ -119,7 +119,13 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
             case Some(fileHandle) => fileHandle.read()
             case None => liftValue(Left(FileDoesNotExist(name)))
           }
-          .map(_.flatMap(decode(name, _)))
+          .map(maybeFileContents =>
+            for {
+              fileContents <- maybeFileContents
+              encoding <- decode[FileEncoding](name, fileContents)
+              data <- decode[T](name, encoding.contents)
+            } yield data
+          )
     }
 
   private def readTmpFile[T : Decoder](name: String): EventStream[Either[FileSystemError, Option[T]]] = {
@@ -130,25 +136,27 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
         liftValue(Right(None))
 
       case Some(tmpFileHandle) =>
-        tmpFileHandle.read().andThen(bytes =>
-          decode[T](tmpName, bytes) match {
-            case Left(_: ParsingFailure) =>
+        tmpFileHandle.read().andThen(fileContents =>
+          Decoder.decodeMessage[FileEncoding](fileContents) match {
+            case Left(_) =>
               liftValue(Right(None))
 
-            case Left(error: DecodingError) =>
-              liftValue(Left(error))
-
-            case Right(data) =>
+            case Right(encoding) =>
               remove(name, recurse = false)
                 .andThen(_ => tmpFileHandle.rename(name))
-                .map(_.map(_ => Some(data)))
+                .map(successOrFail =>
+                  for {
+                    _ <- successOrFail
+                    data <- decode[T](tmpName, encoding.contents)
+                  } yield Some(data)
+                )
           }
         )
     }
   }
   
   private def decode[T : Decoder](
-    fileName: String, 
+    fileName: String,
     bytes: Array[Byte]
   ): Either[ParsingFailure | DecodingError, T] =
     Decoder.decodeMessage(bytes).left.map {
@@ -170,13 +178,8 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
         case Success(asyncHandle) => Right(Some(new AsyncFileHandle(name, asyncHandle)))
       }
 
-  // In order for this method to be safe, we need to check for the existence of the tmp
-  // file when we go to read data. If it exists and is parseable, then that means that
-  // we'd previously written to tmp but failed to complete the rename. In such a world,
-  // we must complete the rename of tmp before allowing access to the parsed data.
-  //
-  // These assumptions also rely on JSON objects being our serialisation format, since
-  // such objects will fail to parse if they aren't written in their entirety.
+  // Writing to an existing file is complicated and places requirements on how we read
+  // files as well. There's a write-up on this stuff against the `FileEncoding` type.
   def replaceFileContent[T : Encoder](
     name: String,
     content: T
@@ -184,7 +187,7 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
     getOrCreateAsyncFileHandle(toTmpFileName(name))
       .andThen(tmpFileHandle =>
         tmpFileHandle
-          .setContents(content.encoded.getBytes)
+          .setContents(FileEncoding(content.encoded.getBytes).encoded.getBytes)
           .andThen(_ => remove(name, recurse = false))
           .andThen(_ => tmpFileHandle.rename(name))
       )

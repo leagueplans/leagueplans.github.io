@@ -14,15 +14,14 @@ object PlanElement {
   def apply(
     initialPlan: Forest[Step.ID, Step],
     focusedStep: Signal[Option[Step.ID]],
+    stepsWithErrorsSignal: Signal[Set[Step.ID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
-    findStepsWithErrors: Forest[Step.ID, Step] => Set[Step.ID],
     stepUpdates: EventBus[Forester[Step.ID, Step] => Unit],
     focusObserver: Observer[Step.ID]
   ): (L.Div, Forester[Step.ID, Step]) = {
     val allStepsVar = Var(List.empty[Step.ID])
     val completionManager = CompletionManager(allStepsVar.signal)
-    val stepsWithErrorsVar = Var(findStepsWithErrors(initialPlan))
 
     val forester = Forester[Step](
       initialPlan,
@@ -32,7 +31,7 @@ object PlanElement {
         _,
         focusedStep,
         completionManager,
-        stepsWithErrorsVar.signal,
+        stepsWithErrorsSignal,
         editingEnabled,
         contextMenuController,
         stepUpdates.writer,
@@ -44,8 +43,7 @@ object PlanElement {
       L.div(
         L.children <-- forester.domSignal,
         stepUpdates.events --> (_.apply(forester)),
-        forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar,
-        forester.forestSignal.changes.debounce(1500).map(findStepsWithErrors) --> stepsWithErrorsVar
+        forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar
       )
 
     (dom, forester)

@@ -1,4 +1,7 @@
-package ddm.ui.model.player.league
+package ddm.ui.model.plan
+
+import ddm.codec.decoding.Decoder
+import ddm.codec.encoding.Encoder
 
 sealed trait ExpMultiplierStrategy
 
@@ -13,4 +16,7 @@ object ExpMultiplierStrategy {
         .map { case (_, multiplier) => multiplier }
         .getOrElse(base)
   }
+
+  given Encoder[ExpMultiplierStrategy] = Encoder.derived
+  given Decoder[ExpMultiplierStrategy] = Decoder.derived
 }

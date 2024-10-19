@@ -24,15 +24,3 @@
   color: white;
   text-shadow: 1px 1px black;
 }
-
-.strategySelectLabel {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.strategySelect {
-  width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 1rem;
-}

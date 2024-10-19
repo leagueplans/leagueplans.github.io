@@ -57,7 +57,7 @@ final class CodecSpecTest extends CodecSpec {
               FieldNumber(4) -> List.empty,
               FieldNumber(764) -> List(
                 Encoding.Message(Map(
-                  FieldNumber(23) -> List(Encoding.Len(Array(0x4, -0x23)))
+                  FieldNumber(23) -> List(Encoding.Len(Array(0b100, -0b10111)))
                 )),
                 Encoding.Varint(BinaryString.unsafe("100"))
               )

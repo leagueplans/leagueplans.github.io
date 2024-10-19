@@ -98,10 +98,12 @@ final class SumCodecTest extends CodecSpec {
       case object B extends A
 
       @nowarn("msg=unused local definition")
+      @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def encoder: Encoder[A] = Encoder.derived
       codeOf(encoder) should compile
 
       @nowarn("msg=unused local definition")
+      @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def decoder: Decoder[A] = Decoder.derived
       codeOf(decoder) should compile
     }
@@ -113,10 +115,12 @@ final class SumCodecTest extends CodecSpec {
       final case class C(a: A) extends B
 
       @nowarn("msg=unused local definition")
+      @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def encoder: Encoder[B] = Encoder.derived
       codeOf(encoder) shouldNot compile
 
       @nowarn("msg=unused local definition")
+      @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def decoder: Decoder[B] = Decoder.derived
       codeOf(decoder) shouldNot compile
     }

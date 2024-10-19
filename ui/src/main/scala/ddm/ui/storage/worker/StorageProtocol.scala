@@ -24,10 +24,26 @@ object StorageProtocol {
     
     final case class Fetch(planID: PlanID) extends ToCoordinator with ToWorker
 
+    object Update {
+      def apply(
+        planID: PlanID,
+        lamport: LamportTimestamp,
+        update: Plan.Settings | Forest.Update[Step.ID, Step]
+      ): Update =
+        Update(
+          planID,
+          lamport,
+          update match {
+            case settings: Plan.Settings => Left(settings)
+            case fu: Forest.Update[Step.ID, Step] => Right(fu)
+          }
+        )
+    }
+
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Forest.Update[Step.ID, Step]
+      update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
     ) extends ToCoordinator with ToWorker
 
     final case class Delete(planID: PlanID) extends ToCoordinator with ToWorker
@@ -70,7 +86,7 @@ object StorageProtocol {
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Forest.Update[Step.ID, Step]
+      update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
     ) extends ToClient
     
     final case class UpdateSucceeded(

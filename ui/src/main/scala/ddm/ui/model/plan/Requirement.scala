@@ -5,8 +5,6 @@ import ddm.codec.encoding.Encoder
 import ddm.common.model.{Item, Skill}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.skill.Level
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
 
 enum Requirement {
   case SkillLevel(skill: Skill, level: Level)

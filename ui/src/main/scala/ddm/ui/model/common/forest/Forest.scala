@@ -55,6 +55,18 @@ final class Forest[ID, T] private[forest](
   val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
+  override def equals(obj: Any): Boolean =
+    obj match {
+      case forest: Forest[?, ?] => this.asProduct == forest.asProduct
+      case _ => false
+    }
+
+  override def hashCode(): Int =
+    asProduct.hashCode()
+
+  private def asProduct: Product =
+    (nodes, toParent, toChildren, roots)
+
   def map[S](f: (ID, T) => S): Forest[ID, S] =
     Forest(
       nodes.map((id, t) => id -> f(id, t)),

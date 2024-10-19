@@ -31,9 +31,6 @@ object Bootstrap {
       L.child <-- toPageSignal(contextMenuController, modalController, toastPublisher),
       EventStream.unit(emitOnce = true).delay(2000) --> (_ =>
         toastPublisher.publish(feedbackToast())
-      ),
-      EventStream.unit(emitOnce = true).delay(2000) --> (_ =>
-        toastPublisher.publish(underDevelopmentToast())
       )
     )
   }
@@ -101,13 +98,5 @@ object Bootstrap {
       ToastHub.Type.Info,
       10.seconds,
       L.span("To offer feedback, contact @Granarder on discord.")
-    )
-
-  private def underDevelopmentToast(): ToastHub.Toast =
-    ToastHub.Toast(
-      ToastHub.Type.Error,
-      30.seconds,
-      L.span("This site is under active development. Breaking changes are planned, which" +
-        " will cause existing plans to fail to render.")
     )
 }

@@ -65,8 +65,8 @@ final class PlanDirectory(underlying: DirectoryHandle) {
       )
     )
   
-  def applyUpdate(update: Forest.Update[Step.ID, Step]): EventStream[Either[FileSystemError, ?]] = {
-    val mappingsAndStepChanges = update match {
+  def applyUpdate(update: Forest.Update[Step.ID, Step] | Plan.Settings): EventStream[Either[FileSystemError, ?]] = {
+    val changes = update match {
       case Update.AddNode(id, data) =>
         acquireStepsDirectory()
           .andThen(_.write(data))
@@ -79,7 +79,7 @@ final class PlanDirectory(underlying: DirectoryHandle) {
         
       case Update.AddLink(child, parent) =>
         updateMappings(_.update(m =>
-          m - child + (parent -> (m(parent) :+ child))
+          m - child + (parent -> (m.getOrElse(parent, List.empty) :+ child))
         ))
         
       case Update.RemoveLink(child, parent) =>
@@ -93,7 +93,7 @@ final class PlanDirectory(underlying: DirectoryHandle) {
         updateMappings(_.update(m =>
           m +
             (oldParent -> m(oldParent).filterNot(_ == child)) +
-            (newParent -> (m(newParent) :+ child))
+            (newParent -> (m.getOrElse(newParent, List.empty) :+ child))
         ))
         
       case Update.UpdateData(id, data) =>
@@ -101,9 +101,12 @@ final class PlanDirectory(underlying: DirectoryHandle) {
         
       case Update.Reorder(children, parent) =>
         updateMappings(_.update(_ + (parent -> children)))
+
+      case settings: Plan.Settings =>
+        writeSettings(settings)
     }
     
-    mappingsAndStepChanges
+    changes
       .andThen(_ => readMetadata())
       .andThen(old => writeMetadata(PlanMetadata(old.name)))
   }

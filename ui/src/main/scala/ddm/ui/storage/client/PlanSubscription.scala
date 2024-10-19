@@ -3,7 +3,7 @@ package ddm.ui.storage.client
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.state.{StrictSignal, Var}
 import ddm.ui.model.common.forest.Forest
-import ddm.ui.model.plan.Step
+import ddm.ui.model.plan.{Plan, Step}
 import ddm.ui.model.plan.Step.ID
 import ddm.ui.storage.client.PlanSubscription.{Message, Status}
 import ddm.ui.storage.model.errors.{ProtocolError, UpdateError}
@@ -21,7 +21,7 @@ object PlanSubscription {
   enum Message {
     case Done
     case Error(cause: ProtocolError)
-    case Update(lamport: LamportTimestamp, data: Forest.Update[Step.ID, Step])
+    case Update(lamport: LamportTimestamp, data: Forest.Update[Step.ID, Step] | Plan.Settings)
     case UpdateSuccessful(lamport: LamportTimestamp)
     case UpdateFailed(lamport: LamportTimestamp, reason: UpdateError)
   }
@@ -30,7 +30,7 @@ object PlanSubscription {
 final class PlanSubscription(
   initialLamport: LamportTimestamp,
   messages: EventStream[Message],
-  save: (LamportTimestamp, Forest.Update[Step.ID, Step]) => ?,
+  save: (LamportTimestamp, Forest.Update[Step.ID, Step] | Plan.Settings) => ?,
   unsubscribe: () => ?
 ) extends AutoCloseable {
   private var currentLamport = initialLamport
@@ -40,7 +40,7 @@ final class PlanSubscription(
   
   val status: StrictSignal[PlanSubscription.Status] = internalStatus.signal
   
-  val updates: EventStream[Forest.Update[ID, Step]] = 
+  val updates: EventStream[Forest.Update[ID, Step] | Plan.Settings] =
     upstream.collect(Function.unlift {
       case Message.Done =>
         upstreamKillSwitch.kill()
@@ -71,7 +71,7 @@ final class PlanSubscription(
         None
     })
 
-  def save(update: Forest.Update[Step.ID, Step]): Unit =
+  def save(update: Forest.Update[Step.ID, Step] | Plan.Settings): Unit =
     ifRunning { _ =>
       currentLamport = currentLamport.increment
       save(currentLamport, update)

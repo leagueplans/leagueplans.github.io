@@ -157,13 +157,11 @@ object NewPlanForm {
       case None =>
         val step = Step(name)
         val steps = Forest.from(Map(step.id -> step), Map(step.id -> List.empty))
-        Right(PlanMetadata(name), Plan(steps, Plan.Settings(mode)))
+        Right((PlanMetadata(name), Plan(steps, mode.settings)))
 
       case Some(planImport) =>
         ExportedPlanDecoder
           .decode(planImport)
-          .map((metadata, plan) =>
-            (metadata.copy(name = name), plan.copy(settings = plan.settings.copy(mode = mode)))
-          )
+          .map((metadata, plan) => (metadata.copy(name = name), plan))
     }
 }

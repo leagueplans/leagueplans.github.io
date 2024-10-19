@@ -61,7 +61,7 @@ final class PlansDirectory(underlying: DirectoryHandle) {
   
   def applyUpdate(
     planID: PlanID,
-    update: Forest.Update[Step.ID, Step]
+    update: Forest.Update[Step.ID, Step] | Plan.Settings
   ): EventStream[Either[FileSystemError, ?]] =
     getPlanDirectory(planID).andThen {
       case None => EventStream.fromValue(Left(FileDoesNotExist(planID)), emitOnce = true)

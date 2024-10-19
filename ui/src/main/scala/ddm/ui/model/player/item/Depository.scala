@@ -76,6 +76,9 @@ object Depository {
         }
     }
   }
+
+  given Encoder[Depository] = Encoder.derived
+  given Decoder[Depository] = Decoder.derived
 }
 
 /** @param contents

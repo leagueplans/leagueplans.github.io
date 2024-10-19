@@ -178,7 +178,7 @@ final class StorageClient(
 
     case Outbound.Update(planID, lamport, update) =>
       subscriptionBus.writer.onNext(
-        (planID, PlanSubscription.Message.Update(lamport, update))
+        (planID, PlanSubscription.Message.Update(lamport, update.merge))
       )
 
     case Outbound.UpdateSucceeded(planID, lamport) =>

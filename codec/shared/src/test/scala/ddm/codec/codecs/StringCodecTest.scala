@@ -33,7 +33,7 @@ final class StringCodecTest extends CodecSpec {
     "decoding should fail for an illegal UTF-8 byte sequence" in(
       Decoder.decode[String](
         // Bit pattern 1000 0000
-        Encoding.Len(Array(-0x1))
+        Encoding.Len(Array(-0b1))
       ).left.value shouldBe a[DecodingFailure]
     )
   }

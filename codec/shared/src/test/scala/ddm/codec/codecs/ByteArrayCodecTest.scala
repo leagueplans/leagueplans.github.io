@@ -11,7 +11,7 @@ final class ByteArrayCodecTest extends CodecSpec {
         testRoundTripEncoding(array, Encoding.Len(array))
 
       "Array.empty" in test(Array.empty)
-      "Array(0x0)" in test(Array(0x0))
+      "Array(0b0)" in test(Array(0b0))
       "Array(Byte.MinValue)" in test(Array(Byte.MinValue))
       "Array(Byte.MaxValue)" in test(Array(Byte.MaxValue))
       "A multibyte array" in test(Array(0x32, -0x24, 0x0, 0x7c, 0x7c, -0x7a))

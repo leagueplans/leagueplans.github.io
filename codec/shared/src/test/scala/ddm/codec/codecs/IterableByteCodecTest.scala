@@ -42,7 +42,7 @@ final class IterableByteCodecTest extends CodecSpec {
         testRoundTripEncoding(bytes, Encoding.Len(bytes.value.toArray))
 
       "CustomIterable.empty" in test(CustomIterable(List.empty))
-      "CustomIterable(0x0)" in test(CustomIterable(List(0x0)))
+      "CustomIterable(0b0)" in test(CustomIterable(List(0b0)))
       "CustomIterable(Byte.MinValue)" in test(CustomIterable(List(Byte.MinValue)))
       "CustomIterable(Byte.MaxValue)" in test(CustomIterable(List(Byte.MaxValue)))
       "A multibyte custom iterable" in test(CustomIterable(List(0x32, -0x24, 0x0, 0x7c, 0x7c, -0x7a)))

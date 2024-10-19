@@ -41,7 +41,7 @@ jobs:
       id: bundle-js
       if: steps.identify-changes.outputs.sources == 'true'
       run: |
-        sbt codecJS/test ui/test
+        sbt codecJS/test commonJS/test ui/test
         cd ui
         npm install
         npm run build

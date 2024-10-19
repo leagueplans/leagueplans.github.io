@@ -106,7 +106,7 @@ private final class StorageWorker(directory: PlansDirectory) {
     }
 
   private def handleUpdate(message: Inbound.Update): EventStream[Outbound.ToCoordinator] =
-    directory.applyUpdate(message.planID, message.update).map {
+    directory.applyUpdate(message.planID, message.update.merge).map {
       case Left(error) =>
         Outbound.UpdateFailed(
           message.planID,

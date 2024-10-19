@@ -11,7 +11,7 @@ final class OptionByteCodecTest extends CodecSpec {
         testRoundTripEncoding(maybeByte, Encoding.Len(maybeByte.toArray))
 
       "None" in test(None)
-      "Some(0x0)" in test(Some(0x0))
+      "Some(0b0)" in test(Some(0b0))
       "Some(Byte.MinValue)" in test(Some(Byte.MinValue))
       "Some(Byte.MaxValue)" in test(Some(Byte.MaxValue))
     }
@@ -21,7 +21,7 @@ final class OptionByteCodecTest extends CodecSpec {
 
     "decoding should fail for a multibyte len" in(
       Decoder.decode[Byte](
-        Encoding.Len(Array(0x0, 0x1))
+        Encoding.Len(Array(0b0, 0b1))
       ).left.value shouldBe a[DecodingFailure]
     )
   }
