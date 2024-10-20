@@ -13,7 +13,7 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2024, 10, 20),
+        new Date(2024, 9, 20),
         "Reworked the plan save system",
         List(
           "Note that this change invalidates all older plans. Contact @Granarder if you'd like to try" +

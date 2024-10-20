@@ -15,6 +15,7 @@ object SchemaVersion {
 // of the existing plan. You can't update the metadata schema version atomically with
 // the contents of the various files
 enum SchemaVersion(val date: Date) {
+  // WARNING: MONTHS ARE ZERO-INDEXED. DAYS ARE NOT. WHY?
   case V1 extends SchemaVersion(new Date(2024, 3, 17))
   
   def number: Int = ordinal + 1
