@@ -18,7 +18,7 @@ object ValidatedFileInput {
     fileSignal: Signal[Option[File]],
     parse: File => EventStream[Either[Throwable, T]]
   ): Signal[Option[Either[Throwable, T]]] =
-    fileSignal.flatMap {
+    fileSignal.flatMapSwitch {
       case Some(file) => parse(file).map(Some.apply).toSignal(initial = None)
       case None => Signal.fromValue(None)
     }

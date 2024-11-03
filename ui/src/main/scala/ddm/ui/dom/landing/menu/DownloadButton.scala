@@ -32,7 +32,7 @@ object DownloadButton {
     storage: StorageClient,
     toastPublisher: ToastHub.Publisher
   ): EventStream[Unit] =
-    storage.fetch(id).changes.collectSome.flatMap {
+    storage.fetch(id).changes.collectSome.flatMapSwitch {
       case Left(error) =>
         toastPublisher.publish(
           ToastHub.Type.Warning,

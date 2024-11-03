@@ -7,12 +7,9 @@ import ddm.ui.wrappers.workers.WorkerScope
 
 object RootDirectory {
   def from(scope: WorkerScope): EventStream[Either[FileSystemError, RootDirectory]] =
-    for {
-      root <- scope.navigator.storage.getDirectory().asObservable
-      maybePlans <- DirectoryHandle(root).acquireSubDirectory("plans")
-    } yield maybePlans.map(plans =>
-      RootDirectory(PlansDirectory(plans))
-    )
+    scope.navigator.storage.getDirectory().asObservable
+      .flatMapSwitch(root => DirectoryHandle(root).acquireSubDirectory("plans"))
+      .map(_.map(plans => RootDirectory(PlansDirectory(plans))))
 }
 
 final class RootDirectory(val plans: PlansDirectory)

@@ -8,23 +8,17 @@ import ddm.ui.utils.airstream.EventStreamOps.andThen
 import ddm.ui.wrappers.opfs.FileSystemError.*
 import ddm.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
 
+import scala.util.chaining.scalaUtilChainingOps
+
 final class PlansDirectory(underlying: DirectoryHandle) {
   def listPlans(): EventStream[Either[UnexpectedFileSystemError, Map[PlanID, PlanMetadata]]] =
-    underlying
-      .listSubDirectories()
-      .andThen { handles =>
-        val zero = EventStream.fromValue(
-          Map.empty[PlanID, PlanMetadata],
-          emitOnce = true
-        )
-
-        handles.foldLeft(zero) { case (acc, (planID, handle)) =>
-          PlanDirectory(handle).readMetadata().flatMap {
-            case Left(error) => acc
-            case Right(metadata) => acc.map(_ + (PlanID.fromString(planID) -> metadata))
-          }
-        }.map(Right(_))
-      }
+    underlying.listSubDirectories().andThen(handles =>
+      handles
+        .map((planID, handle) => PlanDirectory(handle).readMetadata().map(planID -> _))
+        .pipe(EventStream.sequence)
+        .map(_.collect { case (planID, Right(metadata)) => PlanID.fromString(planID) -> metadata }.toMap)
+        .map(Right(_))
+    )
   
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, PlanID]] = {
     val planID = PlanID.generate()

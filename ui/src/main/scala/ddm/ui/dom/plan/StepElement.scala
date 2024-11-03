@@ -147,7 +147,7 @@ object StepElement {
     L.button(
       L.`type`("button"),
       "Cut",
-      L.onClick.ifUnhandledF(_.flatMap { event =>
+      L.onClick.ifUnhandledF(_.flatMapSwitch { event =>
         event.preventDefault()
         window.navigator.clipboard.writeText(stepID).asObservable
       }) --> closer
@@ -166,7 +166,7 @@ object StepElement {
     L.button(
       L.`type`("button"),
       "Paste",
-      L.onClick.ifUnhandledF(_.flatMap { event =>
+      L.onClick.ifUnhandledF(_.flatMapSwitch { event =>
         event.preventDefault()
         window.navigator.clipboard.readText().asObservable
       }) --> Observer.combine(stepMover, closer)
