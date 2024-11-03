@@ -2,7 +2,7 @@ package ddm.ui.dom.landing.menu
 
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.dom.common.{Modal, ToastHub}
+import ddm.ui.dom.common.{DeletionConfirmer, Modal, ToastHub}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.storage.client.StorageClient
 import ddm.ui.storage.model.PlanID
@@ -21,7 +21,8 @@ object DeleteButton {
     modalController: Modal.Controller
   ): L.Button = {
     val confirmer = DeletionConfirmer(
-      name,
+      s"\"$name\" will be permanently deleted. This cannot be undone.",
+      "Delete plan",
       modalController,
       Observer(_ => triggerDelete(id, storage, toastPublisher))
     )

@@ -2,9 +2,8 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{FormOpener, Modal, Tooltip}
+import ddm.ui.dom.common.{DeletionConfirmer, FormOpener, Modal, Tooltip}
 import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.model.plan.{Effect, EffectList, Requirement, Step}
@@ -12,7 +11,6 @@ import ddm.ui.model.player.Cache
 import ddm.ui.utils.HasID
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.wrappers.fusejs.Fuse
-import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -26,7 +24,7 @@ object EditorElement {
     warningsSignal: Signal[List[String]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller
-  ): ReactiveHtmlElement[Div] =
+  ): L.Div =
     L.div(
       L.cls(Styles.editor),
       StepDescription(stepSignal, stepUpdater).amend(L.cls(Styles.description)),
@@ -68,7 +66,7 @@ object EditorElement {
     subStepsSignal: Signal[List[Step]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller,
-  ): Signal[ReactiveHtmlElement[Div]] =
+  ): Signal[L.Div] =
     stepSignal.splitOne(_.id)((stepID, _, _) =>
       Section(
         title = "Steps",
@@ -83,8 +81,13 @@ object EditorElement {
         ),
         Some(newSubStepObserver(stepID, modalController, stepUpdater)),
         stepUpdater.contramap[Step](deletedStep => forester =>
-          // Bit messy, but it works for now
-          DeletionConfirmer(modalController, Observer[Unit](_ => forester.remove(deletedStep.id))).onNext(())
+          DeletionConfirmer(
+            s"\"${deletedStep.details.description}\" and all its nested substeps will be permanently deleted." +
+              s" This cannot be undone.",
+            "Delete substep",
+            modalController,
+            Observer[Unit](_ => forester.remove(deletedStep.id))
+          ).onNext(())
         )
       ).amend(L.cls(Styles.section))
     )
@@ -106,7 +109,7 @@ object EditorElement {
     cache: Cache,
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
-  ): Signal[ReactiveHtmlElement[Div]] =
+  ): Signal[L.Div] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section(
         title = "Effects",
@@ -129,7 +132,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller
-  ): Signal[ReactiveHtmlElement[Div]] =
+  ): Signal[L.Div] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section(
         title = "Requirements",
