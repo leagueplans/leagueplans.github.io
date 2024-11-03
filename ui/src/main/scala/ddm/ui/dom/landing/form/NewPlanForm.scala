@@ -24,7 +24,7 @@ import scala.scalajs.js.annotation.JSImport
 object NewPlanForm {
   def apply(
     storage: StorageClient,
-    planObserver: Observer[(Plan, PlanSubscription)], 
+    planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher
   ): L.FormElement = {
     val (nameInput, nameLabel, nameSignal) = createNameInput()

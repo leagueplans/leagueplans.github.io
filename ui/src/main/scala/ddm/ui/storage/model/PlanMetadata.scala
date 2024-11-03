@@ -18,8 +18,8 @@ object PlanMetadata {
   
   def apply(name: String): PlanMetadata =
     PlanMetadata(
-      name, 
-      new Date(Date.now()), 
+      name,
+      new Date(Date.now()),
       SchemaVersion.values.last
     )
 }

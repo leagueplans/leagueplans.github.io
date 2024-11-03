@@ -58,7 +58,7 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
       .next()
       .asObservable
       .recoverToTry
-      .flatMap {
+      .flatMapSwitch {
         case Success(entry) if entry.done => liftValue(Right(acc))
         case Success(entry) => listContents(iterator, acc :+ entry.value)
         case Failure(ex) => liftValue(Left(UnexpectedFileSystemError(ex)))

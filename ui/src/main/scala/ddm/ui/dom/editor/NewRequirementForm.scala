@@ -134,9 +134,11 @@ object NewRequirementForm {
     levelSignal: Signal[Option[SkillLevel]]
   ): EventStream[Option[Requirement]] =
     formSubmissions.sample(
-      effectTypeSignal.flatMap {
-        case RequirementType.Tool => toolSignal
-        case RequirementType.SkillLevel => levelSignal.map(identity)
-      }
+      Signal
+        .combine(effectTypeSignal, toolSignal, levelSignal)
+        .map {
+          case (RequirementType.Tool, tool, _) => tool
+          case (RequirementType.SkillLevel, _, skillLevel) => skillLevel.map(identity)
+        }
     )
 }

@@ -15,7 +15,7 @@ object ObservableOps {
   extension [F[X] <: Observable[X], T](self: F[T]) {
     def flatMapConcat[S](f: T => EventStream[S]): BufferedStream[T, S] =
       new BufferedStream[T, S](self, f)
-      
+
     def withKillSwitch(resetOnStop: Boolean): KillSwitchedStream[T] =
       new KillSwitchedStream[T](self, resetOnStop)
   }
