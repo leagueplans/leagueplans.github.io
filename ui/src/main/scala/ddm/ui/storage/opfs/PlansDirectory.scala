@@ -4,7 +4,7 @@ import com.raquo.airstream.core.EventStream
 import ddm.ui.model.common.forest.Forest
 import ddm.ui.model.plan.{Plan, Step}
 import ddm.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
-import ddm.ui.utils.airstream.EventStreamOps.andThen
+import ddm.ui.utils.airstream.EventStreamOps.{andThen, safeSequence}
 import ddm.ui.wrappers.opfs.FileSystemError.*
 import ddm.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
 
@@ -15,7 +15,7 @@ final class PlansDirectory(underlying: DirectoryHandle) {
     underlying.listSubDirectories().andThen(handles =>
       handles
         .map((planID, handle) => PlanDirectory(handle).readMetadata().map(planID -> _))
-        .pipe(EventStream.sequence)
+        .pipe(EventStream.safeSequence)
         .map(_.collect { case (planID, Right(metadata)) => PlanID.fromString(planID) -> metadata }.toMap)
         .map(Right(_))
     )

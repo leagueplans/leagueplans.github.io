@@ -13,6 +13,11 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2024, 10, 11),
+        "Fixed an issue that could prevent plans from being loaded",
+        List.empty
+      ),
+      item(
         new Date(2024, 9, 20),
         "Reworked the plan save system",
         List(

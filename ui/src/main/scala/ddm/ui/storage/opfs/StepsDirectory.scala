@@ -4,7 +4,7 @@ import com.raquo.airstream.core.EventStream
 import ddm.codec.Encoding
 import ddm.ui.model.plan.{Step, StepDetails}
 import ddm.ui.storage.opfs.StepsDirectory.*
-import ddm.ui.utils.airstream.EventStreamOps.andThen
+import ddm.ui.utils.airstream.EventStreamOps.{andThen, safeSequence}
 import ddm.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
 
 import scala.util.chaining.scalaUtilChainingOps
@@ -23,7 +23,7 @@ final class StepsDirectory(underlying: DirectoryHandle) {
   
   def write(steps: Iterable[Step]): EventStream[Either[FileSystemError, ?]] =
     EventStream
-      .sequence(steps.map(write).toSeq)
+      .safeSequence(steps.map(write).toSeq)
       .map(results =>
         results
           .collectFirst { case l @ Left(_) => l }
@@ -43,7 +43,7 @@ final class StepsDirectory(underlying: DirectoryHandle) {
 
     ids
       .map(id => read(id).map(id -> _)).toSeq
-      .pipe(EventStream.sequence)
+      .pipe(EventStream.safeSequence)
       .map(_.foldLeft(zero) { case (maybeAcc, (stepID, maybeStep)) =>
         for {
           acc <- maybeAcc
@@ -56,7 +56,7 @@ final class StepsDirectory(underlying: DirectoryHandle) {
     underlying.listFiles().andThen(fileNames =>
       fileNames
         .map(fileName => underlying.read[Encoding](fileName).map(fileName -> _))
-        .pipe(EventStream.sequence)
+        .pipe(EventStream.safeSequence)
         .map(_.collect { case (fileName, Right(encoding)) => toStepID(fileName) -> encoding }.toMap)
         .map(Right(_))
     )

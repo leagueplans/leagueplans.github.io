@@ -12,4 +12,14 @@ object EventStreamOps {
         case Right(value) => f(value)
       }
   }
+
+  extension (self: EventStream.type) {
+    /* When fed an empty collection, the library's default behaviour is to not emit
+     * any elements. */
+    def safeSequence[T](streams: Seq[EventStream[T]]): EventStream[Seq[T]] =
+      if (streams.isEmpty)
+        EventStream.fromValue(List.empty)
+      else
+        EventStream.sequence(streams)
+  }
 }
