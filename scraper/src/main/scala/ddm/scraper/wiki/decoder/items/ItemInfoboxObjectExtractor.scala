@@ -13,7 +13,7 @@ object ItemInfoboxObjectExtractor {
     Set("switch infobox", "multi infobox")
 
   private val ignoredSubTemplates =
-    Set("infobox npc")
+    Set("infobox npc", "infobox scenery")
 
   def extract(terms: List[Term]): List[DecoderResult[(InfoboxVersion, Template.Object)]] =
     terms

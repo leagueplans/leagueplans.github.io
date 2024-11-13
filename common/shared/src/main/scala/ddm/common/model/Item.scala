@@ -47,6 +47,7 @@ object Item {
 
 final case class Item(
   id: Item.ID,
+  gameID: Option[Int],
   name: String,
   examine: String,
   images: NonEmptyList[(Item.Image.Bin, Item.Image.Path)],

@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import cats.data.NonEmptyList
 import ddm.common.model.Item
+import ddm.scraper.wiki.model.WikiItem.GameID
 import ddm.scraper.wiki.model.{InfoboxVersion, Page, WikiItem}
 
 import java.nio.file.Path
@@ -57,6 +58,7 @@ object ItemDumper {
   private def toItem(id: Item.ID, wikiItem: WikiItem): Item =
     Item(
       id,
+      toLiveID(wikiItem.infoboxes.item.id),
       toName(wikiItem.infoboxes),
       wikiItem.infoboxes.item.examine,
       wikiItem.images.map(image => (image.bin, toImagePath(id, image))),
@@ -70,6 +72,12 @@ object ItemDumper {
     infoboxes.version.raw match {
       case Nil => infoboxes.pageName.wikiName
       case path => s"${infoboxes.pageName.wikiName} (${path.mkString(", ")})"
+    }
+
+  private def toLiveID(id: WikiItem.GameID): Option[Int] =
+    id match {
+      case GameID.Live(raw) => Some(raw)
+      case _ => None
     }
 
   private def toImagePath(id: Item.ID, image: WikiItem.Image): Item.Image.Path =

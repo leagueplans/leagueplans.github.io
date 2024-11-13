@@ -16,7 +16,10 @@ import scala.util.{Failure, Success}
 object ItemScraper {
   private val infobox = "Infobox Item"
   private val ignoredCategories: Set[Page.Name.Category] =
-    Set("Inaccessible items").map(Page.Name.Category.apply)
+    Set(
+      "Inaccessible items",
+      "Needs examine added"
+    ).map(Page.Name.Category.apply)
 
   enum Mode {
     /** Inclusive of the named page */

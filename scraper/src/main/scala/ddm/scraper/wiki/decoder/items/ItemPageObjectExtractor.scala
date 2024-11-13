@@ -1,11 +1,14 @@
 package ddm.scraper.wiki.decoder.items
 
-import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult, SimpleInfoboxObjectExtractor}
+import ddm.scraper.wiki.decoder.{DecoderResult, SimpleInfoboxObjectExtractor}
 import ddm.scraper.wiki.model.InfoboxVersion
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.Template
+import org.log4s.{Logger, getLogger}
 
 object ItemPageObjectExtractor {
+  private val logger: Logger = getLogger
+
   final case class VersionedObjects(
     version: InfoboxVersion,
     itemObject: Template.Object,
@@ -23,20 +26,23 @@ object ItemPageObjectExtractor {
       case Some(bonusesExtractions) =>
         val (_, bonusesObjects) = bonusesExtractions.partitionMap(identity)
         val (itemExtractionErrors, itemObjects) = itemExtractions.partitionMap(identity)
-        itemExtractionErrors.map(Left(_)) ++ link(bonusesObjects, itemObjects)
+        itemExtractionErrors.map(Left(_)) ++ link(bonusesObjects, itemObjects).map(Right(_))
     }
   }
 
   private def link(
     bonusesObjects: List[(InfoboxVersion, Template.Object)],
     itemObjects: List[(InfoboxVersion, Template.Object)]
-  ): List[DecoderResult[VersionedObjects]] =
-    itemObjects.map((itemVersion, itemObject) =>
-      bonusesObjects.collectFirst {
+  ): List[VersionedObjects] =
+    itemObjects.map { (itemVersion, itemObject) =>
+      val maybeBonuses = bonusesObjects.collectFirst {
         case (bonusesVersion, bonusesObject) if itemVersion.isSubVersionOf(bonusesVersion) =>
-          VersionedObjects(itemVersion, itemObject, Some(bonusesObject))
-      }.toRight(left = DecoderException(
-        s"Failed to pair item infobox version [${itemVersion.raw.mkString(", ")}] with a bonuses infobox version"
-      ))
-    )
+          bonusesObject
+      }
+
+      if (maybeBonuses.isEmpty)
+        logger.warn(s"Failed to pair item infobox version [${itemVersion.raw.mkString(", ")}] with a bonuses infobox version")
+
+      VersionedObjects(itemVersion, itemObject, maybeBonuses)
+    }
 }
