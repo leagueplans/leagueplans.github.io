@@ -1,20 +1,19 @@
 package ddm.ui.model.player.mode
 
-import ddm.common.model.Skill.{Agility, Herblore, Hitpoints, Runecraft}
+import ddm.common.model.Skill.{Herblore, Hitpoints, Runecraft}
 import ddm.common.model.{Item, LeagueTaskTier, Skill}
 import ddm.ui.model.plan.{ExpMultiplierStrategy, LeaguePointScoring, Plan}
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.league.LeagueStatus
 import ddm.ui.model.player.skill.{Level, Stats}
 
-object LeaguesIV extends Mode.League {
-  val name: String = "Leagues IV: Trailblazer Reloaded"
+object LeaguesV extends Mode.League {
+  val name: String = "Leagues V: Raging Echoes"
 
   val settings: Plan.Settings =
     Plan.Settings(
       initialPlayer = MainGame.initialPlayer.copy(
         stats = Stats(
-          Agility -> Level(10).bound,
           Herblore -> Level(3).bound,
           Hitpoints -> Level(10).bound,
           Runecraft -> Level(5).bound
@@ -27,17 +26,23 @@ object LeaguesIV extends Mode.League {
         ),
         completedQuests = Set(
           3, // Restless ghost
+          4, // Romeo & Juliet
+          15, // Goblin diplomacy
           17, // Dragon slayer
           18, // Druidic ritual
           19, // Lost city
           40, // Jungle potion
           42, // Shilo village
           49, // Dig site
+          50, // Gertrude's cat
+          53, // Rune mysteries
           55, // Elemental workshop
           56, // Priest in peril
           57, // Nature spirit
-          81, // Tears of guthix
+          81, // Tears of Guthix
+          83, // The lost tribe
           105, // Fairytale I
+          121, // Death to the Dorgeshuun
           122, // Fairytale II
           152 // Bone voyage
         ),
@@ -61,10 +66,7 @@ object LeaguesIV extends Mode.League {
           315, // Collect at least 100 Tears of Guthix  in one visit
           316, // Take the train from Dorgesh-Kaan to Keldagrim
           317, // Purchase some Barrows gloves from the Culinaromancer's Chest
-          319, // Light your mining helmet in the Lumbridge Castle basement
-          320, // Recharge your prayer at the Duel Arena with Smite activated
-          322, // Steal from the Dorgesh-Kaan rich chest
-          323, // Pickpocket Movario on the Dorgesh-Kaan Agility Course
+          320, // Recharge your prayer at the Emir's Arena with Smite activated
           324, // Chop some magic logs at the magic training arena
           327, // Perform the Quest point cape emote in the Wise Old Man's house
           382, // Select a colour for your kitten
@@ -87,7 +89,7 @@ object LeaguesIV extends Mode.League {
         List(500 -> 8, 4000 -> 12, 15000 -> 16)
       ),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
-        LeaguesIV,
+        LeaguesV,
         Map(
           LeagueTaskTier.Easy -> 10,
           LeagueTaskTier.Medium -> 40,

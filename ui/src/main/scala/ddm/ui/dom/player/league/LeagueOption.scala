@@ -3,7 +3,7 @@ package ddm.ui.dom.player.league
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import ddm.ui.dom.common.{Button, IconButtonModifiers}
-import ddm.ui.model.player.mode.{LeaguesI, LeaguesII, LeaguesIII, LeaguesIV, Mode}
+import ddm.ui.model.player.mode.*
 import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
@@ -32,6 +32,9 @@ object LeagueOption {
 
     @js.native @JSImport("/images/league-logos/trailblazer-reloaded.png", JSImport.Default)
     val trailblazerReloaded: String = js.native
+
+    @js.native @JSImport("/images/league-logos/raging-echoes.png", JSImport.Default)
+    val ragingEchoes: String = js.native
   }
 
   @js.native @JSImport("/styles/player/league/leagueOption.module.css", JSImport.Default)
@@ -51,6 +54,7 @@ object LeagueOption {
       case LeaguesII => Some(Logos.trailblazer)
       case LeaguesIII => Some(Logos.shatteredRelics)
       case LeaguesIV => Some(Logos.trailblazerReloaded)
+      case LeaguesV => Some(Logos.ragingEchoes)
       case _ => None
     }).map(src =>
       L.img(L.cls(Styles.logo), L.src(src), L.alt(s"Logo for ${league.name}"))

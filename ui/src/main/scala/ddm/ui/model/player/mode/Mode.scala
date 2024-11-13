@@ -14,7 +14,7 @@ object Mode {
 
   object League {
     val all: List[League] =
-      List(LeaguesI, LeaguesII, LeaguesIII, LeaguesIV)
+      List(LeaguesI, LeaguesII, LeaguesIII, LeaguesIV, LeaguesV)
 
     given Encoder[League] =
       Encoder[String].contramap {
@@ -22,6 +22,7 @@ object Mode {
         case LeaguesII => "leagues-2"
         case LeaguesIII => "leagues-3"
         case LeaguesIV => "leagues-4"
+        case LeaguesV => "leagues-5"
         case other => throw IllegalArgumentException(s"Could not encode unexpected league: [$other]")
       }
 
@@ -31,6 +32,7 @@ object Mode {
         case "leagues-2" => Right(LeaguesII)
         case "leagues-3" => Right(LeaguesIII)
         case "leagues-4" => Right(LeaguesIV)
+        case "leagues-5" => Right(LeaguesV)
         case other => Left(DecodingFailure(s"Could not decode unexpected league: [$other]"))
       }
   }

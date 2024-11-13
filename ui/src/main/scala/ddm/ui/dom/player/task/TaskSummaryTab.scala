@@ -8,13 +8,13 @@ import scala.scalajs.js.annotation.JSImport
 object TaskSummaryTab {
   def apply(categories: List[L.HtmlElement]): L.Div =
     L.div(
-      L.cls(Styles.diaryOptions),
-      categories.map(_.amend(L.cls(Styles.option)))
+      L.cls(Styles.categories),
+      categories.map(_.amend(L.cls(Styles.category)))
     )
 
   @js.native @JSImport("/styles/player/task/taskSummaryTab.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val diaryOptions: String = js.native
-    val option: String = js.native
+    val categories: String = js.native
+    val category: String = js.native
   }
 }

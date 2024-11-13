@@ -23,6 +23,7 @@ final case class LeaguePointScoring(
       case LeaguesII => task.leagues2Props.map(_.tier)
       case LeaguesIII => task.leagues3Props.map(_.tier)
       case LeaguesIV => task.leagues4Props.map(_.tier)
+      case LeaguesV => task.leagues5Props.map(_.tier)
       case _ => None
     }
 }

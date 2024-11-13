@@ -13,6 +13,7 @@ enum LeagueTaskArea(val name: String) {
   case Kourend extends LeagueTaskArea("Kourend & Kebos")
   case Morytania extends LeagueTaskArea("Morytania")
   case Tirannwn extends LeagueTaskArea("Tirannwn")
+  case Varlamore extends LeagueTaskArea("Varlamore")
   case Wilderness extends LeagueTaskArea("Wilderness")
 }
 

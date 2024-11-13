@@ -19,7 +19,8 @@ object TwistedTaskDecoder {
           leagues1Props = Some(tier),
           leagues2Props = None,
           leagues3Props = None,
-          leagues4Props = None
+          leagues4Props = None,
+          leagues5Props = None
         )
 
       case _ =>
