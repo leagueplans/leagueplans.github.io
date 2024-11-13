@@ -77,11 +77,13 @@ object ToastHub {
     )
 
   private def dismissButton(observer: Observer[Unit]): L.Button =
-    L.button(
+    Button(observer)(_.handled).amend(
       L.cls(Styles.dismiss),
-      L.`type`("button"),
       FontAwesome.icon(FreeSolid.faXmark),
-      L.onClick.handled --> observer
+      IconButtonModifiers(
+        tooltip = "Dismiss",
+        screenReaderDescription = "dismiss"
+      )
     )
 
   private def autoDismiss(duration: Duration): EventStream[Unit] =

@@ -44,7 +44,6 @@ object EditorElement {
     val warningIcon: String = js.native
     val sections: String = js.native
     val section: String = js.native
-    val tooltip: String = js.native
     val subStepDescription: String = js.native
   }
 
@@ -54,10 +53,7 @@ object EditorElement {
     else
       L.div(
         L.cls(Styles.warningIcon),
-        Tooltip(L.div(
-          L.cls(Styles.tooltip),
-          warnings.map(L.p(_))
-        )),
+        Tooltip(L.div(warnings.map(L.p(_)))),
         FontAwesome.icon(FreeSolid.faTriangleExclamation)
       )
 

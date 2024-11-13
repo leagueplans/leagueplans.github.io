@@ -30,8 +30,6 @@
   border-width: 2px;
   border-radius: 1rem;
 
-  cursor: pointer;
-
   font-size: 1.2rem;
   color: white;
   text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
@@ -41,7 +39,7 @@
   background-color: #6f6f6f;
 }
 
-.submit:hover, .submit:focus {
+.submit:hover, .submit:focus-visible {
   background-color: #98d744;
   box-shadow: 0 0 0.5rem white;
 }
@@ -59,9 +57,4 @@
   border-width: 1px;
   border-style: groove;
   background-color: white;
-}
-
-.tooltip {
-  color: black;
-  font-size: 1rem;
 }

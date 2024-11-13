@@ -3,11 +3,11 @@ package ddm.ui.dom.player.item.equipment
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.Item
-import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.common.{Button, ContextMenu}
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.Depository
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handled
 
 object EquippedItemContextMenu {
   def apply(
@@ -28,10 +28,8 @@ object EquippedItemContextMenu {
       )
     )
 
-    L.button(
-      L.`type`("button"),
-      "Unequip",
-      L.onClick.handled --> Observer.combine(observer, menuCloser)
-    )
+    Button(
+      Observer.combine(observer, menuCloser)
+    )(_.handled).amend("Unequip")
   }
 }

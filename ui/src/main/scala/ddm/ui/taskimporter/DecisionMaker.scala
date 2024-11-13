@@ -3,8 +3,9 @@ package ddm.ui.taskimporter
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.LeagueTask
+import ddm.ui.dom.common.Button
 import io.circe.syntax.EncoderOps
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handledAs
 import io.circe.Printer
 
 import scala.scalajs.js
@@ -81,18 +82,14 @@ object DecisionMaker {
     mergedTask: LeagueTask,
     observer: Observer[Decision]
   ): L.Button =
-    L.button(
+    Button(observer)(_.handledAs(Decision.Merge(existingTask, newTask, mergedTask))).amend(
       L.cls(Styles.mergeButton),
-      L.`type`("button"),
-      descriptor,
-      L.onClick.handledAs(Decision.Merge(existingTask, newTask, mergedTask)) --> observer
+      descriptor
     )
 
   private def newButton(newTask: LeagueTask, observer: Observer[Decision]): L.Button =
-    L.button(
+    Button(observer)(_.handledAs(Decision.New(newTask))).amend(
       L.cls(Styles.`new`),
-      L.`type`("button"),
-      "New task",
-      L.onClick.handledAs(Decision.New(newTask)) --> observer
+      "New task"
     )
 }

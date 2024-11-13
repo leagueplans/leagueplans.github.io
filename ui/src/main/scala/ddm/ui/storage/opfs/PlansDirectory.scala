@@ -19,7 +19,7 @@ final class PlansDirectory(underlying: DirectoryHandle) {
         .map(_.collect { case (planID, Right(metadata)) => PlanID.fromString(planID) -> metadata }.toMap)
         .map(Right(_))
     )
-  
+
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, PlanID]] = {
     val planID = PlanID.generate()
     

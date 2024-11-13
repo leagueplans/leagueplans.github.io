@@ -1,11 +1,12 @@
 package ddm.ui.taskimporter
 
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.LeagueTask
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.dom.common.Button
+import ddm.ui.utils.laminar.LaminarOps.ifUnhandledF
 import io.circe.syntax.EncoderOps
-import org.scalajs.dom.{Blob, BlobPropertyBag, URL}
+import org.scalajs.dom.{Blob, BlobPropertyBag, MouseEvent, URL}
 
 import scala.scalajs.js.JSConverters.JSRichIterable
 
@@ -18,26 +19,18 @@ object Downloader {
     )
 
   private def updatedTasksButton(stateSignal: Signal[StateTracker.State]): L.Button =
-    L.button(
-      L.`type`("button"),
-      "Download updated tasks",
-      L.onClick.ifUnhandledF(_.withCurrentValueOf(stateSignal)) --> { (event, state) =>
-        event.preventDefault()
-        val tasks = state.processedTasks ++ state.remainingExistingTasks.values
-        triggerDownload(tasks, "updated-tasks")
-      }
-    )
+    Button(Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
+      event.preventDefault()
+      val tasks = state.processedTasks ++ state.remainingExistingTasks.values
+      triggerDownload(tasks, "updated-tasks")
+    })(_.ifUnhandledF(_.withCurrentValueOf(stateSignal))).amend("Download updated tasks")
 
   private def remainingTasksButton(stateSignal: Signal[StateTracker.State]): L.Button =
-    L.button(
-      L.`type`("button"),
-      "Download remaining tasks",
-      L.onClick.ifUnhandledF(_.withCurrentValueOf(stateSignal)) --> { (event, state) =>
-        event.preventDefault()
-        val tasks = state.remainingNewTasks.values.toList
-        triggerDownload(tasks, "remaining-tasks")
-      }
-    )
+    Button(Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
+      event.preventDefault()
+      val tasks = state.remainingNewTasks.values.toList
+      triggerDownload(tasks, "remaining-tasks")
+    })(_.ifUnhandledF(_.withCurrentValueOf(stateSignal))).amend("Download remaining tasks")
 
   private def triggerDownload(data: List[LeagueTask], name: String): Unit = {
     val url = createDownloadURL(data)

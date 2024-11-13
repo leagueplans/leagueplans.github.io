@@ -21,7 +21,7 @@
 }
 
 .button {
-  composes: button from "../common/button.module.css";
+  composes: button from "../common/styledButton.module.css";
 
   display: flex;
   flex-wrap: wrap;
@@ -29,7 +29,6 @@
   align-content: center;
   padding: 0.5rem;
   font-size: 1rem;
-  cursor: pointer;
 }
 
 .addIcon {

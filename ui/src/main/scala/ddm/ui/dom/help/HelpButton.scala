@@ -1,23 +1,20 @@
 package ddm.ui.dom.help
 
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.dom.common.Modal
+import ddm.ui.dom.common.{Button, Modal}
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handledAs
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object HelpButton {
-  def apply(modalController: Modal.Controller): L.Button = {
-    L.button(
+  def apply(modalController: Modal.Controller): L.Button =
+    Button(modalController)(_.handledAs(Some(modalContents()))).amend(
       L.cls(Styles.button),
-      L.`type`("button"),
       FontAwesome.icon(FreeRegular.faCircleQuestion).amend(L.svg.cls(Styles.icon)),
-      L.onClick.handledAs(Some(modalContents())) --> modalController
     )
-  }
 
   @js.native @JSImport("/styles/help/helpButton.module.css", JSImport.Default)
   private object Styles extends js.Object {

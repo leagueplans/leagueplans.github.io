@@ -1,0 +1,3 @@
+.submit {
+  composes: button from "../button.module.css";
+}

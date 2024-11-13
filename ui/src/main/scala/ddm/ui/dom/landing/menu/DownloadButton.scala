@@ -1,13 +1,15 @@
 package ddm.ui.dom.landing.menu
 
 import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.codec.encoding.Encoder
-import ddm.ui.dom.common.ToastHub
+import ddm.ui.dom.common.{Button, IconButtonModifiers, ToastHub}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.storage.client.StorageClient
 import ddm.ui.storage.model.{PlanExport, PlanID}
 import ddm.ui.utils.laminar.FontAwesome
+import ddm.ui.utils.laminar.LaminarOps.handled
 import org.scalajs.dom.*
 
 import scala.concurrent.duration.DurationInt
@@ -20,11 +22,22 @@ object DownloadButton {
     name: String,
     storage: StorageClient,
     toastPublisher: ToastHub.Publisher
-  ): L.Button =
-    AsyncButton(
-      FontAwesome.icon(FreeSolid.faDownload),
-      () => onClick(id, name, storage, toastPublisher)
+  ): L.Button = {
+    val clickStream = EventBus[Unit]()
+
+    Button(clickStream.writer)(_.handled).amend(
+      IconButtonModifiers(
+        tooltip = "Download",
+        screenReaderDescription = "download"
+      ),
+      AsyncButtonModifiers(
+        FontAwesome.icon(FreeSolid.faDownload),
+        clickStream.events.flatMapWithStatus(
+          onClick(id, name, storage, toastPublisher)
+        )
+      )
     )
+  }
 
   private def onClick(
     id: PlanID,

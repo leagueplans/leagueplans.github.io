@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.EditableParagraph
+import ddm.ui.dom.common.{Button, EditableParagraph}
 import ddm.ui.dom.forest.Forester
 import ddm.ui.facades.fontawesome.freeregular.FreeRegular
 import ddm.ui.model.plan.Step
@@ -36,16 +36,16 @@ object StepDescription {
   }
 
   private def editingToggle(isEditingState: Var[Boolean]): L.Button =
-    L.button(
+    Button(isEditingState)(
+      _.ifUnhandledF(
+        _.map(_.preventDefault()).sample(isEditingState).map(!_)
+      )
+    ).amend(
       L.cls(Styles.editingToggle),
-      L.`type`("button"),
       L.child <-- isEditingState.signal.map {
         case false => FontAwesome.icon(FreeRegular.faPenToSquare)
         case true => FontAwesome.icon(FreeRegular.faSquareCheck)
-      },
-      L.onClick.ifUnhandledF(
-        _.map(_.preventDefault()).sample(isEditingState).map(!_)
-      ) --> isEditingState
+      }
     )
 
   private def toParagraph(

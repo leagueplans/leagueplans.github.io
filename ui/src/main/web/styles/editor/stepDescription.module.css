@@ -7,10 +7,9 @@
 }
 
 .editingToggle {
-  composes: button from "../common/button.module.css";
+  composes: button from "../common/styledButton.module.css";
 
   font-size: 1.5rem;
   padding: 0.125rem;
   width: 2.1rem;
-  cursor: pointer;
 }

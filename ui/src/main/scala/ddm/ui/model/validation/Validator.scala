@@ -51,7 +51,7 @@ object Validator {
         Either.cond(
           Level.of(player.stats(skill)) >= level,
           right = (),
-          left = s"$skill is less than level $level"
+          left = s"$skill is lower than level $level"
         )
     }
 

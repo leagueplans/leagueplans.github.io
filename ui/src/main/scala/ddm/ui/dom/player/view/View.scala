@@ -2,6 +2,7 @@ package ddm.ui.dom.player.view
 
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
+import ddm.ui.dom.common.Button
 import ddm.ui.utils.laminar.LaminarOps.*
 
 import scala.scalajs.js
@@ -33,15 +34,13 @@ object View {
   }
 
   private def toTabElement(tab: Tab, tabVar: Var[Tab]): L.Button =
-    L.button(
+    Button(tabVar)(_.handledAs(tab)).amend(
       L.cls <-- tabVar.signal.map(selectedTab =>
         if (tab == selectedTab)
           Styles.viewedTab
         else
           Styles.hiddenTab
       ),
-      L.`type`("button"),
-      tab.name,
-      L.onClick.handledAs(tab) --> tabVar
+      tab.name
     )
 }

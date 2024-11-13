@@ -67,14 +67,12 @@
   border-style: none;
   border-radius: 1rem;
 
-  cursor: pointer;
-
   background: none;
   color: unset;
   font-size: 1.5rem;
 }
 
-.dismiss:hover, .dismiss:focus {
+.dismiss:hover, .dismiss:focus-visible {
   background-color: rgba(0, 0, 0, 0.1);
 }
 

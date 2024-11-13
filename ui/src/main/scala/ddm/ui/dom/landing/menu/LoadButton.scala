@@ -1,11 +1,13 @@
 package ddm.ui.dom.landing.menu
 
 import com.raquo.airstream.core.{EventStream, Observer}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.dom.common.ToastHub
+import ddm.ui.dom.common.{Button, ToastHub}
 import ddm.ui.model.plan.Plan
 import ddm.ui.storage.client.{PlanSubscription, StorageClient}
 import ddm.ui.storage.model.PlanID
+import ddm.ui.utils.laminar.LaminarOps.handled
 
 import scala.concurrent.duration.DurationInt
 
@@ -15,11 +17,18 @@ object LoadButton {
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher
-  ): L.Button =
-    AsyncButton(
-      "Load",
-      () => onClick(id, storage, selectionObserver, toastPublisher)
+  ): L.Button = {
+    val clickStream = EventBus[Unit]()
+
+    Button(clickStream.writer)(_.handled).amend(
+      AsyncButtonModifiers(
+        "Load",
+        clickStream.events.flatMapWithStatus(
+          onClick(id, storage, selectionObserver, toastPublisher)
+        )
+      )
     )
+  }
 
   private def onClick(
     id: PlanID,

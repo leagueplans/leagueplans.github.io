@@ -3,6 +3,7 @@ package ddm.ui.dom.player.task
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
+import ddm.ui.dom.common.{Button, IconButtonModifiers}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
 import ddm.ui.utils.laminar.LaminarOps.*
@@ -53,20 +54,30 @@ object TaskPanel {
   }
 
   private def toTabToggle(tabVar: Var[Tab]): L.Button =
-    L.button(
-      L.cls(Styles.tabToggle),
-      L.`type`("button"),
-      L.child <-- tabVar.signal.map {
-        case Tab.Summary => FontAwesome.icon(FreeSolid.faBars)
-        case Tab.Details => FontAwesome.icon(FreeSolid.faHouse)
-      },
-      L.onClick.ifUnhandledF(
+    Button(tabVar)(
+      _.ifUnhandledF(
         _.map(_.preventDefault())
           .sample(tabVar)
           .map {
             case Tab.Summary => Tab.Details
             case Tab.Details => Tab.Summary
           }
-      ) --> tabVar
+      )
+    ).amend(
+      L.cls(Styles.tabToggle),
+      L.child <-- tabVar.signal.map {
+        case Tab.Summary => FontAwesome.icon(FreeSolid.faBars)
+        case Tab.Details => FontAwesome.icon(FreeSolid.faHouse)
+      },
+      IconButtonModifiers(
+        tooltip = tabVar.signal.map {
+          case Tab.Summary => "Switch to the detailed view"
+          case Tab.Details => "Switch to the summary view"
+        },
+        screenReaderDescription = tabVar.signal.map {
+          case Tab.Summary => "detailed view"
+          case Tab.Details => "summary view"
+        }
+      )
     )
 }

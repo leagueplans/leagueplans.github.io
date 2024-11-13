@@ -2,7 +2,7 @@ package ddm.ui.dom.landing.menu
 
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
-import ddm.ui.dom.common.{DeletionConfirmer, Modal, ToastHub}
+import ddm.ui.dom.common.{Button, DeletionConfirmer, IconButtonModifiers, Modal, ToastHub}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.storage.client.StorageClient
 import ddm.ui.storage.model.PlanID
@@ -27,10 +27,12 @@ object DeleteButton {
       Observer(_ => triggerDelete(id, storage, toastPublisher))
     )
 
-    L.button(
-      L.`type`("button"),
+    Button(confirmer)(_.handled).amend(
       FontAwesome.icon(FreeSolid.faXmark),
-      L.onClick.handled --> confirmer
+      IconButtonModifiers(
+        tooltip = "Delete",
+        screenReaderDescription = "delete"
+      )
     )
   }
 

@@ -2,6 +2,7 @@ package ddm.ui.dom.player.diary
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import ddm.ui.dom.common.{Button, IconButtonModifiers}
 import ddm.ui.model.player.diary.{DiaryRegion, DiaryTier}
 import ddm.ui.utils.laminar.LaminarOps.*
 
@@ -45,14 +46,12 @@ object DiaryOption {
     regionObserver: Observer[Unit],
     tierObserver: Observer[Option[DiaryTier]]
   ): L.Button =
-    L.button(
+    Button(Observer.combine(
+      regionObserver,
+      tierObserver.contramap[Unit](_ => None)
+    ))(_.handled).amend(
       L.cls(Styles.region, PanelStyles.header),
-      L.`type`("button"),
-      region.name,
-      L.onClick.handled --> Observer.combine(
-        regionObserver,
-        tierObserver.contramap[Unit](_ => None)
-      )
+      region.name
     )
 
   private def tierButton(
@@ -62,13 +61,15 @@ object DiaryOption {
     regionObserver: Observer[Unit],
     tierObserver: Observer[Option[DiaryTier]]
   ): L.Button =
-    L.button(
+    Button(Observer.combine(
+      regionObserver,
+      tierObserver.contramap[Unit](_ => Some(tier))
+    ))(_.handled).amend(
       L.cls(Styles.tier),
-      L.`type`("button"),
       L.child <-- completeSignal.map(DiaryTierIcon(region, tier, _).amend(L.cls(Styles.icon))),
-      L.onClick.handled --> Observer.combine(
-        regionObserver,
-        tierObserver.contramap[Unit](_ => Some(tier))
+      IconButtonModifiers(
+        tooltip = s"$tier tier",
+        screenReaderDescription = s"$tier tier"
       )
     )
 }

@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.ifUnhandledF
 import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js

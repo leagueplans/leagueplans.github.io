@@ -5,9 +5,5 @@ import ddm.ui.utils.laminar.LaminarOps.handledAs
 
 object CancelModalButton {
   def apply(modalController: Modal.Controller): L.Button =
-    L.button(
-      L.`type`("button"),
-      "Cancel",
-      L.onClick.handledAs(None) --> modalController
-    )
+    Button(modalController)(_.handledAs(None)).amend("Cancel")
 }

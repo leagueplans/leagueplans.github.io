@@ -1,13 +1,5 @@
 .button {
-  background: none;
-  border: none;
-  color: white;
-}
+  cursor: pointer;
 
-.button:hover {
-  filter: drop-shadow(0 0 0.1rem white);
-}
-
-.button:active {
-  opacity: 0.7;
+  transition: background-color 175ms ease-out;
 }

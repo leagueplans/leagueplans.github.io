@@ -3,13 +3,13 @@ package ddm.ui.dom.player.stats
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.*
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.UnlockSkill
 import ddm.ui.model.player.skill.Stat
 import ddm.ui.utils.airstream.ObserverOps.observer
+import ddm.ui.utils.laminar.LaminarOps.handled
 import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js
@@ -119,7 +119,7 @@ object StatPane {
     statSignal: Signal[Stat],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     gainXPFormOpenerSignal: Signal[Observer[FormOpener.Command]]
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     controller.bind(closer =>
       Signal
         .combine(statSignal, effectObserverSignal, gainXPFormOpenerSignal)
@@ -145,10 +145,6 @@ object StatPane {
           L.onClick --> effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
         )
 
-    L.button(
-      L.`type`("button"),
-      conditionalModifiers,
-      L.onClick --> menuCloser
-    )
+    Button(menuCloser)(_.handled).amend(conditionalModifiers)
   }
 }

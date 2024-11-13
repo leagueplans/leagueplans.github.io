@@ -60,8 +60,5 @@ object ItemSearch {
     )
 
   private def tooltip(item: Item): L.Modifier[L.HtmlElement] =
-    Tooltip(KeyValuePairs(
-      L.span("ID:") -> L.span(item.id),
-      L.span("Examine:") -> L.span(item.examine)
-    ))
+    Tooltip(KeyValuePairs(L.span("Examine:") -> L.span(item.examine)))
 }

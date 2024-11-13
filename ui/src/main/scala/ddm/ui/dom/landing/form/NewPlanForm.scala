@@ -50,7 +50,6 @@ object NewPlanForm {
         InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
         importLabel.amend(L.cls(Styles.label), "Initial data:"),
         Tooltip(L.p(
-          L.cls(Styles.tooltip),
           "If you have a save file for an existing plan, then you can import it here. Otherwise, you can ignore this."
         ))
       ),
@@ -67,7 +66,6 @@ object NewPlanForm {
     val submit: String = js.native
 
     val infoIcon: String = js.native
-    val tooltip: String = js.native
   }
 
   private def createNameInput(): (L.Input, L.Label, Signal[String]) = {

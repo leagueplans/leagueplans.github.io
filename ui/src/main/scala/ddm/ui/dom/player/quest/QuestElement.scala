@@ -17,8 +17,8 @@ object QuestElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
     contextMenuController: ContextMenu.Controller
-  ): L.Span =
-    L.span(
+  ): L.Div =
+    L.div(
       L.cls <-- completeSignal.map {
         case false => ColourStyles.notStarted
         case true => ColourStyles.completed

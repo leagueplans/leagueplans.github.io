@@ -2,6 +2,7 @@ package ddm.ui.dom.player.league
 
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import ddm.ui.dom.common.{Button, IconButtonModifiers}
 import ddm.ui.model.player.mode.{LeaguesI, LeaguesII, LeaguesIII, LeaguesIV, Mode}
 import ddm.ui.utils.laminar.LaminarOps.*
 
@@ -10,11 +11,13 @@ import scala.scalajs.js.annotation.JSImport
 
 object LeagueOption {
   def apply(league: Mode.League, leagueObserver: Observer[Unit]): L.Button =
-    L.button(
+    Button(leagueObserver)(_.handled).amend(
       L.cls(Styles.option, PanelStyles.header),
-      L.`type`("button"),
       toLogo(league).getOrElse(league.name),
-      L.onClick.handled --> leagueObserver
+      IconButtonModifiers(
+        tooltip = league.name,
+        screenReaderDescription = league.name
+      )
     )
 
   private object Logos {

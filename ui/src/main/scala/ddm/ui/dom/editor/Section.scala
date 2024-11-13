@@ -2,14 +2,11 @@ package ddm.ui.dom.editor
 
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
-import com.raquo.laminar.nodes.ReactiveHtmlElement.Base
-import ddm.ui.dom.common.DragSortableList
+import ddm.ui.dom.common.{Button, DragSortableList}
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.HasID
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.*
-import org.scalajs.dom.html.{Button, Div}
+import ddm.ui.utils.laminar.LaminarOps.handled
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -23,7 +20,7 @@ object Section {
     toDescription: T => L.Modifier[L.HtmlElement],
     maybeAdditionObserver: Option[Observer[Unit]],
     deletionObserver: Observer[T]
-  )(using hasID: HasID[T]): ReactiveHtmlElement[Div] =
+  )(using hasID: HasID[T]): L.Div =
     L.div(
       L.cls(Styles.section),
       toHeader(title, maybeAdditionObserver),
@@ -49,26 +46,24 @@ object Section {
     val itemDescription: String = js.native
   }
 
-  private def toHeader(title: String, maybeAdditionObserver: Option[Observer[Unit]]): ReactiveHtmlElement[Div] =
+  private def toHeader(title: String, maybeAdditionObserver: Option[Observer[Unit]]): L.Div =
     L.div(
       L.cls(Styles.header),
       maybeAdditionObserver.map(addButton),
       L.p(L.cls(Styles.text), title),
     )
 
-  private def addButton(observer: Observer[Unit]): ReactiveHtmlElement[Button] =
-    L.button(
+  private def addButton(observer: Observer[Unit]): L.Button =
+    Button(observer)(_.handled).amend(
       L.cls(Styles.addIcon),
-      L.`type`("button"),
-      FontAwesome.icon(FreeSolid.faPlus),
-      L.onClick.handled --> observer
+      FontAwesome.icon(FreeSolid.faPlus)
     )
 
   private def toItem(
-    dragIcon: ReactiveHtmlElement[Div],
+    dragIcon: L.Div,
     description: L.Modifier[L.HtmlElement],
     deletionObserver: Observer[Unit]
-  ): List[L.Modifier[Base]] =
+  ): List[L.Modifier[L.HtmlElement]] =
     List(
       L.cls(Styles.item),
       dragIcon.amend(L.cls(Styles.button)),
@@ -79,11 +74,9 @@ object Section {
       deleteButton(deletionObserver)
     )
 
-  private def deleteButton(observer: Observer[Unit]): ReactiveHtmlElement[Button] =
-    L.button(
+  private def deleteButton(observer: Observer[Unit]): L.Button =
+    Button(observer)(_.handled).amend(
       L.cls(Styles.deleteIcon),
-      L.`type`("button"),
-      FontAwesome.icon(FreeSolid.faXmark),
-      L.onClick.handled --> observer
+      FontAwesome.icon(FreeSolid.faXmark)
     )
 }

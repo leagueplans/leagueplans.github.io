@@ -2,15 +2,13 @@ package ddm.ui.dom.player.item.bank
 
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Item
-import ddm.ui.dom.common.{ContextMenu, FormOpener, Modal}
+import ddm.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
 import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.MoveItem
 import ddm.ui.model.player.item.{Depository, Stack}
-import ddm.ui.utils.laminar.LaminarOps.*
-import org.scalajs.dom.html.Div
+import ddm.ui.utils.laminar.LaminarOps.handled
 
 object BankItemContextMenu {
   def apply(
@@ -19,7 +17,7 @@ object BankItemContextMenu {
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modalController: Modal.Controller
-  ): ReactiveHtmlElement[Div] =
+  ): L.Div =
     L.div(
       withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modalController),
       Option.when(item.noteable)(
@@ -50,11 +48,9 @@ object BankItemContextMenu {
           )
         )
 
-    L.button(
-      L.`type`("button"),
-      if (note) "Withdraw noted" else "Withdraw",
-      L.onClick.handled --> Observer.combine(observer, menuCloser)
-    )
+    Button(
+      Observer.combine(observer, menuCloser)
+    )(_.handled).amend(if (note) "Withdraw noted" else "Withdraw")
   }
 
   private def toWithdrawItemFormOpener(

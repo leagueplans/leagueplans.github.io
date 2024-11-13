@@ -4,14 +4,14 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import ddm.common.model.EquipmentType
 import ddm.common.model.Item.Bankable
-import ddm.ui.dom.common.{ContextMenu, FormOpener, Modal}
+import ddm.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
 import ddm.ui.dom.player.item.MoveItemForm
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.plan.Effect.{AddItem, MoveItem}
 import ddm.ui.model.player.item.Depository.Kind.EquipmentSlot
 import ddm.ui.model.player.item.{Depository, Stack}
 import ddm.ui.model.player.{Cache, Player}
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handled
 
 object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
@@ -184,9 +184,7 @@ object InventoryItemContextMenu {
     clickObserver: Observer[Unit],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
-    L.button(
-      L.`type`("button"),
-      text,
-      L.onClick.handled --> Observer.combine(clickObserver, menuCloser)
-    )
+    Button(
+      Observer.combine(clickObserver, menuCloser)
+    )(_.handled).amend(text)
 }

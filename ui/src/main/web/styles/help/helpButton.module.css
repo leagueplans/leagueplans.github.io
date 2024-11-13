@@ -8,12 +8,10 @@
   border-radius: 1rem 0 0 0;
   border-color: #bfa204;
 
-  cursor: pointer;
-
   padding: 0;
 }
 
-.button:hover, .button:focus {
+.button:hover, .button:focus-visible {
   background-color: #114b02;
 }
 

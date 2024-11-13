@@ -3,9 +3,10 @@ package ddm.ui.dom.plan
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
+import ddm.ui.dom.common.Button
 import ddm.ui.facades.fontawesome.freesolid.FreeSolid
 import ddm.ui.utils.laminar.FontAwesome
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.handledAs
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -53,23 +54,19 @@ object CollapsibleList {
     show: Observer[Boolean],
     contentType: String
   ): L.Button =
-    L.button(
+    Button(show)(_.handledAs(true)).amend(
       L.cls(Styles.listToggleHorizontal),
-      L.`type`("button"),
       FontAwesome.icon(FreeSolid.faCaretRight),
       L.span(
         L.cls(Styles.collapsedListAnnotation),
         L.child.text <-- countSignal.map(i => s"$i ${contentType}s hidden")
-      ),
-      L.onClick.handledAs(true) --> show
+      )
     )
 
   private def collapseListButton(showSubSteps: Observer[Boolean]): L.Button =
-    L.button(
+    Button(showSubSteps)(_.handledAs(false)).amend(
       L.cls(Styles.listToggleVertical),
-      L.`type`("button"),
       FontAwesome.icon(FreeSolid.faCaretDown),
-      L.div(L.cls(Styles.collapseBanner)),
-      L.onClick.handledAs(false) --> showSubSteps
+      L.div(L.cls(Styles.collapseBanner))
     )
 }

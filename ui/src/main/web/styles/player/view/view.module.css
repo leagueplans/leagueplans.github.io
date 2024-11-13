@@ -24,13 +24,10 @@
   padding: 0.25rem 1rem;
 
   background: none;
-  cursor: pointer;
 
   color: white;
   text-shadow: 1px 1px black;
   font-size: 1.3rem;
-
-  transition: background-color 300ms ease-out;
 }
 
 .hiddenTab {

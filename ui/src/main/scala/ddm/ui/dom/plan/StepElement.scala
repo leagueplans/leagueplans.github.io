@@ -4,13 +4,12 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.common.{Button, ContextMenu}
 import ddm.ui.dom.forest.Forester
 import ddm.ui.model.plan.Step
 import ddm.ui.utils.airstream.JsPromiseOps.asObservable
-import ddm.ui.utils.laminar.LaminarOps.*
+import ddm.ui.utils.laminar.LaminarOps.{handledAs, ifUnhandled, ifUnhandledF}
 import org.scalajs.dom.html.{OList, Paragraph}
 import org.scalajs.dom.{Event, KeyCode, window}
 
@@ -81,7 +80,7 @@ object StepElement {
     val subStep: String = js.native
   }
 
-  private def hoverControls: (List[Binder[Base]], Signal[Boolean]) = {
+  private def hoverControls: (List[Binder[L.Element]], Signal[Boolean]) = {
     val hovering = Var(false)
     val listeners = List(
       L.onMouseOver.handledAs(true) --> hovering,
@@ -106,7 +105,7 @@ object StepElement {
   private def focusListeners(
     stepID: Step.ID,
     focusObserver: Observer[Step.ID]
-  ): List[Binder[Base]] = {
+  ): List[Binder[L.Element]] = {
     val handler = focusObserver.contramap[Event] { event =>
       event.preventDefault()
       stepID
@@ -125,7 +124,7 @@ object StepElement {
     stepID: Step.ID,
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     completionStatusObserver: Observer[Boolean]
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     controller.bind(closer =>
       Signal
         .combine(editingEnabledSignal, isCompleteSignal)
@@ -144,14 +143,12 @@ object StepElement {
     )
 
   private def cutButton(stepID: Step.ID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
-    L.button(
-      L.`type`("button"),
-      "Cut",
-      L.onClick.ifUnhandledF(_.flatMapSwitch { event =>
+    Button(closer)(
+      _.ifUnhandledF(_.flatMapSwitch { event =>
         event.preventDefault()
         window.navigator.clipboard.writeText(stepID).asObservable
-      }) --> closer
-    )
+      })
+    ).amend("Cut")
 
   private def pasteButton(
     stepID: Step.ID,
@@ -163,14 +160,12 @@ object StepElement {
         forester.move(child = Step.ID.fromString(rawChildID), maybeParent = Some(stepID))
       )
 
-    L.button(
-      L.`type`("button"),
-      "Paste",
-      L.onClick.ifUnhandledF(_.flatMapSwitch { event =>
+    Button(Observer.combine(stepMover, closer))(
+      _.ifUnhandledF(_.flatMapSwitch { event =>
         event.preventDefault()
         window.navigator.clipboard.readText().asObservable
-      }) --> Observer.combine(stepMover, closer)
-    )
+      })
+    ).amend("Paste")
   }
 
   private def changeStatusButton(
@@ -178,9 +173,7 @@ object StepElement {
     completionStatusObserver: Observer[Boolean],
     closer: Observer[ContextMenu.CloseCommand]
   ): L.Button =
-    L.button(
-      L.`type`("button"),
-      if (isComplete) "Mark incomplete" else "Mark complete",
-      L.onClick.handledAs(!isComplete) --> Observer.combine(completionStatusObserver, closer)
-    )
+    Button(Observer.combine(completionStatusObserver, closer))(
+      _.handledAs(!isComplete)
+    ).amend(if (isComplete) "Mark incomplete" else "Mark complete")
 }

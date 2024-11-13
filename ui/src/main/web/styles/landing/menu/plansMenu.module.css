@@ -30,7 +30,6 @@
 }
 
 .button {
-  cursor: pointer;
   border: none;
   color: white;
   background: none;
@@ -41,11 +40,11 @@
 
 .downloadButton {}
 
-.downloadButton:hover, .downloadButton:focus {
+.downloadButton:enabled:hover, .downloadButton:focus-visible {
   background-color: #0e2437;
 }
 
-.downloadButton:active {
+.downloadButton:enabled:active {
   background-color: #000000;
 }
 
@@ -56,7 +55,7 @@
   margin-right: 0.5rem;
 }
 
-.deleteButton:hover, .deleteButton:focus {
+.deleteButton:hover, .deleteButton:focus-visible {
   background-color: #cd0404;
 }
 
@@ -73,10 +72,10 @@
   text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
 }
 
-.loadButton:hover, .loadButton:focus {
+.loadButton:enabled:hover, .loadButton:focus-visible {
   background-color: #98d744;
 }
 
-.loadButton:active {
+.loadButton:enabled:active {
   background-color: #6fa725;
 }
