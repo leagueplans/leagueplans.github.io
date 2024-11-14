@@ -13,6 +13,11 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2024, 10, 14),
+        "Updated item data",
+        List.empty
+      ),
+      item(
         new Date(2024, 10, 13),
         "Preliminary support for Leagues V",
         List(
