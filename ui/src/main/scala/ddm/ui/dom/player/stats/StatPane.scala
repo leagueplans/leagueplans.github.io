@@ -1,7 +1,7 @@
 package ddm.ui.dom.player.stats
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.ui.dom.common.*
@@ -135,16 +135,14 @@ object StatPane {
     gainXPFormOpener: Observer[FormOpener.Command],
     effectObserver: Observer[UnlockSkill],
     menuCloser: Observer[ContextMenu.CloseCommand]
-  ): L.Button = {
-    val conditionalModifiers =
-      if (stat.unlocked)
-        List[L.Modifier[L.Button]]("Gain XP", L.onClick --> gainXPFormOpener)
-      else
-        List[L.Modifier[L.Button]](
-          "Unlock skill",
-          L.onClick --> effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
+  ): L.Button =
+    if (stat.unlocked)
+      Button(Observer.combine(menuCloser, gainXPFormOpener))(_.handled).amend("Gain XP")
+    else
+      Button(
+        Observer.combine(
+          menuCloser, 
+          effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
         )
-
-    Button(menuCloser)(_.handled).amend(conditionalModifiers)
-  }
+      )(_.handled).amend("Unlock skill")
 }
