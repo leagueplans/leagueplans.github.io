@@ -33,7 +33,7 @@ object DescribedRequirement {
         line(
           text("("),
           DescribedRequirement(left, cache),
-          text("and"),
+          text(" and "),
           DescribedRequirement(right, cache),
           text(")"),
         )
@@ -42,7 +42,7 @@ object DescribedRequirement {
         line(
           text("("),
           DescribedRequirement(left, cache),
-          text("or"),
+          text(" or "),
           DescribedRequirement(right, cache),
           text(")"),
         )

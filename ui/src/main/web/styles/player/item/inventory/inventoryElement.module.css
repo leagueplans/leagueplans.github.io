@@ -2,8 +2,3 @@
   grid-template-columns: repeat(4, 36px);
   grid-template-rows: repeat(7, 36px);
 }
-
-.icon {
-  height: 1.2rem;
-  padding-right: 0.3rem;
-}

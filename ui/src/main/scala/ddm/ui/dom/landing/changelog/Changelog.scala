@@ -13,6 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2024, 10, 15),
+        "RuneLite bank tags",
+        List(
+          "You can now click a button in the inventory to export the current inventory contents as a" +
+            " RuneLite bank tag."
+        )
+      ),
+      item(
         new Date(2024, 10, 13),
         "Preliminary support for Leagues V",
         List(

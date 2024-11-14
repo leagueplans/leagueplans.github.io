@@ -1,0 +1,20 @@
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.title {
+  grid-row: 1;
+  grid-column: 1 / 3;
+  justify-self: center;
+}
+
+.inventoryIcon {
+  height: 1.2rem;
+  padding-right: 0.3rem;
+}
+
+.exportButton {
+  grid-row: 1;
+  grid-column: 2;
+}

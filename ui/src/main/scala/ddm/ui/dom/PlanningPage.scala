@@ -81,7 +81,8 @@ object PlanningPage {
           itemFuse,
           addEffectToFocus(focusedStepID.signal, forester),
           contextMenuController,
-          modalController
+          modalController,
+          toastPublisher
         )
       )
 

@@ -10,7 +10,6 @@ import ddm.ui.model.plan.Effect.UnlockSkill
 import ddm.ui.model.player.skill.Stat
 import ddm.ui.utils.airstream.ObserverOps.observer
 import ddm.ui.utils.laminar.LaminarOps.handled
-import org.scalajs.dom.HTMLDialogElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -19,10 +18,10 @@ object StatPane {
   def apply(
     stat: Signal[Stat],
     effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller
-  ): (ReactiveHtmlElement[HTMLDialogElement], L.Div) = {
+    contextMenuController: ContextMenu.Controller,
+    modalController: Modal.Controller
+  ): L.Div = {
     val pane = toPane(stat).amend(toTooltip(stat))
-    val (modal, modalController) = Modal()
 
     val gainXPFormOpener =
       stat
@@ -44,7 +43,7 @@ object StatPane {
       gainXPFormOpener
     )
 
-    (modal, pane.amend(menuBinder))
+    pane.amend(menuBinder)
   }
 
   @js.native @JSImport("/images/stat-window/stat-background.png", JSImport.Default)
@@ -141,7 +140,7 @@ object StatPane {
     else
       Button(
         Observer.combine(
-          menuCloser, 
+          menuCloser,
           effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
         )
       )(_.handled).amend("Unlock skill")

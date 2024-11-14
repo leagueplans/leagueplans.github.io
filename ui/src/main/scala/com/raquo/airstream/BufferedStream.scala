@@ -3,7 +3,6 @@ package com.raquo.airstream
 import com.raquo.airstream.common.{InternalNextErrorObserver, InternalTryObserver, SingleParentStream}
 import com.raquo.airstream.core.{EventStream, Observable, Transaction}
 
-import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
 final class BufferedStream[In, Out](
@@ -28,7 +27,7 @@ final class BufferedStream[In, Out](
           case Failure(error) => fireError(error, trx)
           case Success(value) => fireValue(value, trx)
         }
-      ): @nowarn("msg=discarded non-Unit value")
+      )
     }
   }
 

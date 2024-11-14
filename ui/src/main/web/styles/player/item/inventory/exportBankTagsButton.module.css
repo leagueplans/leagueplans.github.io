@@ -1,0 +1,19 @@
+.icon {
+  vertical-align: bottom;
+  height: 1rem;
+}
+
+.button {
+  border: none;
+  background-color: black;
+  padding: 0.1rem 0.3rem 0.2rem 0.3rem;
+  border-radius: 0.6rem;
+}
+
+.button:hover, .button:focus-visible {
+  background-color: #272727;
+}
+
+.button:active {
+  background-color: #474747;
+}

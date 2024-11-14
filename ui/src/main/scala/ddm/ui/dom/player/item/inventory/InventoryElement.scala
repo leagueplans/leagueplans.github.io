@@ -1,11 +1,11 @@
 package ddm.ui.dom.player.item.inventory
 
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import com.raquo.laminar.modifiers.Binder
 import com.raquo.laminar.nodes.ReactiveElement.Base
 import ddm.common.model.Item
-import ddm.ui.dom.common.{ContextMenu, Modal}
+import ddm.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import ddm.ui.dom.player.item.{StackElement, StackList}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.item.{Depository, Stack}
@@ -22,43 +22,36 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
-  ): L.Div =
+    modalController: Modal.Controller,
+    toastPublisher: ToastHub.Publisher
+  ): L.Div = {
+    val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
+    
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
-      L.headerTag(
-        L.cls(DepositoryStyles.header, PanelStyles.header),
-        L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Inventory icon")),
-        "Inventory"
-      ),
+      InventoryHeader(stacks, modalController, toastPublisher),
       StackList(
-        playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory))),
+        stacks,
         toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modalController)
       ).amend(L.cls(Styles.contents, DepositoryStyles.contents)),
       bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modalController)
     )
-
-  @js.native @JSImport("/images/inventory-icon.png", JSImport.Default)
-  private val icon: String = js.native
+  }
 
   @js.native @JSImport("/styles/player/item/inventory/inventoryElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val contents: String = js.native
-    val icon: String = js.native
   }
 
   @js.native @JSImport("/styles/shared/player/item/depositoryElement.module.css", JSImport.Default)
   private object DepositoryStyles extends js.Object {
     val depository: String = js.native
     val contents: String = js.native
-    val header: String = js.native
-    val icon: String = js.native
   }
 
   @js.native @JSImport("/styles/shared/player/panel.module.css", JSImport.Default)
   private object PanelStyles extends js.Object {
     val panel: String = js.native
-    val header: String = js.native
   }
 
   private def toStackElement(

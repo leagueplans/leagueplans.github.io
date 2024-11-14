@@ -4,7 +4,7 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import ddm.common.model.Skill
-import ddm.ui.dom.common.ContextMenu
+import ddm.ui.dom.common.{ContextMenu, Modal}
 import ddm.ui.model.plan.Effect
 import ddm.ui.model.player.Player
 import ddm.common.model.Skill.*
@@ -18,7 +18,8 @@ object StatsElement {
   def from(
     playerSignal: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenuController: ContextMenu.Controller,
+    modalController: Modal.Controller
   ): ReactiveHtmlElement[OList] =
     StatsElement(
       playerSignal.map(player =>
@@ -31,7 +32,8 @@ object StatsElement {
         )
       ),
       effectObserver,
-      contextMenuController
+      contextMenuController,
+      modalController
     )
 
   private val orderedSkills: List[Skill] =
@@ -49,12 +51,12 @@ object StatsElement {
   def apply(
     statsSignal: Signal[List[Stat]],
     effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenuController: ContextMenu.Controller,
+    modalController: Modal.Controller
   ): ReactiveHtmlElement[OList] = {
-    val statPanes = statsSignal.split(_.skill) { (_, _, signal) =>
-      val (modal, pane) = StatPane(signal, effectObserver, contextMenuController)
-      L.li(modal, pane)
-    }
+    val statPanes = statsSignal.split(_.skill)((_, _, signal) =>
+      L.li(StatPane(signal, effectObserver, contextMenuController, modalController))
+    )
 
     L.ol(
       L.cls(Styles.stats),

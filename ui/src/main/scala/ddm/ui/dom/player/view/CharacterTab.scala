@@ -25,7 +25,8 @@ object CharacterTab {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modalController: Modal.Controller,
+    toastPublisher: ToastHub.Publisher
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
@@ -41,7 +42,8 @@ object CharacterTab {
         itemFuse,
         effectObserverSignal,
         contextMenuController,
-        modalController
+        modalController,
+        toastPublisher
       ).amend(L.cls(Styles.inventoryPanel)),
       BankElement(
         playerSignal.map(_.get(Depository.Kind.Bank)),
@@ -53,7 +55,8 @@ object CharacterTab {
       StatsElement.from(
         playerSignal,
         effectObserverSignal,
-        contextMenuController
+        contextMenuController,
+        modalController
       ).amend(L.cls(Styles.statsPanel)),
       MultiplierElement(
         expMultiplierStrategySignal,
