@@ -44,7 +44,8 @@ object LeaguesV extends Mode.League {
           105, // Fairytale I
           121, // Death to the Dorgeshuun
           122, // Fairytale II
-          152 // Bone voyage
+          152, // Bone voyage
+          187 // Defender of Varrock
         ),
         completedDiaryTasks = Set(
           203, // Travel to Port Sarim via the dock, east of Musa Point
@@ -76,6 +77,7 @@ object LeaguesV extends Mode.League {
           393, // Trade furs with the Fancy Dress Seller for a Spottier cape and equip it
           396, // Teleport to Paddewwa
           404, // Use Lunar magic to make 20 mahogany planks in the Varrock Lumber Yard
+          405, // Bake a summer pie in the Cooking Guild
           406 // Smith and fletch ten rune darts within Varrock
         ),
         leagueStatus = LeagueStatus(
