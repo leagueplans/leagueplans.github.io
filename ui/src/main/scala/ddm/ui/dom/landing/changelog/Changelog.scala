@@ -13,7 +13,7 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2024, 10, 15),
+        new Date(2024, 10, 22),
         "Prerelease Leagues V task list",
         List(
           "You may need to reimport your plan as a Leagues V plan in order to get proper game mode detection working" + 
