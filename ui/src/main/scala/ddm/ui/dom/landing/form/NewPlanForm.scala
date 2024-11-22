@@ -160,6 +160,6 @@ object NewPlanForm {
       case Some(planImport) =>
         ExportedPlanDecoder
           .decode(planImport)
-          .map((metadata, plan) => (metadata.copy(name = name), plan))
+          .map((metadata, plan) => (metadata.copy(name = name), plan.copy(settings = mode.settings)))
     }
 }
