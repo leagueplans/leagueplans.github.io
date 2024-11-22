@@ -94,7 +94,7 @@ object LeaguesV extends Mode.League {
         LeaguesV,
         Map(
           LeagueTaskTier.Easy -> 10,
-          LeagueTaskTier.Medium -> 40,
+          LeagueTaskTier.Medium -> 30,
           LeagueTaskTier.Hard -> 80,
           LeagueTaskTier.Elite -> 200,
           LeagueTaskTier.Master -> 400
