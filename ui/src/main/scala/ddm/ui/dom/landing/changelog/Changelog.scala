@@ -14,6 +14,14 @@ object Changelog {
       L.cls(Styles.changelog),
       item(
         new Date(2024, 10, 15),
+        "Prerelease Leagues V task list",
+        List(
+          "You may need to reimport your plan as a Leagues V plan in order to get proper game mode detection working" + 
+            " for the new tasks."
+        )
+      ),
+      item(
+        new Date(2024, 10, 15),
         "RuneLite bank tags",
         List(
           "You can now click a button in the inventory to export the current inventory contents as a" +

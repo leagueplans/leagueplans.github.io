@@ -7,7 +7,7 @@ import ddm.scraper.dumper.{Cache, CachingWriter, dataSink}
 import ddm.scraper.main.CommandLineArgs
 import ddm.scraper.wiki.http.MediaWikiClient
 import ddm.scraper.wiki.model.Page
-import ddm.scraper.wiki.scraper.leagues.{ShatteredRelicsTasksScraper, TrailblazerReloadedTasksScraper, TrailblazerTasksScraper, TwistedTasksScraper}
+import ddm.scraper.wiki.scraper.leagues.*
 
 import java.nio.file.{Path, StandardOpenOption}
 import scala.annotation.nowarn
@@ -39,6 +39,8 @@ final class ScrapeLeagueTasksRunner(
           ShatteredRelicsTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
         case 4 =>
           TrailblazerReloadedTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
+        case 5 =>
+          RagingEchoesTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
         case _ =>
           Source.empty[LeagueTask]
       }
