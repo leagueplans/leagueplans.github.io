@@ -13,6 +13,13 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2024, 10, 25),
+        "Updated the Leagues V tier 2 point threshold to 750 points",
+        List(
+          "Note that you'll need to reimport your plan for this to take effect."
+        )
+      ),
+      item(
         new Date(2024, 10, 22),
         "Prerelease Leagues V task list",
         List(
