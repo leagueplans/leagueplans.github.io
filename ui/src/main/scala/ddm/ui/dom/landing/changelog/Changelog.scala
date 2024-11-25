@@ -14,7 +14,7 @@ object Changelog {
       L.cls(Styles.changelog),
       item(
         new Date(2024, 10, 25),
-        "Updated the Leagues V tier 2 point threshold to 750 points",
+        "Updated the Leagues V xp multiplier thresholds to 750, 5,000, and 16,000 points",
         List(
           "Note that you'll need to reimport your plan for this to take effect."
         )
