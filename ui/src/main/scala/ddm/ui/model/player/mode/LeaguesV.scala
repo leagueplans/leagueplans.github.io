@@ -88,7 +88,7 @@ object LeaguesV extends Mode.League {
       ),
       expMultiplierStrategy = ExpMultiplierStrategy.LeaguePointBased(
         5,
-        List(500 -> 8, 4000 -> 12, 15000 -> 16)
+        List(750 -> 8, 4000 -> 12, 15000 -> 16)
       ),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
         LeaguesV,
