@@ -13,11 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2024, 10, 27),
+        "Added all new Leagues V tasks - have fun!",
+        List.empty
+      ),
+      item(
         new Date(2024, 10, 25),
         "Updated the Leagues V xp multiplier thresholds to 750, 5,000, and 16,000 points",
-        List(
-          "Note that you'll need to reimport your plan for this to take effect."
-        )
+        List("Note that you'll need to reimport your plan for this to take effect.")
       ),
       item(
         new Date(2024, 10, 22),
@@ -48,21 +51,6 @@ object Changelog {
             " tries to complete the leagues IV task to cut a tree. Once the new tasks have been imported," +
             " you can then convert that plan to a leagues V plan and you'll receive a warning if the task" +
             " to a cut a tree has been removed."
-        )
-      ),
-      item(
-        new Date(2024, 10, 11),
-        "Fixed an issue that could prevent plans from being loaded",
-        List.empty
-      ),
-      item(
-        new Date(2024, 9, 20),
-        "Reworked the plan save system",
-        List(
-          "Note that this change invalidates all older plans. Contact @Granarder if you'd like to try" +
-            " to recover old plans.",
-          "Reduced the file size of plans by ~80%.",
-          "Fixed a number of situations where saved plans could be corrupted."
         )
       )
     )
