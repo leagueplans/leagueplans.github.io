@@ -7,7 +7,7 @@ import ddm.scraper.http.HTTPClient
 import ddm.scraper.telemetry.{WithAnnotation, WithStreamAnnotation}
 import ddm.scraper.wiki.http.response.WikiResponse
 import ddm.scraper.wiki.model.{Page, PageDescriptor}
-import ddm.scraper.wiki.streaming.{PageStream, pageFlatMapPar, pageFlattenIterables, pageMapZIO}
+import ddm.scraper.wiki.streaming.*
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import zio.http.*
 import zio.http.Header.UserAgent
@@ -46,17 +46,16 @@ final class WikiClient(
   def fetch(selector: WikiSelector)(using Trace): PageStream[PageDescriptor] =
     ZStream
       .fromIterable(QueryParamsGenerator(selector, pageLimit))
-      .flatMapPar(WikiClient.streamFanOut)(fetchPages)
-      // It's a bit weird to duplicate the page like this, but it lets us use
-      // all the utils for page mapping
-      .map(_.map((page, _) => (page, page)))
+      .flatMapPar(WikiClient.streamFanOut)(fetchPages(_, continueParams = QueryParams.empty))
+      .pageExtend
+      .pageMap((page, _) => page)
 
   def fetch(selector: WikiSelector, contentType: WikiContentType)(using Trace): PageStream[String] = {
     val contentTypeParams = QueryParamsGenerator(contentType)
     ZStream
       .fromIterable(QueryParamsGenerator(selector, pageLimit))
       .map(_ ++ contentTypeParams)
-      .flatMapPar(WikiClient.streamFanOut)(fetchPages)
+      .flatMapPar(WikiClient.streamFanOut)(fetchPages(_, continueParams = QueryParams.empty))
       .pageMapZIO(json => decodeContent(json, contentType) match {
         case Some(Right(content)) => ZIO.succeed(Chunk(content))
         case Some(Left(error)) => ZIO.fail(error)
@@ -103,8 +102,11 @@ final class WikiClient(
       }
     )
 
-  private def fetchPages(baseParams: QueryParams)(using Trace): PageStream[JsonObject] = {
-    val request = buildQuery(baseParams)
+  private def fetchPages(
+    baseParams: QueryParams, 
+    continueParams: QueryParams
+  )(using Trace): PageStream[JsonObject] = {
+    val request = buildQuery(baseParams ++ continueParams)
     val response = execute(request, kindLabel = "query").either.map(_.flatMap(decodeQueryResponse))
 
     ZStream
@@ -115,7 +117,7 @@ final class WikiClient(
 
         case Right(response) =>
           val continue = response.continueParams match {
-            case Some(continueParams) => fetchPages(baseParams ++ continueParams)
+            case Some(nextContinueParams) => fetchPages(baseParams, nextContinueParams)
             case None => ZStream.empty
           }
 
