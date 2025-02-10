@@ -35,7 +35,7 @@ object TermOps {
         case Nil => Right(None)
         case (t: T) :: Nil => Right(Some(t))
         case _ :: Nil => Left(DecoderException("Unexpected term type"))
-        case _ => Left(DecoderException("More than one term found"))
+        case _ => Left(DecoderException(s"More than one term found [$self]"))
       }
 
     def asBoolean: DecoderResult[Boolean] =
@@ -165,5 +165,5 @@ object TermOps {
   }
 
   private val ignoredTemplates: Set[String] =
-    Set("sic", "^", "scp")
+    Set("sic", "^", "scp", "bug")
 }

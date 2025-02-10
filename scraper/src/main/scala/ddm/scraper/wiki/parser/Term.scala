@@ -1,6 +1,6 @@
 package ddm.scraper.wiki.parser
 
-import ddm.scraper.wiki.model.Page
+import ddm.scraper.wiki.model.PageDescriptor
 import scala.util.chaining.scalaUtilChainingOps
 
 sealed trait Term
@@ -12,7 +12,7 @@ object Term {
 
   final case class Header(raw: String, level: Int) extends Structured
 
-  final case class Link(pageName: Page.Name, text: String) extends Structured
+  final case class Link(pageName: PageDescriptor.Name, text: String) extends Structured
 
   final case class Function(name: String, params: List[List[Term]]) extends Structured
 

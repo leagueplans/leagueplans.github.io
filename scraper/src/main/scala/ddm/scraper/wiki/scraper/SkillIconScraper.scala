@@ -1,39 +1,28 @@
 package ddm.scraper.wiki.scraper
 
-import akka.actor.typed.ActorRef
-import akka.stream.scaladsl.Source
-import ddm.scraper.dumper.Cache
-import ddm.scraper.reporter.Reporter
-import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiSelector}
-import ddm.scraper.wiki.model.Page
-import ddm.scraper.wiki.model.Page.Name
+import ddm.scraper.wiki.http.{WikiClient, WikiSelector}
+import ddm.scraper.wiki.model.PageDescriptor
+import ddm.scraper.wiki.streaming.{PageStream, pageCollect, pageMap, pageMapZIOPar}
+import zio.{Trace, ZIO}
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
+import java.nio.file.Path
+import scala.util.Try
 
 object SkillIconScraper {
-  def scrape(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message.NewEntry[(Page, Throwable)]]
-  )(using ec: ExecutionContext): Source[(String, Array[Byte]), ?] =
+  def scrape(client: WikiClient)(using Trace): PageStream[(Path, Array[Byte])] =
     client
-      .fetch(
-        MediaWikiSelector.Members(Page.Name.Category("Skill icons")),
-        maybeContent = None
+      .fetch(WikiSelector.Members(PageDescriptor.Name.Category("Skill icons")))
+      .pageMap(_.name)
+      .pageCollect { case name @ PageDescriptor.Name.File(raw, _) if raw.contains("icon") => name }
+      .pageMapZIOPar(n = 8)(fileName =>
+        for {
+          path <- ZIO.fromTry(toFilePath(fileName))
+          icon <- client.fetchImage(fileName)
+        } yield (path, icon)
       )
-      .collect { case (page @ Page(_, name: Page.Name.File), _) if name.raw.contains("icon") => (page, name) }
-      .mapAsync(parallelism = 10)((page, name) => fetchImage(name, client).map((page, _)))
-      .via(Reporter.pageFlow(reporter))
-      .map { case (_, (fileName, data)) =>
-        val trimmed = fileName.raw.replaceFirst(" icon", "")
-        s"$trimmed.${fileName.extension}" -> data
-      }
-
-  private def fetchImage(
-    name: Page.Name.File,
-    client: MediaWikiClient
-  )(using ec: ExecutionContext): Future[Either[Throwable, (Name.File, Array[Byte])]] =
-    client
-      .fetchImage(name)
-      .transform(result => Success(result.toEither.map((name, _))))
+    
+  private def toFilePath(fileName: PageDescriptor.Name.File): Try[Path] = {
+    val saveName = s"${fileName.raw.replaceFirst(" icon", "")}.${fileName.extension}"
+    Try(Path.of(saveName))
+  }
 }

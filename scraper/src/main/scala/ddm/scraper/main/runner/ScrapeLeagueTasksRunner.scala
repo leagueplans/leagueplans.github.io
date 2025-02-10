@@ -1,53 +1,56 @@
 package ddm.scraper.main.runner
 
-import akka.actor.typed.{ActorRef, ActorSystem}
-import akka.stream.scaladsl.{Sink, Source}
 import ddm.common.model.LeagueTask
-import ddm.scraper.dumper.{Cache, CachingWriter, dataSink}
+import ddm.scraper.dumper.JsonDumper
 import ddm.scraper.main.CommandLineArgs
-import ddm.scraper.wiki.http.MediaWikiClient
-import ddm.scraper.wiki.model.Page
+import ddm.scraper.wiki.http.WikiClient
 import ddm.scraper.wiki.scraper.leagues.*
+import ddm.scraper.wiki.streaming.{PageStream, pageRun}
+import zio.{Chunk, Task, Trace, ZIO}
 
-import java.nio.file.{Path, StandardOpenOption}
-import scala.annotation.nowarn
+import java.nio.file.{Files, Path}
+import scala.util.{Failure, Success, Try}
 
 object ScrapeLeagueTasksRunner {
-  def from(args: CommandLineArgs): ScrapeLeagueTasksRunner =
-    ScrapeLeagueTasksRunner(
-      args.get("league")(_.toInt),
-      args.get("target-directory")(Path.of(_).resolve("dump/data/tasks.json"))
+  def make(
+    args: CommandLineArgs,
+    targetDirectory: Path,
+    client: WikiClient
+  )(using Trace): Task[ScrapeLeagueTasksRunner] =
+    for {
+      scraper <- makeScraper(args, client)
+      dumper <- makeDumper(targetDirectory)
+    } yield ScrapeLeagueTasksRunner(scraper, dumper)
+
+  private def makeScraper(args: CommandLineArgs, client: WikiClient)(using Trace): Task[LeagueTasksScraper] =
+    ZIO.fromTry(args.get("league") {
+      case "1" => Success(TwistedTasksScraper.make(client))
+      case "2" => Success(TrailblazerTasksScraper.make(client))
+      case "3" => Success(ShatteredRelicsTasksScraper.make(client))
+      case "4" => Success(TrailblazerReloadedTasksScraper.make(client))
+      case "5" => Success(RagingEchoesTasksScraper.make(client))
+      case s => Failure(IllegalArgumentException(s"Unexpected league number [$s]"))
+    }).flatten
+
+  private def makeDumper(targetDirectory: Path): Task[JsonDumper[Vector[LeagueTask]]] =
+    ZIO.fromTry(
+      for {
+        targetFile <- Try(targetDirectory.resolve("dump/data/tasks.json"))
+        _ <- Try(Files.createDirectories(targetFile.getParent))
+        dumper <- JsonDumper.make[Vector[LeagueTask]](targetFile)
+      } yield dumper
     )
 }
 
 final class ScrapeLeagueTasksRunner(
-  league: Int,
-  tasksFile: Path
-) extends Runner {
-  def run(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message[(Page, Throwable)]],
-    spawnWriter: Spawn[Cache.Message[LeagueTask]]
-  )(using system: ActorSystem[?]): Unit = {
-    val source =
-      league match {
-        case 1 =>
-          TwistedTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-        case 2 =>
-          TrailblazerTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-        case 3 =>
-          ShatteredRelicsTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-        case 4 =>
-          TrailblazerReloadedTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-        case 5 =>
-          RagingEchoesTasksScraper.scrape(client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-        case _ =>
-          Source.empty[LeagueTask]
-      }
-
-    val writerBehaviour = CachingWriter.to[LeagueTask](tasksFile, StandardOpenOption.CREATE_NEW)
-    source
-      .alsoTo(dataSink(spawnWriter(writerBehaviour)))
-      .runWith(Sink.onComplete(runStatus => reporter ! Cache.Message.Complete(runStatus))): @nowarn("msg=discarded non-Unit value")
-  }
+  scraper: LeagueTasksScraper,
+  dumper: JsonDumper[Vector[LeagueTask]]
+) extends ScrapeRunner {
+  def run(using Trace): Task[Chunk[PageStream.Error]] =
+    for {
+      (errors, tasks) <- scraper.scrape.pageRun
+      _ <- ZIO.fromTry(dumper.dump(
+        tasks.map((_, task) => task).toVector.sorted
+      ))
+    } yield errors
 }

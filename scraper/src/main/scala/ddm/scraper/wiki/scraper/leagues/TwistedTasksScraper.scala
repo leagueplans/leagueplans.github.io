@@ -1,50 +1,15 @@
 package ddm.scraper.wiki.scraper.leagues
 
-import akka.NotUsed
-import akka.stream.scaladsl.{Flow, Source}
-import ddm.common.model.LeagueTask
-import ddm.scraper.wiki.decoder.leagues.{LeagueTaskRowExtractor, TwistedTaskDecoder}
-import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
-import ddm.scraper.wiki.model.Page
-import ddm.scraper.wiki.parser.TermParser
+import ddm.scraper.wiki.decoder.leagues.TwistedTaskDecoder
+import ddm.scraper.wiki.http.{WikiClient, WikiSelector}
+import ddm.scraper.wiki.model.PageDescriptor
+import zio.{Trace, UIO}
 
 object TwistedTasksScraper {
-  def scrape(
-    client: MediaWikiClient,
-    reportError: (Page, Throwable) => Unit
-  ): Source[LeagueTask, ?] = {
-    val taskRowExtractor = new LeagueTaskRowExtractor
-
-    client
-      .fetch(
-        MediaWikiSelector.Pages(List(Page.Name.from("Twisted_League/Tasks"))),
-        Some(MediaWikiContent.Revisions)
-      )
-      .via(errorReportingFlow(reportError))
-      .map((page, content) => (page, TermParser.parse(content)))
-      .via(errorReportingFlow(reportError))
-      .map((page, terms) => (page, taskRowExtractor.extract(terms)))
-      .via(errorReportingFlow(reportError))
-      .mapConcat((page, sections) =>
-        sections.flatMap(section =>
-          section.tasks.map((index, task) =>
-            (page, TwistedTaskDecoder.decode(index, section.tier, task))
-          )
-        )
-      )
-      .via(errorReportingFlow(reportError))
-      .map((_, task) => task)
-  }
-
-  private def errorReportingFlow[T](
-    reportError: (Page, Throwable) => Unit
-  ): Flow[(Page, Either[Throwable, T]), (Page, T), NotUsed] =
-    Flow[(Page, Either[Throwable, T])]
-      .collect(Function.unlift {
-        case (page, Right(value)) =>
-          Some((page, value))
-        case (page, Left(error)) =>
-          reportError(page, error)
-          None
-      })
+  def make(client: WikiClient)(using Trace): UIO[SectionBasedLeagueTasksScraper] =
+    SectionBasedLeagueTasksScraper.make(
+      client,
+      WikiSelector.Pages(Vector(PageDescriptor.Name.from("Twisted_League/Tasks"))),
+      TwistedTaskDecoder.decode
+    )
 }

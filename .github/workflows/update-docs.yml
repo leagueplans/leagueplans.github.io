@@ -3,11 +3,10 @@ on: push
 
 jobs:
   update-docs:
-    # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
-    runs-on: ubuntu-20.04
+    # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+    runs-on: ubuntu-24.04
     steps:
-    - name: Checkout project
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Identify changes
       uses: dorny/paths-filter@v2
@@ -31,11 +30,19 @@ jobs:
       with:
         node-version: 18
 
-    - uses: actions/setup-java@v3
+    - uses: coursier/cache-action@v6
+      if: steps.identify-changes.outputs.sources == 'true'
+
+    - uses: actions/setup-java@v4
       if: steps.identify-changes.outputs.sources == 'true'
       with:
         distribution: temurin
-        java-version: '17'
+        java-version: 17
+
+    - uses: sbt/setup-sbt@v1
+      if: steps.identify-changes.outputs.sources == 'true'
+      with:
+        sbt-runner-version: 1.10.7
 
     - name: Bundle javascript
       id: bundle-js

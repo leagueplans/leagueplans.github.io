@@ -1,81 +1,83 @@
 package ddm.scraper.main
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, Terminated}
-import akka.http.scaladsl.model.headers.`User-Agent`
-import ddm.scraper.dumper.Cache
-import ddm.scraper.http.ThrottledHttpClient
-import ddm.scraper.main.runner.{Runner, ScrapeItemsRunner, ScrapeLeagueTasksRunner, ScrapeSkillIconsRunner}
-import ddm.scraper.reporter.ReportPrinter
-import ddm.scraper.wiki.http.MediaWikiClient
-import ddm.scraper.wiki.model.Page
-import org.log4s.getLogger
+import ddm.scraper.http.HTTPClient
+import ddm.scraper.main.runner.ScrapeRunner
+import ddm.scraper.reporter.RunReporter
+import ddm.scraper.wiki.http.WikiClient
+import zio.http.Header.UserAgent
+import zio.http.URL
+import zio.logging.backend.SLF4J
+import zio.{Console, Duration, RIO, Runtime, Schedule, Scope, Task, Trace, URIO, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 import java.nio.file.{Files, Path}
-import scala.annotation.nowarn
-import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.util.chaining.scalaUtilChainingOps
-import scala.util.{Failure, Success}
+import scala.util.Try
 
-@main def run(args: String*): Unit = {
-  val actorSystem = ActorSystem[Nothing](
-    Behaviors.setup[Nothing] { context =>
-      import context.{executionContext, system}
+object Main extends ZIOAppDefault {
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
-      def spawn[T](behavior: Behavior[T]): ActorRef[T] = {
-        val ref = context.spawnAnonymous(behavior)
-        context.watch(ref)
-        ref
-      }
+  def run: ZIO[ZIOAppArgs & Scope, Throwable, Unit] =
+    for {
+      args <- CommandLineArgs.parse
+      baseURL <- ZIO.fromEither(URL.decode("https://oldschool.runescape.wiki"))
+      targetDirectory <- makeTargetDirectory(args)
+      reporter <- makeReporter(baseURL, targetDirectory)
+      httpClient <- makeHTTPClient
+      runner <- ScrapeRunner.make(args, targetDirectory, makeWikiClient(httpClient, baseURL))
+      console <- ZIO.console
+      _ <- startBackgroundMetricDumping(console)
+      result <- runner.run.exit
+      _ <- ZIO.fromTry(reporter.report(result))
+      _ <- result
+    } yield ()
 
-      val baseURL = "https://oldschool.runescape.wiki"
-      val clArgs = CommandLineArgs.parse(args)
-      val runner = Runner.from(clArgs)
-      val userAgent = clArgs.get("user-agent")(`User-Agent`(_))
-      val reportFile = clArgs.get("target-directory")(Path.of(_).resolve("report.md"))
+  private def makeTargetDirectory(args: CommandLineArgs)(using Trace): Task[Path] =
+    for {
+      path <- ZIO.fromTry(args.get("target-directory")(directory => Try(Path.of(directory))))
+      _ <- ZIO.attempt(Files.createDirectories(path))
+    } yield path
 
-      val client = MediaWikiClient(
-        ThrottledHttpClient(
-          maxThroughput = 5,
-          interval = 1.second,
-          bufferSize = Int.MaxValue,
-          parallelism = 4
-        ),
-        userAgent,
-        baseURL
-      )
+  private def makeReporter(baseURL: URL, targetDirectory: Path)(using Trace): Task[RunReporter] =
+    ZIO.fromTry(
+      for {
+        target <- Try(targetDirectory.resolve("report.md"))
+        reporter <- RunReporter.make(baseURL, target)
+      } yield reporter
+    )
 
-      val reporter =
-        Cache
-          .init[(Page, Throwable)] { (runStatus, failures) =>
-            val logger = getLogger("Reporter")
-            runStatus match {
-              case Failure(error) => logger.error(error)("Run failed")
-              case Success(_) => logger.info("Run succeeded")
-            }
+  private def makeHTTPClient(using Trace): RIO[Scope, HTTPClient] =
+    HTTPClient.make(
+      name = "main",
+      connectionPoolSize = 4,
+      idleTimeout = 30.seconds,
+      maxRequestBurst = 10,
+      rateLimitInterval = 100.milliseconds
+    )
 
-            val report = ReportPrinter.print(runStatus, failures, baseURL)
-            Files.write(reportFile, report.getBytes): @nowarn("msg=discarded non-Unit value")
-          }
-          .pipe(spawn)
+  private def makeWikiClient(httpClient: HTTPClient, baseURL: URL): WikiClient =
+    new WikiClient(
+      httpClient,
+      UserAgent(
+        UserAgent.ProductOrComment.Product("leagueplansbot", version = None),
+        List(UserAgent.ProductOrComment.Comment("+https://github.com/leagueplans/leagueplans.github.io"))
+      ),
+      baseURL,
+      pageLimit = 50,
+      // Recurs at 5s, 10s, 20s, 35s, 1m, 1m40s, 2m45s
+      retrySchedule = Schedule.fibonacci(Duration.fromScala(5.seconds)).jittered && Schedule.recurs(7)
+    )
 
-      runner match {
-        case r: ScrapeItemsRunner => r.run(client, reporter, spawn, spawn)
-        case r: ScrapeSkillIconsRunner => r.run(client, reporter)
-        case r: ScrapeLeagueTasksRunner => r.run(client, reporter, spawn)
-        case _ => throw RuntimeException("Unexpected runner returned")
-      }
+  private def startBackgroundMetricDumping(console: Console)(using Trace): URIO[Scope, Unit] = {
+    val dump = for {
+      _ <- console.printLine("Dumping metrics")
+      snapshot <- ZIO.metrics
+      _ <- snapshot.dump
+    } yield ()
 
-      Behaviors.receiveSignal[Nothing] { case (context, _: Terminated) =>
-        if (context.children.isEmpty)
-          Behaviors.stopped
-        else
-          Behaviors.same
-      }
-    },
-    name = "scraper"
-  )
-
-  Await.result(actorSystem.whenTerminated, atMost = 5.hours): @nowarn("msg=discarded non-Unit value of type akka.Done")
+    dump
+      .repeat(Schedule.fixed(Duration.fromScala(15.seconds)))
+      .forkScoped
+      .unit
+  }
 }

@@ -1,20 +1,71 @@
-<configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>[%date][%thread][%logger{36}][%-5level] - %msg%n</pattern>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+
+<configuration debug="true">
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.classic.filter.LevelFilter"/>
+    <import class="ch.qos.logback.classic.filter.ThresholdFilter"/>
+    <import class="ddm.scraper.telemetry.ThresholdLoggerFilter"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.core.FileAppender"/>
+    <import class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
+
+    <shutdownHook class="DefaultShutdownHook"/>
+    
+    <variable name="DETAILED_LOG_LEVEL" value="debug"/>
+    <variable name="STANDARD_LOG_LEVEL" value="info"/>
+    <variable name="CONSOLE_PATTERN" value="[%d{HH:mm:ss.SSS}] [%-5level] [%kvp] [%logger{24}] %msg%n"/>
+
+    <root level="${DETAILED_LOG_LEVEL}">
+        <appender-ref ref="stdout"/>
+        <appender-ref ref="stderr"/>
+        <appender-ref ref="run.log"/>
+    </root>
+
+    <appender name="stdout" class="ConsoleAppender">
+        <target>System.out</target>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>${CONSOLE_PATTERN}</pattern>
         </encoder>
+        <filter class="ThresholdFilter">
+            <level>${STANDARD_LOG_LEVEL}</level>
+        </filter>
+        <filter class="LevelFilter">
+            <level>warn</level>
+            <onMatch>DENY</onMatch>
+        </filter>
+        <filter class="LevelFilter">
+            <level>error</level>
+            <onMatch>DENY</onMatch>
+        </filter>
     </appender>
 
-    <appender name="run.log" class="ch.qos.logback.core.FileAppender">
+    <appender name="stderr" class="ConsoleAppender">
+        <target>System.err</target>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+        <filter class="ThresholdFilter">
+            <level>${STANDARD_LOG_LEVEL}</level>
+        </filter>
+        <filter class="ThresholdFilter">
+            <level>warn</level>
+        </filter>
+    </appender>
+
+    <appender name="run.log" class="FileAppender">
         <file>logs/run.log</file>
         <append>false</append>
-        <encoder>
-            <pattern>[%date][%thread][%logger{36}][%-5level] - %msg%n</pattern>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>[%date{STRICT}] [%thread] [%level] [%kvp] [%logger{36}] %msg%n</pattern>
         </encoder>
+        <!-- The ThresholdLoggerFilter has to be defined first in order to overrule the ThresholdFilter -->
+        <filter class="ThresholdLoggerFilter">
+            <level>${DETAILED_LOG_LEVEL}</level>
+            <logger>ddm.scraper</logger>
+        </filter>
+        <filter class="ThresholdFilter">
+            <level>${STANDARD_LOG_LEVEL}</level>
+        </filter>
     </appender>
-
-    <root level="info">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="run.log" />
-    </root>
 </configuration>

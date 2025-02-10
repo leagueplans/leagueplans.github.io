@@ -5,7 +5,6 @@ set -o pipefail
 # Takes a name for a scraper, runs it, and then syncs the the UI resources with the produced files
 
 readonly SCRAPER=$1
-readonly USER_AGENT='League plans CI (+https://github.com/leagueplans/leagueplans.github.io)'
 readonly TMP='tmp'
 readonly TARGET='ui/src/main/web'
 
@@ -14,7 +13,7 @@ if [[ ! -d "${TARGET}" ]]; then
 fi
 
 run () {
-  sbt "wikiScraper/run \"scraper=${SCRAPER}\" \"user-agent=${USER_AGENT}\" \"target-directory=${TMP}\" $*"
+  sbt "wikiScraper/run \"scraper=${SCRAPER}\" \"target-directory=${TMP}\" $*"
 }
 
 sync () {

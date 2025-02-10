@@ -6,7 +6,6 @@ import ddm.codec.parsing.{Parser, ParsingFailure}
 import java.lang.{ThreadLocal, Long as JLong}
 import java.nio.ByteBuffer
 import java.nio.charset.*
-import scala.annotation.nowarn
 import scala.collection.Factory
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.deriving.Mirror
@@ -27,8 +26,8 @@ object Decoder {
   def apply[T](using decoder: Decoder[T]): decoder.type =
     decoder
 
-  inline def apply[T](f: Encoding => Either[DecodingFailure, T]): Decoder[T] =
-    f(_): @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
+  def apply[T](f: Encoding => Either[DecodingFailure, T]): Decoder[T] =
+    f(_)
 
   def decode[T](encoding: Encoding)(using decoder: Decoder[T]): Either[DecodingFailure, T] =
     decoder.decode(encoding)

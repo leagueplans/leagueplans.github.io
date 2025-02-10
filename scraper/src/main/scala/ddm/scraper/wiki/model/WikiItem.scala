@@ -12,13 +12,12 @@ object WikiItem {
 
   final case class Image(
     bin: Item.Image.Bin,
-    fileName: Page.Name.File,
+    fileName: PageDescriptor.Name.File,
     data: Array[Byte]
   )
 
   final case class Infoboxes(
-    pageID: Page.ID,
-    pageName: Page.Name.Other,
+    pageName: PageDescriptor.Name.Other,
     version: InfoboxVersion,
     item: ItemInfobox,
     maybeBonuses: Option[BonusesInfobox]

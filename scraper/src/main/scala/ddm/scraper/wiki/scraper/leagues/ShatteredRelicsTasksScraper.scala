@@ -1,48 +1,24 @@
 package ddm.scraper.wiki.scraper.leagues
 
-import akka.NotUsed
-import akka.stream.scaladsl.{Flow, Source}
 import ddm.common.model.LeagueTask
 import ddm.common.model.ShatteredRelicsTaskProperties.Category
 import ddm.common.model.Skill.*
-import ddm.scraper.wiki.decoder.leagues.{ShatteredRelicsTaskDecoder, ShatteredRelicsTaskRowExtractor}
-import ddm.scraper.wiki.http.{MediaWikiClient, MediaWikiContent, MediaWikiSelector}
-import ddm.scraper.wiki.model.Page
-import ddm.scraper.wiki.parser.TermParser
+import ddm.scraper.telemetry.WithStreamAnnotation
+import ddm.scraper.wiki.decoder.leagues.ShatteredRelicsTaskDecoder
+import ddm.scraper.wiki.http.{WikiClient, WikiSelector}
+import ddm.scraper.wiki.model.PageDescriptor
+import ddm.scraper.wiki.streaming.PageStream
+import zio.stream.ZStream
+import zio.{Trace, UIO}
 
 object ShatteredRelicsTasksScraper {
-  def scrape(
-    client: MediaWikiClient,
-    reportError: (Page, Throwable) => Unit
-  ): Source[LeagueTask, ?] = {
-    val taskRowExtractor = new ShatteredRelicsTaskRowExtractor
+  def make(client: WikiClient)(using Trace): UIO[ShatteredRelicsTasksScraper] =
+    TaskIndexer.make.map(taskIndexer =>
+      new ShatteredRelicsTasksScraper(client, taskIndexer)
+    )
 
-    Source(pagesWithCategories)
-      .flatMapConcat((category, pageName) =>
-        client
-          .fetch(MediaWikiSelector.Pages(List(pageName)), Some(MediaWikiContent.Revisions))
-          .map((page, result) => (page, result.map(content => (category, content))))
-      )
-      .via(errorReportingFlow(reportError))
-      .map { case (page, (category, content)) =>
-        (page, TermParser.parse(content).map(terms => (category, terms)))
-      }
-      .via(errorReportingFlow(reportError))
-      .map { case (page, (category, terms)) =>
-        (page, taskRowExtractor.extract(terms).map(tasks => (category, tasks)))
-      }
-      .via(errorReportingFlow(reportError))
-      .mapConcat { case (page, (category, tasks)) =>
-        tasks.map((index, task) =>
-          (page, ShatteredRelicsTaskDecoder.decode(index, category, task))
-        )
-      }
-      .via(errorReportingFlow(reportError))
-      .map((_, task) => task)
-  }
-
-  private val pagesWithCategories: List[(Category, Page.Name)] =
-    List(
+  private val categorySelectors: Vector[(Category, WikiSelector)] =
+    Vector(
       Category.SkillCat(Agility) -> "Shattered_Relics_League/Tasks/Agility",
       Category.SkillCat(Attack) -> "Shattered_Relics_League/Tasks/Attack",
       Category.SkillCat(Construction) -> "Shattered_Relics_League/Tasks/Construction",
@@ -70,17 +46,22 @@ object ShatteredRelicsTasksScraper {
       Category.Quest -> "Shattered_Relics_League/Tasks/Quests",
       Category.Clues -> "Shattered_Relics_League/Tasks/Clues",
       Category.General -> "Shattered_Relics_League/Tasks/General",
-    ).map((area, wikiName) => (area, Page.Name.from(wikiName)))
+    ).map((category, wikiName) => (category, WikiSelector.Pages(Vector(PageDescriptor.Name.from(wikiName)))))
+}
 
-  private def errorReportingFlow[T](
-    reportError: (Page, Throwable) => Unit
-  ): Flow[(Page, Either[Throwable, T]), (Page, T), NotUsed] =
-    Flow[(Page, Either[Throwable, T])]
-      .collect(Function.unlift {
-        case (page, Right(value)) =>
-          Some((page, value))
-        case (page, Left(error)) =>
-          reportError(page, error)
-          None
-      })
+final class ShatteredRelicsTasksScraper(client: WikiClient, taskIndexer: TaskIndexer) extends LeagueTasksScraper {
+  def scrape(using Trace): PageStream[LeagueTask] =
+    ZStream
+      .fromIterable(ShatteredRelicsTasksScraper.categorySelectors)
+      .flatMapPar(n = 4)((category, selector) =>
+        WithStreamAnnotation.forLogs("task-category" -> category.name)(
+          TemplateBasedLeagueTasksScraper(
+            client,
+            taskIndexer,
+            selector,
+            templateName = "srltaskrow",
+            ShatteredRelicsTaskDecoder.decode(_, category, _)
+          ).scrape
+        )
+      )
 }

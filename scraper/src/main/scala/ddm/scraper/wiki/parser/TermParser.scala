@@ -16,7 +16,7 @@ object TermParser {
   final class ParserException(
     message: String,
     cause: ParseError
-  ) extends Exception(message, cause)
+  ) extends RuntimeException(message, cause)
 }
 
 final class TermParser(val input: ParserInput) extends Parser with ControlCharacters {

@@ -1,29 +1,24 @@
-package ddm.scraper.wiki.decoder.leagues
+package ddm.scraper.wiki.decoder.leagues.rowextractors
 
 import ddm.common.model.LeagueTaskTier
-import ddm.scraper.wiki.decoder.leagues.LeagueTaskRowExtractor.Section
 import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult}
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.*
 
 import scala.annotation.tailrec
 
-object LeagueTaskRowExtractor {
-  final case class Section(tier: LeagueTaskTier, tasks: List[(Int, Template)])
-}
+object SectionBasedTaskRowExtractor {
+  final case class Section(tier: LeagueTaskTier, tasks: Vector[Template])
 
-final class LeagueTaskRowExtractor {
-  private var taskIndex = 1
-
-  def extract(terms: List[Term]): DecoderResult[List[Section]] =
+  def extract(terms: List[Term]): DecoderResult[Vector[Section]] =
     skipToNextTier(terms) match {
       case Some((tier, remaining)) =>
         Right(extractSections(
           remaining,
-          sectionsAcc = List.empty,
-          sectionAcc = Section(tier, tasks = List.empty)
+          sectionsAcc = Vector.empty,
+          sectionAcc = Section(tier, tasks = Vector.empty)
         ))
-
+        
       case None =>
         Left(DecoderException("Failed to find any task tier headers"))
     }
@@ -43,24 +38,23 @@ final class LeagueTaskRowExtractor {
   @tailrec
   private def extractSections(
     remaining: List[Term],
-    sectionsAcc: List[Section],
+    sectionsAcc: Vector[Section],
     sectionAcc: Section
-  ): List[Section] =
+  ): Vector[Section] =
     remaining match {
       case Nil =>
         sectionsAcc :+ sectionAcc
-
+        
       case Header(raw, _) :: tail =>
         toTier(raw) match {
-          case Some(tier) => extractSections(tail, sectionsAcc :+ sectionAcc, Section(tier, List.empty))
+          case Some(tier) => extractSections(tail, sectionsAcc :+ sectionAcc, Section(tier, Vector.empty))
           case None => extractSections(tail, sectionsAcc, sectionAcc)
         }
-
+        
       case (template: Template) :: tail if template.name.toLowerCase == "leaguetaskrow" =>
-        val updatedTasks = sectionAcc.tasks :+ (taskIndex, template)
-        taskIndex += 1
+        val updatedTasks = sectionAcc.tasks :+ template
         extractSections(tail, sectionsAcc, sectionAcc.copy(tasks = updatedTasks))
-
+        
       case _ :: tail =>
         extractSections(tail, sectionsAcc, sectionAcc)
     }

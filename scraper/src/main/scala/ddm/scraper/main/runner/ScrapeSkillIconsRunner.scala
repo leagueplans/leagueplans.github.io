@@ -1,32 +1,26 @@
 package ddm.scraper.main.runner
 
-import akka.actor.typed.ActorRef
-import akka.stream.Materializer
-import ddm.scraper.dumper.{Cache, SkillIconDumper}
-import ddm.scraper.main.CommandLineArgs
-import ddm.scraper.wiki.http.MediaWikiClient
-import ddm.scraper.wiki.model.Page
+import ddm.scraper.dumper.ImageDumper
+import ddm.scraper.wiki.http.WikiClient
 import ddm.scraper.wiki.scraper.SkillIconScraper
+import ddm.scraper.wiki.streaming.{PageStream, pageMapZIO, pageRun}
+import zio.{Chunk, Task, Trace, UIO, ZIO}
 
 import java.nio.file.Path
-import scala.concurrent.ExecutionContext
 
 object ScrapeSkillIconsRunner {
-  def from(args: CommandLineArgs): ScrapeSkillIconsRunner =
-    ScrapeSkillIconsRunner(
-      args.get("target-directory")(root =>
-        Path.of(root).resolve("dump/dynamic/assets/images/skill-icons")
-      )
-    )
+  def make(targetDirectory: Path, client: WikiClient)(using Trace): Task[ScrapeSkillIconsRunner] =
+    for {
+      iconsDirectory <- ZIO.attempt(targetDirectory.resolve("dump/dynamic/assets/images/skill-icons"))
+      dumper <- ImageDumper.make("skill-icons", iconsDirectory)
+    } yield ScrapeSkillIconsRunner(dumper, client)
 }
 
-final class ScrapeSkillIconsRunner(iconsDirectory: Path) extends Runner {
-  def run(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message[(Page, Throwable)]],
-  )(using mat: Materializer, ec: ExecutionContext): Unit =
+final class ScrapeSkillIconsRunner(dumper: ImageDumper, client: WikiClient) extends ScrapeRunner {
+  def run(using Trace): UIO[Chunk[PageStream.Error]] =
     SkillIconScraper
-      .scrape(client, reporter)
-      .runWith(SkillIconDumper.dump(iconsDirectory))
-      .onComplete(runStatus => reporter ! Cache.Message.Complete(runStatus))
+      .scrape(client)
+      .pageMapZIO((path, icon) => dumper.dump(path, icon))
+      .pageRun
+      .map((errors, _) => errors)
 }

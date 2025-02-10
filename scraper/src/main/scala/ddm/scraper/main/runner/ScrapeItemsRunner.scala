@@ -1,75 +1,32 @@
 package ddm.scraper.main.runner
 
-import akka.actor.typed.{ActorRef, ActorSystem}
-import ddm.common.model.Item
-import ddm.scraper.dumper.{Cache, CachingWriter, ItemDumper}
+import ddm.scraper.dumper.items.ItemDumper
 import ddm.scraper.main.CommandLineArgs
-import ddm.scraper.wiki.http.MediaWikiClient
-import ddm.scraper.wiki.model.{InfoboxVersion, Page}
-import ddm.scraper.wiki.scraper.ItemScraper
-import io.circe.parser.decode
+import ddm.scraper.wiki.http.WikiClient
+import ddm.scraper.wiki.scraper.ItemsScraper
+import ddm.scraper.wiki.streaming.PageStream
+import zio.{Chunk, RIO, Scope, Task, Trace, ZIO}
 
-import java.nio.file.{Files, Path, StandardOpenOption}
-import scala.util.chaining.scalaUtilChainingOps
+import java.nio.file.Path
 
 object ScrapeItemsRunner {
-  def from(args: CommandLineArgs): ScrapeItemsRunner = {
-    val dumpDirectory = args.get("target-directory")(Path.of(_).resolve("dump"))
-
-    ScrapeItemsRunner(
-      parseMode(args),
-      idMapFile = args.get("id-map")(Path.of(_)),
-      itemsFile = dumpDirectory.resolve("data/items.json"),
-      imagesDirectory = dumpDirectory.resolve("dynamic/assets/images/items")
-    )
-  }
-
-  private def parseMode(args: CommandLineArgs): ItemScraper.Mode =
-    args
-      .getOpt("pages")(
-        _.split('|')
-          .map[Page.Name.Other](Page.Name.Other.apply)
-          .toList
-          .pipe(ItemScraper.Mode.Pages.apply)
-      )
-      .orElse(args.getOpt("from")(name => ItemScraper.Mode.From(Page.Name.Other(name))))
-      .getOrElse(ItemScraper.Mode.All)
+  def make(
+    args: CommandLineArgs,
+    targetDirectory: Path,
+    client: WikiClient
+  )(using Trace): Task[ScrapeItemsRunner] =
+    for {
+      scraper <- ZIO.fromTry(ItemsScraper.make(args, client))
+      dumper <- ItemDumper.make(args, targetDirectory)
+    } yield ScrapeItemsRunner(scraper, dumper)
 }
 
-final class ScrapeItemsRunner(
-  mode: ItemScraper.Mode,
-  idMapFile: Path,
-  itemsFile: Path,
-  imagesDirectory: Path
-) extends Runner {
-  def run(
-    client: MediaWikiClient,
-    reporter: ActorRef[Cache.Message[(Page, Throwable)]],
-    spawnIDMapWriter: Spawn[Cache.Message[((Page.ID, InfoboxVersion), Item.ID)]],
-    spawnItemWriter: Spawn[Cache.Message[Item]]
-  )(using system: ActorSystem[?]): Unit = {
-    import system.executionContext
-    val idMapWriterBehavior = CachingWriter.to[((Page.ID, InfoboxVersion), Item.ID)](idMapFile)
-    val itemWriterBehavior = CachingWriter.to[Item](itemsFile, StandardOpenOption.CREATE_NEW)
-
-    ItemScraper
-      .scrape(mode, client, (page, error) => reporter ! Cache.Message.NewEntry((page, error)))
-      .runWith(
-        ItemDumper.dump(
-          loadIDMap(),
-          imagesDirectory,
-          spawnIDMapWriter(idMapWriterBehavior),
-          spawnItemWriter(itemWriterBehavior)
-        )
-      )
-      .onComplete(runStatus => reporter ! Cache.Message.Complete(runStatus))
-  }
-
-  private def loadIDMap(): Map[(Page.ID, InfoboxVersion), Item.ID] =
-    if (Files.exists(idMapFile)) {
-      decode[List[((Page.ID, InfoboxVersion), Item.ID)]](Files.readString(idMapFile))
-        .toTry.get
-        .toMap
-    } else
-      Map.empty
+final class ScrapeItemsRunner(scraper: ItemsScraper, dumper: ItemDumper) extends ScrapeRunner {
+  def run(using Trace): RIO[Scope, Chunk[PageStream.Error]] =
+    for {
+      (errorStream, itemStream) <- scraper.scrape.partitionEither(ZIO.succeed(_))
+      fork <- errorStream.runCollect.forkScoped
+      _ <- itemStream.run(dumper.sink)
+      errors <- fork.join
+    } yield errors
 }

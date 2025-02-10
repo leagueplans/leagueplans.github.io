@@ -12,18 +12,29 @@ on:
 jobs:
   scrape:
     # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
-    - name: Checkout project
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: actions/setup-java@v3
+    - uses: coursier/cache-action@v6
+
+    - uses: actions/setup-java@v4
       with:
         distribution: temurin
-        java-version: '17'
+        java-version: 17
+
+    - uses: sbt/setup-sbt@v1
+      with:
+        sbt-runner-version: 1.10.7
 
     - name: Run scraper
       run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
+
+    - name: Archive run logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-logs
+        path: logs/run.log
 
     - name: Read report
       id: read-report
@@ -35,7 +46,7 @@ jobs:
         echo "$delimiter" >> $GITHUB_OUTPUT
 
     - name: Raise PR for any changes
-      uses: peter-evans/create-pull-request@v4
+      uses: peter-evans/create-pull-request@v7
       with:
         commit-message: Update ${{ github.event.inputs.resource }}
         branch: scraper/${{ github.event.inputs.resource }}
@@ -43,5 +54,5 @@ jobs:
         title: Update ${{ github.event.inputs.resource }}
         body: |
           Triggered by workflow [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          
+          ---
           ${{ steps.read-report.outputs.report }}

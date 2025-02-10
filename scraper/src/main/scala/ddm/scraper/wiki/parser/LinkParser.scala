@@ -1,6 +1,6 @@
 package ddm.scraper.wiki.parser
 
-import ddm.scraper.wiki.model.Page
+import ddm.scraper.wiki.model.PageDescriptor
 import org.parboiled2.*
 
 final class LinkParser(val input: ParserInput) extends Parser with ControlCharacters {
@@ -8,7 +8,7 @@ final class LinkParser(val input: ParserInput) extends Parser with ControlCharac
     rule(
       pageName ~ optional(linkSeparator ~ text) ~ linkEnd ~> (
         (pageName: String, text: Option[String]) =>
-          Term.Link(Page.Name.from(pageName), text.getOrElse(pageName).trim)
+          Term.Link(PageDescriptor.Name.from(pageName), text.getOrElse(pageName).trim)
       )
     )
 

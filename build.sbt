@@ -2,11 +2,10 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.5.0"
+ThisBuild / scalaVersion := "3.5.2"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
-  "-explain-types",
   "-feature",
   "-unchecked",
   "-Wsafe-init",
@@ -18,16 +17,16 @@ lazy val root =
   (project in file("."))
     .aggregate(codec.jvm, codec.js, common.jvm, common.js, wikiScraper, ui)
 
-val circeVersion = "0.14.6"
-
 lazy val codec =
   crossProject(JVMPlatform, JSPlatform).in(file("codec"))
     .settings(
       libraryDependencies ++= List(
-        "org.scalatest" %%% "scalatest" % "3.2.18" % "test",
-        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.18.0" % "test"
+        "org.scalatest" %%% "scalatest" % "3.2.19" % "test",
+        "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % "test"
       )
     )
+
+val circeVersion = "0.14.10"
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -40,18 +39,20 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
-val akkaVersion = "2.6.18"
-val scrimageVersion = "4.1.1"
+val scrimageVersion = "4.3.0"
+val zioVersion = "2.1.14"
+val zioLoggingVersion = "2.4.0"
 
 lazy val wikiScraper =
   project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
-        "ch.qos.logback" % "logback-classic" % "1.4.14",
-        "org.log4s" %% "log4s" % "1.10.0",
-        ("com.typesafe.akka" %% "akka-actor-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
-        ("com.typesafe.akka" %% "akka-stream-typed" % akkaVersion).cross(CrossVersion.for3Use2_13),
-        ("com.typesafe.akka" %% "akka-http" % "10.2.9").cross(CrossVersion.for3Use2_13),
+        "ch.qos.logback" % "logback-classic" % "1.5.16",
+        "dev.zio" %% "zio" % zioVersion,
+        "dev.zio" %% "zio-streams" % zioVersion,
+        "dev.zio" %% "zio-http" % "3.0.1",
+        "dev.zio" %% "zio-logging" % zioLoggingVersion,
+        "dev.zio" %% "zio-logging-slf4j2" % zioLoggingVersion,
         "org.parboiled" %% "parboiled" % "2.5.1",
         "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
         ("com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion).cross(CrossVersion.for3Use2_13)

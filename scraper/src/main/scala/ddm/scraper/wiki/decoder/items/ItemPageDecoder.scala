@@ -1,17 +1,19 @@
 package ddm.scraper.wiki.decoder.items
 
 import ddm.scraper.wiki.decoder.{DecoderException, DecoderResult}
-import ddm.scraper.wiki.model.{BonusesInfobox, Page, WikiItem}
+import ddm.scraper.wiki.model.{BonusesInfobox, PageDescriptor, WikiItem}
 import ddm.scraper.wiki.parser.Term.Template
 
 object ItemPageDecoder {
-  def decode(page: Page, versionedObjects: ItemPageObjectExtractor.VersionedObjects): DecoderResult[WikiItem.Infoboxes] =
+  def decode(
+    page: PageDescriptor.Name,
+    versionedObjects: ItemPageObjectExtractor.VersionedObjects
+  ): DecoderResult[WikiItem.Infoboxes] =
     for {
       itemInfobox <- ItemInfoboxDecoder.decode(versionedObjects.itemObject)
       maybeBonusesInfobox <- decodeBonuses(versionedObjects.maybeBonusesObject)
-      pageName <- decodePageName(page.name)
+      pageName <- decodePageName(page)
     } yield WikiItem.Infoboxes(
-      page.id,
       pageName,
       versionedObjects.version,
       itemInfobox,
@@ -24,9 +26,9 @@ object ItemPageDecoder {
       case None => Right(None)
     }
 
-  private def decodePageName(name: Page.Name): DecoderResult[Page.Name.Other] =
+  private def decodePageName(name: PageDescriptor.Name): DecoderResult[PageDescriptor.Name.Other] =
     name match {
-      case itemPageName: Page.Name.Other => Right(itemPageName)
+      case itemPageName: PageDescriptor.Name.Other => Right(itemPageName)
       case _ => Left(DecoderException("Unexpected page name"))
     }
 }

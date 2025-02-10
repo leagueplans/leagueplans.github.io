@@ -2,7 +2,6 @@ package ddm.codec.decoding
 
 import ddm.codec.Encoding
 
-import scala.annotation.nowarn
 import scala.collection.{Factory, mutable}
 
 trait CollectionDecoder[T] {
@@ -19,8 +18,8 @@ object CollectionDecoder {
   def apply[T](using decoder: CollectionDecoder[T]): decoder.type =
     decoder
     
-  inline def apply[T](f: List[Encoding] => Either[DecodingFailure, T]): CollectionDecoder[T] =
-    f(_): @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
+  def apply[T](f: List[Encoding] => Either[DecodingFailure, T]): CollectionDecoder[T] =
+    f(_)
 
   given factoryDecoder[T : Decoder, C](using factory: Factory[T, C]): CollectionDecoder[C] =
     CollectionDecoder { encodings =>

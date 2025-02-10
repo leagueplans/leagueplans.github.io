@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import ddm.common.model.Item
 import ddm.scraper.wiki.decoder.*
 import ddm.scraper.wiki.decoder.TermOps.*
-import ddm.scraper.wiki.model.{ItemInfobox, Page, WikiItem}
+import ddm.scraper.wiki.model.{ItemInfobox, PageDescriptor, WikiItem}
 import ddm.scraper.wiki.parser.Term
 
 object ItemInfoboxDecoder {
@@ -63,10 +63,10 @@ object ItemInfoboxDecoder {
       .map(constructor.apply)
   }
 
-  private def asImageBins(raw: List[Term]): DecoderResult[NonEmptyList[(Item.Image.Bin, Page.Name.File)]] =
+  private def asImageBins(raw: List[Term]): DecoderResult[NonEmptyList[(Item.Image.Bin, PageDescriptor.Name.File)]] =
     raw
-      .foldLeft[DecoderResult[List[Page.Name.File]]](Right(List.empty)) {
-        case (Right(acc), Term.Link(file: Page.Name.File, _)) => Right(acc :+ file)
+      .foldLeft[DecoderResult[List[PageDescriptor.Name.File]]](Right(List.empty)) {
+        case (Right(acc), Term.Link(file: PageDescriptor.Name.File, _)) => Right(acc :+ file)
         case (Right(acc), _: Term.Unstructured) => Right(acc)
         case (Right(_), _: Term) => Left(DecoderException("Unexpected term"))
         case (l @ Left(_), _) => l
@@ -88,7 +88,7 @@ object ItemInfoboxDecoder {
           )
       }
 
-  private def decodeFloor(link: Page.Name.File): DecoderResult[Item.Image.Bin] =
+  private def decodeFloor(link: PageDescriptor.Name.File): DecoderResult[Item.Image.Bin] =
     link.raw.split("[ _]").last.toIntOption match {
       case Some(i) => Right(Item.Image.Bin(i))
       case None => Left(DecoderException("Unexpected format"))
