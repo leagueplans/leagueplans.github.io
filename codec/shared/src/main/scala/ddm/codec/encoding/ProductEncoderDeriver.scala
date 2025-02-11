@@ -6,7 +6,7 @@ import scala.compiletime.{erasedValue, summonFrom, summonInline}
 import scala.deriving.Mirror
 
 object ProductEncoderDeriver {
-  inline def derive[T](using mirror: Mirror.ProductOf[T]): Encoder[T] =
+  inline def derive[T : Mirror.ProductOf as mirror]: Encoder[T] =
     Encoder(t =>
       Encoding.Message(
         encodeFields(toTuple(t, mirror)(using summonInline))

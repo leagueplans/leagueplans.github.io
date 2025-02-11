@@ -12,7 +12,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Section {
-  def apply[T](
+  def apply[T : HasID](
     title: String,
     id: String,
     orderSignal: Signal[List[T]],
@@ -20,11 +20,11 @@ object Section {
     toDescription: T => L.Modifier[L.HtmlElement],
     maybeAdditionObserver: Option[Observer[Unit]],
     deletionObserver: Observer[T]
-  )(using hasID: HasID[T]): L.Div =
+  ): L.Div =
     L.div(
       L.cls(Styles.section),
       toHeader(title, maybeAdditionObserver),
-      DragSortableList[hasID.ID, T](
+      DragSortableList[T](
         id = s"editor-$id",
         orderSignal,
         orderObserver,

@@ -23,13 +23,13 @@ trait Decoder[T] {
 }
 
 object Decoder {
-  def apply[T](using decoder: Decoder[T]): decoder.type =
+  def apply[T : Decoder as decoder]: decoder.type =
     decoder
 
   def apply[T](f: Encoding => Either[DecodingFailure, T]): Decoder[T] =
     f(_)
 
-  def decode[T](encoding: Encoding)(using decoder: Decoder[T]): Either[DecodingFailure, T] =
+  def decode[T : Decoder as decoder](encoding: Encoding): Either[DecodingFailure, T] =
     decoder.decode(encoding)
     
   def decodeVarint[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
@@ -47,7 +47,7 @@ object Decoder {
   def decodeMessage[T : Decoder](bytes: Array[Byte]): Either[ParsingFailure | DecodingFailure, T] =
     Parser.parseMessage(bytes).flatMap(decode)
 
-  inline def derived[T](using mirror: Mirror.Of[T]): Decoder[T] =
+  inline def derived[T : Mirror.Of as mirror]: Decoder[T] =
     inline mirror match {
       case product: Mirror.ProductOf[T] => ProductDecoderDeriver.derive(using product)
       case sum: Mirror.SumOf[T] => SumDecoderDeriver.derive(using sum)

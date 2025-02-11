@@ -16,14 +16,14 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object DragSortableList {
-  def apply[ID, T](
+  def apply[T : HasID as hasID](
     id: String,
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
-    toElement: (ID, T, Signal[T], L.Div) => L.Modifier[L.HtmlElement]
-  )(using HasID.Aux[T, ID]): ReactiveHtmlElement[OList] = {
+    toElement: (hasID.ID, T, Signal[T], L.Div) => L.Modifier[L.HtmlElement]
+  ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
-    val dragTracker = Var[Option[Dragging[ID, T]]](None)
+    val dragTracker = Var[Option[Dragging[hasID.ID, T]]](None)
 
     val children =
       orderSignal

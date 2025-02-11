@@ -10,10 +10,10 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object TaskList {
-  def apply[Task](
+  def apply[Task : HasID](
     tasksSignal: Signal[List[Task]],
     toNode: Task => L.Node
-  )(using hasID: HasID[Task]): ReactiveHtmlElement[HTMLOListElement] =
+  ): ReactiveHtmlElement[HTMLOListElement] =
     L.ol(
       L.cls(Styles.list),
       L.children <-- tasksSignal.split(_.id)((_, task, _) =>

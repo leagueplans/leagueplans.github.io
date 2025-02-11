@@ -2,7 +2,7 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.5.2"
+ThisBuild / scalaVersion := "3.6.3"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",

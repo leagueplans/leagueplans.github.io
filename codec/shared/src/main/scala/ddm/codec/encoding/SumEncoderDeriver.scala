@@ -5,7 +5,7 @@ import ddm.codec.Encoding
 import scala.deriving.Mirror
 
 object SumEncoderDeriver {
-  inline def derive[T](using mirror: Mirror.SumOf[T]): Encoder[T] =
+  inline def derive[T : Mirror.SumOf as mirror]: Encoder[T] =
     Encoder[(Encoding, Encoding)].contramap(t =>
       (
         Encoder.encode(mirror.ordinal(t))(using Encoder.unsignedIntEncoder),

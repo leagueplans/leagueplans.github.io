@@ -15,7 +15,7 @@ trait CollectionDecoder[T] {
 }
 
 object CollectionDecoder {
-  def apply[T](using decoder: CollectionDecoder[T]): decoder.type =
+  def apply[T : CollectionDecoder as decoder]: decoder.type =
     decoder
     
   def apply[T](f: List[Encoding] => Either[DecodingFailure, T]): CollectionDecoder[T] =

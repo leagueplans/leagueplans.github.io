@@ -6,7 +6,7 @@ import scala.compiletime.{constValue, erasedValue, summonFrom, summonInline}
 import scala.deriving.Mirror
 
 object ProductDecoderDeriver {
-  inline def derive[T](using mirror: Mirror.ProductOf[T]): Decoder[T] =
+  inline def derive[T : Mirror.ProductOf as mirror]: Decoder[T] =
     Decoder.messageDecoder.emap(message =>
       decodeFields[mirror.MirroredElemTypes, mirror.MirroredElemLabels](
         message, 

@@ -14,15 +14,8 @@ trait MessagePortClient[-Out, +In] {
 }
 
 object MessagePortClient {
-  def apply[Out, In]: PartiallyAppliedMessagePortClient[Out, In] =
-    new PartiallyAppliedMessagePortClient[Out, In]
-  
-  final class PartiallyAppliedMessagePortClient[Out, In](val dummy: Boolean = true) extends AnyVal {
-    def apply[Port : MessagePortLike](
-      port: Port
-    )(using Encoder[Out], Decoder[In]): MessagePortClient[Out, In] =
-      Impl[Out, In, Port](port)
-  }
+  def apply[Out, In](using Encoder[Out], Decoder[In])[Port : MessagePortLike](port: Port): MessagePortClient[Out, In] =
+    Impl[Out, In, Port](port)
 
   private final class Impl[Out : Encoder, In : Decoder, Port : MessagePortLike](
     port: Port
@@ -45,7 +38,7 @@ object MessagePortClient {
       val bytes = message.encoded.getBytes.toTypedArray
       port.postMessage(bytes, Array(bytes.buffer).toJSArray)
     }
-    
+
     def close(): Unit = port.close()
   }
 }

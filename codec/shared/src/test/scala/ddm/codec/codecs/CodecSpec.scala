@@ -20,7 +20,7 @@ abstract class CodecSpec
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000)
 
-  final def testRoundTripEncoding[T : Encoder : Decoder : Equality](
+  final def testRoundTripEncoding[T : {Encoder, Decoder, Equality}](
     value: T,
     expectedEncoding: Encoding
   ): Assertion = {
@@ -33,7 +33,7 @@ abstract class CodecSpec
     )
   }
   
-  final def testRoundTripSerialisation[T : Encoder : Decoder : Equality](
+  final def testRoundTripSerialisation[T : {Encoder, Decoder, Equality}](
     value: T,
     decode: Array[Byte] => Decoder[T] ?=> Either[ParsingFailure | DecodingFailure, T],
     expectedEncoding: Array[Byte]
@@ -47,7 +47,7 @@ abstract class CodecSpec
     )
   }
 
-  final def testRoundTripSerialisation[T : Encoder : Decoder : Equality](
+  final def testRoundTripSerialisation[T : {Encoder, Decoder, Equality}](
     value: T,
     decode: Array[Byte] => Decoder[T] ?=> Either[ParsingFailure | DecodingFailure, T]
   ): Assertion = {

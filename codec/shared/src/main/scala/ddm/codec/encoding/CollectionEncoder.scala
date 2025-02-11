@@ -12,7 +12,7 @@ trait CollectionEncoder[T] {
 }
 
 object CollectionEncoder {
-  def apply[T](using encoder: CollectionEncoder[T]): encoder.type =
+  def apply[T : CollectionEncoder as encoder]: encoder.type =
     encoder
 
   inline def apply[T](f: T => List[Encoding]): CollectionEncoder[T] =

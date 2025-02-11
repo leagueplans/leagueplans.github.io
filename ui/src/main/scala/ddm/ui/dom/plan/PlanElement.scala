@@ -23,7 +23,7 @@ object PlanElement {
     val allStepsVar = Var(List.empty[Step.ID])
     val completionManager = CompletionManager(allStepsVar.signal)
 
-    val forester = Forester[Step](
+    val forester = Forester(
       initialPlan,
       toElement(
         _,

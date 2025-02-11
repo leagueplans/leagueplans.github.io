@@ -9,22 +9,18 @@ import ddm.ui.model.common.forest.{Forest, ForestInterpreter, ForestResolver}
 import ddm.ui.utils.HasID
 
 object Forester {
-  def apply[T] = new PartiallyAppliedForester[T]
-
-  final class PartiallyAppliedForester[T](val dummy: Boolean = true) extends AnyVal {
-    def apply[ID](
-      forest: Forest[ID, T],
-      createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
-    )(using hasID: HasID.Aux[T, ID]): Forester[ID, T] =
-      new Forester(Var(forest), DOMForestUpdateEvaluator(forest, createDOMNode))
-  }
+  def apply[ID, T](
+    forest: Forest[ID, T],
+    createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
+  )(using HasID.Aux[T, ID]): Forester[ID, T] =
+    new Forester(Var(forest), DOMForestUpdateEvaluator(forest, createDOMNode))
 }
 
 /** Optimises updates to the forest */
 final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
   domEvaluator: DOMForestUpdateEvaluator[ID, T]
-)(using hasID: HasID.Aux[T, ID]) {
+)(using HasID.Aux[T, ID]) {
   val forestSignal: Signal[Forest[ID, T]] =
     forestState.signal.distinct
 

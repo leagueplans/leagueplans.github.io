@@ -5,7 +5,7 @@ import ddm.scraper.wiki.decoder.{DecoderResult, SimpleInfoboxObjectExtractor}
 import ddm.scraper.wiki.model.InfoboxVersion
 import ddm.scraper.wiki.parser.Term
 import ddm.scraper.wiki.parser.Term.Template
-import zio.{UIO, ZIO}
+import zio.{Trace, UIO, ZIO}
 
 object ItemPageObjectExtractor {
   final case class VersionedObjects(
@@ -16,7 +16,7 @@ object ItemPageObjectExtractor {
 
   private val bonusesExtractor = SimpleInfoboxObjectExtractor("bonuses")
 
-  def extract(terms: List[Term]): UIO[List[DecoderResult[VersionedObjects]]] = {
+  def extract(terms: List[Term])(using Trace): UIO[List[DecoderResult[VersionedObjects]]] = {
     val itemExtractions = ItemInfoboxObjectExtractor.extract(terms)
     bonusesExtractor.extractIfExists(terms) match {
       case None =>
@@ -36,7 +36,7 @@ object ItemPageObjectExtractor {
   private def link(
     bonusesObjects: List[(InfoboxVersion, Template.Object)],
     itemObjects: List[(InfoboxVersion, Template.Object)]
-  ): UIO[List[VersionedObjects]] =
+  )(using Trace): UIO[List[VersionedObjects]] =
     ZIO.foreach(itemObjects) { (itemVersion, itemObject) =>
       val maybeBonuses = bonusesObjects.collectFirst {
         case (bonusesVersion, bonusesObject) if itemVersion.isSubVersionOf(bonusesVersion) =>

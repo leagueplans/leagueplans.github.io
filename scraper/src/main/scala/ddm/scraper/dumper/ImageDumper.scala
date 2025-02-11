@@ -3,12 +3,12 @@ package ddm.scraper.dumper
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.{ImmutableImageLoader, PngWriter}
 import ddm.scraper.telemetry.Metric
-import zio.{Task, ZIO}
+import zio.{Task, Trace, ZIO}
 
 import java.nio.file.{Files, Path}
 
 object ImageDumper {
-  def make[T](name: String, targetDirectory: Path): Task[ImageDumper] =
+  def make[T](name: String, targetDirectory: Path)(using Trace): Task[ImageDumper] =
     for {
       _ <- ZIO.attempt(Files.createDirectories(targetDirectory))
       imageCounter <- Metric.makeCounter(s"$name.image-dumper.images")
@@ -22,7 +22,7 @@ final class ImageDumper(
   imageCounter: Metric.Counter[Long],
   byteCounter: Metric.Counter[Long]
 ) {
-  def dump(subPath: Path, data: Array[Byte]): Task[Unit] =
+  def dump(subPath: Path, data: Array[Byte])(using Trace): Task[Unit] =
     ZIO.uninterruptibleMask(restore =>
       for {
         _ <- restore(writeToFile(subPath, data))
@@ -31,7 +31,7 @@ final class ImageDumper(
       } yield ()
     )
     
-  private def writeToFile(subPath: Path, data: Array[Byte]): Task[Unit] =
+  private def writeToFile(subPath: Path, data: Array[Byte])(using Trace): Task[Unit] =
     ZIO.attempt {
       val path = directory.resolve(subPath)
       Files.createDirectories(path.getParent)

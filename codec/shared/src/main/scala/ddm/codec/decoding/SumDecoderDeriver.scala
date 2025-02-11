@@ -5,7 +5,7 @@ import ddm.codec.Encoding
 import scala.deriving.Mirror
 
 object SumDecoderDeriver {
-  inline def derive[T](using mirror: Mirror.SumOf[T]): Decoder[T] = {
+  inline def derive[T : Mirror.SumOf as mirror]: Decoder[T] = {
     lazy val decoders = 
       summonOrDeriveDecoders[mirror.MirroredElemTypes]
         .asInstanceOf[List[Decoder[T]]]

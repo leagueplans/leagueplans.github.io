@@ -49,7 +49,7 @@ object ItemDumper {
       dataDumper <- JsonDumper.make[Vector[Item]](itemsFile)
     } yield dataDumper
   
-  private def makeIconDumper(dumpDirectory: Path): Task[ImageDumper] =
+  private def makeIconDumper(dumpDirectory: Path)(using Trace): Task[ImageDumper] =
     for {
       imagesDirectory <- ZIO.attempt(dumpDirectory.resolve("dynamic/assets/images/items"))
       imageDumper <- ImageDumper.make("items", imagesDirectory)

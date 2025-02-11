@@ -14,7 +14,7 @@ trait Encoder[T] {
 }
 
 object Encoder {
-  def apply[T](using encoder: Encoder[T]): encoder.type =
+  def apply[T : Encoder as encoder]: encoder.type =
     encoder
 
   def apply[T](f: T => Encoding): Encoder[T] =
@@ -25,7 +25,7 @@ object Encoder {
   def encode[T : Encoder](t: T): Encoding =
     t.encoded
 
-  inline def derived[T](using mirror: Mirror.Of[T]): Encoder[T] =
+  inline def derived[T : Mirror.Of as mirror]: Encoder[T] =
     inline mirror match {
       case product: Mirror.ProductOf[T] => ProductEncoderDeriver.derive(using product)
       case sum: Mirror.SumOf[T] => SumEncoderDeriver.derive(using sum)
