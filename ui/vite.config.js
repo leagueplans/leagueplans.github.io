@@ -1,6 +1,24 @@
 import { spawnSync } from "child_process";
 import { defineConfig } from "vite";
 
+export default defineConfig(({ command, mode }) => {
+  const linkOutputDir =
+    command === "serve" ?
+      printSbtTask("fastLinkOutputDir") :
+      printSbtTask("fullLinkOutputDir");
+
+  return {
+    root: "src/main/web",
+    publicDir: "dynamic",
+    resolve: { alias: [ { find: "@linkOutputDir", replacement: linkOutputDir } ] },
+    json: { stringify: true },
+    worker: { format: "es" },
+    server: { port: 5173, strictPort: true },
+    preview: { port: 5173, strictPort: true },
+    build: { outDir: "../../../target/vite", emptyOutDir: true }
+  }
+});
+
 function printSbtTask(task) {
   const args = ["--error", "--batch", `print ${task}`];
   const options = {
@@ -29,21 +47,3 @@ function printSbtTask(task) {
   else
     return result.stdout.toString().replace('[0J', '').trim();
 }
-
-export default defineConfig(({ command, mode }) => {
-  const linkOutputDir =
-    command === "serve" ?
-      printSbtTask("fastLinkOutputDir") :
-      printSbtTask("fullLinkOutputDir");
-
-  return {
-    root: "src/main/web",
-    publicDir: "dynamic",
-    resolve: { alias: [ { find: "@linkOutputDir", replacement: linkOutputDir } ] },
-    json: { stringify: true },
-    worker: { format: "es" },
-    server: { port: 5173, strictPort: true },
-    preview: { port: 5173, strictPort: true },
-    build: { outDir: "../../../target/vite", emptyOutDir: true }
-  }
-});

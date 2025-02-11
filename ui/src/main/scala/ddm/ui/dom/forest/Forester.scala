@@ -13,7 +13,7 @@ object Forester {
     forest: Forest[ID, T],
     createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
   )(using HasID.Aux[T, ID]): Forester[ID, T] =
-    new Forester(Var(forest), DOMForestUpdateEvaluator(forest, createDOMNode))
+    new Forester(Var(forest).distinct, DOMForestUpdateEvaluator(forest, createDOMNode))
 }
 
 /** Optimises updates to the forest */
@@ -22,7 +22,7 @@ final class Forester[ID, T](
   domEvaluator: DOMForestUpdateEvaluator[ID, T]
 )(using HasID.Aux[T, ID]) {
   val forestSignal: Signal[Forest[ID, T]] =
-    forestState.signal.distinct
+    forestState.signal
 
   val domSignal: Signal[List[L.Node]] =
     forestSignal.map(
