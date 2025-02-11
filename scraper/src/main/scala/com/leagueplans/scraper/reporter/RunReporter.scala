@@ -26,7 +26,7 @@ final class RunReporter(baseURL: URL, target: Path) {
       case Exit.Success(errors) =>
         s"""✅ **COMPLETE**
            |
-           |${formatFailures(errors)}""".stripMargin
+           |${formatFailureSections(errors)}""".stripMargin
 
       case Exit.Failure(cause) =>
         s"""❌ **ERROR**
@@ -39,7 +39,7 @@ final class RunReporter(baseURL: URL, target: Path) {
        |$contents""".stripMargin
   }
 
-  private def formatFailures(errors: Chunk[PageStream.Error]): String = {
+  private def formatFailureSections(errors: Chunk[PageStream.Error]): String = {
     val (failedRequests, failedPages) = errors.partitionMap {
       case (request: Request, error) => Left(request, error)
       case (page: PageDescriptor, error) => Right(page, error)
@@ -47,42 +47,38 @@ final class RunReporter(baseURL: URL, target: Path) {
 
     s"""${formatFailedRequests(failedRequests)}
        |
-       |${formatFailedPages(failedPages)}""".stripMargin
+       |${formatFailedPages(failedPages)}
+       |""".stripMargin
   }
 
-  private def formatFailedRequests(errors: Chunk[(Request, Throwable)]): String = {
-    val contents =
-      errors.map((request, error) =>
-        s"${formatFailedRequest(request, error)}"
-      ).mkString("\n---\n")
-
+  private def formatFailedRequests(errors: Chunk[(Request, Throwable)]): String =
     s"""## 📡 Failed requests
-       |$contents""".stripMargin
-  }
+       |${formatFailures(errors)(formatRequest)(using Ordering.by(_.url.encode))}""".stripMargin
 
-  private def formatFailedRequest(request: Request, error: Throwable): String =
-    s"""`${request.method.render} ${request.url.encode}`
-       |${formatError(error)}""".stripMargin
+  private def formatRequest(request: Request): String =
+    s"`${request.method.render} ${request.url.encode}`"
 
-  private def formatFailedPages(errors: Chunk[(PageDescriptor, Throwable)]): String = {
-    val contents =
-      errors.map((page, error) =>
-        s"${formatFailedPage(page, error)}"
-      ).mkString("\n---\n")
-
+  private def formatFailedPages(errors: Chunk[(PageDescriptor, Throwable)]): String =
     s"""## 📄 Failed pages
-       |$contents""".stripMargin
-  }
-
-  private def formatFailedPage(page: PageDescriptor, error: Throwable): String =
-    s"""${formatPage(page)}
-       |${formatError(error)}""".stripMargin
+       |${formatFailures(errors)(formatPage)}""".stripMargin
 
   private def formatPage(page: PageDescriptor): String = {
     // Required for proper markdown link rendering
     val replaced = page.name.wikiName.replace(' ', '_')
     s"[${page.name.wikiName}](${baseURL.encode}/w/$replaced) (Page ID ${page.id})"
   }
+
+  private def formatFailures[ID : Ordering](
+    errors: Chunk[(ID, Throwable)]
+  )(formatID: ID => String): String =
+    errors
+      .groupMap((_, error) => formatError(error))((id, _) => id)
+      .toVector
+      .sortBy((error, _) => error)
+      .map((error, ids) =>
+        s"""$error
+           |${ids.sorted.map(formatID).mkString("\n\n")}""".stripMargin
+      ).mkString("\n\n---\n")
 
   private def formatError(error: Throwable): String =
     s"""```text

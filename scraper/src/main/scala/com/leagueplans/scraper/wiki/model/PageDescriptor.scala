@@ -30,7 +30,10 @@ object PageDescriptor {
       }
 
     given Decoder[Name] = Decoder[String].map(from)
+    given Ordering[Name] = Ordering.by(_.wikiName)
   }
+
+  given Ordering[PageDescriptor] = Ordering.by(p => (p.name, p.id))
 }
 
 final case class PageDescriptor(id: PageDescriptor.ID, name: PageDescriptor.Name)
