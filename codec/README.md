@@ -11,7 +11,7 @@ The project has three primary goals:
 Our encodings have more or less the same properties as Protobuf encodings, and this turns out to be good enough for our purposes. A section has been included [below](#comparison-with-protobuf-encoding) that describes the main differences.
 
 ### An intermediary AST
-A full AST implementation can be found in [Encoding.scala](shared/src/main/scala/ddm/codec/Encoding.scala).
+A full AST implementation can be found in [Encoding.scala](shared/src/main/scala/com/leagueplans/codec/Encoding.scala).
 
 ### Prevent unsound encoders/decoders
 Let's consider the following case class.
@@ -37,7 +37,7 @@ In general, nested `Option`s and collections result in ambiguous encodings. As s
 ## Usage
 ### Encoding
 ```scala 3
-import ddm.codec.encoding.Encoder
+import com.leagueplans.codec.encoding.Encoder
 
 given Encoder[T] = ???
 val t: T = ???
@@ -51,8 +51,8 @@ Encoding works in a straightforward manner. If we have an encoder for a given ty
 
 ### Decoding
 ```scala 3
-import ddm.codec.decoding.{Decoder, DecodingFailure}
-import ddm.codec.parsing.{Parser, ParsingFailure}
+import com.leagueplans.codec.decoding.{Decoder, DecodingFailure}
+import com.leagueplans.codec.parsing.{Parser, ParsingFailure}
 
 given Decoder[T] = ???
 val bytes: Array[Byte] = ???
@@ -65,15 +65,15 @@ val maybeT: Either[ParsingFailure | DecodingFailure, T] = Decoder.decodeMessage(
 Typically, when decoding we'll have a byte array representing a message. If we have a `Decoder[T]` in scope for the type `T` that we wish to decode our byte array into, then we can use the `decodeMessage` method defined on the `Decoder` companion object to attempt to decode the bytes. If we wanted to, we could use one of the other `decodeX` methods, which would interpret the parse the byte array as something other than a message.
 
 ### Auto-deriving encoders and decoders
-Encoders and decoders are predefined for frequently used Scala types. You can find their implementations in the respective companion objects, [Encoder.scala](shared/src/main/scala/ddm/codec/encoding/Encoder.scala) and [Decoder.scala](shared/src/main/scala/ddm/codec/decoding/Decoder.scala).
+Encoders and decoders are predefined for frequently used Scala types. You can find their implementations in the respective companion objects, [Encoder.scala](shared/src/main/scala/com/leagueplans/codec/encoding/Encoder.scala) and [Decoder.scala](shared/src/main/scala/com/leagueplans/codec/decoding/Decoder.scala).
 
 #### Products
 For a product type `T` with fields of types `T1, ..., TN`, if the compiler can find implicit encoders with types `Encoder[T1], ..., Encoder[TN]` in scope, then you can summon an `Encoder[T]` using `Encoder.derived`. Likewise for a `Decoder[T]`.
 
 For example:
 ```scala 3
-import ddm.codec.decoding.Decoder
-import ddm.codec.encoding.Encoder
+import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.codec.encoding.Encoder
 
 final case class A(f: Float, s: String, ds: Set[Double])
 
@@ -96,8 +96,8 @@ For a sum type `T` with subtypes `T1, ..., TN`, you can summon an `Encoder[T]` u
 
 For example:
 ```scala 3
-import ddm.codec.decoding.Decoder
-import ddm.codec.encoding.Encoder
+import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.codec.encoding.Encoder
 
 sealed trait A
 
@@ -201,8 +201,8 @@ We can parse much more information with our spec. Real messages typically have s
 ### Sum encodings
 Scala sum types are serialised as tuples. The first element of the tuple is a varint denoting the ordinal for the specific subtype of our sum, and the second element of the tuple is the actual encoding of the subtype. For example:
 ```scala 3
-import ddm.codec.decoding.Decoder
-import ddm.codec.encoding.Encoder
+import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.codec.encoding.Encoder
 
 sealed trait A
 

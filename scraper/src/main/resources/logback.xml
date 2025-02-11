@@ -5,10 +5,10 @@
     <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
     <import class="ch.qos.logback.classic.filter.LevelFilter"/>
     <import class="ch.qos.logback.classic.filter.ThresholdFilter"/>
-    <import class="ddm.scraper.telemetry.ThresholdLoggerFilter"/>
     <import class="ch.qos.logback.core.ConsoleAppender"/>
     <import class="ch.qos.logback.core.FileAppender"/>
     <import class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
+    <import class="com.leagueplans.scraper.telemetry.ThresholdLoggerFilter"/>
 
     <shutdownHook class="DefaultShutdownHook"/>
     
@@ -62,7 +62,7 @@
         <!-- The ThresholdLoggerFilter has to be defined first in order to overrule the ThresholdFilter -->
         <filter class="ThresholdLoggerFilter">
             <level>${DETAILED_LOG_LEVEL}</level>
-            <logger>ddm.scraper</logger>
+            <logger>com.leagueplans.scraper</logger>
         </filter>
         <filter class="ThresholdFilter">
             <level>${STANDARD_LOG_LEVEL}</level>

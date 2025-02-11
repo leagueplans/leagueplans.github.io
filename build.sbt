@@ -81,7 +81,7 @@ lazy val ui =
       scalaJSLinkerConfig ~= (config =>
         config
           .withModuleKind(ModuleKind.ESModule)
-          .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("ddm.ui")))
+          .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("com.leagueplans.ui")))
       ),
       fastLinkOutputDir := {
         // Ensure that fastLinkJS has run, then return its output directory
