@@ -1,12 +1,11 @@
 package com.leagueplans.ui.storage.worker
 
-import com.leagueplans.ui.facades.workers.{CreateWorkerOptions, WorkerFactory}
 import com.leagueplans.ui.storage.model.LamportTimestamp
 import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
 import com.leagueplans.ui.storage.worker.IdealisedStorageCoordinator.{InboundPort, Result, WorkerPort}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
-import com.leagueplans.ui.wrappers.workers.{MessagePortClient, SharedWorkerScope}
+import com.leagueplans.ui.wrappers.workers.{MessagePortClient, SharedWorkerScope, WorkerFactory}
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner
@@ -26,9 +25,7 @@ private object IdealisedStorageCoordinator {
     val messageBus = EventBus[(InboundPort, Inbound.ToCoordinator)]()
     val coordinator = IdealisedStorageCoordinator(
       PlanSubscriptions.empty,
-      MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](
-        WorkerFactory.storageWorker(CreateWorkerOptions.storageWorker)
-      )
+      MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](WorkerFactory.storageWorker())
     )
 
     messageBus

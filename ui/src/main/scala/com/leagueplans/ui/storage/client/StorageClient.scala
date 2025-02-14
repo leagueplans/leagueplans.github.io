@@ -1,12 +1,11 @@
 package com.leagueplans.ui.storage.client
 
-import com.leagueplans.ui.facades.workers.{CreateWorkerOptions, WorkerFactory}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.storage.worker.StorageCoordinator
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
-import com.leagueplans.ui.wrappers.workers.MessagePortClient
+import com.leagueplans.ui.wrappers.workers.{MessagePortClient, WorkerFactory}
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
@@ -18,9 +17,7 @@ object StorageClient {
   def apply(): StorageClient = {
     val coordinator = startCoordinator()
     val worker =
-      MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](
-        WorkerFactory.storageWorker(CreateWorkerOptions.storageWorker)
-      )
+      MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](WorkerFactory.storageWorker())
       
     worker.setMessageHandler(message => coordinator.send(Right(message)))
 
@@ -31,9 +28,7 @@ object StorageClient {
   }
   
   private def startCoordinator(): MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut] =
-    MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut](
-      WorkerFactory.storageCoordinator(CreateWorkerOptions.storageCoordinator)
-    )
+    MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut](WorkerFactory.storageCoordinator())
   
   private def toSetMessageHandler(
     coordinator: MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut],
