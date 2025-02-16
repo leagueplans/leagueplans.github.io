@@ -5,8 +5,6 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.html.Div
 import org.scalajs.dom.{Element, MouseEvent}
 
 import scala.scalajs.js
@@ -25,7 +23,7 @@ object ContextMenu {
     }
   }
 
-  def apply(): (ReactiveHtmlElement[Div], Controller) = {
+  def apply(): (L.Div, Controller) = {
     val status = Var[Status](Status.Closed)
     val controller = Controller(
       opener(status.writer),
@@ -51,7 +49,7 @@ object ContextMenu {
       Status.Open(event.pageX, event.pageY, contents)
     }
 
-  private def toMenu(status: Var[Status]): ReactiveHtmlElement[Div] =
+  private def toMenu(status: Var[Status]): L.Div =
     L.div(
       L.cls <-- status.signal.map {
         case _: Status.Open => Styles.open

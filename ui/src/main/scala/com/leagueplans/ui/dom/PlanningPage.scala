@@ -59,6 +59,7 @@ object PlanningPage {
       stepsWithErrorsVar.signal.map(_.keySet),
       editingEnabled = Val(true),
       contextMenuController,
+      toastPublisher,
       stepUpdates,
       focusUpdater
     )

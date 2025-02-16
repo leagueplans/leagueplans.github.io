@@ -60,13 +60,13 @@ object Section {
     )
 
   private def toItem(
-    dragIcon: L.Div,
+    dragIcon: L.SvgElement,
     description: L.Modifier[L.HtmlElement],
     deletionObserver: Observer[Unit]
   ): List[L.Modifier[L.HtmlElement]] =
     List(
       L.cls(Styles.item),
-      dragIcon.amend(L.cls(Styles.button)),
+      dragIcon.amend(L.svg.cls(Styles.button)),
       L.div(
         L.cls(Styles.itemDescription),
         description

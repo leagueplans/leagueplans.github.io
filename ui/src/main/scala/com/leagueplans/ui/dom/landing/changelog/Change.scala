@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.landing.changelog
 
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLParagraphElement
+import org.scalajs.dom.html.Paragraph
 
 import scala.scalajs.js
 import scala.scalajs.js.Date
@@ -37,7 +37,7 @@ object Change {
     val summary: String = js.native
   }
 
-  private def toSummary(description: String): ReactiveHtmlElement[HTMLParagraphElement] =
+  private def toSummary(description: String): ReactiveHtmlElement[Paragraph] =
     L.p(
       L.cls(Styles.summary),
       description

@@ -12,8 +12,6 @@ import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, textToTextNode}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -60,7 +58,7 @@ object NewRequirementForm {
       )
     )
 
-  private def toToolSearch(items: Fuse[Item]): (ReactiveHtmlElement[Div], Signal[Option[Requirement]]) = {
+  private def toToolSearch(items: Fuse[Item]): (L.Div, Signal[Option[Requirement]]) = {
     val (search, searchLabel, radios, selection) =
       ItemSearch(
         items,
@@ -87,7 +85,7 @@ object NewRequirementForm {
     (div, requirement)
   }
 
-  private def levelEntry(): (ReactiveHtmlElement[Div], Signal[Option[SkillLevel]]) = {
+  private def levelEntry(): (L.Div, Signal[Option[SkillLevel]]) = {
     val (skillInput, skillLabel, skillSignal) = Select[Skill](
       id = "new-requirement-skill-selection",
       NonEmptyList.fromListUnsafe(

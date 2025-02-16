@@ -6,8 +6,6 @@ import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
-import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -18,7 +16,7 @@ object EquipmentElement {
     cache: Cache,
     effectObserver: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-  ): ReactiveHtmlElement[Div] =
+  ): L.Div =
     L.div(
       L.cls(Styles.pane),
       L.img(

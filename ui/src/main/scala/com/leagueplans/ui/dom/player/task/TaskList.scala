@@ -4,7 +4,7 @@ import com.leagueplans.ui.utils.HasID
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLOListElement
+import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -13,7 +13,7 @@ object TaskList {
   def apply[Task : HasID](
     tasksSignal: Signal[List[Task]],
     toNode: Task => L.Node
-  ): ReactiveHtmlElement[HTMLOListElement] =
+  ): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.list),
       L.children <-- tasksSignal.split(_.id)((_, task, _) =>

@@ -20,7 +20,7 @@ object DragSortableList {
     id: String,
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
-    toElement: (hasID.ID, T, Signal[T], L.Div) => L.Modifier[L.HtmlElement]
+    toElement: (hasID.ID, T, Signal[T], L.SvgElement) => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
     val dragTracker = Var[Option[Dragging[hasID.ID, T]]](None)
@@ -55,11 +55,10 @@ object DragSortableList {
 
   private final case class Dragging[ID, T](id: ID, originalIndex: Int, originalOrder: List[T])
 
-  private def dragIcon: (L.Div, Signal[Boolean]) = {
+  private def dragIcon: (L.SvgElement, Signal[Boolean]) = {
     val mouseOver = Var(false)
-    val icon = L.div(
-      L.cls(Styles.icon),
-      FontAwesome.icon(FreeSolid.faGripVertical),
+    val icon = FontAwesome.icon(FreeSolid.faGripVertical).amend(
+      L.svg.cls(Styles.icon),
       L.onMouseOver.mapToStrict(true) --> mouseOver,
       L.onMouseLeave.mapToStrict(false) --> mouseOver
     )

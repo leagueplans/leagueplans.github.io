@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.plan.ExpMultiplierStrategy
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLParagraphElement
+import org.scalajs.dom.html.Paragraph
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -64,6 +64,6 @@ object MultiplierElement {
         )
     }
 
-  private def multiplier(value: Int): ReactiveHtmlElement[HTMLParagraphElement] =
+  private def multiplier(value: Int): ReactiveHtmlElement[Paragraph] =
     L.p(L.cls(Styles.multiplier), s"${value}x")
 }

@@ -5,17 +5,19 @@ import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
 import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, handledWith}
+import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import org.scalajs.dom.window
 
 object StepContextMenu {
   def apply(
+    stepID: Step.ID,
+    stepSignal: Signal[Step],
     controller: ContextMenu.Controller,
+    clipboard: Clipboard[Step],
     isCompleteSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
-    stepID: Step.ID,
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     completionStatusObserver: Observer[Boolean]
   ): Binder[L.Element] =
@@ -24,10 +26,10 @@ object StepContextMenu {
         .combine(editingEnabledSignal, isCompleteSignal)
         .map((editingEnabled, isComplete) =>
           Some(
-            if (editingEnabled)
+            if (editingEnabled && clipboard.isSupported)
               L.div(
-                cutButton(stepID, closer),
-                pasteButton(stepID, stepUpdater, closer),
+                cutButton(stepSignal, clipboard, closer),
+                pasteButton(stepID, clipboard, stepUpdater, closer),
                 changeStatusButton(isComplete, completionStatusObserver, closer)
               )
             else
@@ -36,26 +38,40 @@ object StepContextMenu {
         )
     )
 
-  private def cutButton(stepID: Step.ID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
+  private def cutButton(
+    stepSignal: Signal[Step],
+    clipboard: Clipboard[Step],
+    closer: Observer[ContextMenu.CloseCommand]
+  ): L.Button =
     Button(
-      _.handledWith(_.flatMapSwitch(_ =>
-        window.navigator.clipboard.writeText(stepID).asObservable
-      )) --> closer
+      _.handledWith(
+        _.sample(stepSignal).flatMapSwitch(step =>
+          clipboard.write(step).asObservable
+        )
+      ) --> closer
     ).amend("Cut")
 
+  // There's an edge case to be aware of here.
+  // Suppose you copy a step X from plan A to plan B. Then you modify step X substantially, and
+  // then copy the updated step X back to plan A. This will overwrite the data for step X in A.
+  // If a long time has passed between the two copies, then this behaviour could be surprising.
+  // I think this is unlikely enough to be a worthwhile tradeoff for being able to copy data
+  // between plans. This behaviour can be made less problematic by introducing the ability to
+  // undo changes.
   private def pasteButton(
     stepID: Step.ID,
+    clipboard: Clipboard[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     closer: Observer[ContextMenu.CloseCommand]
   ): L.Button = {
     val stepMover =
-      stepUpdater.contramap[String](rawChildID => forester =>
-        forester.move(child = Step.ID.fromString(rawChildID), maybeParent = Some(stepID))
+      stepUpdater.contramap[Step](step => forester =>
+        forester.add(child = step, parent = stepID)
       )
 
     Button(
       _.handledWith(_.flatMapSwitch(_ =>
-        window.navigator.clipboard.readText().asObservable
+        clipboard.read().asObservable.collectSome
       )) --> Observer.combine(stepMover, closer)
     ).amend("Paste")
   }

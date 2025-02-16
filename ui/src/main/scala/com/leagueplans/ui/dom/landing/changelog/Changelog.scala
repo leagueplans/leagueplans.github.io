@@ -2,20 +2,24 @@ package com.leagueplans.ui.dom.landing.changelog
 
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLOListElement
+import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
 import scala.scalajs.js.Date
 import scala.scalajs.js.annotation.JSImport
 
 object Changelog {
-  def apply(): ReactiveHtmlElement[HTMLOListElement] =
+  def apply(): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.changelog),
       item(
         new Date(2025, 1, 16),
         "UX improvements to the plan section",
-        List.empty
+        List(
+          "Steps can now be copy/pasted between browser tabs (except Firefox)",
+          "Tidied up the layout of the plan section",
+          "Toggling a step's visibility with the keyboard no longer changes the focused step"
+        )
       ),
       item(
         new Date(2024, 10, 15),

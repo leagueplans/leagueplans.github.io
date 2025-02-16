@@ -5,6 +5,7 @@ import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, onKey}
+import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
@@ -29,12 +30,14 @@ object StepElement {
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
+    clipboard: Clipboard[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     completionStatusObserver: Observer[Boolean],
     focusObserver: Observer[Step.ID]
   ): L.Div = {
     val isHovering = Var(false)
     val (subSteps, subStepsMaskController) = toSubSteps(subStepsSignal)
+
     L.div(
       L.cls(Styles.step),
       L.cls <-- Signal.combine(isFocused, isCompleteSignal, hasErrorsSignal, isHovering).map(StepBackground.from),
@@ -46,10 +49,12 @@ object StepElement {
       toFocusListeners(stepID, focusObserver),
       toHoverListeners(isHovering),
       StepContextMenu(
+        stepID,
+        step,
         contextMenuController,
+        clipboard,
         isCompleteSignal,
         editingEnabledSignal,
-        stepID,
         stepUpdater,
         completionStatusObserver
       )

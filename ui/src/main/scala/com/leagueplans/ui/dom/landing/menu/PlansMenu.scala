@@ -7,7 +7,7 @@ import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.HTMLOListElement
+import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
 import scala.scalajs.js.Date
@@ -19,7 +19,7 @@ object PlansMenu {
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
     modalController: Modal.Controller
-  ): ReactiveHtmlElement[HTMLOListElement] =
+  ): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.list),
       L.children <-- toEntries(storage, selectionObserver, toastPublisher, modalController)

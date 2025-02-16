@@ -1,9 +1,11 @@
 package com.leagueplans.ui.dom.plan
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
@@ -19,11 +21,13 @@ object PlanElement {
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
+    toastPublisher: ToastHub.Publisher,
     stepUpdates: EventBus[Forester[Step.ID, Step] => Unit],
     focusObserver: Observer[Step.ID]
   ): (L.Div, Forester[Step.ID, Step]) = {
     val allStepsVar = Var(List.empty[Step.ID])
     val completionManager = CompletionManager(allStepsVar.signal)
+    val clipboard = Clipboard[Step]("step", toastPublisher, Decoder.decodeMessage)
 
     val forester = Forester(
       initialPlan,
@@ -36,6 +40,7 @@ object PlanElement {
         stepsWithErrorsSignal,
         editingEnabled,
         contextMenuController,
+        clipboard,
         stepUpdates.writer,
         focusObserver
       )
@@ -67,6 +72,7 @@ object PlanElement {
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     editingEnabled: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
+    clipboard: Clipboard[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     focusObserver: Observer[Step.ID]
   ): L.HtmlElement =
@@ -82,6 +88,7 @@ object PlanElement {
       hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
       editingEnabled,
       contextMenuController,
+      clipboard,
       stepUpdater,
       completionStatusObserver = Observer[Boolean](completionManager.updateStatus(stepID, _)),
       focusObserver

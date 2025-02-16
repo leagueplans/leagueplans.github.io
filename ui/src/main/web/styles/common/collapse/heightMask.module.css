@@ -1,6 +1,4 @@
-.mask {
-  overflow: hidden;
-}
+.mask {}
 
 .maskOpen {
   composes: mask;
@@ -8,4 +6,12 @@
 
 .maskClosed {
   composes: mask;
+
+  overflow: hidden;
+}
+
+.maskAnimating {
+  composes: mask;
+
+  overflow: hidden;
 }
