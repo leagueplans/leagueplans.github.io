@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.player.league
 
 import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
 import com.leagueplans.ui.model.player.mode.*
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.handled
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 
@@ -11,7 +11,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object LeagueOption {
   def apply(league: Mode.League, leagueObserver: Observer[Unit]): L.Button =
-    Button(leagueObserver)(_.handled).amend(
+    Button(_.handled --> leagueObserver).amend(
       L.cls(Styles.option, PanelStyles.header),
       toLogo(league).getOrElse(league.name),
       IconButtonModifiers(

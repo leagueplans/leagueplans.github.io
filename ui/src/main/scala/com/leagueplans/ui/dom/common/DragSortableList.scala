@@ -4,7 +4,7 @@ import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.HasID
 import com.leagueplans.ui.utils.airstream.ObservableOps.unzip
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.{ifUnhandledF, handledWith}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
@@ -124,25 +124,21 @@ object DragSortableList {
   private def onDragEnd[ID, T](
     dragTracker: Var[Option[Dragging[ID, T]]],
     orderObserver: Observer[List[T]]
-  ): L.Modifier[L.HtmlElement] =
-    L.inContext(ctx =>
-      L.onDragEnd.ifUnhandledF(
-        _.collect { case event if event.target == ctx.ref =>
-          event.preventDefault()
-          event
-        }.withCurrentValueOf(dragTracker)
-      ) --> Observer.combine(
-        dragTracker.writer.contramap[Any](_ => None),
-        orderObserver.contracollect[(DragEvent, Option[Dragging[ID, T]])](
-          Function.unlift {
-            case (event, Some(dragging)) if event.dataTransfer.dropEffect == DataTransferDropEffectKind.none =>
-              Some(dragging.originalOrder)
-            case _ =>
-              None
-          }
-        )
-      )
+  ): L.Modifier[L.HtmlElement] = {
+    val observer = Observer.combine(
+      dragTracker.writer.contramap[Any](_ => None),
+      orderObserver.contracollect[(DragEvent, Option[Dragging[ID, T]])] {
+        case (event, Some(dragging)) if event.dataTransfer.dropEffect == DataTransferDropEffectKind.none =>
+          dragging.originalOrder
+      }
     )
+
+    L.inContext(ctx =>
+      L.onDragEnd
+        .filterByTarget(_ == ctx.ref)
+        .handledWith(_.withCurrentValueOf(dragTracker)) --> observer
+    )
+  }
 
   private def move[T](order: List[T], from: Int, to: Int): List[T] = {
     val buffer = order.toBuffer

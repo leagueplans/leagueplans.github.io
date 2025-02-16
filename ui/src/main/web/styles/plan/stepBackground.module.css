@@ -1,0 +1,30 @@
+.focused {
+  background-color: #444203;
+  transition: background-color 125ms ease-out;
+}
+
+.incomplete {
+  background-color: #00172e;
+}
+
+.hoveredIncomplete {
+  background-color: #082a4c;
+}
+
+.errors {
+  background-color: #5b0000;
+  transition: background-color 125ms ease-out;
+}
+
+.hoveredErrors {
+  background-color: #830000;
+}
+
+.complete {
+  background-color: #1b4302;
+  transition: background-color 125ms ease-out;
+}
+
+.hoveredComplete {
+  background-color: #2b6904;
+}

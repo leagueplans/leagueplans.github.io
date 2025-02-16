@@ -54,7 +54,7 @@ object Section {
     )
 
   private def addButton(observer: Observer[Unit]): L.Button =
-    Button(observer)(_.handled).amend(
+    Button(_.handled --> observer).amend(
       L.cls(Styles.addIcon),
       FontAwesome.icon(FreeSolid.faPlus)
     )
@@ -75,7 +75,7 @@ object Section {
     )
 
   private def deleteButton(observer: Observer[Unit]): L.Button =
-    Button(observer)(_.handled).amend(
+    Button(_.handled --> observer).amend(
       L.cls(Styles.deleteIcon),
       FontAwesome.icon(FreeSolid.faXmark)
     )

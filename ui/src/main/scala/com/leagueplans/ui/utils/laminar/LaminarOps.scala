@@ -1,17 +1,15 @@
 package com.leagueplans.ui.utils.laminar
 
-import com.leagueplans.ui.facades.animation.Animation
+import com.leagueplans.ui.wrappers.animation.Animation
 import com.raquo.airstream.core.{EventStream, Observable}
-import com.raquo.laminar.api.L.eventPropToProcessor
-import com.raquo.laminar.api.Laminar
-import com.raquo.laminar.keys.{EventProp, LockedEventKey}
-import com.raquo.laminar.nodes.ReactiveElement
-import org.scalajs.dom.{Element, Event}
+import com.raquo.laminar.api.{L, Laminar, eventPropToProcessor}
+import com.raquo.laminar.keys.{EventProcessor, LockedEventKey}
+import org.scalajs.dom.{Event, KeyboardEvent}
 
 import scala.util.chaining.scalaUtilChainingOps
 
 object LaminarOps {
-  extension [E <: Event](self: EventProp[E]) {
+  extension [E <: Event](self: EventProcessor[E, E]) {
     def handled: LockedEventKey[E, E, Unit] =
       handledAs(())
 
@@ -20,20 +18,31 @@ object LaminarOps {
         event.preventDefault()
         t
       })
+      
+    def handledWith[T](f: EventStream[E] => Observable[T]): LockedEventKey[E, E, T] =
+      ifUnhandledF(stream =>
+        f(stream.map { event =>
+          event.preventDefault()
+          event
+        })
+      )
 
     def ifUnhandled: LockedEventKey[E, E, E] =
       ifUnhandledF(identity)
 
-    def ifUnhandledF[Out](
-      f: EventStream[E] => Observable[Out]
-    ): LockedEventKey[E, E, Out] =
+    def ifUnhandledF[T](
+      f: EventStream[E] => Observable[T]
+    ): LockedEventKey[E, E, T] =
       self.compose(_.filter(!_.defaultPrevented).pipe(f))
   }
-  
+
   extension (self: Laminar) {
-    def onMountAnimate[El <: Element](f: El => Animation): self.Modifier[ReactiveElement[El]] =
-      self.onMountUnmountCallbackWithState[ReactiveElement[El], Animation](
-        mountContext => f(mountContext.thisNode.ref),
+    def onKey(keyCode: Int): EventProcessor[KeyboardEvent, KeyboardEvent] =
+      self.onKeyDown.filter(_.keyCode == keyCode)
+
+    def onMountAnimate[E <: L.Element](f: E => Animation.Instance): self.Modifier[E] =
+      self.onMountUnmountCallbackWithState[E, Animation.Instance](
+        mountContext => f(mountContext.thisNode),
         (_, maybeAnimation) => maybeAnimation.foreach(_.cancel())
       )
   }

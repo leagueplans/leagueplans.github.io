@@ -5,10 +5,10 @@ import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.{handled, handledAs}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph
@@ -36,11 +36,7 @@ object StepDescription {
   }
 
   private def editingToggle(isEditingState: Var[Boolean]): L.Button =
-    Button(isEditingState)(
-      _.ifUnhandledF(
-        _.map(_.preventDefault()).sample(isEditingState).map(!_)
-      )
-    ).amend(
+    Button(_.handled --> isEditingState.invertWriter).amend(
       L.cls(Styles.editingToggle),
       L.child <-- isEditingState.signal.map {
         case false => FontAwesome.icon(FreeRegular.faPenToSquare)

@@ -1,9 +1,10 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.{handled, handledAs, onKey}
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.features.unitArrows
+import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.*
 import org.scalajs.dom.html.Paragraph
@@ -20,16 +21,10 @@ object  EditableParagraph {
           L.onInput.handledAs(ctx.ref.innerText) --> content,
           // Kind of hacky... but I want something to trigger blurring and the enter
           // key seems the best choice
-          L.eventProp[InputEvent]("beforeinput").ifUnhandled --> (event =>
-            if (event.inputType == InputType.insertParagraph && event.target == ctx.ref) {
-              event.preventDefault()
-              ctx.ref.blur()
-            }
-          ),
-          L.onKeyDown.ifUnhandledF(_.filter(_.keyCode == KeyCode.Escape)) --> { event =>
-            event.preventDefault()
-            ctx.ref.blur()
-          }
+          L.eventProp[InputEvent]("beforeinput").filter(event =>
+            event.inputType == InputType.insertParagraph && event.target == ctx.ref
+          ).handled --> ctx.ref.blur(),
+          L.onKey(KeyCode.Escape).handled --> ctx.ref.blur()
         ))
       )
 

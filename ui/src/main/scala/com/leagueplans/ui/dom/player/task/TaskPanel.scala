@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.player.task
 import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.handled
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
@@ -54,16 +54,10 @@ object TaskPanel {
   }
 
   private def toTabToggle(tabVar: Var[Tab]): L.Button =
-    Button(tabVar)(
-      _.ifUnhandledF(
-        _.map(_.preventDefault())
-          .sample(tabVar)
-          .map {
-            case Tab.Summary => Tab.Details
-            case Tab.Details => Tab.Summary
-          }
-      )
-    ).amend(
+    Button(_.handled --> tabVar.updater {
+      case (Tab.Summary, _) => Tab.Details
+      case (Tab.Details, _) => Tab.Summary
+    }).amend(
       L.cls(Styles.tabToggle),
       L.child <-- tabVar.signal.map {
         case Tab.Summary => FontAwesome.icon(FreeSolid.faBars)

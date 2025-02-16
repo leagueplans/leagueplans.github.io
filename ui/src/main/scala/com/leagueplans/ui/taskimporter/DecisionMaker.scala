@@ -82,13 +82,13 @@ object DecisionMaker {
     mergedTask: LeagueTask,
     observer: Observer[Decision]
   ): L.Button =
-    Button(observer)(_.handledAs(Decision.Merge(existingTask, newTask, mergedTask))).amend(
+    Button(_.handledAs(Decision.Merge(existingTask, newTask, mergedTask)) --> observer).amend(
       L.cls(Styles.mergeButton),
       descriptor
     )
 
   private def newButton(newTask: LeagueTask, observer: Observer[Decision]): L.Button =
-    Button(observer)(_.handledAs(Decision.New(newTask))).amend(
+    Button(_.handledAs(Decision.New(newTask)) --> observer).amend(
       L.cls(Styles.`new`),
       "New task"
     )

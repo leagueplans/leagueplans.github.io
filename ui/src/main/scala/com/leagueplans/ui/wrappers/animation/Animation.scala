@@ -1,59 +1,43 @@
 package com.leagueplans.ui.wrappers.animation
 
-import com.leagueplans.ui.facades.animation.{Animatable, Animation, KeyframeAnimationOptions}
-import org.scalajs.dom.Element
+import com.leagueplans.ui.facades.animation.{Animatable, KeyframeAnimationOptions, Animation as AnimationFacade}
+import com.raquo.laminar.nodes.ReactiveElement
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.{JSRichIterable, iterableOnceConvertible2JSRichIterableOnce}
 
-extension (self: Element) {
-  def animate(
+object Animation {
+  type Instance = AnimationFacade
+
+  def apply(
     duration: Duration,
     keyframe1: Iterable[KeyframePropertySetter[?]],
     keyframeN: Iterable[KeyframePropertySetter[?]]*
   ): Animation =
-    animate(
-      toJS((keyframe1 +: keyframeN).toArray),
-      duration.toUnit(TimeUnit.MILLISECONDS)
-    )
+    new Animation(toJS((keyframe1 +: keyframeN).toArray), duration.toUnit(TimeUnit.MILLISECONDS))
 
-  def animate(
+  def apply(
     options: KeyframeAnimationOptions,
     keyframe1: Iterable[KeyframePropertySetter[?]],
     keyframeN: Iterable[KeyframePropertySetter[?]]*
   ): Animation =
-    animate(
-      toJS((keyframe1 +: keyframeN).toArray),
-      options
-    )
+    new Animation(toJS((keyframe1 +: keyframeN).toArray), options)
 
-  def animate(
+  def apply(
     duration: Duration,
     setter1: KeyframesPropertySetter[?],
     setterN: KeyframesPropertySetter[?]*
   ): Animation =
-    animate(
-      toJS((setter1 +: setterN).toArray),
-      duration.toUnit(TimeUnit.MILLISECONDS)
-    )
+    new Animation(toJS((setter1 +: setterN).toArray), duration.toUnit(TimeUnit.MILLISECONDS))
 
-  def animate(
+  def apply(
     options: KeyframeAnimationOptions,
     setter1: KeyframesPropertySetter[?],
     setterN: KeyframesPropertySetter[?]*
   ): Animation =
-    animate(
-      toJS((setter1 +: setterN).toArray),
-      options
-    )
-
-  private def animate(
-    keyframes: js.UndefOr[js.Object],
-    options: Double | KeyframeAnimationOptions
-  ): Animation =
-    self.asInstanceOf[Animatable].animate(keyframes, options)
+    new Animation(toJS((setter1 +: setterN).toArray), options)
 
   private def toJS(frames: Array[Iterable[KeyframePropertySetter[?]]]): js.Array[js.Dictionary[?]] =
     frames.map(frame =>
@@ -70,4 +54,9 @@ extension (self: Element) {
         js.Tuple2(setter.property.name, setter.values.toJSArray)
       ).toJSIterable
     ).asInstanceOf[js.Object]
+}
+
+final class Animation(keyframes: js.UndefOr[js.Object], options: Double | KeyframeAnimationOptions) {
+  def play(element: ReactiveElement[?]): Animation.Instance =
+    element.ref.asInstanceOf[Animatable].animate(keyframes, options)
 }

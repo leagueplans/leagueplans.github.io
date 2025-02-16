@@ -25,9 +25,7 @@ object InventoryContextMenu {
     addItemFormOpener: Observer[FormOpener.Command],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
-    Button(
-      Observer.combine(addItemFormOpener, menuCloser)
-    )(_.handled).amend("Add item")
+    Button(_.handled --> Observer.combine(addItemFormOpener, menuCloser)).amend("Add item")
 
   private def toAddItemFormOpener(
     itemFuse: Fuse[Item],

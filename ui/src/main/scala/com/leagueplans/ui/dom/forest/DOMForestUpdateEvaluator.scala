@@ -11,12 +11,12 @@ import com.raquo.laminar.api.L
 import scala.collection.mutable
 
 object DOMForestUpdateEvaluator {
-  type ChildNodes = List[L.Node]
-  type NodeState[Data] = (Observer[Data], Var[ChildNodes], L.Node)
+  type ChildNodes = List[L.HtmlElement]
+  type NodeState[Data] = (Observer[Data], Var[ChildNodes], L.HtmlElement)
   
   def apply[ID, Data](
     forest: Forest[ID, Data],
-    createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.Node
+    createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.HtmlElement
   ): DOMForestUpdateEvaluator[ID, Data] = {
     val domForest = forest.map(initialise(_, _, createDOMNode))
     domForest.foreachParent { case ((_, childrenState, _), children) =>
@@ -28,10 +28,10 @@ object DOMForestUpdateEvaluator {
   private def initialise[ID, Data](
     id: ID,
     data: Data,
-    createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.Node
+    createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.HtmlElement
   ): NodeState[Data] = {
     val dataState = Var(data)
-    val children = Var[List[L.Node]](List.empty)
+    val children = Var[List[L.HtmlElement]](List.empty)
     val element = createDOMNode(id, dataState.signal, children.signal)
     (dataState.writer, children, element)
   }
@@ -39,7 +39,7 @@ object DOMForestUpdateEvaluator {
 
 final class DOMForestUpdateEvaluator[ID, Data](
   val state: mutable.Map[ID, NodeState[Data]],
-  createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.Node
+  createDOMNode: (ID, Signal[Data], Signal[ChildNodes]) => L.HtmlElement
 ) {
   def eval(updates: Iterable[Update[ID, Data]]): Unit =
     updates.foreach(eval)

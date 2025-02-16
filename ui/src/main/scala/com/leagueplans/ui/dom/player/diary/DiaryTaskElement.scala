@@ -6,7 +6,6 @@ import com.leagueplans.ui.model.player.diary.DiaryTask
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -53,7 +52,7 @@ object DiaryTaskElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(completeSignal, effectObserverSignal)

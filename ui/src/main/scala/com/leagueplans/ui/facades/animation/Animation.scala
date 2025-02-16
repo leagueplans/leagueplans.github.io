@@ -21,9 +21,9 @@ class Animation(
   def ready: js.Promise[Animation] = js.native
   def finished: js.Promise[Animation] = js.native
   
-  def onfinish: js.UndefOr[js.Function1[Event, Any]] = js.native
-  def oncancel: js.UndefOr[js.Function1[Event, Any]] = js.native
-  def onremove: js.UndefOr[js.Function1[Event, Any]] = js.native
+  var onfinish: js.UndefOr[js.Function1[Event, Any]] = js.native
+  var oncancel: js.UndefOr[js.Function1[Event, Any]] = js.native
+  var onremove: js.UndefOr[js.Function1[Event, Any]] = js.native
 
   def cancel(): Unit = js.native
   def finish(): Unit = js.native

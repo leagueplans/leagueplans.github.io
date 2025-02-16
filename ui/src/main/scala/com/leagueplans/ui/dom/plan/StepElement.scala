@@ -1,26 +1,29 @@
 package com.leagueplans.ui.dom.plan
 
-import com.leagueplans.ui.dom.common.{Button, ContextMenu}
+import com.leagueplans.ui.dom.common.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
-import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, ifUnhandled, ifUnhandledF}
+import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, onKey}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
-import com.raquo.laminar.modifiers.Binder
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.html.{OList, Paragraph}
-import org.scalajs.dom.{Event, KeyCode, window}
+import org.scalajs.dom.KeyCode
+import org.scalajs.dom.html.Paragraph
 
+import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepElement {
+  private val startOpen = true
+  private val animationDuration = 200.millis
+
   def apply(
     stepID: Step.ID,
     step: Signal[Step],
-    subStepsSignal: Signal[List[L.Node]],
+    subStepsSignal: Signal[List[L.HtmlElement]],
     isFocused: Signal[Boolean],
     isCompleteSignal: Signal[Boolean],
     hasErrorsSignal: Signal[Boolean],
@@ -30,31 +33,19 @@ object StepElement {
     completionStatusObserver: Observer[Boolean],
     focusObserver: Observer[Step.ID]
   ): L.Div = {
-    val (hoverListeners, isHovering) = hoverControls
-    val subSteps =
-      L.child <-- CollapsibleList(
-        subStepsSignal.map(_.size),
-        showInitially = true,
-        contentType = "step",
-        expandedSubSteps(subStepsSignal)
-      )
-
+    val isHovering = Var(false)
+    val (subSteps, subStepsMaskController) = toSubSteps(subStepsSignal)
     L.div(
-      L.cls <-- Signal.combine(isFocused, isCompleteSignal, hasErrorsSignal, isHovering).map {
-        case (true, _, _, _) => Styles.focused
-        case (false, true, _, false) => Styles.complete
-        case (false, true, _, true) => Styles.hoveredComplete
-        case (false, false, true, false) => Styles.errors
-        case (false, false, true, true) => Styles.hoveredErrors
-        case (false, false, false, false) => Styles.incomplete
-        case (false, false, false, true) => Styles.hoveredIncomplete
-      },
+      L.cls(Styles.step),
+      L.cls <-- Signal.combine(isFocused, isCompleteSignal, hasErrorsSignal, isHovering).map(StepBackground.from),
       L.tabIndex(0),
-      L.child <-- toDescription(step),
+      L.child <-- toSubStepsToggle(subStepsMaskController, subStepsSignal),
+      toDescription(step),
       subSteps,
-      focusListeners(stepID, focusObserver),
-      hoverListeners,
-      contextMenu(
+      Tooltip(L.span("Click to toggle focus")),
+      toFocusListeners(stepID, focusObserver),
+      toHoverListeners(isHovering),
+      StepContextMenu(
         contextMenuController,
         isCompleteSignal,
         editingEnabledSignal,
@@ -67,113 +58,64 @@ object StepElement {
 
   @js.native @JSImport("/styles/plan/step.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val focused: String = js.native
-    val hoveredIncomplete: String = js.native
-    val incomplete: String = js.native
-    val hoveredErrors: String = js.native
-    val errors: String = js.native
-    val hoveredComplete: String = js.native
-    val complete: String = js.native
-
+    val step: String = js.native
+    val subStepsToggle: String = js.native
+    val sideBar: String = js.native
     val description: String = js.native
-    val subList: String = js.native
+    val subSteps: String = js.native
+    val subStepList: String = js.native
     val subStep: String = js.native
   }
 
-  private def hoverControls: (List[Binder[L.Element]], Signal[Boolean]) = {
-    val hovering = Var(false)
-    val listeners = List(
-      L.onMouseOver.handledAs(true) --> hovering,
-      L.onMouseOut.handledAs(false) --> hovering
-    )
-    (listeners, hovering.signal)
-  }
-
-  private def expandedSubSteps(subStepsSignal: Signal[List[L.Node]]): ReactiveHtmlElement[OList] =
-    L.ol(
-      L.cls(Styles.subList),
+  private def toSubSteps(subStepsSignal: Signal[List[L.HtmlElement]]): (L.Div, InvertibleAnimationController) = {
+    val list = L.ol(
+      L.cls(Styles.subStepList),
       L.children <-- subStepsSignal.split(identity)((child, _, _) =>
         L.li(L.cls(Styles.subStep), child)
       )
     )
 
-  private def toDescription(stepSignal: Signal[Step]): Signal[ReactiveHtmlElement[Paragraph]] =
-    stepSignal.map(_.description).map(desc =>
-      L.p(L.cls(Styles.description), desc)
+    val (mask, controller) = HeightMask(list, startOpen, animationDuration)
+    (mask.amend(L.cls(Styles.subSteps)), controller)
+  }
+
+  private def toSubStepsToggle(
+    subStepsMaskController: InvertibleAnimationController,
+    subStepsSignal: Signal[List[L.HtmlElement]]
+  ): Signal[L.Node] =
+    subStepsSignal.map(_.isEmpty).splitBoolean(
+      whenTrue = _ => L.emptyNode,
+      whenFalse = _ => CollapseButton(
+        startOpen,
+        animationDuration,
+        subStepsMaskController,
+        tooltip = "Toggle sub-step visibility",
+        screenReaderDescription = "toggle sub-step visibility"
+      ).amend(
+        L.cls(Styles.subStepsToggle),
+        L.div(L.cls(Styles.sideBar))
+      )
     )
 
-  private def focusListeners(
+  private def toDescription(stepSignal: Signal[Step]): ReactiveHtmlElement[Paragraph] =
+    L.p(
+      L.cls(Styles.description),
+      L.text <-- stepSignal.map(_.description)
+    )
+
+  private def toFocusListeners(
     stepID: Step.ID,
     focusObserver: Observer[Step.ID]
-  ): List[Binder[L.Element]] = {
-    val handler = focusObserver.contramap[Event] { event =>
-      event.preventDefault()
-      stepID
-    }
-
+  ): L.Modifier[L.HtmlElement] =
     List(
-      L.onClick.ifUnhandled --> handler,
-      L.onKeyDown.ifUnhandledF(_.filter(_.keyCode == KeyCode.Enter)) --> handler
-    )
-  }
-
-  private def contextMenu(
-    controller: ContextMenu.Controller,
-    isCompleteSignal: Signal[Boolean],
-    editingEnabledSignal: Signal[Boolean],
-    stepID: Step.ID,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    completionStatusObserver: Observer[Boolean]
-  ): Binder[L.Element] =
-    controller.bind(closer =>
-      Signal
-        .combine(editingEnabledSignal, isCompleteSignal)
-        .map((editingEnabled, isComplete) =>
-          Some(
-            if (editingEnabled)
-              L.div(
-                cutButton(stepID, closer),
-                pasteButton(stepID, stepUpdater, closer),
-                changeStatusButton(isComplete, completionStatusObserver, closer)
-              )
-            else
-              L.div(changeStatusButton(isComplete, completionStatusObserver, closer))
-          )
-        )
+      L.onClick.handledAs(stepID) --> focusObserver,
+      L.onKey(KeyCode.Enter).handledAs(stepID) --> focusObserver
     )
 
-  private def cutButton(stepID: Step.ID, closer: Observer[ContextMenu.CloseCommand]): L.Button =
-    Button(closer)(
-      _.ifUnhandledF(_.flatMapSwitch { event =>
-        event.preventDefault()
-        window.navigator.clipboard.writeText(stepID).asObservable
-      })
-    ).amend("Cut")
-
-  private def pasteButton(
-    stepID: Step.ID,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    closer: Observer[ContextMenu.CloseCommand]
-  ): L.Button = {
-    val stepMover =
-      stepUpdater.contramap[String](rawChildID => forester =>
-        forester.move(child = Step.ID.fromString(rawChildID), maybeParent = Some(stepID))
-      )
-
-    Button(Observer.combine(stepMover, closer))(
-      _.ifUnhandledF(_.flatMapSwitch { event =>
-        event.preventDefault()
-        window.navigator.clipboard.readText().asObservable
-      })
-    ).amend("Paste")
+  private def toHoverListeners(isHovering: Var[Boolean]): L.Modifier[L.HtmlElement] = {
+    List(
+      L.onMouseOver.handledAs(true) --> isHovering,
+      L.onMouseOut.handledAs(false) --> isHovering
+    )
   }
-
-  private def changeStatusButton(
-    isComplete: Boolean,
-    completionStatusObserver: Observer[Boolean],
-    closer: Observer[ContextMenu.CloseCommand]
-  ): L.Button =
-    Button(Observer.combine(completionStatusObserver, closer))(
-      _.handledAs(!isComplete)
-    ).amend(if (isComplete) "Mark incomplete" else "Mark complete")
 }

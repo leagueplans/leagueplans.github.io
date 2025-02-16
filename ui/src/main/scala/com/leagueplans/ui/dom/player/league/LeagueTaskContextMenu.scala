@@ -14,6 +14,7 @@ object LeagueTaskContextMenu {
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     Button(
-      Observer.combine(effectObserver, menuCloser)
-    )(_.handledAs(CompleteLeagueTask(leagueTask.id))).amend("Complete")
+      _.handledAs[CompleteLeagueTask](CompleteLeagueTask(leagueTask.id)) -->
+        Observer.combine(effectObserver, menuCloser)
+    ).amend("Complete")
 }

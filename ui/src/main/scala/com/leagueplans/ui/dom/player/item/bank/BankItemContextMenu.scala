@@ -49,8 +49,8 @@ object BankItemContextMenu {
         )
 
     Button(
-      Observer.combine(observer, menuCloser)
-    )(_.handled).amend(if (note) "Withdraw noted" else "Withdraw")
+      _.handled --> Observer.combine(observer, menuCloser)
+    ).amend(if (note) "Withdraw noted" else "Withdraw")
   }
 
   private def toWithdrawItemFormOpener(

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.ifUnhandledF
+import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
 import com.raquo.airstream.core.{Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
@@ -37,11 +37,7 @@ object Modal {
               case true => if (!node.ref.open) node.ref.showModal()
               case false => if (node.ref.open) node.ref.close()
             },
-            L.onClick.ifUnhandledF(
-              _.filter(_.target == node.ref)
-                .map(_.preventDefault())
-                .mapToStrict(None)
-            ) --> content
+            L.onClick.filterByTarget(_ == node.ref).handledAs(None) --> content
           )
         ),
         L.eventProp("close").mapToStrict(None) --> content

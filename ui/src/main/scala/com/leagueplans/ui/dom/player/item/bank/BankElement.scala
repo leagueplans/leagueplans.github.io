@@ -9,7 +9,6 @@ import com.leagueplans.ui.model.player.item.{Depository, Stack}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -79,7 +78,7 @@ object BankElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalController: Modal.Controller
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)

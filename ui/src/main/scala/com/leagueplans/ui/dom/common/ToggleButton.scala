@@ -14,7 +14,7 @@ object ToggleButton {
   ): (L.Button, Signal[T]) = {
     val isInitial = Var(true)
     val button =
-      Button(isInitial.invertWriter)(_.handled).amend(
+      Button(_.handled --> isInitial.invertWriter).amend(
         L.child <-- isInitial.signal.splitBoolean(
           whenTrue = _ => initialContent,
           whenFalse = _ => alternativeContent

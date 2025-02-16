@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.player.view
 
 import com.leagueplans.ui.dom.common.Button
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 
@@ -34,7 +34,7 @@ object View {
   }
 
   private def toTabElement(tab: Tab, tabVar: Var[Tab]): L.Button =
-    Button(tabVar)(_.handledAs(tab)).amend(
+    Button(_.handledAs(tab) --> tabVar).amend(
       L.cls <-- tabVar.signal.map(selectedTab =>
         if (tab == selectedTab)
           Styles.viewedTab

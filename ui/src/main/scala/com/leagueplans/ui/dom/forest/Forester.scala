@@ -11,7 +11,7 @@ import com.raquo.laminar.api.L
 object Forester {
   def apply[ID, T](
     forest: Forest[ID, T],
-    createDOMNode: (ID, Signal[T], Signal[List[L.Node]]) => L.Node
+    createDOMNode: (ID, Signal[T], Signal[List[L.HtmlElement]]) => L.HtmlElement
   )(using HasID.Aux[T, ID]): Forester[ID, T] =
     new Forester(Var(forest).distinct, DOMForestUpdateEvaluator(forest, createDOMNode))
 }
@@ -24,7 +24,7 @@ final class Forester[ID, T](
   val forestSignal: Signal[Forest[ID, T]] =
     forestState.signal
 
-  val domSignal: Signal[List[L.Node]] =
+  val domSignal: Signal[List[L.HtmlElement]] =
     forestSignal.map(
       _.roots
         .flatMap(domEvaluator.state.get)

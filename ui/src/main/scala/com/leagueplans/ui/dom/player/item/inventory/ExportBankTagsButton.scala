@@ -20,8 +20,8 @@ object ExportBankTagsButton {
     toastPublisher: ToastHub.Publisher
   ): L.Button =
     Button(
-      toFormOpener(stacksSignal, modalController, toastPublisher)
-    )(_.handled).amend(
+      _.handled --> toFormOpener(stacksSignal, modalController, toastPublisher)
+    ).amend(
       L.cls(Styles.button),
       L.img(L.cls(Styles.icon), L.src(rlLogo), L.alt("RuneLite logo")),
       IconButtonModifiers(

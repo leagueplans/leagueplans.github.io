@@ -1,11 +1,10 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.*
+import com.leagueplans.ui.utils.laminar.LaminarOps.ifUnhandledF
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.{Element, MouseEvent}
@@ -20,7 +19,7 @@ object ContextMenu {
     opener: Observer[(MouseEvent, Option[L.Node])],
     closer: Observer[CloseCommand]
   ) {
-    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder[Base] = {
+    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder[L.Element] = {
       val contents = toContents(closer)
       L.onContextMenu.ifUnhandledF(_.withCurrentValueOf(contents)) --> opener
     }
@@ -71,20 +70,20 @@ object ContextMenu {
   private def toCoords(status: Signal[Status])(pick: Status.Open => Double): EventStream[String] =
     status.changes.collect { case open: Status.Open => s"${pick(open)}px" }
 
-  private def closeOnClickOutside(status: Observer[Status]): Binder[Base] =
-    L.documentEvents(
-      _.onContextMenu
-        .filter(!_.defaultPrevented)
-        .mapTo(Status.Closed)
-    ) --> status
-
-  private def closeIfAnotherMenuIsOpened(status: Observer[Status]): L.Modifier[Base] =
+  private def closeOnClickOutside(status: Observer[Status]): L.Modifier[L.Element] =
     L.inContext(node =>
       L.documentEvents(
         _.onClick
           .mapToTargetAs[Element]
           .filter(target => !Option(target.closest(s".${Styles.open}")).contains(node.ref))
-          .mapTo(Status.Closed)
+          .mapToStrict(Status.Closed)
       ) --> status
     )
+
+  private def closeIfAnotherMenuIsOpened(status: Observer[Status]): Binder[L.Element] =
+    L.documentEvents(
+      _.onContextMenu
+        .filter(!_.defaultPrevented)
+        .mapToStrict(Status.Closed)
+    ) --> status
 }

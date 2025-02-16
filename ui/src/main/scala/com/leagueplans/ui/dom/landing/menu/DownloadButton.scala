@@ -25,7 +25,7 @@ object DownloadButton {
   ): L.Button = {
     val clickStream = EventBus[Unit]()
 
-    Button(clickStream.writer)(_.handled).amend(
+    Button(_.handled --> clickStream.writer).amend(
       IconButtonModifiers(
         tooltip = "Download",
         screenReaderDescription = "download"

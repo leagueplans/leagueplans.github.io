@@ -1,62 +1,54 @@
 .step {
-  border: solid rgba(255, 253, 214, 0.5);
-  border-width: 0.05rem 0rem 0.05rem 0.05rem;
-  border-radius: 0.3rem 0 0 0.3rem;
-  padding: 0.125rem 0rem 0.125rem 0.125rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  /* The third row is unused by components. It exists to auto-fill the
+   * plan section when the plan is collapsed/empty (e.g. new plans). */
+  grid-template-rows: auto auto 1fr;
+
+  border: solid rgba(255, 255, 255, 0.3);
+  border-width: 1px 0 0 0;
+  padding: 0.3rem 0rem 0.3rem 0.3rem;
 }
 
-.focused {
-  composes: step;
-  background-color: #444203;
+.subStepsToggle {
+  display: grid;
+  grid-template-rows: subgrid;
+
+  grid-column: 1;
+  grid-row: 1 / 3;
+
+  border: none;
+  color: white;
+  background: none;
 }
 
-.incomplete {
-  composes: step;
-  background-color: #00172e;
-}
+.sideBar {
+  grid-row: 2;
 
-.hoveredIncomplete {
-  composes: step;
-  background-color: #082a4c;
-}
-
-.errors {
-  composes: step;
-  background-color: #5b0000;
-}
-
-.hoveredErrors {
-  composes: step;
-  background-color: #830000;
-}
-
-.complete {
-  composes: step;
-  background-color: #1b4302;
-}
-
-.hoveredComplete {
-  composes: step;
-  background-color: #2b6904;
+  height: 100%;
+  width: 2px;
+  justify-self: center;
+  background-color: rgba(255, 255, 255, 0.6);
 }
 
 .description {
+  grid-column: 2;
+  grid-row: 1;
+
+  padding-left: 0.1rem;
+
   color: white;
 }
 
-.subList {
+.subSteps {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.subStepList {
   margin: 0;
   padding: 0;
   list-style-type: none;
-  flex-grow: 1;
 }
 
-.listElement {}
-
-.listElement + .listElement {
-  margin-top: 0.1rem;
-}
-
-.subStep {
-  composes: listElement;
-}
+.subStep {}

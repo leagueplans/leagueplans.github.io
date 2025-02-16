@@ -9,6 +9,9 @@ import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
 object PlanElement {
   def apply(
     initialPlan: Forest[Step.ID, Step],
@@ -40,18 +43,25 @@ object PlanElement {
 
     val dom =
       L.div(
-        L.children <-- forester.domSignal,
+        L.cls(Styles.plan),
+        L.children <-- forester.domSignal.map(_.map(_.amend(L.cls(Styles.rootStep)))),
         stepUpdates.events --> (_.apply(forester)),
         forester.forestSignal.map(_.toList.map(_.id)) --> allStepsVar
-      )
+      ).amend()
 
     (dom, forester)
+  }
+
+  @js.native @JSImport("/styles/plan/plan.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val plan: String = js.native
+    val rootStep: String = js.native
   }
 
   private def toElement(
     stepID: Step.ID,
     step: Signal[Step],
-    subSteps: Signal[List[L.Node]],
+    subSteps: Signal[List[L.HtmlElement]],
     focusedStep: Signal[Option[Step.ID]],
     completionManager: CompletionManager,
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
@@ -77,7 +87,7 @@ object PlanElement {
       focusObserver
     )
 
-  private class CompletionManager(allStepsSignal: StrictSignal[List[Step.ID]]) {
+  private final class CompletionManager(allStepsSignal: StrictSignal[List[Step.ID]]) {
     private val completedSteps: Var[List[Step.ID]] = Var(List.empty)
 
     private val completedStepsSignal: Signal[Set[Step.ID]] =

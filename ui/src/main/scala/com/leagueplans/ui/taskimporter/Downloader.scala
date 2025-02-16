@@ -2,11 +2,11 @@ package com.leagueplans.ui.taskimporter
 
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.dom.common.Button
-import com.leagueplans.ui.utils.laminar.LaminarOps.ifUnhandledF
-import com.raquo.airstream.core.{Observer, Signal}
+import com.leagueplans.ui.utils.laminar.LaminarOps.handledWith
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 import io.circe.syntax.EncoderOps
-import org.scalajs.dom.{Blob, BlobPropertyBag, MouseEvent, URL}
+import org.scalajs.dom.{Blob, BlobPropertyBag, URL}
 
 import scala.scalajs.js.JSConverters.JSRichIterable
 
@@ -19,18 +19,16 @@ object Downloader {
     )
 
   private def updatedTasksButton(stateSignal: Signal[StateTracker.State]): L.Button =
-    Button(Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
-      event.preventDefault()
+    Button(_.handledWith(_.sample(stateSignal)) --> { state =>
       val tasks = state.processedTasks ++ state.remainingExistingTasks.values
       triggerDownload(tasks, "updated-tasks")
-    })(_.ifUnhandledF(_.withCurrentValueOf(stateSignal))).amend("Download updated tasks")
+    }).amend("Download updated tasks")
 
   private def remainingTasksButton(stateSignal: Signal[StateTracker.State]): L.Button =
-    Button(Observer[(MouseEvent, StateTracker.State)] { (event, state) =>
-      event.preventDefault()
+    Button(_.handledWith(_.sample(stateSignal)) --> { state =>
       val tasks = state.remainingNewTasks.values.toList
       triggerDownload(tasks, "remaining-tasks")
-    })(_.ifUnhandledF(_.withCurrentValueOf(stateSignal))).amend("Download remaining tasks")
+    }).amend("Download remaining tasks")
 
   private def triggerDownload(data: List[LeagueTask], name: String): Unit = {
     val url = createDownloadURL(data)

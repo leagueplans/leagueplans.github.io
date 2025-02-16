@@ -1,0 +1,8 @@
+.plan {
+  display: flex;
+  flex-direction: column;
+}
+
+.rootStep {
+  flex-grow: 1;
+}

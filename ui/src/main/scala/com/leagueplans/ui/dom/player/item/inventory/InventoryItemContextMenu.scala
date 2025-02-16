@@ -184,7 +184,5 @@ object InventoryItemContextMenu {
     clickObserver: Observer[Unit],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
-    Button(
-      Observer.combine(clickObserver, menuCloser)
-    )(_.handled).amend(text)
+    Button(_.handled --> Observer.combine(clickObserver, menuCloser)).amend(text)
 }

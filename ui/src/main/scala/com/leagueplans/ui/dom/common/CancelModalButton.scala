@@ -5,5 +5,5 @@ import com.raquo.laminar.api.{L, textToTextNode}
 
 object CancelModalButton {
   def apply(modalController: Modal.Controller): L.Button =
-    Button(modalController)(_.handledAs(None)).amend("Cancel")
+    Button(_.handledAs(None) --> modalController).amend("Cancel")
 }

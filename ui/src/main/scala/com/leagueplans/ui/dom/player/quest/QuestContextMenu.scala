@@ -14,6 +14,7 @@ object QuestContextMenu {
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     Button(
-      Observer.combine(effectObserver, menuCloser)
-    )(_.handledAs(CompleteQuest(quest.id))).amend("Complete")
+      _.handledAs[CompleteQuest](CompleteQuest(quest.id)) --> 
+        Observer.combine(effectObserver, menuCloser)
+    ).amend("Complete")
 }

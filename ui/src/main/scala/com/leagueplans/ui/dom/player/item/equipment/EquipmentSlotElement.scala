@@ -10,7 +10,6 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.L
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -95,7 +94,7 @@ object EquipmentSlotElement {
     slot: EquipmentSlot,
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)

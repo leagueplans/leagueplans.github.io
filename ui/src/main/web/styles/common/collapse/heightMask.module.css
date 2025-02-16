@@ -1,0 +1,11 @@
+.mask {
+  overflow: hidden;
+}
+
+.maskOpen {
+  composes: mask;
+}
+
+.maskClosed {
+  composes: mask;
+}

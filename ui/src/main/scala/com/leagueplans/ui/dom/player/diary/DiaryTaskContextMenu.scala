@@ -14,6 +14,7 @@ object DiaryTaskContextMenu {
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     Button(
-      Observer.combine(effectObserver, menuCloser)
-    )(_.handledAs(CompleteDiaryTask(diaryTask.id))).amend("Complete")
+      _.handledAs[CompleteDiaryTask](CompleteDiaryTask(diaryTask.id)) --> 
+        Observer.combine(effectObserver, menuCloser)
+    ).amend("Complete")
 }

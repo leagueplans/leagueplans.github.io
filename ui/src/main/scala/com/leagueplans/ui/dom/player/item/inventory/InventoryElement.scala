@@ -10,7 +10,6 @@ import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveElement.Base
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -78,7 +77,7 @@ object InventoryElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalController: Modal.Controller
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       effectObserverSignal.map(maybeEffectObserver =>
         maybeEffectObserver.map(effectObserver =>
@@ -95,7 +94,7 @@ object InventoryElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modalController: Modal.Controller
-  ): Binder[Base] =
+  ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(stackSizeSignal, effectObserverSignal)

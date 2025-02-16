@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.common.form
 import com.leagueplans.ui.utils.laminar.LaminarOps.handled
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, eventPropToProcessor}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

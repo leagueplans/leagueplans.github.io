@@ -12,6 +12,7 @@ object KeyframeProperty {
   private def prop[V](name: String): KeyframeProperty[V] =
     new KeyframeProperty[V](name) {}
 
+  val height: KeyframeProperty[String] = prop("height")
   val offset: KeyframeProperty[Double] = prop("offset")
   val opacity: KeyframeProperty[Double] = prop("opacity")
   val transform: KeyframeProperty[String] = prop("transform")

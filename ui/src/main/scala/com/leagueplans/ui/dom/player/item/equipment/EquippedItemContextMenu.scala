@@ -28,8 +28,6 @@ object EquippedItemContextMenu {
       )
     )
 
-    Button(
-      Observer.combine(observer, menuCloser)
-    )(_.handled).amend("Unequip")
+    Button(_.handled --> Observer.combine(observer, menuCloser)).amend("Unequip")
   }
 }

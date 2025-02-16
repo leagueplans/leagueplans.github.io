@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.common
 
 import com.leagueplans.ui.facades.animation.KeyframeAnimationOptions
 import com.leagueplans.ui.utils.laminar.LaminarOps.onMountAnimate
-import com.leagueplans.ui.wrappers.animation.{KeyframeProperty, animate}
+import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
@@ -51,19 +51,21 @@ object Tooltip {
   private def isClosestListener(event: MouseEvent, parent: Element): Boolean =
     event.target.isInstanceOf[Element] &&
       Option(event.target.asInstanceOf[Element].closest(s".${Styles.hasTooltip}")).contains(parent)
+    
+  private val fadeIn = Animation(
+    new KeyframeAnimationOptions {
+      duration = 250
+      easing = "ease-in-out"
+    },
+    KeyframeProperty.opacity(0, 1)
+  )
 
   private def tooltipModifiers(mouseCoords: Signal[(Double, Double)]): L.Modifier[L.HtmlElement] =
     List(
       L.cls(Styles.tooltip),
       L.left <-- toOffset(mouseCoords)(_._1 + 12), // the +12 is to offset from the cursor
       L.top <-- toOffset(mouseCoords)(_._2 - 10),
-      L.onMountAnimate(_.animate(
-        KeyframeAnimationOptions(
-          duration = 250,
-          easing = "ease-in-out"
-        ),
-        KeyframeProperty.opacity(0, 1)
-      ))
+      L.onMountAnimate(fadeIn.play)
     )
 
   private def toVisibilityStream(

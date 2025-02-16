@@ -27,7 +27,7 @@ object DeleteButton {
       Observer(_ => triggerDelete(id, storage, toastPublisher))
     )
 
-    Button(confirmer)(_.handled).amend(
+    Button(_.handled --> confirmer).amend(
       FontAwesome.icon(FreeSolid.faXmark),
       IconButtonModifiers(
         tooltip = "Delete",

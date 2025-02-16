@@ -136,12 +136,12 @@ object StatPane {
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     if (stat.unlocked)
-      Button(Observer.combine(menuCloser, gainXPFormOpener))(_.handled).amend("Gain XP")
+      Button(_.handled --> Observer.combine(menuCloser, gainXPFormOpener)).amend("Gain XP")
     else
       Button(
-        Observer.combine(
+        _.handled --> Observer.combine(
           menuCloser,
           effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
         )
-      )(_.handled).amend("Unlock skill")
+      ).amend("Unlock skill")
 }
