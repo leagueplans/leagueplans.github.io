@@ -1,10 +1,11 @@
-package com.leagueplans.ui.dom.editor
+package com.leagueplans.ui.dom.plan
 
 import com.leagueplans.ui.dom.common.form.{Form, TextInput}
 import com.leagueplans.ui.model.plan.Step
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
+//TODO Revisit styling
 object NewStepForm {
   def apply(): (L.FormElement, EventStream[Option[Step]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()

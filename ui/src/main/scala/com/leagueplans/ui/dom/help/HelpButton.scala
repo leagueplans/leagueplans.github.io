@@ -49,12 +49,12 @@ object HelpButton {
           |- the visualiser (left-hand side)
           |- the editor (bottom left when you've selected a specific step in your plan)
           |
-          |You can click on individual steps within your plan to focus the visualiser and editor on that step. The visualiser will show you what your character should look like after taking into account all of the effects on steps up to and including the one you've selected, but not including substeps. The editor will show you the current substeps, effects, and requirements defined for the selected step.
+          |You can click on individual steps within your plan to focus the visualiser and editor on that step. The visualiser will show you what your character should look like after taking into account all of the effects on steps up to and including the one you've selected, but not including substeps. The editor will show you the current effects and requirements defined for the selected step.
           |""".stripMargin
       ),
       L.h4("The plan section"),
       L.p(
-        """The plan section lists all of the steps currently defined for your plan. You can click on individual steps within your plan to focus the visualiser and editor on the targeted step. Right-clicking on steps within the plan allows you to move steps around via the cut/paste options.
+        """The plan section lists all of the steps currently defined for your plan. You can click on individual steps within your plan to focus the visualiser and editor on the targeted step. When a step is focused, the "Add step" button will add new steps as substeps of the focused step, and a drag button will appear next to the step name to facilitate repositioning the step. If using a Chromium browser, then right-clicking on a step allows you to cut/paste the step across browser tabs/windows.
           |""".stripMargin
       ),
       L.h4("The visualiser section"),
@@ -80,9 +80,9 @@ object HelpButton {
       L.p(
         """The editor section provides functionality for modifying an individual step. In particular, you can:
           |- reword the step's description by clicking the icon next to the step description
-          |- create substeps and requirements by clicking the + icon against the relevant section headers
-          |- remove substeps, effects, and requirements by clicking the x button next to the associated entry
-          |- reorder substeps, effects, and requirements within the step by using the drag icons
+          |- create requirements by clicking the + icon against the relevant section header
+          |- remove effects and requirements by clicking the x button next to the associated entry
+          |- reorder effects and requirements within the step by using the drag icons
           |
           |The editor section will also display a warning icon if the app detects a problem with the selected step. Here's a list of currently implemented validations:
           |- requirements listed by the step must be met before taking into account the effects of the step

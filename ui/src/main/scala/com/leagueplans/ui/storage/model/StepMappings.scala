@@ -9,7 +9,4 @@ object StepMappings {
   given Decoder[StepMappings] = Decoder.derived
 }
 
-final case class StepMappings(value: Map[Step.ID, List[Step.ID]]) {
-  def update(f: Map[Step.ID, List[Step.ID]] => Map[Step.ID, List[Step.ID]]): StepMappings =
-    copy(f(value))
-}
+final case class StepMappings(toChildren: Map[Step.ID, List[Step.ID]], roots: List[Step.ID])

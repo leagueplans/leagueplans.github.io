@@ -40,6 +40,8 @@ final class PlanTest extends CodecSpec {
     }
 
     "encoding values to and decoding values from an expected encoding" in {
+      val name = "Deadman: Armageddon plan"
+
       val step = Step(
         Step.ID.fromString("id"),
         StepDetails(
@@ -51,14 +53,16 @@ final class PlanTest extends CodecSpec {
 
       val forest = Forest.from(
         nodes = Map(step.id -> step),
-        parentsToChildren = Map(step.id -> List.empty)
+        parentsToChildren = Map(step.id -> List.empty),
+        roots = List(step.id)
       )
 
       testRoundTripSerialisation(
-        Plan(forest, settings),
+        Plan(name, forest, settings),
         Decoder.decodeMessage,
-        Array[Byte](0b100, 0b1000011) ++ Encoder.encode(forest).getBytes ++
-          Array[Byte](0b1100, 0b1000110) ++ Encoder.encode(settings).getBytes
+        Array[Byte](0b11, 0b11000) ++ Encoder.encode(name).getBytes ++
+          Array[Byte](0b1100, 0b1000111) ++ Encoder.encode(forest).getBytes ++
+          Array[Byte](0b10100, 0b1000110) ++ Encoder.encode(settings).getBytes
       )
     }
   }

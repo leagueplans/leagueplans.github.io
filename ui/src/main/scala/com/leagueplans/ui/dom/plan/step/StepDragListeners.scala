@@ -1,4 +1,4 @@
-package com.leagueplans.ui.dom.plan
+package com.leagueplans.ui.dom.plan.step
 
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.plan.Step
@@ -35,7 +35,7 @@ object StepDragListeners {
         case DropLocation.Into => Styles.dropInto
         case DropLocation.After => Styles.dropAfter
       }.toList),
-      onDragStart(stepID, header, closeSubsteps),
+      onDragStart(stepID, hasSubsteps, header, closeSubsteps),
       onDragEnterOver(hasSubsteps, dropLocation.someWriter),
       onDragLeave(dropLocation.writer),
       onDrop(stepID, hasSubsteps, dropLocation.writer, stepUpdater)
@@ -51,17 +51,23 @@ object StepDragListeners {
 
   private def onDragStart(
     stepID: Step.ID,
+    hasSubstepsSignal: Signal[Boolean],
     header: L.Element,
     closeSubsteps: () => Unit
   ): L.Modifier[L.Element] =
-    L.inContext(ctx =>
-      L.onDragStart.filterByTarget(_ == ctx.ref) --> { event =>
+    L.inContext { ctx =>
+      val events =
+        L.onDragStart
+          .filterByTarget(_ == ctx.ref)
+          .compose(_.withCurrentValueOf(hasSubstepsSignal))
+        
+      events --> { (event, hasSubsteps) =>
         event.dataTransfer.setData(contentType, stepID)
         event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
         event.dataTransfer.setDragImage(header.ref, 0, 0)
-        closeSubsteps()
+        if (hasSubsteps) closeSubsteps()
       }
-    )
+    }
 
   private def onDragEnterOver(
     hasSubsteps: Signal[Boolean],
@@ -161,19 +167,24 @@ object StepDragListeners {
             forester.move(child = dropped, newParent = droppedOver)
 
           case DropLocation.Before | DropLocation.After =>
-            forest.toParent.get(droppedOver).foreach { parent =>
-              val siblings = forest.toChildren(parent).filterNot(_ == dropped)
-              // We earlier checked that dropped != droppedOver, so droppedOver is in the list
-              val (before, `droppedOver` :: after) = siblings.span(_ != droppedOver): @unchecked
-              val newOrder =
-                if (location == DropLocation.Before)
-                  ((before :+ dropped) :+ droppedOver) ++ after
-                else
-                  ((before :+ droppedOver) :+ dropped) ++ after
-
-              forester.move(dropped, newParent = parent)
-              forester.reorder(newOrder)
+            val maybeParent = forest.toParent.get(droppedOver)
+            val neighbours = maybeParent match {
+              case Some(parent) => forest.toChildren(parent).filterNot(_ == dropped)
+              case None => forest.roots.filterNot(_ == dropped)
             }
+            // We earlier checked that dropped != droppedOver, so droppedOver is in the list
+            val (before, `droppedOver` :: after) = neighbours.span(_ != droppedOver): @unchecked
+            val newOrder =
+              if (location == DropLocation.Before)
+                ((before :+ dropped) :+ droppedOver) ++ after
+              else
+                ((before :+ droppedOver) :+ dropped) ++ after
+
+            maybeParent match {
+              case Some(parent) => forester.move(dropped, parent)
+              case None => forester.promoteToRoot(dropped)
+            }
+            forester.reorder(newOrder)
         }
       }
     }

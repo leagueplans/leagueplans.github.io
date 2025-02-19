@@ -13,9 +13,10 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2025, 1, 19),
+        new Date(2025, 1, 23),
         "UX improvements to the plan section",
         List(
+          "Substep management functionality has been moved to the plan section, from the editor section",
           "Steps can now be repositioned much more easily due to the addition of a drag button on the focused step",
           "Steps can now be copy/pasted between browser tabs (except Firefox)",
           "Tidied up the layout of the plan section",

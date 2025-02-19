@@ -42,6 +42,9 @@ final class Forester[ID, T](
 
   def move(child: ID, newParent: ID): Unit =
     run(_.move(child, Some(newParent)))
+    
+  def promoteToRoot(child: ID): Unit =
+    run(_.move(child, None))
 
   def remove(id: ID): Unit =
     run(_.remove(id))

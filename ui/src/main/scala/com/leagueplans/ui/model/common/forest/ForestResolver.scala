@@ -43,14 +43,13 @@ object ForestResolver {
         resolve(forest, List(RemoveLink(child, oldParent), AddLink(child, newParent)))
         
       case UpdateData(id, data) =>
-        make(forest)(
-          updatedNodes = forest.nodes + (id -> data)
-        )
+        make(forest)(updatedNodes = forest.nodes + (id -> data))
 
-      case Reorder(children, parent) =>
-        make(forest)(
-          updatedToChildren = forest.toChildren + (parent -> children)
-        )
+      case Reorder(children, Some(parent)) =>
+        make(forest)(updatedToChildren = forest.toChildren + (parent -> children))
+
+      case Reorder(roots, None) =>
+        make(forest)(updatedRoots = roots)
     }
 
   private def make[ID, T](forest: Forest[ID, T])(

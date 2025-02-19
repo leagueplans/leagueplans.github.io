@@ -11,13 +11,15 @@ final class StepMappingsTest extends CodecSpec {
       val id1 = Step.ID.fromString("a")
       val id2 = Step.ID.fromString("b")
       val id3 = Step.ID.fromString("c")
+      val id1Encoding = Encoder.encode(id1).getBytes
 
       testRoundTripSerialisation(
-        StepMappings(Map(id1 -> List(id2, id3))),
+        StepMappings(Map(id1 -> List(id2, id3)), List(id1)),
         Decoder.decodeMessage,
-        Array[Byte](0b100, 0b1001, 0b11, 0b1) ++ Encoder.encode(id1).getBytes ++
+        Array[Byte](0b100, 0b1001, 0b11, 0b1) ++ id1Encoding ++
           Array[Byte](0b1011, 0b1) ++ Encoder.encode(id2).getBytes ++
-          Array[Byte](0b1011, 0b1) ++ Encoder.encode(id3).getBytes
+          Array[Byte](0b1011, 0b1) ++ Encoder.encode(id3).getBytes ++
+          Array[Byte](0b1011, 0b1) ++ id1Encoding
       )
     }
   }

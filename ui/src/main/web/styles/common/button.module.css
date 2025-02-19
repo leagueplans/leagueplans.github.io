@@ -1,5 +1,7 @@
 .button {
-  cursor: pointer;
-
   transition: background-color 175ms ease-out;
+}
+
+.button:enabled {
+  cursor: pointer;
 }

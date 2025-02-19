@@ -5,12 +5,12 @@ import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.utils.airstream.EventStreamOps.{andThen, safeSequence}
 import com.leagueplans.ui.wrappers.opfs.FileSystemError.*
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
+import com.leagueplans.ui.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
 import com.raquo.airstream.core.EventStream
 
 import scala.util.chaining.scalaUtilChainingOps
 
-final class PlansDirectory(underlying: DirectoryHandle) {
+final class PlansDirectory[T : DirectoryHandleLike](underlying: T) {
   def listPlans(): EventStream[Either[UnexpectedFileSystemError, Map[PlanID, PlanMetadata]]] =
     underlying.listSubDirectories().andThen(handles =>
       handles
@@ -73,7 +73,7 @@ final class PlansDirectory(underlying: DirectoryHandle) {
           .andThen(_ => underlying.removeDirectory(planID))
     }
 
-  private def getPlanDirectory(planID: PlanID): EventStream[Either[FileSystemError, Option[PlanDirectory]]] =
+  private def getPlanDirectory(planID: PlanID): EventStream[Either[FileSystemError, Option[PlanDirectory[T]]]] =
     underlying
       .getSubDirectory(planID)
       .map(_.map(_.map(PlanDirectory(_))))

@@ -1,7 +1,7 @@
-package com.leagueplans.ui.dom.plan
+package com.leagueplans.ui.dom.plan.step
 
-import scala.scalajs.js.annotation.JSImport
 import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 
 opaque type StepBackground <: String = String
 

@@ -67,8 +67,11 @@ final class DOMForestUpdateEvaluator[ID, Data](
       case UpdateData(id, data) =>
         state.get(id).foreach((writer, _, _) => writer.onNext(data))
         
-      case Reorder(children, parent) =>
+      case Reorder(children, Some(parent)) =>
         val childNodes = children.flatMap(state.get).map((_, _, node) => node)
         state.get(parent).foreach((_, writer, _) => writer.set(childNodes))
+
+      case Reorder(roots, None) =>
+        /* Nothing to do - we don't need to track root node ordering here */
     }
 }

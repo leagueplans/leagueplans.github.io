@@ -4,16 +4,24 @@ import com.leagueplans.codec.Encoding
 import com.leagueplans.codec.decoding.{Decoder, DecodingFailure}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step, StepDetails}
+import com.leagueplans.ui.storage.migrations.{MigrationError, Migrator}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings}
+import com.raquo.airstream.core.EventStream
 
 object ExportedPlanDecoder {
-  def decode(data: PlanExport): Either[DecodingFailure, (PlanMetadata, Plan)] =
-    for {
-      metadata <- Decoder.decode[PlanMetadata](data.metadata)
-      steps <- decodeSteps(data.steps)
-      mappings <- Decoder.decode[StepMappings](data.mappings)
-      settings <- Decoder.decode[Plan.Settings](data.settings)
-    } yield (metadata, Plan(Forest.from(steps, mappings.value), settings))
+  def decode(input: PlanExport): EventStream[Either[DecodingFailure | MigrationError, (PlanMetadata, Plan)]] =
+    Migrator.run(input).map(maybeData =>
+      for {
+        data <- maybeData
+        metadata <- Decoder.decode[PlanMetadata](data.metadata)
+        steps <- decodeSteps(data.steps)
+        mappings <- Decoder.decode[StepMappings](data.mappings)
+        settings <- Decoder.decode[Plan.Settings](data.settings)
+      } yield (
+        metadata,
+        Plan(metadata.name, Forest.from(steps, mappings.toChildren, mappings.roots), settings)
+      )
+    )
   
   private def decodeSteps(
     encodedSteps: Map[Step.ID, Encoding]

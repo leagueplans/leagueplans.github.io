@@ -64,7 +64,7 @@ final class ForestTest extends CodecSpec {
         )
 
         "Reorder" in test(
-          Forest.Update.Reorder(List(child2ID, child1ID), parentID),
+          Forest.Update.Reorder(List(child2ID, child1ID), Some(parentID)),
           Array[Byte](0, 0b110, 0b1100, 0b110, 0) ++ child2IDEnc ++
             Array[Byte](0) ++ child1IDEnc ++
             Array[Byte](0b1000) ++ parentIDEnc
@@ -76,7 +76,8 @@ final class ForestTest extends CodecSpec {
       testRoundTripSerialisation(
         Forest.from(
           nodes = Map(parentID -> parent, child1ID -> child1, child2ID -> child2),
-          parentsToChildren = Map(parentID -> List(child1ID, child2ID))
+          parentsToChildren = Map(parentID -> List(child1ID, child2ID)),
+          roots = List(parentID)
         ),
         Decoder.decodeMessage,
         Array[Byte](0b100, 0b100, 0) ++ parentIDEnc ++
@@ -89,7 +90,8 @@ final class ForestTest extends CodecSpec {
           Array[Byte](0b1000) ++ child1IDEnc ++
           Array[Byte](0b1000) ++ child2IDEnc ++
           Array[Byte](0b1100, 0b10, 0) ++ child1IDEnc ++
-          Array[Byte](0b1100, 0b10, 0) ++ child2IDEnc
+          Array[Byte](0b1100, 0b10, 0) ++ child2IDEnc ++
+          Array[Byte](0b10000) ++ parentIDEnc
       )
   }
 }

@@ -14,6 +14,7 @@ import scala.scalajs.js.annotation.JSImport
 //TODO There should really only be a single tooltip for the app
 // An issue with the current approach is that tooltips are interactive like their
 // parent element
+//TODO Anchoring seems like a better approach to position tooltips
 object Tooltip {
   def apply(contents: L.HtmlElement): L.Modifier[L.HtmlElement] = {
     val mouseOver = Var(false)

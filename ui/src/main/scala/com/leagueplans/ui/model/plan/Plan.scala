@@ -21,4 +21,8 @@ object Plan {
   )
 }
 
-final case class Plan(steps: Forest[Step.ID, Step], settings: Plan.Settings)
+final case class Plan(
+  name: String,
+  steps: Forest[Step.ID, Step],
+  settings: Plan.Settings
+)

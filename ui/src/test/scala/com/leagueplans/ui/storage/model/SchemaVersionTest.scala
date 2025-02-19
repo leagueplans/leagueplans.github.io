@@ -15,6 +15,7 @@ final class SchemaVersionTest extends CodecSpec {
         )
 
       "V1" in test(SchemaVersion.V1, 0)
+      "V2" in test(SchemaVersion.V2, 1)
     }
   }
 }

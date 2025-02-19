@@ -1,0 +1,80 @@
+.header {
+  display: flex;
+
+  color: white;
+  font-size: 1.3rem;
+}
+
+.icon {
+  margin-left: auto;
+
+  height: 1.5rem;
+  padding: 0.25rem;
+  align-self: center;
+}
+
+.name {
+  margin-right: auto;
+
+  padding: 0.25rem;
+  text-shadow: 1px 1px black;
+  text-align: center;
+}
+
+.focus {}
+
+.focus:enabled:focus-visible {
+  outline-style: dashed;
+  outline-color: white;
+  outline-width: 0.1rem;
+  outline-offset: -0.1rem;
+}
+
+.addStepButton {
+  composes: focus;
+
+  border-style: none;
+  background-color: #2f4679;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.addStepButton:hover, .addStepButton:focus-visible {
+  background-color: #51ad8a;
+}
+
+.addStepButton:active {
+  background-color: #3d8d6f;
+}
+
+.deleteStepButton {
+  composes: focus;
+
+  border-style: none;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.deleteStepButton:enabled {
+  background-color: #7d1717;
+}
+
+.deleteStepButton:disabled {
+  background-color: #6f6f6f;
+}
+
+.deleteStepButton:enabled:hover, .deleteStepButton:enabled:focus-visible {
+  background-color: #cd0404;
+}
+
+.deleteStepButton:enabled:active {
+  background-color: #a90404;
+}
+
+.buttonText {
+  text-shadow:
+    -1px 0 black,
+    0 1px black,
+    1px 0 black,
+    0 -1px black;
+}

@@ -23,7 +23,7 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
 
       case Some(existingData) =>
         val updateData = Option.when(existingData != data)(UpdateData(childID, data)).toList
-        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).map(_.id).contains(childID)
+        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).exists(_.id == childID)
 
         if (targetParentHasChildAsAncestor || maybeParentID.contains(childID))
           updateData
@@ -32,7 +32,10 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
 
           (maybeAddLink, maybeRemoveLink) match {
             case (Some(addLink), Some(removeLink)) =>
-              ChangeParent(childID, removeLink.parent, addLink.parent) +: updateData
+              val changeParent = Option.when(addLink.parent != removeLink.parent)(
+                ChangeParent(childID, removeLink.parent, addLink.parent)
+              ).toList
+              changeParent ++ updateData
               
             case (Some(addLink), None) =>
               updateData :+ addLink
@@ -80,16 +83,20 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
   }
 
   def reorder(newOrder: List[ID]): List[Update[ID, T]] =
-    newOrder
-      .headOption
-      .flatMap(forest.toParent.get)
-      .filter { parent =>
-        val children = forest.toChildren.get(parent).toList.flatten
-        val providedChildren = newOrder.toSet
-        // It's important to use the non-set containers for size checks, to protect against duplicates
-        newOrder.size == children.size &&
-          children.forall(providedChildren.contains)
+    newOrder.headOption.flatMap { head =>
+      val maybeParent = forest.toParent.get(head)
+      val isAReordering = maybeParent match {
+        case Some(parent) => isReordering(forest.toChildren.get(parent).toList.flatten, newOrder)
+        case None => isReordering(forest.roots, newOrder)
       }
-      .map(Reorder(newOrder, _))
-      .toList
+      Option.when(isAReordering)(Reorder(newOrder, maybeParent))
+    }.toList
+
+  private def isReordering(original: List[ID], updated: List[ID]): Boolean =
+    original != updated &&
+      updated.size == original.size && {
+        // It's important to use non-set containers for size checks, to protect against duplicates
+        val provided = updated.toSet
+        original.forall(provided.contains)
+      }
 }

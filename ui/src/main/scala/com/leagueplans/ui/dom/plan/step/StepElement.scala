@@ -1,4 +1,4 @@
-package com.leagueplans.ui.dom.plan
+package com.leagueplans.ui.dom.plan.step
 
 import com.leagueplans.ui.dom.common.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
@@ -21,21 +21,29 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
+//TODO Maybe you can get the sticky description stuff working through also returning the
+//     header from the apply method
+// steps:
+//   position: relative
+// headers:
+//   background: inherit
+//   top: dynamic
+//   position: sticky
 object StepElement {
   def apply(
     stepID: Step.ID,
     step: Signal[Step],
     substepsSignal: Signal[List[L.HtmlElement]],
-    isFocused: Signal[Boolean],
+    focusedStep: Var[Option[Step.ID]],
     isCompleteSignal: Signal[Boolean],
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
     clipboard: Clipboard[Step],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    completionStatusObserver: Observer[Boolean],
-    focusObserver: Observer[Step.ID]
+    completionStatusObserver: Observer[Boolean]
   ): L.Div = {
+    val isFocused = focusedStep.signal.map(_.contains(stepID))
     val isHovering = Var(false)
     val isDraggable = Var(false)
     val animationController = InvertibleAnimationController(
@@ -53,7 +61,7 @@ object StepElement {
       header,
       toSubsteps(substepsSignal, animationController),
       Tooltip(L.span("Click to toggle focus")),
-      toFocusListeners(stepID, focusObserver),
+      toFocusListeners(stepID, focusedStep),
       toHoverListeners(isHovering),
       StepContextMenu(
         stepID,
@@ -104,32 +112,32 @@ object StepElement {
   private def toSubstepsToggle(
     animationController: InvertibleAnimationController,
     substepsSignal: Signal[List[L.HtmlElement]]
-  ): Signal[L.Node] = {
-    val icon = FontAwesome.icon(FreeSolid.faCaretRight).amend(
-      L.svg.cls(Styles.substepsToggleIcon),
-      L.svg.transform.maybe(Option.when(animationController.isOpen)("rotate(90)")),
-      animationController(
-        toOpen = rotate(_, targetRotation = 90),
-        toClose = rotate(_, targetRotation = 0)
-      )
-    )
-    
-    val button =
-      CollapseButton(
-        icon,
-        animationController,
-        tooltip = "Toggle substep visibility",
-        screenReaderDescription = "toggle substep visibility"
-      ).amend(
-        L.cls(Styles.substepsToggle),
-        L.div(L.cls(Styles.substepsSidebar))
-      )
+  ): Signal[L.Node] =
+    // We choose the icons orientation based on whether the animation controller is
+    // currently open, so we need to make sure that we only create the icon at the
+    // point where we go to render.
+    substepsSignal.map(_.isEmpty).distinct.map {
+      case true => L.emptyNode
+      case false =>
+        val icon = FontAwesome.icon(FreeSolid.faCaretRight).amend(
+          L.svg.cls(Styles.substepsToggleIcon),
+          L.svg.transform.maybe(Option.when(animationController.isOpen)("rotate(90)")),
+          animationController(
+            toOpen = rotate(_, targetRotation = 90),
+            toClose = rotate(_, targetRotation = 0)
+          )
+        )
 
-    substepsSignal.map(_.isEmpty).splitBoolean(
-      whenTrue = _ => L.emptyNode,
-      whenFalse = _ => button
-    )
-  }
+        CollapseButton(
+          icon,
+          animationController,
+          tooltip = "Toggle substep visibility",
+          screenReaderDescription = "toggle substep visibility"
+        ).amend(
+          L.cls(Styles.substepsToggle),
+          L.div(L.cls(Styles.substepsSidebar))
+        )
+    }
 
   private def rotate(animationDuration: Duration, targetRotation: Double): Animation =
     Animation(
@@ -142,17 +150,22 @@ object StepElement {
 
   private def toFocusListeners(
     stepID: Step.ID,
-    focusObserver: Observer[Step.ID]
-  ): L.Modifier[L.HtmlElement] =
-    List(
-      L.onClick.handledAs(stepID) --> focusObserver,
-      L.onKey(KeyCode.Enter).handledAs(stepID) --> focusObserver
-    )
+    focusedStep: Var[Option[Step.ID]]
+  ): L.Modifier[L.HtmlElement] = {
+    val updater = focusedStep.updater {
+      case (Some(`stepID`), _) => None
+      case (_, _) => Some(stepID)
+    }
 
-  private def toHoverListeners(isHovering: Var[Boolean]): L.Modifier[L.HtmlElement] = {
+    List(
+      L.onClick.handledAs(stepID) --> updater,
+      L.onKey(KeyCode.Enter).handledAs(stepID) --> updater
+    )
+  }
+
+  private def toHoverListeners(isHovering: Var[Boolean]): L.Modifier[L.HtmlElement] =
     List(
       L.onMouseOver.handledAs(true) --> isHovering,
       L.onMouseOut.handledAs(false) --> isHovering
     )
-  }
 }

@@ -5,7 +5,7 @@ import com.leagueplans.ui.storage.opfs.{PlansDirectory, RootDirectory}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.storage.worker.StorageWorker.convert
 import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
-import com.leagueplans.ui.wrappers.opfs.FileSystemError as OPFSError
+import com.leagueplans.ui.wrappers.opfs.{DirectoryHandle, FileSystemError as OPFSError}
 import com.leagueplans.ui.wrappers.workers.DedicatedWorkerScope
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
@@ -70,7 +70,7 @@ private object StorageWorker {
     }
 }
 
-private final class StorageWorker(directory: PlansDirectory) {
+private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
   def handle(message: Inbound.ToWorker): EventStream[Outbound.ToCoordinator] =
     message match {
       case Inbound.ListPlans => handleListPlans()

@@ -7,18 +7,19 @@ import com.leagueplans.codec.encoding.Encoder
 import scala.annotation.tailrec
 
 object Forest {
+  def empty[ID, T]: Forest[ID, T] =
+    new Forest(Map.empty, Map.empty, Map.empty, List.empty)
+
   def from[ID, T](
     nodes: Map[ID, T],
-    parentsToChildren: Map[ID, List[ID]]
+    parentsToChildren: Map[ID, List[ID]],
+    roots: List[ID]
   ): Forest[ID, T] = {
     val toParent = parentsToChildren.flatMap((parent, children) =>
       children.map(_ -> parent)
     )
     val toChildren = nodes.map((id, _) => id -> parentsToChildren.getOrElse(id, List.empty))
-    val roots = nodes.collect {
-      case (id, _) if !toParent.contains(id) => id
-    }
-    new Forest(nodes, toParent, toChildren, roots.toList)
+    new Forest(nodes, toParent, toChildren, roots)
   }
 
   enum Update[+ID, +T] {
@@ -30,7 +31,7 @@ object Forest {
     case ChangeParent(child: ID, oldParent: ID, newParent: ID)
 
     case UpdateData(id: ID, data: T)
-    case Reorder(children: List[ID], parent: ID)
+    case Reorder(children: List[ID], maybeParent: Option[ID])
   }
   
   object Update {
@@ -39,13 +40,13 @@ object Forest {
   }
 
   given [ID : Encoder, T : Encoder]: Encoder[Forest[ID, T]] =
-    Encoder[(Map[ID, T], Map[ID, List[ID]])].contramap(forest =>
-      (forest.nodes, forest.toChildren)
+    Encoder[(Map[ID, T], Map[ID, List[ID]], List[ID])].contramap(forest =>
+      (forest.nodes, forest.toChildren, forest.roots)
     )
 
   given [ID : Decoder, T : Decoder]: Decoder[Forest[ID, T]] =
-    Decoder[(Map[ID, T], Map[ID, List[ID]])].map((nodes, toChildren) =>
-      from(nodes, toChildren)
+    Decoder[(Map[ID, T], Map[ID, List[ID]], List[ID])].map((nodes, toChildren, roots) =>
+      from(nodes, toChildren, roots)
     )
 }
 
@@ -66,6 +67,9 @@ final class Forest[ID, T] private[forest](
 
   private def asProduct: Product =
     (nodes, toParent, toChildren, roots)
+
+  override def toString: String =
+    s"Forest$asProduct"
 
   def map[S](f: (ID, T) => S): Forest[ID, S] =
     Forest(

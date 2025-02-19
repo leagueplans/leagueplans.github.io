@@ -29,8 +29,6 @@
 .plan {
   flex: 45;
   height: 100vh;
-  overflow: auto;
-  background-color: #00172e;
 }
 
 .help {

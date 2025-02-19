@@ -1,8 +1,23 @@
 .plan {
-  display: flex;
-  flex-direction: column;
+  /* Theoretically we could use a flexbox here, since we only have a single column
+   * However, for reasons unknown, using a flexbox kills the performance of the
+   * plan section. Dragging steps and collapsing substeps are terribly laggy when
+   * we use a flexbox here instead of a single-column grid.
+   */
+  display: grid;
+  grid-template-rows: auto 1fr;
+
+  background-color: #00172e;
 }
 
-.rootStep {
-  flex-grow: 1;
+.header {
+  grid-row: 1;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.steps {
+  grid-row: 2;
+
+  overflow: auto;
 }

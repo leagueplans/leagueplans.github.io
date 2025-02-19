@@ -9,6 +9,7 @@ import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.storage.ExportedPlanDecoder
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
+import com.leagueplans.ui.storage.migrations.MigrationError
 import com.leagueplans.ui.storage.model.errors.FileSystemError
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
@@ -119,8 +120,8 @@ object NewPlanForm {
     EventStream
       .fromValue(())
       .sample(inputSignal)
-      .map(toPlan)
-      .andThen[DecodingFailure | FileSystemError, PlanID]((metadata, plan) =>
+      .flatMapSwitch(toPlan)
+      .andThen[DecodingFailure | MigrationError | FileSystemError, PlanID]((metadata, plan) =>
         storage.create(metadata, plan).changes.collectSome
       )
       .andThen(planID => storage.subscribe(planID).changes.collectSome)
@@ -134,6 +135,13 @@ object NewPlanForm {
               ToastHub.Type.Warning,
               15.seconds,
               s"Failed to decode imported data. Cause: [${error.getMessage}]"
+            )
+
+          case Left(error: MigrationError) =>
+            toastPublisher.publish(
+              ToastHub.Type.Warning,
+              15.seconds,
+              s"Failed to update plan to the latest save file format. Cause: [${error.message}]"
             )
             
           case Left(error: FileSystemError) =>
@@ -150,16 +158,24 @@ object NewPlanForm {
     name: String, 
     mode: Mode, 
     maybeImport: Option[PlanExport]
-  ): Either[DecodingFailure, (PlanMetadata, Plan)] =
+  ): EventStream[Either[DecodingFailure | MigrationError, (PlanMetadata, Plan)]] =
     maybeImport match {
       case None =>
-        val step = Step(name)
-        val steps = Forest.from(Map(step.id -> step), Map(step.id -> List.empty))
-        Right((PlanMetadata(name), Plan(steps, mode.settings)))
+        val steps = Forest.from[Step.ID, Step](
+          nodes = Map.empty,
+          parentsToChildren = Map.empty,
+          roots = List.empty
+        )
+        EventStream.fromValue(
+          Right((PlanMetadata(name), Plan(name, steps, mode.settings))),
+          emitOnce = true
+        )
 
       case Some(planImport) =>
         ExportedPlanDecoder
           .decode(planImport)
-          .map((metadata, plan) => (metadata.copy(name = name), plan.copy(settings = mode.settings)))
+          .map(_.map((metadata, plan) =>
+            (metadata.copy(name = name), plan.copy(name = name, settings = mode.settings))
+          ))
     }
 }

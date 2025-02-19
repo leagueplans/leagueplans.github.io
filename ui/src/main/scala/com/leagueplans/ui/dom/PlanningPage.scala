@@ -52,16 +52,15 @@ object PlanningPage {
 
     val stepUpdates = EventBus[Forester[Step.ID, Step] => Unit]()
     val focusedStepID = Var[Option[Step.ID]](None)
-    val focusUpdater = focusedStepID.updater[Step.ID]((old, current) => Option.when(!old.contains(current))(current))
     val (planElement, forester) = PlanElement(
-      initialPlan.steps,
-      focusedStepID.signal,
+      initialPlan,
+      focusedStepID,
       stepsWithErrorsVar.signal.map(_.keySet),
       editingEnabled = Val(true),
       contextMenuController,
+      modalController,
       toastPublisher,
-      stepUpdates,
-      focusUpdater
+      stepUpdates
     )
 
     val settingsVar = Var(initialPlan.settings)
@@ -96,7 +95,6 @@ object PlanningPage {
             cache,
             itemFuse,
             stepSignal,
-            signal.map((state, step) => state.plan.children(step.id)),
             Signal.combine(stepSignal, stepsWithErrorsVar).map((step, stepsWithErrors) =>
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),

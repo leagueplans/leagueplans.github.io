@@ -6,10 +6,10 @@ import com.leagueplans.ui.wrappers.workers.WorkerScope
 import com.raquo.airstream.core.EventStream
 
 object RootDirectory {
-  def from(scope: WorkerScope): EventStream[Either[FileSystemError, RootDirectory]] =
+  def from(scope: WorkerScope): EventStream[Either[FileSystemError, RootDirectory[DirectoryHandle]]] =
     scope.navigator.storage.getDirectory().asObservable
       .flatMapSwitch(root => DirectoryHandle(root).acquireSubDirectory("plans"))
       .map(_.map(plans => RootDirectory(PlansDirectory(plans))))
 }
 
-final class RootDirectory(val plans: PlansDirectory)
+final class RootDirectory[T](val plans: PlansDirectory[T])

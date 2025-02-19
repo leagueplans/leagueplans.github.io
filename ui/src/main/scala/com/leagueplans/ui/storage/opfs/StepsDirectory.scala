@@ -4,7 +4,7 @@ import com.leagueplans.codec.Encoding
 import com.leagueplans.ui.model.plan.{Step, StepDetails}
 import com.leagueplans.ui.storage.opfs.StepsDirectory.*
 import com.leagueplans.ui.utils.airstream.EventStreamOps.{andThen, safeSequence}
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
+import com.leagueplans.ui.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
 import com.raquo.airstream.core.EventStream
 
 import scala.util.chaining.scalaUtilChainingOps
@@ -17,7 +17,7 @@ object StepsDirectory {
     Step.ID.fromString(fileName.takeWhile(_ != '.'))
 }
 
-final class StepsDirectory(underlying: DirectoryHandle) {
+final class StepsDirectory[T : DirectoryHandleLike](underlying: T) {
   def write(step: Step): EventStream[Either[FileSystemError, ?]] =
     underlying.replaceFileContent(toFileName(step.id), step.details)
   

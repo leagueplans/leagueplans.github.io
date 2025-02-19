@@ -3,6 +3,7 @@ package com.raquo.airstream
 import com.raquo.airstream.common.{InternalNextErrorObserver, InternalTryObserver, SingleParentStream}
 import com.raquo.airstream.core.{EventStream, Observable, Transaction}
 
+import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 final class BufferedStream[In, Out](
@@ -12,13 +13,13 @@ final class BufferedStream[In, Out](
   protected val topoRank: Int = 1
 
   private var maybeProcessor = Option.empty[EventStream[Out]]
-  private var buffer = List.empty[In]
+  private val buffer = ListBuffer.empty[In]
 
   private val processorObserver = new InternalTryObserver[Out] {
     protected def onTry(nextValue: Try[Out], transaction: Transaction): Unit = {
       stopProcessing()
       buffer.headOption.foreach { bufferedValue =>
-        buffer = buffer.drop(1)
+        buffer.dropInPlace(1)
         startProcessing(bufferedValue)
       }
 
@@ -49,7 +50,7 @@ final class BufferedStream[In, Out](
 
   protected def onNext(nextValue: In, transaction: Transaction): Unit =
     if (maybeProcessor.nonEmpty)
-      buffer :+= nextValue
+      buffer.addOne(nextValue)
     else
       startProcessing(nextValue)
 

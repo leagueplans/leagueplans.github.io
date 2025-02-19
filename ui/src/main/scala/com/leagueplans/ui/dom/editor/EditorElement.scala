@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.editor
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{DeletionConfirmer, FormOpener, Modal, Tooltip}
+import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
@@ -20,7 +20,6 @@ object EditorElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
-    substepsSignal: Signal[List[Step]],
     warningsSignal: Signal[List[String]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller
@@ -31,7 +30,6 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon),
       L.div(
         L.cls(Styles.sections),
-        L.child <-- toSubsteps(stepSignal, substepsSignal, stepUpdater, modalController),
         L.child <-- toEffects(cache, stepSignal, stepUpdater),
         L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalController)
       )
@@ -44,7 +42,6 @@ object EditorElement {
     val warningIcon: String = js.native
     val sections: String = js.native
     val section: String = js.native
-    val substepDescription: String = js.native
   }
 
   private def toWarningIcon(warnings: List[String]): L.Node =
@@ -56,50 +53,6 @@ object EditorElement {
         Tooltip(L.div(warnings.map(L.p(_)))),
         FontAwesome.icon(FreeSolid.faTriangleExclamation)
       )
-
-  private def toSubsteps(
-    stepSignal: Signal[Step],
-    substepsSignal: Signal[List[Step]],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
-    modalController: Modal.Controller,
-  ): Signal[L.Div] =
-    stepSignal.splitOne(_.id)((stepID, _, _) =>
-      Section(
-        title = "Steps",
-        id = "substeps",
-        substepsSignal,
-        stepUpdater.contramap[List[Step]](reordering => forester =>
-          forester.reorder(reordering.map(_.id))
-        ),
-        substep => L.p(
-          L.cls(Styles.substepDescription),
-          substep.description
-        ),
-        Some(newSubstepObserver(stepID, modalController, stepUpdater)),
-        stepUpdater.contramap[Step](deletedStep => forester =>
-          DeletionConfirmer(
-            s"\"${deletedStep.details.description}\" and all its nested substeps will be permanently deleted." +
-              s" This cannot be undone.",
-            "Delete substep",
-            modalController,
-            Observer[Unit](_ => forester.remove(deletedStep.id))
-          ).onNext(())
-        )
-      ).amend(L.cls(Styles.section))
-    )
-
-  private def newSubstepObserver(
-    parentID: Step.ID,
-    modalController: Modal.Controller,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
-  ): Observer[FormOpener.Command] =
-    FormOpener(
-      modalController,
-      stepUpdater.contracollect[Option[Step]] { case Some(newStep) => forester =>
-        forester.add(newStep, parentID)
-      },
-      () => NewStepForm()
-    )
 
   private def toEffects(
     cache: Cache,

@@ -8,7 +8,7 @@ import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings}
 import com.leagueplans.ui.storage.opfs.PlanDirectory.*
 import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
 import com.leagueplans.ui.wrappers.opfs.FileSystemError.*
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandle, FileSystemError}
+import com.leagueplans.ui.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
 import com.raquo.airstream.core.EventStream
 
 object PlanDirectory {
@@ -18,7 +18,7 @@ object PlanDirectory {
   private val stepsDirectoryName = "steps"
 }
 
-final class PlanDirectory(underlying: DirectoryHandle) {
+final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
   def readMetadata(): EventStream[Either[FileSystemError, PlanMetadata]] =
     underlying.read(metadataFileName)
     
@@ -40,7 +40,7 @@ final class PlanDirectory(underlying: DirectoryHandle) {
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, ?]] = {
     writeMetadata(metadata)
       .andThen(_ => writeSettings(plan.settings))
-      .andThen(_ => writeMappings(StepMappings(plan.steps.toChildren)))
+      .andThen(_ => writeMappings(StepMappings(plan.steps.toChildren, plan.steps.roots)))
       .andThen(_ => acquireStepsDirectory())
       .andThen(_.write(plan.steps.nodes.values))
   }
@@ -57,11 +57,17 @@ final class PlanDirectory(underlying: DirectoryHandle) {
     )
 
   def readPlan(): EventStream[Either[FileSystemError, Plan]] =
-    readSettings().andThen(settings =>
-      readMappings().andThen(mappings =>
-        acquireStepsDirectory()
-          .andThen(_.read(mappings.value.keySet ++ mappings.value.values.flatten))
-          .map(_.map(steps => Plan(Forest.from(steps, mappings.value), settings)))
+    readMetadata().andThen(metadata =>
+      readSettings().andThen(settings =>
+        readMappings().andThen(mappings =>
+          acquireStepsDirectory()
+            .andThen(_.read(mappings.toChildren.keySet ++ mappings.toChildren.values.flatten))
+            .map(_.map(steps => Plan(
+              metadata.name,
+              Forest.from(steps, mappings.toChildren, mappings.roots),
+              settings
+            )))
+        )
       )
     )
   
@@ -70,37 +76,57 @@ final class PlanDirectory(underlying: DirectoryHandle) {
       case Update.AddNode(id, data) =>
         acquireStepsDirectory()
           .andThen(_.write(data))
-          .andThen(_ => updateMappings(_.update(_ + (id -> List.empty))))
+          .andThen(_ => updateMappings(original =>
+            original.copy(
+              toChildren = original.toChildren + (id -> List.empty),
+              roots = original.roots :+ id
+            )
+          ))
         
       case Update.RemoveNode(id) =>
-        updateMappings(_.update(_ - id))
-          .andThen(_ => acquireStepsDirectory())
+        updateMappings(original =>
+          original.copy(
+            toChildren = original.toChildren - id,
+            roots = original.roots.filterNot(_ == id)
+          )
+        ).andThen(_ => acquireStepsDirectory())
           .andThen(_.remove(id))
         
       case Update.AddLink(child, parent) =>
-        updateMappings(_.update(m =>
-          m - child + (parent -> (m.getOrElse(parent, List.empty) :+ child))
-        ))
+        updateMappings(original =>
+          original.copy(
+            toChildren = original.toChildren + (parent -> (original.toChildren(parent) :+ child)),
+            roots = original.roots.filterNot(_ == child)
+          )
+        )
         
       case Update.RemoveLink(child, parent) =>
-        updateMappings(_.update(m =>
-          m + 
-            (parent -> m(parent).filterNot(_ == child)) +
-            (child -> List.empty)
-        ))
+        updateMappings(original =>
+          original.copy(
+            toChildren = original.toChildren + (parent -> original.toChildren(parent).filterNot(_ == child)),
+            roots = original.roots :+ child
+          )
+        )
         
       case Update.ChangeParent(child, oldParent, newParent) =>
-        updateMappings(_.update(m =>
-          m +
-            (oldParent -> m(oldParent).filterNot(_ == child)) +
-            (newParent -> (m.getOrElse(newParent, List.empty) :+ child))
-        ))
+        updateMappings(original =>
+          original.copy(toChildren =
+            original.toChildren +
+              (oldParent -> original.toChildren(oldParent).filterNot(_ == child)) +
+              (newParent -> (original.toChildren(newParent) :+ child))
+          )
+        )
         
       case Update.UpdateData(id, data) =>
         acquireStepsDirectory().andThen(_.write(data))
         
-      case Update.Reorder(children, parent) =>
-        updateMappings(_.update(_ + (parent -> children)))
+      case Update.Reorder(children, Some(parent)) =>
+        updateMappings(original =>
+          original.copy(toChildren = original.toChildren + (parent -> children))
+        )
+
+      case Update.Reorder(roots, None) =>
+        updateMappings(_.copy(roots = roots))
 
       case settings: Plan.Settings =>
         writeSettings(settings)
@@ -121,7 +147,7 @@ final class PlanDirectory(underlying: DirectoryHandle) {
       .andThen(_ => underlying.removeFile(settingsFileName))
       .andThen(_ => underlying.removeFile(metadataFileName))
 
-  private def acquireStepsDirectory(): EventStream[Either[FileSystemError, StepsDirectory]] =
+  private def acquireStepsDirectory(): EventStream[Either[FileSystemError, StepsDirectory[T]]] =
     underlying
       .acquireSubDirectory(stepsDirectoryName)
       .map(_.map(StepsDirectory(_)))

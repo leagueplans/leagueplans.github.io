@@ -1,4 +1,4 @@
-package com.leagueplans.ui.dom.plan
+package com.leagueplans.ui.dom.plan.step
 
 import com.leagueplans.ui.dom.common.{Button, ContextMenu}
 import com.leagueplans.ui.dom.forest.Forester

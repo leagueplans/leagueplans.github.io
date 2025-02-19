@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.landing.menu
 import com.leagueplans.ui.dom.common.{Modal, ToastHub}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
-import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata}
+import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata, SchemaVersion}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -34,6 +34,7 @@ object PlansMenu {
     val downloadButton: String = js.native
     val deleteButton: String = js.native
     val loadButton: String = js.native
+    val updateButton: String = js.native
   }
 
   private def toEntries(
@@ -72,8 +73,13 @@ object PlansMenu {
       DownloadButton(id, metadata.name, storage, toastPublisher).amend(
         L.cls(Styles.button, Styles.downloadButton)
       ),
-      LoadButton(id, storage, selectionObserver, toastPublisher).amend(
-        L.cls(Styles.button, Styles.loadButton)
-      )
+      if (metadata.schemaVersion == SchemaVersion.values.last)
+        LoadButton(id, storage, selectionObserver, toastPublisher).amend(
+          L.cls(Styles.button, Styles.loadButton)
+        )
+      else
+        UpdateButton(id, storage, toastPublisher).amend(
+          L.cls(Styles.button, Styles.updateButton)
+        )
     )
 }
