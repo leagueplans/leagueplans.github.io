@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.help
 import com.leagueplans.ui.dom.common.{Button, Modal}
 import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js

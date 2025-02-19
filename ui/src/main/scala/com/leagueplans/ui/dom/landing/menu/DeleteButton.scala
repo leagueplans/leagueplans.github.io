@@ -6,7 +6,7 @@ import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.PlanID
 import com.leagueplans.ui.utils.airstream.PromiseLikeOps.onComplete
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 

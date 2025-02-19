@@ -6,7 +6,7 @@ import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID}
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}

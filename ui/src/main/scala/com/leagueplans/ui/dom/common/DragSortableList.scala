@@ -3,8 +3,9 @@ package com.leagueplans.ui.dom.common
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.HasID
 import com.leagueplans.ui.utils.airstream.ObservableOps.unzip
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.ui.utils.laminar.EventPropOps.ifUnhandled
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.{ifUnhandledF, handledWith}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
@@ -114,8 +115,8 @@ object DragSortableList {
       )
 
     List(
-      L.onDragEnter.ifUnhandledF(streamMutator) --> orderMutator,
-      L.onDragOver.ifUnhandledF(streamMutator) --> orderMutator
+      L.onDragEnter.ifUnhandled.compose(streamMutator) --> orderMutator,
+      L.onDragOver.ifUnhandled.compose(streamMutator) --> orderMutator
     )
   }
 

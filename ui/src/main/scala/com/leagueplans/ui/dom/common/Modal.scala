@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.raquo.airstream.core.{Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}

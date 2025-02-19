@@ -1,7 +1,7 @@
 package com.leagueplans.ui.wrappers.animation
 
 import com.leagueplans.ui.facades.animation.{Animatable, KeyframeAnimationOptions, Animation as AnimationFacade}
-import com.raquo.laminar.nodes.ReactiveElement
+import com.raquo.laminar.api.L
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -57,6 +57,6 @@ object Animation {
 }
 
 final class Animation(keyframes: js.UndefOr[js.Object], options: Double | KeyframeAnimationOptions) {
-  def play(element: ReactiveElement[?]): Animation.Instance =
+  def play(element: L.Element): Animation.Instance =
     element.ref.asInstanceOf[Animatable].animate(keyframes, options)
 }

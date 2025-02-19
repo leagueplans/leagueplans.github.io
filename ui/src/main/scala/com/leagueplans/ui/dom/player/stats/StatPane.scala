@@ -5,7 +5,7 @@ import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.UnlockSkill
 import com.leagueplans.ui.model.player.skill.Stat
 import com.leagueplans.ui.utils.airstream.ObserverOps.observer
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder

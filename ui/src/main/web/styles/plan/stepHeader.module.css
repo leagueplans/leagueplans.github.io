@@ -1,0 +1,17 @@
+.header {
+  display: flex;
+}
+
+.dragIcon {
+  align-self: center;
+  padding: 0.3rem;
+}
+
+.title {
+  flex-grow: 1;
+  padding: 0.3rem 0 0.3rem 0.3rem;
+}
+
+.dragIcon + .title {
+  padding-left: 0;
+}

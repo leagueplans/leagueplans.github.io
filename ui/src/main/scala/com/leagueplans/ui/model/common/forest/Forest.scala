@@ -51,7 +51,7 @@ object Forest {
 
 final class Forest[ID, T] private[forest](
   val nodes: Map[ID, T],
-  private[forest] val toParent: Map[ID, ID],
+  val toParent: Map[ID, ID],
   val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {

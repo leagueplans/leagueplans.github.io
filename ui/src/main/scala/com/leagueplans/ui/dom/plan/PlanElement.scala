@@ -66,7 +66,7 @@ object PlanElement {
   private def toElement(
     stepID: Step.ID,
     step: Signal[Step],
-    subSteps: Signal[List[L.HtmlElement]],
+    substeps: Signal[List[L.HtmlElement]],
     focusedStep: Signal[Option[Step.ID]],
     completionManager: CompletionManager,
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
@@ -79,7 +79,7 @@ object PlanElement {
     StepElement(
       stepID,
       step,
-      subSteps,
+      substeps,
       isFocused = Signal.combine(step, focusedStep).map {
         case (s, Some(focus)) => s.id == focus
         case _ => false

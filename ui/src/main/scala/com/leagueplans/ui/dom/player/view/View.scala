@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.player.view
 
 import com.leagueplans.ui.dom.common.Button
-import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
 

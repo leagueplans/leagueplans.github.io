@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.common
 import com.leagueplans.ui.facades.fontawesome.commontypes.IconDefinition
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{EventStream, Observer, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.Var

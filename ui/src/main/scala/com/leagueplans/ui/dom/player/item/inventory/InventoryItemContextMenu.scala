@@ -9,7 +9,7 @@ import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.{Depository, Stack}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 

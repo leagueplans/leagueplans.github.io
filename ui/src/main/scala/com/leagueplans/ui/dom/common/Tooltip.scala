@@ -11,6 +11,9 @@ import org.scalajs.dom.{Element, MouseEvent}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
+//TODO There should really only be a single tooltip for the app
+// An issue with the current approach is that tooltips are interactive like their
+// parent element
 object Tooltip {
   def apply(contents: L.HtmlElement): L.Modifier[L.HtmlElement] = {
     val mouseOver = Var(false)
@@ -40,12 +43,10 @@ object Tooltip {
   ): L.Modifier[L.HtmlElement] =
     List(
       L.inContext[L.HtmlElement](node =>
-        L.onMouseOver --> mouseOver.contracollect[MouseEvent] {
-          case event => isClosestListener(event, node.ref)
-        }
+        L.onMouseOver.map(isClosestListener(_, node.ref)) --> mouseOver
       ),
-      L.onMouseLeave --> mouseOver.contramap[MouseEvent](_ => false),
-      L.onMouseMove --> mouseCoords.contramap[MouseEvent](event => (event.clientX, event.clientY))
+      L.onMouseLeave.mapToStrict(false) --> mouseOver,
+      L.onMouseMove.map(event => (event.clientX, event.clientY)) --> mouseCoords
     )
 
   private def isClosestListener(event: MouseEvent, parent: Element): Boolean =

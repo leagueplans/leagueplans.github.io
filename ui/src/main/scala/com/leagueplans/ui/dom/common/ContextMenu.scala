@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.ifUnhandledF
+import com.leagueplans.ui.utils.laminar.EventPropOps.ifUnhandled
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor}
@@ -19,7 +19,7 @@ object ContextMenu {
   ) {
     def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder[L.Element] = {
       val contents = toContents(closer)
-      L.onContextMenu.ifUnhandledF(_.withCurrentValueOf(contents)) --> opener
+      L.onContextMenu.ifUnhandled.compose(_.withCurrentValueOf(contents)) --> opener
     }
   }
 
@@ -79,9 +79,5 @@ object ContextMenu {
     )
 
   private def closeIfAnotherMenuIsOpened(status: Observer[Status]): Binder[L.Element] =
-    L.documentEvents(
-      _.onContextMenu
-        .filter(!_.defaultPrevented)
-        .mapToStrict(Status.Closed)
-    ) --> status
+    L.documentEvents(_.onContextMenu.ifUnhandled.mapToStrict(Status.Closed)) --> status
 }

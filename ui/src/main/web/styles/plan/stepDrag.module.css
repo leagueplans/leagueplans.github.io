@@ -1,0 +1,30 @@
+.dropTarget {
+  /* Required to prevent the box-shadows from being hidden by neighbouring elements */
+  position: relative;
+  z-index: 1;
+}
+
+.dropBefore {
+  composes: dropTarget;
+
+  /* Relies on the border css in the step module. We don't paint an inset shadow because of the border */
+  border-color: yellow;
+  box-shadow: 0 -1px yellow;
+}
+
+.dropInto {
+  composes: dropTarget;
+
+  /* Relies on the border css in the step module. We don't paint a top inset shadow because of the border */
+  border-color: yellow;
+  box-shadow:
+    0 -1px yellow,
+    -1px 0 yellow, 1px 0 yellow inset,
+    0 1px yellow, 0 -1px yellow inset;
+}
+
+.dropAfter {
+  composes: dropTarget;
+
+  box-shadow: 0 1px yellow, 0 -1px yellow inset;
+}

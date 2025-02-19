@@ -2,7 +2,7 @@ package com.leagueplans.ui.taskimporter
 
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.dom.common.Button
-import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import io.circe.Printer

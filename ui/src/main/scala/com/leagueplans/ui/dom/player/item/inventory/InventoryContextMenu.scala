@@ -4,7 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
 import com.leagueplans.ui.model.plan.Effect.AddItem
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}

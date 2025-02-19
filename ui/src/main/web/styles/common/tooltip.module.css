@@ -5,7 +5,8 @@
   border-radius: 0.75rem;
 
   position: fixed;
-  z-index: 1;
+  /* Should be a larger index than anything else in the project */
+  z-index: 2;
 
   background-color: black;
   color: white;

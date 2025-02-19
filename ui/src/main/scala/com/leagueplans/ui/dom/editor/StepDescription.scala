@@ -4,11 +4,12 @@ import com.leagueplans.ui.dom.common.{Button, EditableParagraph}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.ui.utils.laminar.EventPropOps.handledAs
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.{handled, handledAs}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom
 import org.scalajs.dom.html.Paragraph

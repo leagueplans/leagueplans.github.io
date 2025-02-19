@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.player.item.inventory
 import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.model.player.item.Stack
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import org.scalajs.dom.window

@@ -3,28 +3,29 @@ package com.leagueplans.ui.dom.plan
 import com.leagueplans.ui.dom.common.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.forest.Forester
+import com.leagueplans.ui.facades.animation.{FillMode, KeyframeAnimationOptions}
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, onKey}
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
+import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.leagueplans.ui.wrappers.Clipboard
+import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.KeyCode
-import org.scalajs.dom.html.Paragraph
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepElement {
-  private val startOpen = true
-  private val animationDuration = 200.millis
-
   def apply(
     stepID: Step.ID,
     step: Signal[Step],
-    subStepsSignal: Signal[List[L.HtmlElement]],
+    substepsSignal: Signal[List[L.HtmlElement]],
     isFocused: Signal[Boolean],
     isCompleteSignal: Signal[Boolean],
     hasErrorsSignal: Signal[Boolean],
@@ -36,15 +37,21 @@ object StepElement {
     focusObserver: Observer[Step.ID]
   ): L.Div = {
     val isHovering = Var(false)
-    val (subSteps, subStepsMaskController) = toSubSteps(subStepsSignal)
+    val isDraggable = Var(false)
+    val animationController = InvertibleAnimationController(
+      startOpen = true,
+      animationDuration = 200.millis
+    )
+    val header = StepHeader(step, isFocused, isDraggable.writer).amend(L.cls(Styles.header))
 
     L.div(
       L.cls(Styles.step),
       L.cls <-- Signal.combine(isFocused, isCompleteSignal, hasErrorsSignal, isHovering).map(StepBackground.from),
       L.tabIndex(0),
-      L.child <-- toSubStepsToggle(subStepsMaskController, subStepsSignal),
-      toDescription(step),
-      subSteps,
+      L.draggable <-- isDraggable,
+      L.child <-- toSubstepsToggle(animationController, substepsSignal),
+      header,
+      toSubsteps(substepsSignal, animationController),
       Tooltip(L.span("Click to toggle focus")),
       toFocusListeners(stepID, focusObserver),
       toHoverListeners(isHovering),
@@ -57,6 +64,13 @@ object StepElement {
         editingEnabledSignal,
         stepUpdater,
         completionStatusObserver
+      ),
+      StepDragListeners(
+        stepID,
+        hasSubsteps = substepsSignal.map(_.nonEmpty),
+        header,
+        closeSubsteps = animationController.close,
+        stepUpdater
       )
     )
   }
@@ -64,48 +78,66 @@ object StepElement {
   @js.native @JSImport("/styles/plan/step.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val step: String = js.native
-    val subStepsToggle: String = js.native
-    val sideBar: String = js.native
-    val description: String = js.native
-    val subSteps: String = js.native
-    val subStepList: String = js.native
-    val subStep: String = js.native
+    val substepsToggle: String = js.native
+    val substepsToggleIcon: String = js.native
+    val substepsSidebar: String = js.native
+    val header: String = js.native
+    val substeps: String = js.native
+    val substepList: String = js.native
+    val substep: String = js.native
   }
 
-  private def toSubSteps(subStepsSignal: Signal[List[L.HtmlElement]]): (L.Div, InvertibleAnimationController) = {
+  private def toSubsteps(
+    substepsSignal: Signal[List[L.HtmlElement]],
+    animationController: InvertibleAnimationController
+  ): L.Div = {
     val list = L.ol(
-      L.cls(Styles.subStepList),
-      L.children <-- subStepsSignal.split(identity)((child, _, _) =>
-        L.li(L.cls(Styles.subStep), child)
+      L.cls(Styles.substepList),
+      L.children <-- substepsSignal.split(identity)((child, _, _) =>
+        L.li(L.cls(Styles.substep), child)
       )
     )
 
-    val (mask, controller) = HeightMask(list, startOpen, animationDuration)
-    (mask.amend(L.cls(Styles.subSteps)), controller)
+    HeightMask(list, animationController).amend(L.cls(Styles.substeps))
   }
 
-  private def toSubStepsToggle(
-    subStepsMaskController: InvertibleAnimationController,
-    subStepsSignal: Signal[List[L.HtmlElement]]
-  ): Signal[L.Node] =
-    subStepsSignal.map(_.isEmpty).splitBoolean(
-      whenTrue = _ => L.emptyNode,
-      whenFalse = _ => CollapseButton(
-        startOpen,
-        animationDuration,
-        subStepsMaskController,
-        tooltip = "Toggle sub-step visibility",
-        screenReaderDescription = "toggle sub-step visibility"
-      ).amend(
-        L.cls(Styles.subStepsToggle),
-        L.div(L.cls(Styles.sideBar))
+  private def toSubstepsToggle(
+    animationController: InvertibleAnimationController,
+    substepsSignal: Signal[List[L.HtmlElement]]
+  ): Signal[L.Node] = {
+    val icon = FontAwesome.icon(FreeSolid.faCaretRight).amend(
+      L.svg.cls(Styles.substepsToggleIcon),
+      L.svg.transform.maybe(Option.when(animationController.isOpen)("rotate(90)")),
+      animationController(
+        toOpen = rotate(_, targetRotation = 90),
+        toClose = rotate(_, targetRotation = 0)
       )
     )
+    
+    val button =
+      CollapseButton(
+        icon,
+        animationController,
+        tooltip = "Toggle substep visibility",
+        screenReaderDescription = "toggle substep visibility"
+      ).amend(
+        L.cls(Styles.substepsToggle),
+        L.div(L.cls(Styles.substepsSidebar))
+      )
 
-  private def toDescription(stepSignal: Signal[Step]): ReactiveHtmlElement[Paragraph] =
-    L.p(
-      L.cls(Styles.description),
-      L.text <-- stepSignal.map(_.description)
+    substepsSignal.map(_.isEmpty).splitBoolean(
+      whenTrue = _ => L.emptyNode,
+      whenFalse = _ => button
+    )
+  }
+
+  private def rotate(animationDuration: Duration, targetRotation: Double): Animation =
+    Animation(
+      new KeyframeAnimationOptions {
+        duration = animationDuration.toMillis.toDouble
+        fill = FillMode.forwards
+      },
+      List(KeyframeProperty.transform(s"rotate(${targetRotation}deg)"))
     )
 
   private def toFocusListeners(

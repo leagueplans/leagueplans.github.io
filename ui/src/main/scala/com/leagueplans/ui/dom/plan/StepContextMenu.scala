@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.common.{Button, ContextMenu}
 import com.leagueplans.ui.dom.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
-import com.leagueplans.ui.utils.laminar.LaminarOps.{handledAs, handledWith}
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handledAs, handledWith}
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}

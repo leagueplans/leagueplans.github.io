@@ -15,5 +15,6 @@ object KeyframeProperty {
   val height: KeyframeProperty[String] = prop("height")
   val offset: KeyframeProperty[Double] = prop("offset")
   val opacity: KeyframeProperty[Double] = prop("opacity")
+  val scale: KeyframeProperty[Double] = prop("scale")
   val transform: KeyframeProperty[String] = prop("transform")
 }

@@ -20,7 +20,7 @@ object EditorElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
-    subStepsSignal: Signal[List[Step]],
+    substepsSignal: Signal[List[Step]],
     warningsSignal: Signal[List[String]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller
@@ -31,7 +31,7 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon),
       L.div(
         L.cls(Styles.sections),
-        L.child <-- toSubSteps(stepSignal, subStepsSignal, stepUpdater, modalController),
+        L.child <-- toSubsteps(stepSignal, substepsSignal, stepUpdater, modalController),
         L.child <-- toEffects(cache, stepSignal, stepUpdater),
         L.child <-- toRequirements(cache, itemFuse, stepSignal, stepUpdater, modalController)
       )
@@ -44,7 +44,7 @@ object EditorElement {
     val warningIcon: String = js.native
     val sections: String = js.native
     val section: String = js.native
-    val subStepDescription: String = js.native
+    val substepDescription: String = js.native
   }
 
   private def toWarningIcon(warnings: List[String]): L.Node =
@@ -57,9 +57,9 @@ object EditorElement {
         FontAwesome.icon(FreeSolid.faTriangleExclamation)
       )
 
-  private def toSubSteps(
+  private def toSubsteps(
     stepSignal: Signal[Step],
-    subStepsSignal: Signal[List[Step]],
+    substepsSignal: Signal[List[Step]],
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
     modalController: Modal.Controller,
   ): Signal[L.Div] =
@@ -67,15 +67,15 @@ object EditorElement {
       Section(
         title = "Steps",
         id = "substeps",
-        subStepsSignal,
+        substepsSignal,
         stepUpdater.contramap[List[Step]](reordering => forester =>
           forester.reorder(reordering.map(_.id))
         ),
-        subStep => L.p(
-          L.cls(Styles.subStepDescription),
-          subStep.description
+        substep => L.p(
+          L.cls(Styles.substepDescription),
+          substep.description
         ),
-        Some(newSubStepObserver(stepID, modalController, stepUpdater)),
+        Some(newSubstepObserver(stepID, modalController, stepUpdater)),
         stepUpdater.contramap[Step](deletedStep => forester =>
           DeletionConfirmer(
             s"\"${deletedStep.details.description}\" and all its nested substeps will be permanently deleted." +
@@ -88,7 +88,7 @@ object EditorElement {
       ).amend(L.cls(Styles.section))
     )
 
-  private def newSubStepObserver(
+  private def newSubstepObserver(
     parentID: Step.ID,
     modalController: Modal.Controller,
     stepUpdater: Observer[Forester[Step.ID, Step] => Unit]

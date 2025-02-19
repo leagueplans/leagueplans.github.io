@@ -84,9 +84,10 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
       .headOption
       .flatMap(forest.toParent.get)
       .filter { parent =>
-        val children = forest.toChildren.get(parent).toSet.flatten
+        val children = forest.toChildren.get(parent).toList.flatten
         val providedChildren = newOrder.toSet
-        providedChildren.size == children.size &&
+        // It's important to use the non-set containers for size checks, to protect against duplicates
+        newOrder.size == children.size &&
           children.forall(providedChildren.contains)
       }
       .map(Reorder(newOrder, _))

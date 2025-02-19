@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.common.form
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventPropOps.handledAs
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor}
+import com.raquo.laminar.api.L
 import org.scalajs.dom.File
 
 object FileInput {

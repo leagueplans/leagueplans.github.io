@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.player.diary
 
 import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 

@@ -5,7 +5,7 @@ import com.leagueplans.ui.model.common.forest.{Forest, ForestInterpreter, Forest
 import com.leagueplans.ui.utils.HasID
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.airstream.state.Var
+import com.raquo.airstream.state.{StrictSignal, Var}
 import com.raquo.laminar.api.L
 
 object Forester {
@@ -21,7 +21,7 @@ final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
   domEvaluator: DOMForestUpdateEvaluator[ID, T]
 )(using HasID.Aux[T, ID]) {
-  val forestSignal: Signal[Forest[ID, T]] =
+  val forestSignal: StrictSignal[Forest[ID, T]] =
     forestState.signal
 
   val domSignal: Signal[List[L.HtmlElement]] =
@@ -40,8 +40,8 @@ final class Forester[ID, T](
   def add(child: T, parent: ID): Unit =
     run(_.add(child, parent))
 
-  def move(child: ID, maybeParent: Option[ID]): Unit =
-    run(_.move(child, maybeParent))
+  def move(child: ID, newParent: ID): Unit =
+    run(_.move(child, Some(newParent)))
 
   def remove(id: ID): Unit =
     run(_.remove(id))

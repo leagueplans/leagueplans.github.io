@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.common.{Button, ContextMenu}
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
-import com.leagueplans.ui.utils.laminar.LaminarOps.handled
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 

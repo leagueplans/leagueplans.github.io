@@ -1,6 +1,8 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.LaminarOps.{handled, handledAs, onKey}
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.ui.utils.laminar.EventPropOps.handledAs
+import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.features.unitArrows
@@ -21,9 +23,10 @@ object  EditableParagraph {
           L.onInput.handledAs(ctx.ref.innerText) --> content,
           // Kind of hacky... but I want something to trigger blurring and the enter
           // key seems the best choice
-          L.eventProp[InputEvent]("beforeinput").filter(event =>
-            event.inputType == InputType.insertParagraph && event.target == ctx.ref
-          ).handled --> ctx.ref.blur(),
+          L.eventProp[InputEvent]("beforeinput")
+            .filter(_.inputType == InputType.insertParagraph)
+            .filterByTarget(_ == ctx.ref)
+            .handled --> ctx.ref.blur(),
           L.onKey(KeyCode.Escape).handled --> ctx.ref.blur()
         ))
       )
