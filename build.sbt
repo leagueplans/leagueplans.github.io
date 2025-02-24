@@ -78,11 +78,7 @@ lazy val ui =
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       scalaJSUseMainModuleInitializer := true,
-      scalaJSLinkerConfig ~= (config =>
-        config
-          .withModuleKind(ModuleKind.ESModule)
-          .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("com.leagueplans.ui")))
-      ),
+      scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
       fastLinkOutputDir := {
         // Ensure that fastLinkJS has run, then return its output directory
         (Compile / fastLinkJS).value

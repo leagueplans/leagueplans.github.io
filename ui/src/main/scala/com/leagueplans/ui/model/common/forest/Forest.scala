@@ -87,7 +87,6 @@ final class Forest[ID, T] private[forest](
       .get(childID)
       .toList
       .flatMap(toChildren)
-      .filterNot(_ == childID)
       .flatMap(nodes.get)
 
   def ancestors(childID: ID): List[T] =

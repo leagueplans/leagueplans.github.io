@@ -1,7 +1,6 @@
 package com.leagueplans.ui.storage.client
 
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.Step.ID
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.storage.client.PlanSubscription.{Message, Status}
 import com.leagueplans.ui.storage.model.LamportTimestamp
@@ -40,7 +39,7 @@ final class PlanSubscription(
   
   val status: StrictSignal[PlanSubscription.Status] = internalStatus.signal
   
-  val updates: EventStream[Forest.Update[ID, Step] | Plan.Settings] =
+  val updates: EventStream[Forest.Update[Step.ID, Step] | Plan.Settings] =
     upstream.collect(Function.unlift {
       case Message.Done =>
         upstreamKillSwitch.kill()

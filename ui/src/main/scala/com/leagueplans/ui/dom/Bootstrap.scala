@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom
 import com.leagueplans.common.model.{Item, LeagueTask}
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import com.leagueplans.ui.dom.landing.LandingPage
+import com.leagueplans.ui.dom.planning.PlanningPage
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.diary.DiaryTask
 import com.leagueplans.ui.model.player.{Cache, Quest}

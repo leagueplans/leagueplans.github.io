@@ -1,6 +1,6 @@
 package com.leagueplans.ui.integration
 
-import com.leagueplans.ui.dom.forest.Forester
+import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.mode.Armageddon
@@ -27,7 +27,7 @@ final class ForesterIntegrationTest
     expectedRoots: List[Step]
   ): Assertion = {
     val forest = Forest.empty[Step.ID, Step]
-    val forester = Forester(forest, (_, _, _) => null)
+    val forester = Forester(forest)
     val directory = PlanDirectory(new MockDirectoryHandle)
     val expectedForest = toForest(expectedToChildren, expectedRoots)
 
@@ -35,7 +35,7 @@ final class ForesterIntegrationTest
       setUpStreaming(forest, forester, directory)(using owner)
       f(forester)
 
-      val actualForest = forester.forestSignal.now()
+      val actualForest = forester.signal.now()
       val persistedForest = readPlan(directory)(using owner)
 
       withClue("Checking nodes:") {
@@ -63,7 +63,7 @@ final class ForesterIntegrationTest
     directory: PlanDirectory[?]
   )(using Owner): Unit = {
     // Required to ensure that forest updates are processed
-    forester.forestSignal.foreach(_ => ())
+    forester.signal.foreach(_ => ())
 
     directory
       .create(PlanMetadata("test"), Plan("test", forest, Armageddon.settings))
