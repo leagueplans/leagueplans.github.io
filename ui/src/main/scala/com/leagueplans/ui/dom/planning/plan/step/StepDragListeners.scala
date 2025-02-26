@@ -1,18 +1,18 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.dom.planning.forest.Forester
+import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventPropOps.ifUnhandled
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.{EventStream, Observable, Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, seqToModifier}
+import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.keys.EventProp
 import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-//TODO Maybe use outline instead of the box-shadow z-index hacking for dragging?
 object StepDragListeners {
   private val contentType = "application/step-id"
 
@@ -25,25 +25,27 @@ object StepDragListeners {
     hasSubsteps: Signal[Boolean],
     header: L.Element,
     closeSubsteps: () => Unit,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    forester: Forester[Step.ID, Step]
   ): L.Modifier[L.HtmlElement] = {
     val dropLocation = Var(Option.empty[DropLocation])
 
     List(
-      L.cls <-- dropLocation.signal.map(_.map {
-        case DropLocation.Before => Styles.dropBefore
-        case DropLocation.Into => Styles.dropInto
-        case DropLocation.After => Styles.dropAfter
-      }.toList),
+      L.cls <-- dropLocation.signal.map {
+        case None => Styles.nonTarget
+        case Some(DropLocation.Before) => Styles.dropBefore
+        case Some(DropLocation.Into) => Styles.dropInto
+        case Some(DropLocation.After) => Styles.dropAfter
+      },
       onDragStart(stepID, hasSubsteps, header, closeSubsteps),
       onDragEnterOver(hasSubsteps, dropLocation.someWriter),
       onDragLeave(dropLocation.writer),
-      onDrop(stepID, hasSubsteps, dropLocation.writer, stepUpdater)
+      onDrop(stepID, hasSubsteps, dropLocation.writer, forester)
     )
   }
 
   @js.native @JSImport("/styles/planning/plan/step/drag.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val nonTarget: String = js.native
     val dropBefore: String = js.native
     val dropInto: String = js.native
     val dropAfter: String = js.native
@@ -83,10 +85,12 @@ object StepDragListeners {
     hasSubsteps: Signal[Boolean],
     locationObserver: Observer[DropLocation]
   ): L.Modifier[L.Element] =
-    withDropLocation(prop, hasSubsteps)(
-      locationObserver.contramap { (event, dropLocation) =>
+    withEventHandling(prop)((ctx, events) =>
+      events.map((ctx, _)).withCurrentValueOf(hasSubsteps)
+    )(
+      locationObserver.contramap { (ctx, event, hasSubsteps) =>
         event.dataTransfer.dropEffect = DataTransferDropEffectKind.move
-        dropLocation
+        calcDropLocation(event, ctx, hasSubsteps)
       }
     )
 
@@ -101,36 +105,33 @@ object StepDragListeners {
     stepID: Step.ID,
     hasSubsteps: Signal[Boolean],
     locationObserver: Observer[Option[DropLocation]],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    forester: Forester[Step.ID, Step]
   ): L.Modifier[L.Element] =
-    withDropLocation(L.onDrop, hasSubsteps)(
+    withEventHandling(L.onDrop)((ctx, events) =>
+      events
+        .withCurrentValueOf(hasSubsteps, forester.signal)
+        .map { (event, hasSubsteps, forest) =>
+          val dropped = Step.ID.fromString(event.dataTransfer.getData(contentType))
+          (dropped, calcDropLocation(event, ctx, hasSubsteps), forest)
+        }
+    )(
       Observer.combine(
         locationObserver.contramap(_ => None),
-        stepUpdater.contramap { (event, dropLocation) => forester =>
-          resolveDrop(
-            droppedOver = stepID,
-            dropped = Step.ID.fromString(event.dataTransfer.getData(contentType)),
-            dropLocation,
-            forester
-          )
-        }
+        Observer((dropped, dropLocation, forest) =>
+          resolveDrop(droppedOver = stepID, dropped, dropLocation, forest, forester)
+        )
       )
     )
 
-  private def withDropLocation(
-    prop: EventProp[DragEvent],
-    hasSubsteps: Signal[Boolean]
-  )(observer: Observer[(DragEvent, DropLocation)]): L.Modifier[L.Element] =
+  private def withEventHandling[T](prop: EventProp[DragEvent])(
+    f: (L.Element, EventStream[DragEvent]) => Observable[T]
+  )(observer: Observer[T]): L.Modifier[L.Element] =
     L.inContext(ctx =>
       prop
         .ifUnhandled
         .filter(_.dataTransfer.types.exists(_ == contentType))
         .preventDefault
-        .compose(
-          _.withCurrentValueOf(hasSubsteps).map((event, hasSubsteps) =>
-            (event, calcDropLocation(event, ctx, hasSubsteps))
-          )
-        ) --> observer
+        .compose(f(ctx, _)) --> observer
     )
 
   private def calcDropLocation(
@@ -156,10 +157,10 @@ object StepDragListeners {
     droppedOver: Step.ID,
     dropped: Step.ID,
     location: DropLocation,
-    forester: Forester[Step.ID, Step]
+    forest: Forest[Step.ID, Step], 
+    forester: Forester[Step.ID, Step],
   ): Unit =
     if (dropped != droppedOver) {
-      val forest = forester.signal.now()
       val wouldCauseLoop = forest.ancestors(droppedOver).contains(dropped)
       if (!wouldCauseLoop) {
         location match {

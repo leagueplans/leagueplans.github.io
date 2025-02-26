@@ -15,11 +15,11 @@ object StepContextMenu {
   def apply(
     stepID: Step.ID,
     stepSignal: Signal[Step],
+    forester: Forester[Step.ID, Step],
     controller: ContextMenu.Controller,
     clipboard: Clipboard[Step],
     completionController: CompletedStep.Controller,
-    editingEnabledSignal: Signal[Boolean],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    editingEnabledSignal: Signal[Boolean]
   ): Binder[L.Element] =
     controller.bind(closer =>
       Signal
@@ -29,7 +29,7 @@ object StepContextMenu {
             if (editingEnabled && clipboard.isSupported)
               L.div(
                 cutButton(stepSignal, clipboard, closer),
-                pasteButton(stepID, clipboard, stepUpdater, closer),
+                pasteButton(stepID, clipboard, forester, closer),
                 changeStatusButton(stepID, isComplete, completionController, closer)
               )
             else
@@ -61,14 +61,10 @@ object StepContextMenu {
   private def pasteButton(
     stepID: Step.ID,
     clipboard: Clipboard[Step],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
+    forester: Forester[Step.ID, Step],
     closer: Observer[ContextMenu.CloseCommand]
   ): L.Button = {
-    val stepMover =
-      stepUpdater.contramap[Step](step => forester =>
-        forester.add(child = step, parent = stepID)
-      )
-
+    val stepMover = Observer[Step](step => forester.add(child = step, parent = stepID))
     Button(
       _.handledWith(_.flatMapSwitch(_ =>
         clipboard.read().asObservable.collectSome

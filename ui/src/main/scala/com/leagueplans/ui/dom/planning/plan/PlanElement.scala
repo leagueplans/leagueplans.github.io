@@ -5,7 +5,6 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.raquo.airstream.core.Signal
-import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.L
 
 import scala.scalajs.js
@@ -20,7 +19,6 @@ object PlanElement {
     forester: Forester[Step.ID, Step],
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
-    stepUpdates: EventBus[Forester[Step.ID, Step] => Unit],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     contextMenuController: ContextMenu.Controller,
     focusController: FocusedStep.Controller,
@@ -31,16 +29,14 @@ object PlanElement {
       L.cls(Styles.plan),
       PlanHeader(
         planName,
-        forester.signal,
+        forester,
         focusController,
         modalController,
-        stepUpdates.writer
       ).amend(L.cls(Styles.header)),
       StepsElement(
         forester,
         subscription,
         editingEnabled,
-        stepUpdates,
         stepsWithErrorsSignal,
         contextMenuController,
         focusController,

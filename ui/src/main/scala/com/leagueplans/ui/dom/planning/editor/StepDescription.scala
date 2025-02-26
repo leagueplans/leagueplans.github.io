@@ -18,15 +18,12 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepDescription {
-  def apply(
-    stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
-  ): L.Div = {
+  def apply(stepSignal: Signal[Step], forester: Forester[Step.ID, Step]): L.Div = {
     val isEditing = Var(false)
 
     L.div(
       editingToggle(isEditing),
-      L.child <-- toParagraph(isEditing, stepSignal, stepUpdater)
+      L.child <-- toParagraph(isEditing, stepSignal, forester)
     )
   }
 
@@ -48,7 +45,7 @@ object StepDescription {
   private def toParagraph(
     isEditing: Var[Boolean],
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    forester: Forester[Step.ID, Step]
   ): Signal[ReactiveHtmlElement[Paragraph]] =
     Signal
       .combine(isEditing, stepSignal)
@@ -56,7 +53,7 @@ object StepDescription {
         case (false, (_, step), _) =>
           staticParagraph(step.description)
         case (true, (_, step), _) =>
-          liveEditingParagraph(step.description, stepSignal, stepUpdater, isEditing.writer)
+          liveEditingParagraph(step.description, stepSignal, forester, isEditing.writer)
       }
 
   private def staticParagraph(description: String): ReactiveHtmlElement[Paragraph] =
@@ -65,7 +62,7 @@ object StepDescription {
   private def liveEditingParagraph(
     initialDescription: String,
     stepSignal: Signal[Step],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit],
+    forester: Forester[Step.ID, Step],
     isEditingUpdater: Observer[Boolean]
   ): ReactiveHtmlElement[Paragraph] = {
     val (p, descriptionSignal) = EditableParagraph(initial = initialDescription)
@@ -73,7 +70,7 @@ object StepDescription {
     p.amend(
       L.cls(Styles.paragraph),
       descriptionSignal.withCurrentValueOf(stepSignal) -->
-        stepUpdater.contramap[(String, Step)]((description, step) => forester =>
+        Observer[(String, Step)]((description, step) =>
           forester.update(step.deepCopy(description = description))
         ),
       L.onMountCallback { ctx =>

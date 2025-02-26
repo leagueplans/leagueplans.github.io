@@ -26,6 +26,9 @@ final class Forester[ID, T](forestState: Var[Forest[ID, T]])(using HasID.Aux[T, 
   def add(child: T, parent: ID): Unit =
     run(_.add(child, parent))
 
+  def add(child: T, maybeParent: Option[ID]): Unit =
+    run(_.addOption(child, maybeParent))
+
   def move(child: ID, newParent: ID): Unit =
     run(_.move(child, Some(newParent)))
     

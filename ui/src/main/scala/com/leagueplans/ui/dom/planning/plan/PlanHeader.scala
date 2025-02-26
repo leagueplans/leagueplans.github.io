@@ -2,7 +2,6 @@ package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.ui.dom.common.{Button, DeletionConfirmer, FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
@@ -16,16 +15,15 @@ import scala.scalajs.js.annotation.JSImport
 object PlanHeader {
   def apply(
     planName: String,
-    forestSignal: Signal[Forest[Step.ID, Step]],
+    forester: Forester[Step.ID, Step],
     focusController: FocusedStep.Controller,
-    modalController: Modal.Controller,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    modalController: Modal.Controller
   ): L.Div = {
-    val addStepObserver = createAddStepObserver(focusController.signal, modalController, stepUpdater)
-    val deleteStepObserver = createDeleteStepObserver(focusController, modalController, stepUpdater)
+    val addStepObserver = createAddStepObserver(focusController.signal, modalController, forester)
+    val deleteStepObserver = createDeleteStepObserver(focusController, modalController, forester)
     val stepSignal =
       Signal
-        .combine(focusController.signal, forestSignal)
+        .combine(focusController.signal, forester.signal)
         .map((maybeStepID, forest) => maybeStepID.flatMap(forest.nodes.get))
 
     L.div(
@@ -59,14 +57,13 @@ object PlanHeader {
   private def createAddStepObserver(
     focusedStep: Signal[Option[Step.ID]],
     modalController: Modal.Controller,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    forester: Forester[Step.ID, Step]
   ): Observer[FormOpener.Command] =
     FormOpener(
       modalController,
-      stepUpdater.contracollect[(Option[Step], Option[Step.ID])] {
-        case (Some(child), Some(parent)) => _.add(child, parent)
-        case (Some(child), None) => _.add(child)
-      },
+      Observer[(Option[Step], Option[Step.ID])]((maybeChild, maybeParent) =>
+        maybeChild.foreach(forester.add(_, maybeParent))
+      ),
       () => {
         val (form, submissions) = NewStepForm()
         (form, submissions.withCurrentValueOf(focusedStep))
@@ -89,9 +86,9 @@ object PlanHeader {
   private def createDeleteStepObserver(
     focusController: FocusedStep.Controller,
     modalController: Modal.Controller,
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    forester: Forester[Step.ID, Step]
   ): Observer[Step] =
-    stepUpdater.contramap[Step](step => forester =>
+    Observer(step =>
       DeletionConfirmer(
         s"\"${step.details.description}\" and all its nested substeps will be permanently deleted." +
           s" This cannot be undone.",

@@ -12,7 +12,7 @@ import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.leagueplans.ui.wrappers.Clipboard
 import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -35,13 +35,13 @@ object StepElement {
     stepID: Step.ID,
     step: Signal[Step],
     substepsSignal: Signal[List[L.HtmlElement]],
+    forester: Forester[Step.ID, Step],
     focusController: FocusedStep.Controller,
     completionController: CompletedStep.Controller,
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
-    clipboard: Clipboard[Step],
-    stepUpdater: Observer[Forester[Step.ID, Step] => Unit]
+    clipboard: Clipboard[Step]
   ): L.Div = {
     val isFocused = focusController.signalFor(stepID)
     val isCompleted = completionController.signalFor(stepID)
@@ -67,18 +67,18 @@ object StepElement {
       StepContextMenu(
         stepID,
         step,
+        forester,
         contextMenuController,
         clipboard,
         completionController,
         editingEnabledSignal,
-        stepUpdater
       ),
       StepDragListeners(
         stepID,
         hasSubsteps = substepsSignal.map(_.nonEmpty),
         header,
         closeSubsteps = animationController.close,
-        stepUpdater
+        forester
       )
     )
   }

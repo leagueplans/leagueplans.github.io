@@ -18,7 +18,6 @@ import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
 import org.scalajs.dom.window
@@ -51,14 +50,12 @@ object PlanningPage {
     )
     val forester = Forester(initialPlan.steps)
     val (focusedStepBinder, focusController) = FocusedStep()
-    val stepUpdates = EventBus[Forester[Step.ID, Step] => Unit]()
 
     val planElement = PlanElement(
       initialPlan.name,
       forester,
       subscription,
       editingEnabled = Val(true),
-      stepUpdates,
       stepsWithErrorsVar.signal.map(_.keySet),
       contextMenuController,
       focusController,
@@ -90,10 +87,10 @@ object PlanningPage {
       )
 
     val editorElement =
-      stateSignal
-        .map(state => state.focusedStep.map(step => (state, step)))
-        .split((_, step) => step.id) { (_, _, signal) =>
-          val stepSignal = signal.map((_, step) => step)
+      Signal
+        .combine(focusController.signal, forester.signal)
+        .map((maybeFocus, forest) => maybeFocus.flatMap(forest.nodes.get))
+        .split(_.id)((_, _, stepSignal) =>
           EditorElement(
             cache,
             itemFuse,
@@ -101,10 +98,10 @@ object PlanningPage {
             Signal.combine(stepSignal, stepsWithErrorsVar).map((step, stepsWithErrors) =>
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
-            stepUpdates.writer,
+            forester,
             modalController
           )
-        }
+        )
 
     val stepsWithErrorsStream =
       Signal
@@ -149,7 +146,7 @@ object PlanningPage {
   ) {
     private val allSteps = plan.toList
 
-    val (progressedSteps, focusedStep) =
+    private val (progressedSteps, focusedStep) =
       focusedStepID match {
         case Some(id) =>
           val (lhs, rhs) = allSteps.span(_.id != id)
@@ -160,7 +157,7 @@ object PlanningPage {
           (allSteps, None)
       }
 
-    val playerPreFocusedStep: Player =
+    private val playerPreFocusedStep: Player =
       effectResolver.resolve(
         initialPlayer,
         progressedSteps.flatMap(_.directEffects.underlying)*

@@ -9,7 +9,6 @@ import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.Signal
-import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
@@ -22,7 +21,6 @@ object StepsElement {
     forester: Forester[Step.ID, Step],
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
-    stepUpdates: EventBus[Forester[Step.ID, Step] => Unit],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     contextMenuController: ContextMenu.Controller,
     focusController: FocusedStep.Controller,
@@ -39,13 +37,13 @@ object StepsElement {
             stepID,
             stepSignal,
             substepsSignal,
+            forester,
             focusController,
             completionController,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
             contextMenuController,
-            clipboard,
-            stepUpdates.writer
+            clipboard
           )
       )
 
@@ -60,8 +58,7 @@ object StepsElement {
       subscriptionEvents --> forester.process,
       subscriptionEvents --> (update => dom.eval(update)),
       forester.updateStream --> subscription.save,
-      forester.updateStream --> (update => dom.eval(update)),
-      stepUpdates.events --> (f => f(forester))
+      forester.updateStream --> (update => dom.eval(update))
     )
   }
 

@@ -5,8 +5,14 @@
    * plan section when the plan is collapsed/empty (e.g. new plans). */
   grid-template-rows: auto auto 1fr;
 
-  border: solid rgba(255, 255, 255, 0.3);
-  /* stepDrag.module.css expects there to only be a top border */
+  /* drag.module.css interacts with this in a pretty hacky way.
+   * In order to get consistent highlighting regardless of whether the user
+   * hovers over the top of the next element or the bottom of the current
+   * element, we need to recolour the border. We can't do this consistently
+   * without having the drag module be the sole controller of the border
+   * colour, since we can't control the ordering of css classes.
+   */
+  border-style: solid;
   border-width: 1px 0 0 0;
 }
 
