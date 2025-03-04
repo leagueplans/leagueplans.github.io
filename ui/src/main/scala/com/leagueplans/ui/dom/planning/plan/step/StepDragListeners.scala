@@ -6,7 +6,7 @@ import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventPropOps.ifUnhandled
 import com.raquo.airstream.core.{EventStream, Observable, Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier}
+import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.keys.EventProp
 import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent}
 
@@ -18,11 +18,19 @@ object StepDragListeners {
 
   private enum DropLocation {
     case Before, Into, After
+
+    def style: String =
+      this match {
+        case DropLocation.Before => Styles.dropBefore
+        case DropLocation.Into => Styles.dropInto
+        case DropLocation.After => Styles.dropAfter
+      }
   }
 
   def apply(
     stepID: Step.ID,
     hasSubsteps: Signal[Boolean],
+    isDraggingObserver: Observer[Boolean],
     header: L.Element,
     closeSubsteps: () => Unit,
     forester: Forester[Step.ID, Step]
@@ -30,30 +38,31 @@ object StepDragListeners {
     val dropLocation = Var(Option.empty[DropLocation])
 
     List(
-      L.cls <-- dropLocation.signal.map {
-        case None => Styles.nonTarget
-        case Some(DropLocation.Before) => Styles.dropBefore
-        case Some(DropLocation.Into) => Styles.dropInto
-        case Some(DropLocation.After) => Styles.dropAfter
-      },
-      onDragStart(stepID, hasSubsteps, header, closeSubsteps),
+      L.child.maybe <-- toStyling(dropLocation.signal),
+      onDragStart(stepID, hasSubsteps, isDraggingObserver, header, closeSubsteps),
       onDragEnterOver(hasSubsteps, dropLocation.someWriter),
       onDragLeave(dropLocation.writer),
-      onDrop(stepID, hasSubsteps, dropLocation.writer, forester)
+      onDragEnd(isDraggingObserver),
+      onDrop(stepID, hasSubsteps, dropLocation.writer, forester),
     )
   }
 
   @js.native @JSImport("/styles/planning/plan/step/drag.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val nonTarget: String = js.native
     val dropBefore: String = js.native
     val dropInto: String = js.native
     val dropAfter: String = js.native
   }
 
+  private def toStyling(dropLocation: Signal[Option[DropLocation]]): Signal[Option[L.Div]] =
+    dropLocation.signal.map(_.map(location =>
+      L.div(L.cls(location.style))
+    ))
+
   private def onDragStart(
     stepID: Step.ID,
     hasSubstepsSignal: Signal[Boolean],
+    isDraggingObserver: Observer[Boolean],
     header: L.Element,
     closeSubsteps: () => Unit
   ): L.Modifier[L.Element] =
@@ -67,6 +76,7 @@ object StepDragListeners {
         event.dataTransfer.setData(contentType, stepID)
         event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
         event.dataTransfer.setDragImage(header.ref, 0, 0)
+        isDraggingObserver.onNext(true)
         if (hasSubsteps) closeSubsteps()
       }
     }
@@ -100,6 +110,13 @@ object StepDragListeners {
       .filter(_.dataTransfer.types.exists(_ == contentType))
       .preventDefault
       .mapToStrict(None) --> locationObserver
+
+  private def onDragEnd(isDraggingObserver: Observer[Boolean]): L.Modifier[L.Element] =
+    L.onDragEnd
+      .ifUnhandled
+      .filter(_.dataTransfer.types.exists(_ == contentType))
+      .preventDefault
+      .mapToStrict(false) --> isDraggingObserver
 
   private def onDrop(
     stepID: Step.ID,

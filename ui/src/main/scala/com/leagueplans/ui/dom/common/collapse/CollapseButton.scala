@@ -15,10 +15,12 @@ object CollapseButton {
   def apply(
     controller: InvertibleAnimationController,
     tooltip: String,
-    screenReaderDescription: String
+    screenReaderDescription: String,
+    iconModifiers: L.Modifier[L.SvgElement]
   ): L.Button =
     CollapseButton(
       FontAwesome.icon(FreeSolid.faCaretRight).amend(
+        iconModifiers,
         L.svg.transform.maybe(Option.when(controller.isOpen)("rotate(90)")),
         controller(
           toOpen = rotate(_, targetRotation = 90),

@@ -2,13 +2,14 @@ package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub}
-import com.leagueplans.ui.dom.planning.forest.{DOMForestUpdateEvaluator, Forester}
+import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.Signal
+import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
@@ -28,18 +29,30 @@ object StepsElement {
   ): ReactiveHtmlElement[OList] = {
     val clipboard = Clipboard[Step]("step", toastPublisher, Decoder.decodeMessage)
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
+    // Performance suffers a lot when a step is being dragged while the css for allowing step
+    // headers to stick to the top of the plan is enabled. Dragging a step onto a stickied step
+    // doesn't work too well either, since the box-shadows don't wrap around the header.
+    //
+    // As a result, we track whether we're dragging a step, and disable the sticky-step css
+    // when we are.
+    val isDragging = Var(false)
 
     val dom =
-      DOMForestUpdateEvaluator(
+      ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])](
         forester.signal.now(),
-        (stepID, stepSignal, substepsSignal) =>
+        (stepID, stepSignal, parentSignal, substepsSignal) =>
           StepElement(
             stepID,
             stepSignal,
-            substepsSignal,
+            parentSignal.flatMapSwitch {
+              case Some((_, positionOffset)) => positionOffset
+              case None => Signal.fromValue(0)
+            },
+            substepsSignal.map(_.map((substep, _) => substep)),
             forester,
             focusController,
             completionController,
+            isDragging,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
             contextMenuController,
@@ -70,10 +83,10 @@ object StepsElement {
 
   private def toSteps(
     forester: Forester[Step.ID, Step],
-    dom: DOMForestUpdateEvaluator[Step.ID, Step]
+    dom: ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])]
   ): Signal[List[L.LI]] =
     forester.signal.map(_.roots).split(identity)((step, _, _) =>
-      dom.state.get(step).map((_, _, element) =>
+      dom.get(step).map((element, _) =>
         L.li(L.cls(Styles.rootStep), element)
       )
     ).map(_.flatten)

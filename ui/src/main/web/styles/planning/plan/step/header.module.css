@@ -1,4 +1,15 @@
-.header {
+.header {}
+
+.substepsToggleIcon {
+  color: white;
+}
+
+.substepsToggle {
+  border: none;
+  background: none;
+}
+
+.title {
   display: flex;
 }
 
@@ -7,11 +18,11 @@
   padding: 0.3rem;
 }
 
-.title {
+.description {
   flex-grow: 1;
   padding: 0.3rem 0 0.3rem 0.3rem;
 }
 
-.dragIcon + .title {
+.dragIcon + .description {
   padding-left: 0;
 }

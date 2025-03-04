@@ -1,39 +1,30 @@
-/* Relies on the border css in the step module */
-.regularTopBorder {
-  border-top-color: rgba(255, 255, 255, 0.3);
-}
-
-.nonTarget {
-  composes: regularTopBorder;
-}
-
 .dropTarget {
+  position: absolute;
+  width: 100%;
+  height: 100%;
   /* Required to prevent the box-shadows from being hidden by neighbouring elements */
-  position: relative;
   z-index: 1;
+
+  pointer-events: none;
 }
 
 .dropBefore {
   composes: dropTarget;
 
-  /* Relies on the border css in the step module. We don't paint an inset shadow because of the border */
-  border-top-color: yellow;
-  box-shadow: 0 -1px yellow;
+  box-shadow: 0 -2px yellow;
 }
 
 .dropInto {
   composes: dropTarget;
 
-  /* Relies on the border css in the step module. We don't paint a top inset shadow because of the border */
-  border-top-color: yellow;
   box-shadow:
-    0 -1px yellow,
+    0 -2px yellow,
     -1px 0 yellow, 1px 0 yellow inset,
     0 1px yellow, 0 -1px yellow inset;
 }
 
 .dropAfter {
-  composes: dropTarget, regularTopBorder;
+  composes: dropTarget;
 
   box-shadow: 0 1px yellow, 0 -1px yellow inset;
 }
