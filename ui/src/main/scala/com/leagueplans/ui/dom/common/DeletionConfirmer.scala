@@ -11,17 +11,18 @@ object DeletionConfirmer {
   def apply(
     warningText: String,
     deleteButtonText: String,
-    modalController: Modal.Controller,
+    modal: Modal,
     deletionObserver: Observer[Unit]
-  ): Observer[FormOpener.Command] =
+  ): FormOpener =
     FormOpener(
-      modalController,
-      deletionObserver,
-      () => createForm(warningText, deleteButtonText, modalController)
+      modal,
+      createForm(warningText, deleteButtonText, modal),
+      deletionObserver
     )
 
   @js.native @JSImport("/styles/common/deletionConfirmer.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val form: String = js.native
     val header: String = js.native
     val description: String = js.native
     val buttons: String = js.native
@@ -33,11 +34,12 @@ object DeletionConfirmer {
   private def createForm(
     warningText: String,
     deleteButtonText: String,
-    modalController: Modal.Controller
+    modal: Modal
   ): (L.FormElement, Observable[Unit]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
 
     val form = emptyForm.amend(
+      L.cls(Styles.form),
       L.div(L.cls(Styles.header), "Please confirm deletion"),
       L.p(
         L.cls(Styles.description),
@@ -45,7 +47,7 @@ object DeletionConfirmer {
       ),
       L.div(
         L.cls(Styles.buttons),
-        CancelModalButton(modalController).amend(
+        CancelModalButton(modal).amend(
           L.cls(Styles.cancel, Styles.button),
           L.onMountFocus
         ),

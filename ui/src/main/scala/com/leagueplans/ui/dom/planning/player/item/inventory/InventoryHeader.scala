@@ -11,7 +11,7 @@ import scala.scalajs.js.annotation.JSImport
 object InventoryHeader {
   def apply(
     stacks: Signal[List[(Stack, List[Int])]],
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Element =
     L.div(
@@ -25,11 +25,7 @@ object InventoryHeader {
         ),
         "Inventory",
       ),
-      ExportBankTagsButton(
-        stacks,
-        modalController, 
-        toastPublisher
-      ).amend(L.cls(Styles.exportButton))
+      ExportBankTagsButton(stacks, modal, toastPublisher).amend(L.cls(Styles.exportButton))
     )
 
   @js.native @JSImport("/images/inventory-icon.png", JSImport.Default)

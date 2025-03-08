@@ -18,12 +18,12 @@ object DeleteButton {
     name: String,
     storage: StorageClient,
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Button = {
     val confirmer = DeletionConfirmer(
       s"\"$name\" will be permanently deleted. This cannot be undone.",
       "Delete plan",
-      modalController,
+      modal,
       Observer(_ => triggerDelete(id, storage, toastPublisher))
     )
 

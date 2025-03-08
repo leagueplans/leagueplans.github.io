@@ -17,7 +17,7 @@ object AddItemForm {
   def apply(
     target: Depository.Kind,
     items: Fuse[Item],
-    modalController: Modal.Controller
+    modal: Modal
   ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (quantityNodes, quantitySignal) = quantityInput()
@@ -36,7 +36,7 @@ object AddItemForm {
       L.div(
         L.cls(Styles.modalButtons),
         submitButton.amend(L.cls(Styles.modalButton)),
-        CancelModalButton(modalController).amend(L.cls(Styles.modalButton))
+        CancelModalButton(modal).amend(L.cls(Styles.modalButton))
       )
     )
     val submissions = effectSubmissions(target, formSubmissions, itemSignal, quantitySignal, noteSignal)

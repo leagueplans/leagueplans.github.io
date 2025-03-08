@@ -1,7 +1,4 @@
 .dialog {
+  border-radius: 1rem;
   padding: 0;
-}
-
-.container {
-  padding: 1em;
 }

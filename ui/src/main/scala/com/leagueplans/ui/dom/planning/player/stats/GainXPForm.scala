@@ -16,6 +16,7 @@ object GainXPForm {
     val (xpInputNodes, xpSignal) = xpInput()
 
     val form = emptyForm.amend(
+      L.cls(Styles.form),
       SkillIcon(skill).amend(L.cls(Styles.icon)),
       xpInputNodes,
       submitButton.amend(L.cls(Styles.input))
@@ -27,6 +28,7 @@ object GainXPForm {
 
   @js.native @JSImport("/styles/planning/player/stats/gainXPForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
+    val form: String = js.native
     val label: String = js.native
     val input: String = js.native
     val icon: String = js.native

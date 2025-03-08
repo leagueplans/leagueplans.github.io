@@ -27,7 +27,7 @@ object  EditableParagraph {
             .filter(_.inputType == InputType.insertParagraph)
             .filterByTarget(_ == ctx.ref)
             .handled --> ctx.ref.blur(),
-          L.onKey(KeyCode.Escape).handled --> ctx.ref.blur()
+          L.onKey(KeyValue.Escape).handled --> ctx.ref.blur()
         ))
       )
 

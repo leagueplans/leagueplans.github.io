@@ -4,7 +4,7 @@ import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.raquo.laminar.api.{L, eventPropToProcessor}
 import com.raquo.laminar.keys.EventProcessor
 import com.raquo.laminar.modifiers.Binder
-import org.scalajs.dom.{KeyCode, KeyboardEvent, MouseEvent}
+import org.scalajs.dom.{KeyValue, KeyboardEvent, MouseEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -21,7 +21,7 @@ object Button {
           .asInstanceOf[EventProcessor[MouseEvent | KeyboardEvent, MouseEvent | KeyboardEvent]]
       ),
       onClick(
-        L.onKey(KeyCode.Enter)
+        L.onKey(KeyValue.Enter)
           .asInstanceOf[EventProcessor[MouseEvent | KeyboardEvent, MouseEvent | KeyboardEvent]]
       )
     )

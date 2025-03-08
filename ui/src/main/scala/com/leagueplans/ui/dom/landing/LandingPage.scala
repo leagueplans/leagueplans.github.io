@@ -19,12 +19,12 @@ object LandingPage {
   def apply(
     planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div =
     L.div(
       L.cls(Styles.page),
       changeLog(),
-      plansForm(planObserver, toastPublisher, modalController)
+      plansForm(planObserver, toastPublisher, modal)
     )
 
   @js.native @JSImport("/styles/landing/landingPage.module.css", JSImport.Default)
@@ -48,7 +48,7 @@ object LandingPage {
   private def plansForm(
     planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div = {
     val storage = StorageClient()
     val newPlanForm = NewPlanForm(storage, planObserver, toastPublisher)
@@ -57,7 +57,7 @@ object LandingPage {
       L.cls(Styles.content),
       L.p(L.cls(Styles.intro), "Start a new plan from scratch"),
       newPlanForm,
-      L.child <-- toExistingPlans(storage, planObserver, toastPublisher, modalController),
+      L.child <-- toExistingPlans(storage, planObserver, toastPublisher, modal),
       L.p(
         L.cls(Styles.disclaimer),
         "Plans are saved against your browser's local storage. As a result, wiping your" +
@@ -70,7 +70,7 @@ object LandingPage {
     storage: StorageClient,
     planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): Signal[L.Node] = {
     val hasRefreshedState = Var(false)
     storage
@@ -79,7 +79,7 @@ object LandingPage {
       .splitOne((plans, hasRefreshed) => (hasRefreshed, plans.isEmpty)) {
         case ((false, true), _, _) => toLoadingNode(storage, toastPublisher, hasRefreshedState)
         case ((true, true), _, _) => L.emptyNode
-        case ((_, false), _, _) => toMenu(storage, planObserver, toastPublisher, modalController)
+        case ((_, false), _, _) => toMenu(storage, planObserver, toastPublisher, modal)
       }
   }
 
@@ -108,7 +108,7 @@ object LandingPage {
     storage: StorageClient,
     planObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div =
     L.div(
       L.cls(Styles.menu),
@@ -117,7 +117,7 @@ object LandingPage {
         storage,
         planObserver,
         toastPublisher,
-        modalController
+        modal
       ).amend(L.cls(Styles.menuContent))
     )
 }

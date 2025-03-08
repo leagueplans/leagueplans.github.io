@@ -18,6 +18,8 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StepDescription {
+  val liveEditID: String = "live-edit-step-description"
+  
   def apply(stepSignal: Signal[Step], forester: Forester[Step.ID, Step]): L.Div = {
     val isEditing = Var(false)
 
@@ -68,6 +70,7 @@ object StepDescription {
     val (p, descriptionSignal) = EditableParagraph(initial = initialDescription)
 
     p.amend(
+      L.idAttr(liveEditID),
       L.cls(Styles.paragraph),
       descriptionSignal.withCurrentValueOf(stepSignal) -->
         Observer[(String, Step)]((description, step) =>

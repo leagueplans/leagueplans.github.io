@@ -18,10 +18,10 @@ object Visualiser {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val characterTab = View.Tab("Character", CharacterTab(playerSignal, expMultiplierStrategySignal, cache, itemFuse, effectObserverSignal, contextMenuController, modalController, toastPublisher))
+    val characterTab = View.Tab("Character", CharacterTab(playerSignal, expMultiplierStrategySignal, cache, itemFuse, effectObserverSignal, contextMenuController, modal, toastPublisher))
     val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, contextMenuController))
 
     if (isLeague)

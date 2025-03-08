@@ -19,7 +19,7 @@ object StatsElement {
     playerSignal: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): ReactiveHtmlElement[OList] =
     StatsElement(
       playerSignal.map(player =>
@@ -33,7 +33,7 @@ object StatsElement {
       ),
       effectObserver,
       contextMenuController,
-      modalController
+      modal
     )
 
   private val orderedSkills: List[Skill] =
@@ -52,10 +52,10 @@ object StatsElement {
     statsSignal: Signal[List[Stat]],
     effectObserver: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): ReactiveHtmlElement[OList] = {
     val statPanes = statsSignal.split(_.skill)((_, _, signal) =>
-      L.li(StatPane(signal, effectObserver, contextMenuController, modalController))
+      L.li(StatPane(signal, effectObserver, contextMenuController, modal))
     )
 
     L.ol(

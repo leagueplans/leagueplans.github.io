@@ -11,9 +11,9 @@ import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import org.scalajs.dom.KeyCode
+import org.scalajs.dom.{KeyValue, document}
 
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
@@ -148,28 +148,41 @@ object StepElement {
   ): L.Modifier[L.HtmlElement] =
     List(
       L.onClick.handledAs(stepID) --> focusController.toggle,
-      L.onKey(KeyCode.Enter).handledAs(stepID) --> focusController.toggle
+      L.onKey(KeyValue.Enter).handledAs(stepID) --> focusController.toggle,
+      L.inContext[L.HtmlElement](ctx =>
+        focusController.signalFor(stepID).changes --> {
+          case true => ctx.ref.focus()
+          case false => ctx.ref.blur()
+        }
+      )
     )
 
   private def toHoverListeners(isHovering: Var[Boolean]): L.Modifier[L.HtmlElement] =
     List(
       L.onMouseOver.handledAs(true) --> isHovering,
-      L.onMouseOut.handledAs(false) --> isHovering
+      L.inContext[L.HtmlElement](ctx =>
+        L.onMouseOut.handledAs(
+          document.activeElement == ctx.ref && document.hasFocus()
+        ) --> isHovering
+      ),
+      L.onMouseOut.handledAs(false) --> isHovering,
+      L.onFocus.handledAs(true) --> isHovering,
+      L.onBlur.handledAs(false) --> isHovering
     )
 
   private def toChildOffset(
     animationController: InvertibleAnimationController,
+    parentOffsetSignal: Signal[Int],
     headerHeightSignal: Signal[Int],
-    parentOffsetSignal: Signal[Int]
   ): Signal[Int] =
     Signal.combine(
       animationController.statusSignal,
-      headerHeightSignal,
-      parentOffsetSignal
+      parentOffsetSignal,
+      headerHeightSignal
     ).map {
-      case (InvertibleAnimationController.Status.Open, headerHeight, parentOffset) =>
+      case (InvertibleAnimationController.Status.Open, offset, headerHeight) =>
         // Not sure why, but without the -1, there's sometimes a gap between the elements
-        headerHeight + parentOffset - 1
+        offset + headerHeight - 1
       case _ =>
         0
     }

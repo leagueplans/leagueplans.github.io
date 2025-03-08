@@ -1,5 +1,6 @@
 .form {
   display: grid;
+  padding: 1rem;
 }
 
 .inputs {

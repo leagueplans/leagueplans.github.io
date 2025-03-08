@@ -16,11 +16,11 @@ import scala.scalajs.js.annotation.JSImport
 object ExportBankTagsButton {
   def apply(
     stacksSignal: Signal[List[(Stack, List[Int])]],
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Button =
     Button(
-      _.handled --> toFormOpener(stacksSignal, modalController, toastPublisher)
+      _.handled --> toFormOpener(stacksSignal, modal, toastPublisher)
     ).amend(
       L.cls(Styles.button),
       L.img(L.cls(Styles.icon), L.src(rlLogo), L.alt("RuneLite logo")),
@@ -41,15 +41,15 @@ object ExportBankTagsButton {
 
   private def toFormOpener(
     stacksSignal: Signal[List[(Stack, List[Int])]],
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
-  ): Observer[FormOpener.Command] = {
+  ): FormOpener = {
     val (form, formSubmissions) = ExportBankTagsForm()
-
     FormOpener(
-      modalController,
-      publish(toastPublisher),
-      () => (form, toClipboardStream(formSubmissions, stacksSignal))
+      modal,
+      form,
+      toClipboardStream(formSubmissions, stacksSignal),
+      publish(toastPublisher)
     )
   }
 

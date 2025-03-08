@@ -21,13 +21,13 @@ import scala.scalajs.js.annotation.JSImport
 object Bootstrap {
   def apply(): L.Div = {
     val (contextMenu, contextMenuController) = ContextMenu()
-    val (modal, modalController) = Modal()
+    val (modalElement, modalController) = Modal()
     val (toastHub, toastPublisher) = ToastHub()
 
     L.div(
       L.idAttr("bootstrap"),
       contextMenu,
-      modal,
+      modalElement,
       toastHub,
       L.child <-- toPageSignal(contextMenuController, modalController, toastPublisher),
       EventStream.unit(emitOnce = true).delay(2000) --> (_ =>
@@ -38,7 +38,7 @@ object Bootstrap {
 
   private def toPageSignal(
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): Signal[L.Div] = {
     val planBus = EventBus[(Plan, PlanSubscription)]()
@@ -51,11 +51,11 @@ object Bootstrap {
           subscription,
           cache,
           contextMenuController,
-          modalController,
+          modal,
           toastPublisher
         )
       )
-      .toSignal(initial = LandingPage(planBus.writer, toastPublisher, modalController))
+      .toSignal(initial = LandingPage(planBus.writer, toastPublisher, modal))
   }
 
   private def loadCache(toastPublisher: ToastHub.Publisher): EventStream[Cache] =

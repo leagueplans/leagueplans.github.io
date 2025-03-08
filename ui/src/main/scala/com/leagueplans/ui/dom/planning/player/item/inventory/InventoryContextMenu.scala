@@ -14,30 +14,27 @@ object InventoryContextMenu {
     itemFuse: Fuse[Item],
     effectObserver: Observer[AddItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Button =
-    toElement(
-      toAddItemFormOpener(itemFuse, effectObserver, modalController),
-      menuCloser
-    )
+    toElement(toAddItemFormOpener(itemFuse, effectObserver, modal), menuCloser)
 
   private def toElement(
-    addItemFormOpener: Observer[FormOpener.Command],
+    addItemFormOpener: FormOpener,
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
-    Button(_.handled --> Observer.combine(addItemFormOpener, menuCloser)).amend("Add item")
+    Button(_.handled --> Observer.combine(
+      addItemFormOpener.toObserver,
+      menuCloser
+    )).amend("Add item")
 
   private def toAddItemFormOpener(
     itemFuse: Fuse[Item],
     effectObserver: Observer[AddItem],
-    modalController: Modal.Controller
-  ): Observer[FormOpener.Command] =
+    modal: Modal
+  ): FormOpener =
     FormOpener(
-      modalController,
-      effectObserver,
-      () => {
-        val (form, formSubmissions) = AddItemForm(Depository.Kind.Inventory, itemFuse, modalController)
-        (form, formSubmissions.collect { case Some(effect) => effect })
-      }
+      modal,
+      AddItemForm(Depository.Kind.Inventory, itemFuse, modal),
+      effectObserver.contracollect[Option[AddItem]] { case Some(effect) => effect }
     )
 }

@@ -14,7 +14,7 @@ object RemoveItemForm {
   ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (input, label, quantitySignal) = quantityInput(heldQuantity)
-    val form = emptyForm.amend(label, input, submitButton)
+    val form = emptyForm.amend(L.padding("1rem"), label, input, submitButton)
     (form, effectSubmissions(stack, depository, quantitySignal, formSubmissions))
   }
 

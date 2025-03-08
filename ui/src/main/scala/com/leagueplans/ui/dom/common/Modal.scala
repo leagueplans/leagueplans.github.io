@@ -11,26 +11,13 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Modal {
-  final class Controller(underlying: WriteBus[Option[L.Element]]) extends Sink[Option[L.Element]] {
-    export underlying.toObserver
-    
-    def show(content: L.Element): Unit =
-      underlying.onNext(Some(content))
-
-    def close(): Unit =
-      underlying.onNext(None)
-  }
-  
-  def apply(): (ReactiveHtmlElement[Dialog], Modal.Controller) = {
+  def apply(): (ReactiveHtmlElement[Dialog], Modal) = {
     val content = EventBus[Option[L.Element]]()
 
-    val node =
+    val element =
       L.dialogTag(
         L.cls(Styles.dialog),
-        L.div(
-          L.cls(Styles.container),
-          L.child <-- content.events.map(_.getOrElse(L.emptyNode)),
-        ),
+        L.child.maybe <-- content.events,
         L.inContext(node =>
           List(
             content.events.map(_.nonEmpty) --> {
@@ -43,12 +30,21 @@ object Modal {
         L.eventProp("close").mapToStrict(None) --> content
       )
 
-    (node, Controller(content.writer))
+    (element, new Modal(content.writer))
   }
 
   @js.native @JSImport("/styles/common/modal.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val dialog: String = js.native
-    val container: String = js.native
   }
+}
+
+final class Modal private(underlying: WriteBus[Option[L.Element]]) extends Sink[Option[L.Element]] {
+  export underlying.toObserver
+
+  def show(content: L.Element): Unit =
+    underlying.onNext(Some(content))
+
+  def close(): Unit =
+    underlying.onNext(None)
 }

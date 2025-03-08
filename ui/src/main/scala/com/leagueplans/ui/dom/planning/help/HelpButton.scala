@@ -10,8 +10,8 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object HelpButton {
-  def apply(modalController: Modal.Controller): L.Button =
-    Button(_.handledAs(Some(modalContents())) --> modalController).amend(
+  def apply(modal: Modal): L.Button =
+    Button(_.handledAs(Some(modalContents())) --> modal).amend(
       L.cls(Styles.button),
       FontAwesome.icon(FreeRegular.faCircleQuestion).amend(L.svg.cls(Styles.icon)),
     )

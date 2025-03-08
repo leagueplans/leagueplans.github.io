@@ -11,7 +11,6 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 //TODO Context menus
-//TODO Hotkeys
 //TODO Cross plan copy/paste
 object PlanElement {
   def apply(
@@ -22,18 +21,18 @@ object PlanElement {
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     contextMenuController: ContextMenu.Controller,
     focusController: FocusedStep.Controller,
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
-  ): L.Div =
+  ): L.Div = {
+    val newStepForm = NewStepForm(forester, modal)
+    val deleteStepForm = DeleteStepForm(forester, focusController, modal)
+
     L.div(
       L.cls(Styles.plan),
-      PlanHeader(
-        planName,
-        forester,
-        focusController,
-        modalController,
-      ).amend(L.cls(Styles.header)),
-      StepsElement(
+      PlanHeader(planName, focusController, modal, newStepForm, deleteStepForm).amend(
+        L.cls(Styles.header)
+      ),
+      InteractiveForest(
         forester,
         subscription,
         editingEnabled,
@@ -41,8 +40,10 @@ object PlanElement {
         contextMenuController,
         focusController,
         toastPublisher
-      ).amend(L.cls(Styles.steps))
+      ).amend(L.cls(Styles.steps)),
+      HotkeyModifiers(focusController, newStepForm, deleteStepForm)
     )
+  }
 
   @js.native @JSImport("/styles/planning/plan/plan.module.css", JSImport.Default)
   private object Styles extends js.Object {

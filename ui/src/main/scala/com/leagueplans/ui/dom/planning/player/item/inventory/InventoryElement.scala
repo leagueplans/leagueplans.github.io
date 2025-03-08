@@ -21,19 +21,19 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
     
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
-      InventoryHeader(stacks, modalController, toastPublisher),
+      InventoryHeader(stacks, modal, toastPublisher),
       StackList(
         stacks,
-        toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modalController)
+        toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modal)
       ).amend(L.cls(Styles.contents, DepositoryStyles.contents)),
-      bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modalController)
+      bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modal)
     )
   }
 
@@ -58,7 +58,7 @@ object InventoryElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
     StackElement(stack, stackSizeSignal).amend(
       bindItemContextMenu(
@@ -68,7 +68,7 @@ object InventoryElement {
         playerSignal,
         effectObserverSignal,
         contextMenuController,
-        modalController
+        modal
       )
     )
 
@@ -76,12 +76,12 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       effectObserverSignal.map(maybeEffectObserver =>
         maybeEffectObserver.map(effectObserver =>
-          InventoryContextMenu(itemFuse, effectObserver, menuCloser, modalController)
+          InventoryContextMenu(itemFuse, effectObserver, menuCloser, modal)
         )
       )
     )
@@ -93,14 +93,14 @@ object InventoryElement {
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(stackSizeSignal, effectObserverSignal)
         .map((stackSize, maybeEffectObserver) =>
           maybeEffectObserver.map(effectObserver =>
-            InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modalController)
+            InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modal)
           )
         )
     )

@@ -16,12 +16,12 @@ object BankItemContextMenu {
     stackSize: Int,
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div =
     L.div(
-      withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modalController),
+      withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modal),
       Option.when(item.noteable)(
-        withdrawButton(item, stackSize, note = true, effectObserver, menuCloser, modalController)
+        withdrawButton(item, stackSize, note = true, effectObserver, menuCloser, modal)
       )
     )
 
@@ -31,11 +31,11 @@ object BankItemContextMenu {
     note: Boolean,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Node = {
     val observer =
       if (stackSize > 1)
-        toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modalController)
+        toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modal)
       else
         effectObserver.contramap[Unit](_ =>
           MoveItem(
@@ -58,19 +58,17 @@ object BankItemContextMenu {
     heldQuantity: Int,
     note: Boolean,
     effectObserver: Observer[MoveItem],
-    modalController: Modal.Controller
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = MoveItemForm(
-      Stack(item, noted = false),
-      heldQuantity,
-      Depository.Kind.Bank,
-      Depository.Kind.Inventory,
-      note
-    )
+    modal: Modal
+  ): Observer[Any] =
     FormOpener(
-      modalController,
-      effectObserver,
-      () => (form, formSubmissions.collect { case Some(effect) => effect })
-    )
-  }
+      modal: Modal,
+      MoveItemForm(
+        Stack(item, noted = false),
+        heldQuantity,
+        Depository.Kind.Bank,
+        Depository.Kind.Inventory,
+        note
+      ),
+      effectObserver.contracollect[Option[MoveItem]] { case Some(effect) => effect }
+    ).toObserver
 }

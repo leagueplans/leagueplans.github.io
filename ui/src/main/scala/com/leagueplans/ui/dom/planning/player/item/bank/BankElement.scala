@@ -19,7 +19,7 @@ object BankElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div =
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
@@ -30,7 +30,7 @@ object BankElement {
       ),
       StackList(
         bankSignal.map(cache.itemise),
-        toStackElement(effectObserverSignal, contextMenuController, modalController)
+        toStackElement(effectObserverSignal, contextMenuController, modal)
       ).amend(L.cls(Styles.contents, DepositoryStyles.contents))
     )
 
@@ -60,7 +60,7 @@ object BankElement {
   private def toStackElement(
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
     StackElement(stack, stackSizeSignal).amend(
       bindContextMenu(
@@ -68,7 +68,7 @@ object BankElement {
         stackSizeSignal,
         effectObserverSignal,
         contextMenuController,
-        modalController
+        modal
       )
     )
 
@@ -77,14 +77,14 @@ object BankElement {
     stackSizeSignal: Signal[Int],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(effectObserverSignal, stackSizeSignal)
         .map((maybeEffectObserver, stackSize) =>
           maybeEffectObserver.map(effectObserver =>
-            BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modalController)
+            BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modal)
           )
         )
     )

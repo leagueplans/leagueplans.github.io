@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.common
 
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
+import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.laminar.api.{L, textToTextNode}
 
 object CancelModalButton {
-  def apply(modalController: Modal.Controller): L.Button =
-    Button(_.handledAs(None) --> modalController).amend("Cancel")
+  def apply(modal: Modal): L.Button =
+    Button(_.handled --> (_ => modal.close())).amend("Cancel")
 }

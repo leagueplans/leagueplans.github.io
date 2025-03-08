@@ -22,7 +22,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div =
     L.div(
       L.cls(Styles.editor),
@@ -31,7 +31,7 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         L.child <-- toEffects(cache, stepSignal, forester),
-        L.child <-- toRequirements(cache, itemFuse, stepSignal, forester, modalController)
+        L.child <-- toRequirements(cache, itemFuse, stepSignal, forester, modal)
       )
     )
 
@@ -80,7 +80,7 @@ object EditorElement {
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
-    modalController: Modal.Controller
+    modal: Modal
   ): Signal[L.Div] =
     stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
       Section(
@@ -91,7 +91,7 @@ object EditorElement {
           forester.update(stepID, _.deepCopy(requirements = requirementOrdering))
         ),
         DescribedRequirement(_, cache),
-        Some(newRequirementObserver(itemFuse, stepID, modalController, forester)),
+        Some(newRequirementObserver(itemFuse, stepID, modal, forester)),
         Observer[Requirement](deletedRequirement =>
           forester.update(stepID, step => step.deepCopy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
         )
@@ -101,16 +101,14 @@ object EditorElement {
   private def newRequirementObserver(
     itemFuse: Fuse[Item],
     stepID: Step.ID,
-    modalController: Modal.Controller,
+    modal: Modal,
     forester: Forester[Step.ID, Step]
-  ): Observer[FormOpener.Command] =
+  ): Observer[Any] =
     FormOpener(
-      modalController,
-      Observer[Option[Requirement]](maybeRequirement =>
-        maybeRequirement.foreach(newRequirement =>
-          forester.update(stepID, step => step.deepCopy(requirements = step.requirements :+ newRequirement))
-        )
-      ),
-      () => NewRequirementForm(itemFuse)
-    )
+      modal,
+      NewRequirementForm(itemFuse),
+      _.foreach(newRequirement =>
+        forester.update(stepID, step => step.deepCopy(requirements = step.requirements :+ newRequirement))
+      )
+    ).toObserver
 }

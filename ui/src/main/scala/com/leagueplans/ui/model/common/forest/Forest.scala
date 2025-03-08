@@ -105,18 +105,37 @@ final class Forest[ID, T] private[forest](
     }
   }
 
+  def subforest(id: ID): Forest[ID, T] = {
+    val (subToChildren, subToParent) = 
+      recurse(initial = List(id))(
+        (parent, children) => (Map(parent -> children), children.map(_ -> parent).toMap),
+      )(using Monoid.instance(
+        (Map.empty, Map.empty),
+        { case ((toChildren1, toParent1), (toChildren2, toParent2)) =>
+          (toChildren1 ++ toChildren2, toParent1 ++ toParent2)
+        }
+      ))
+
+    Forest(
+      nodes.view.filterKeys(subToChildren.contains).toMap,
+      subToParent,
+      subToChildren,
+      roots = List(id).filter(subToChildren.contains)
+    )
+  }
+
   def toList: List[T] =
-    recurse((id, _) => List(id)).flatMap(nodes.get)
+    recurse()((id, _) => List(id)).flatMap(nodes.get)
 
   def foreachParent(f: (T, List[T]) => Unit): Unit =
-    recurse((id, children) =>
+    recurse()((id, children) =>
       nodes.get(id).foreach(parent =>
         f(parent, children.flatMap(nodes.get))
       )
     )
 
-  def recurse[Acc : Monoid](f: (ID, List[ID]) => Acc): Acc =
-    recursionHelper(acc = Monoid[Acc].empty, remaining = roots)(f)
+  def recurse[Acc : Monoid](initial: List[ID] = roots)(f: (ID, List[ID]) => Acc): Acc =
+    recursionHelper(acc = Monoid[Acc].empty, initial)(f)
 
   @tailrec
   private def recursionHelper[Acc : Monoid](

@@ -17,7 +17,7 @@ object MoveItemForm {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val (quantityInput, quantityLabel, quantitySignal) = toQuantityInput(heldQuantity)
 
-    val form = emptyForm.amend(quantityLabel, quantityInput, submitButton)
+    val form = emptyForm.amend(L.padding("1rem"), quantityLabel, quantityInput, submitButton)
     (form, effectSubmissions(stack, source, target, noteInTarget, quantitySignal, formSubmissions))
   }
 

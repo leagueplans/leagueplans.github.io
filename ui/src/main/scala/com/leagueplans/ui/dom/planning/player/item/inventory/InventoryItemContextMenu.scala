@@ -23,18 +23,18 @@ object InventoryItemContextMenu {
     playerSignal: Signal[Player],
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div = {
     val heldQuantitySignal = playerSignal.map(
       _.get(inventory).contents.getOrElse((stack.item.id, stack.noted), 0)
     )
 
     L.div(
-      L.child <-- heldQuantitySignal.map(bankButton(stack, _, effectObserver, menuCloser, modalController)),
+      L.child <-- heldQuantitySignal.map(bankButton(stack, _, effectObserver, menuCloser, modal)),
       L.child <-- playerSignal.map(player =>
         equipButton(stack, cache, stackSize, player, effectObserver, menuCloser)
       ),
-      L.child <-- heldQuantitySignal.map(removeButton(stack, _, effectObserver, menuCloser, modalController)),
+      L.child <-- heldQuantitySignal.map(removeButton(stack, _, effectObserver, menuCloser, modal)),
     )
   }
 
@@ -43,14 +43,14 @@ object InventoryItemContextMenu {
     heldQuantity: Int,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Node =
     stack.item.bankable match {
       case Bankable.No => L.emptyNode
       case _: Bankable.Yes =>
         val observer =
           if (heldQuantity > 1)
-            toBankItemFormOpener(stack, heldQuantity, effectObserver, modalController)
+            toBankItemFormOpener(stack, heldQuantity, effectObserver, modal).toObserver
           else
             effectObserver.contramap[Unit](_ =>
               MoveItem(
@@ -70,21 +70,19 @@ object InventoryItemContextMenu {
     stack: Stack,
     heldQuantity: Int,
     effectObserver: Observer[MoveItem],
-    modalController: Modal.Controller
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = MoveItemForm(
-      stack,
-      heldQuantity,
-      inventory,
-      Depository.Kind.Bank,
-      noteInTarget = false
-    )
+    modal: Modal
+  ): FormOpener =
     FormOpener(
-      modalController,
-      effectObserver,
-      () => (form, formSubmissions.collect { case Some(effect) => effect })
+      modal,
+      MoveItemForm(
+        stack,
+        heldQuantity,
+        inventory,
+        Depository.Kind.Bank,
+        noteInTarget = false
+      ),
+      effectObserver.contracollect[Option[MoveItem]] { case Some(effect) => effect }
     )
-  }
 
   private def equipButton(
     stack: Stack,
@@ -154,11 +152,11 @@ object InventoryItemContextMenu {
     heldQuantity: Int,
     effectObserver: Observer[AddItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Button = {
     val observer =
       if (heldQuantity > 1)
-        toRemoveItemFormOpener(stack, heldQuantity, effectObserver, modalController)
+        toRemoveItemFormOpener(stack, heldQuantity, effectObserver, modal).toObserver
       else
         effectObserver.contramap[Unit](_ => AddItem(stack.item.id, -heldQuantity, inventory, stack.noted))
 
@@ -169,15 +167,13 @@ object InventoryItemContextMenu {
     stack: Stack,
     heldQuantity: Int,
     effectObserver: Observer[AddItem],
-    modalController: Modal.Controller
-  ): Observer[FormOpener.Command] = {
-    val (form, formSubmissions) = RemoveItemForm(stack, heldQuantity, inventory)
+    modal: Modal
+  ): FormOpener =
     FormOpener(
-      modalController,
-      effectObserver,
-      () => (form, formSubmissions.collect { case Some(effect) => effect })
+      modal,
+      RemoveItemForm(stack, heldQuantity, inventory),
+      effectObserver.contracollect[Option[AddItem]] { case Some(effect) => effect }
     )
-  }
 
   private def button(
     text: String,

@@ -32,7 +32,7 @@ object PlanningPage {
     subscription: PlanSubscription,
     cache: Cache,
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller,
+    modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val itemFuse = Fuse(
@@ -59,7 +59,7 @@ object PlanningPage {
       stepsWithErrorsVar.signal.map(_.keySet),
       contextMenuController,
       focusController,
-      modalController,
+      modal,
       toastPublisher
     )
 
@@ -81,7 +81,7 @@ object PlanningPage {
           itemFuse,
           addEffectToFocus(focusController.signal, forester),
           contextMenuController,
-          modalController,
+          modal,
           toastPublisher
         )
       )
@@ -99,7 +99,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
-            modalController
+            modal
           )
         )
 
@@ -118,7 +118,7 @@ object PlanningPage {
         L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
       ),
       planElement.amend(L.cls(Styles.plan)),
-      HelpButton(modalController).amend(L.cls(Styles.help)),
+      HelpButton(modal).amend(L.cls(Styles.help)),
       focusedStepBinder(forester.signal),
       //TODO Move evaluation to a worker, since this is expensive to run on the main thread
       stepsWithErrorsStream --> stepsWithErrorsVar,

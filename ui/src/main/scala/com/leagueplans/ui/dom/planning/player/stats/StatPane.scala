@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player.stats
 
 import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.plan.Effect.UnlockSkill
+import com.leagueplans.ui.model.plan.Effect.{GainExp, UnlockSkill}
 import com.leagueplans.ui.model.player.skill.Stat
 import com.leagueplans.ui.utils.airstream.ObserverOps.observer
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
@@ -19,7 +19,7 @@ object StatPane {
     stat: Signal[Stat],
     effectObserver: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.Div = {
     val pane = toPane(stat).amend(toTooltip(stat))
 
@@ -27,14 +27,13 @@ object StatPane {
       stat
         .map(_.skill)
         .combineWith(effectObserver)
-        .map { case (skill, maybeObserver) =>
-          val (form, formSubmissions) = GainXPForm(skill)
+        .map((skill, maybeObserver) =>
           FormOpener(
-            modalController,
-            maybeObserver.observer,
-            () => (form, formSubmissions.collect { case Some(effect) => effect })
+            modal,
+            GainXPForm(skill),
+            maybeObserver.observer.contracollect[Option[GainExp]] { case Some(effect) => effect }
           )
-        }
+        )
 
     val menuBinder = toMenuBinder(
       contextMenuController,
@@ -117,7 +116,7 @@ object StatPane {
     controller: ContextMenu.Controller,
     statSignal: Signal[Stat],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    gainXPFormOpenerSignal: Signal[Observer[FormOpener.Command]]
+    gainXPFormOpenerSignal: Signal[FormOpener]
   ): Binder[L.Element] =
     controller.bind(closer =>
       Signal
@@ -131,12 +130,12 @@ object StatPane {
 
   private def toMenu(
     stat: Stat,
-    gainXPFormOpener: Observer[FormOpener.Command],
+    gainXPFormOpener: FormOpener,
     effectObserver: Observer[UnlockSkill],
     menuCloser: Observer[ContextMenu.CloseCommand]
   ): L.Button =
     if (stat.unlocked)
-      Button(_.handled --> Observer.combine(menuCloser, gainXPFormOpener)).amend("Gain XP")
+      Button(_.handled --> Observer.combine(menuCloser, gainXPFormOpener.toObserver)).amend("Gain XP")
     else
       Button(
         _.handled --> Observer.combine(

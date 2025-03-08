@@ -13,6 +13,15 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2025, 2, 8),
+        "Support for keyboard shortcuts",
+        List(
+          "This updates adds a few initial keyboard shortcuts to make the process of creating a plan smoother. Give me" +
+            " a ping if you'd like to suggest additional shortcuts.",
+          "Spruced up the modals for adding and deleting steps"
+        )
+      ),
+      item(
         new Date(2025, 1, 23),
         "UX improvements to the plan section",
         List(

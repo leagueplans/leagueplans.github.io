@@ -18,11 +18,11 @@ object PlansMenu {
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.list),
-      L.children <-- toEntries(storage, selectionObserver, toastPublisher, modalController)
+      L.children <-- toEntries(storage, selectionObserver, toastPublisher, modal)
     )
 
   @js.native @JSImport("/styles/landing/menu/plansMenu.module.css", JSImport.Default)
@@ -41,13 +41,13 @@ object PlansMenu {
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): Signal[List[L.LI]] =
     storage
       .plansSignal
       .map(sort)
       .split((id, _) => id) { case (_, (id, metadata), _) =>
-        toEntry(id, metadata, storage, selectionObserver, toastPublisher, modalController)
+        toEntry(id, metadata, storage, selectionObserver, toastPublisher, modal)
       }
 
   private given Ordering[Date] =
@@ -62,11 +62,11 @@ object PlansMenu {
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher,
-    modalController: Modal.Controller
+    modal: Modal
   ): L.LI =
     L.li(
       L.cls(Styles.row),
-      DeleteButton(id, metadata.name, storage, toastPublisher, modalController).amend(
+      DeleteButton(id, metadata.name, storage, toastPublisher, modal).amend(
         L.cls(Styles.button, Styles.deleteButton)
       ),
       PlanDescriptor(metadata).amend(L.cls(Styles.descriptor)),

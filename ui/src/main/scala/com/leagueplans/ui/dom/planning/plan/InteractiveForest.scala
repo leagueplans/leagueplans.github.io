@@ -8,7 +8,8 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.wrappers.Clipboard
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
+import com.raquo.airstream.misc.StreamFromSignal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -17,7 +18,7 @@ import org.scalajs.dom.html.OList
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object StepsElement {
+object InteractiveForest {
   def apply(
     forester: Forester[Step.ID, Step],
     subscription: PlanSubscription,
@@ -75,7 +76,7 @@ object StepsElement {
     )
   }
 
-  @js.native @JSImport("/styles/planning/plan/steps.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/plan/interactiveForest.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val forest: String = js.native
     val rootStep: String = js.native
@@ -85,9 +86,13 @@ object StepsElement {
     forester: Forester[Step.ID, Step],
     dom: ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])]
   ): Signal[List[L.LI]] =
-    forester.signal.map(_.roots).split(identity)((step, _, _) =>
-      dom.get(step).map((element, _) =>
-        L.li(L.cls(Styles.rootStep), element)
+    EventStream
+      .merge(
+        StreamFromSignal(forester.signal, changesOnly = false),
+        dom.nodeChanges.sample(forester.signal)
       )
-    ).map(_.flatten)
+      .map(_.roots.flatMap(dom.get))
+      .split(identity) { case ((element, _), _, _) => 
+        L.li(L.cls(Styles.rootStep), element)
+      }
 }

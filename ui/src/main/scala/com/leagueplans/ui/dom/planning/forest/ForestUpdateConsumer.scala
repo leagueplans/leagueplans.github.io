@@ -4,7 +4,8 @@ import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.*
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.Forest.Update.*
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 
 import scala.collection.mutable
@@ -50,6 +51,11 @@ final class ForestUpdateConsumer[ID, Data, Node] private(
 ) {
   def get(id: ID): Option[Node] =
     state.get(id).map(_.node)
+  
+  private val nodeChangesBus = EventBus[Unit]()
+  
+  val nodeChanges: EventStream[Unit] =
+    nodeChangesBus.events
 
   def eval(updates: Iterable[Update[ID, Data]]): Unit =
     updates.foreach(eval)
@@ -58,9 +64,11 @@ final class ForestUpdateConsumer[ID, Data, Node] private(
     update match {
       case AddNode(id, data) =>
         state += id -> initialise(id, data, createNode)
+        nodeChangesBus.emit(())
         
       case RemoveNode(id) =>
         state -= id
+        nodeChangesBus.emit(())
         
       case AddLink(child, parent) =>
         state.get(child).zip(state.get(parent)).foreach { (childState, parentState) =>

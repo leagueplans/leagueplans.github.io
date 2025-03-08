@@ -83,8 +83,9 @@ object FocusedStep {
 
             case None =>
               maybeParent.orElse(
-                // No siblings + no parent implies this is the only root
-                Option.when(!ignoreChildren)(lowestDescendant(step, forest))
+                forest.roots.lastOption.map(step =>
+                  if (ignoreChildren) step else lowestDescendant(step, forest)
+                )
               )
           }
       }

@@ -54,6 +54,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHouse")
   object faHouse extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faKeyboard")
+  object faKeyboard extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faPlus")
   object faPlus extends IconDefinition
 
