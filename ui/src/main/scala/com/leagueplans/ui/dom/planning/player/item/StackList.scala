@@ -12,8 +12,10 @@ object StackList {
     toElement: ItemStack => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] =
     L.ol(
-      L.children <-- stacksSignal.split(identity)((stack, _, _) =>
+      // zipWithIndex ensures that we can render/remove duplicate stacks (e.g. unnoted, unstackable
+      // items in the inventory)
+      L.children <-- stacksSignal.map(_.zipWithIndex).split(identity) { case ((stack, _), _, _) =>
         L.li(toElement(stack))
-      )
+      }
     )
 }
