@@ -2,18 +2,17 @@ package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.AddItem
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
 object RemoveItemForm {
   def apply(
-    stack: Stack,
-    heldQuantity: Int,
+    stack: ItemStack,
     depository: Depository.Kind
   ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
-    val (input, label, quantitySignal) = quantityInput(heldQuantity)
+    val (input, label, quantitySignal) = quantityInput(stack.quantity)
     val form = emptyForm.amend(L.padding("1rem"), label, input, submitButton)
     (form, effectSubmissions(stack, depository, quantitySignal, formSubmissions))
   }
@@ -34,7 +33,7 @@ object RemoveItemForm {
   }
 
   private def effectSubmissions(
-    stack: Stack,
+    stack: ItemStack,
     depository: Depository.Kind,
     quantitySignal: Signal[Int],
     formSubmissions: EventStream[Unit]

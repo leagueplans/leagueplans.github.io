@@ -1,11 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
-import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.ContextMenu
 import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
-import com.leagueplans.ui.model.player.item.Stack
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.L
@@ -17,7 +16,7 @@ import scala.scalajs.js.annotation.JSImport
 object EquipmentSlotElement {
   def apply(
     slot: EquipmentSlot,
-    stacks: List[(Stack, List[Int])],
+    stacks: List[ItemStack],
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
   ): L.Div =
@@ -30,8 +29,8 @@ object EquipmentSlotElement {
       ),
       StackList(
         Val(stacks),
-        (stack, stackSizeSignal) => StackElement(stack, stackSizeSignal).amend(
-          bindContextMenu(stack.item, stackSizeSignal, slot, effectObserverSignal, contextMenuController)
+        stack => StackElement(stack).amend(
+          bindContextMenu(stack, slot, effectObserverSignal, contextMenuController)
         )
       ).amend(L.cls(Styles.contents))
     )
@@ -89,19 +88,14 @@ object EquipmentSlotElement {
       }
 
   private def bindContextMenu(
-    item: Item,
-    stackSizeSignal: Signal[Int],
+    stack: ItemStack,
     slot: EquipmentSlot,
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
-      Signal
-        .combine(effectObserverSignal, stackSizeSignal)
-        .map((maybeEffectObserver, stackSize) =>
-          maybeEffectObserver.map(effectObserver =>
-            EquippedItemContextMenu(item, stackSize, slot, effectObserver, menuCloser)
-          )
-        )
+      effectObserverSignal.map(_.map(effectObserver =>
+        EquippedItemContextMenu(stack, slot, effectObserver, menuCloser)
+      ))
     )
 }

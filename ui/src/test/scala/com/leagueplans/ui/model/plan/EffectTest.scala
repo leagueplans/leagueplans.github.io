@@ -27,7 +27,7 @@ final class EffectTest extends CodecSpec {
       val itemIDEnc = Encoder.encode(itemID).getBytes
 
       "AddItem" in test(
-        Effect.AddItem(itemID, count = 1, Depository.Kind.Inventory, note = false),
+        Effect.AddItem(itemID, quantity = 1, Depository.Kind.Inventory, note = false),
         Array[Byte](0, 0b1, 0b1100, 0b1101, 0) ++ itemIDEnc ++
           Array[Byte](0b1000) ++ Encoder.encode(1).getBytes ++
           Array[Byte](0b10100, 0b100) ++ Encoder.encode[Depository.Kind](Depository.Kind.Inventory).getBytes ++
@@ -48,7 +48,7 @@ final class EffectTest extends CodecSpec {
       "MoveItem" in test(
         Effect.MoveItem(
           itemID,
-          count = 30,
+          quantity = 30,
           source = Depository.Kind.Inventory,
           notedInSource = true,
           target = Depository.Kind.Bank,

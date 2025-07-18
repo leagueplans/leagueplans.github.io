@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player
 
 import com.leagueplans.common.model.{Item, LeagueTask}
 import com.leagueplans.ui.model.player.diary.DiaryTask
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 
 object Cache {
   def apply(items: Set[Item], quests: Set[Quest], diaryTasks: Set[DiaryTask], leagueTasks: Set[LeagueTask]): Cache =
@@ -20,16 +20,16 @@ final case class Cache(
   diaryTasks: Map[Int, DiaryTask],
   leagueTasks: Map[Int, LeagueTask]
 ) {
-  def itemise(depository: Depository): List[(Stack, List[Int])] =
+  def itemise(depository: Depository): List[ItemStack] =
     depository
       .contents
       .toList
       .map { case ((id, noted), count) => (items(id), noted, count) }
       .sortBy((item, noted, _) => (item.name, noted))
-      .map {
-        case (item, noted, count) if item.stackable || noted || depository.kind.autoStack =>
-          Stack(item, noted) -> List(count)
-        case (item, noted, count) =>
-          Stack(item, noted) -> List.fill(count)(1)
+      .flatMap {
+        case (item, noted, quantity) if item.stackable || noted || depository.kind.autoStack =>
+          List(ItemStack(item, noted, quantity))
+        case (item, noted, quantity) =>
+          List.fill(quantity)(ItemStack(item, noted, quantity = 1))
       }
 }

@@ -5,9 +5,8 @@ import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.Stack
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
@@ -27,8 +26,7 @@ object DescribedEffect {
           line(
             text(s"${target.name}:"),
             StackElement(
-              Stack(cache.items(item), note),
-              Val(count)
+              ItemStack(cache.items(item), note, count)
             ).amend(L.cls(Styles.itemIcon)),
             FontAwesome.icon(FreeSolid.faArrowUpLong).amend(L.svg.cls(Styles.pickup))
           )
@@ -36,8 +34,7 @@ object DescribedEffect {
           line(
             text(s"${target.name}:"),
             StackElement(
-              Stack(cache.items(item), note),
-              Val(-count)
+              ItemStack(cache.items(item), note, -count),
             ).amend(L.cls(Styles.itemIcon)),
             FontAwesome.icon(FreeSolid.faArrowDownLong).amend(L.svg.cls(Styles.drop))
           )
@@ -45,8 +42,7 @@ object DescribedEffect {
       case Effect.MoveItem(item, count, source, notedInSource, target, notedInTarget) =>
         line(
           StackElement(
-            Stack(cache.items(item), notedInSource || notedInTarget),
-            Val(count)
+            ItemStack(cache.items(item), notedInSource || notedInTarget, count)
           ).amend(L.cls(Styles.itemIcon)),
           text(source.name),
           FontAwesome.icon(FreeSolid.faArrowRightLong).amend(L.svg.cls(Styles.transfer)),

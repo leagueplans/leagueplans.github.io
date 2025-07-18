@@ -52,13 +52,13 @@ object EffectValidator extends EffectValidator[Effect] {
 
   private val addItemValidator: EffectValidator[AddItem] =
     from(
-      pre = gain => if (gain.count < 0) List(Validator.hasItem(gain.target, gain.item, gain.note, -gain.count)) else List.empty,
-      post = gain => if (gain.count > 0) List(Validator.depositorySize(gain.target)) else List.empty
+      pre = gain => if (gain.quantity < 0) List(Validator.hasItem(gain.target, gain.item, gain.note, -gain.quantity)) else List.empty,
+      post = gain => if (gain.quantity > 0) List(Validator.depositorySize(gain.target)) else List.empty
     )
 
   private val moveItemValidator: EffectValidator[MoveItem] =
     from(
-      pre = move => List(Validator.hasItem(move.source, move.item, move.notedInSource, move.count)),
+      pre = move => List(Validator.hasItem(move.source, move.item, move.notedInSource, move.quantity)),
       post = move => List(Validator.depositorySize(move.target))
     )
 

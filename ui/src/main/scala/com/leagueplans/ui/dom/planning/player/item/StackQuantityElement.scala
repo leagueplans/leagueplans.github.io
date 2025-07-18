@@ -1,29 +1,25 @@
 package com.leagueplans.ui.dom.planning.player.item
 
-import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object StackSizeElement {
-  def apply(stackSizeSignal: Signal[Int]): L.Span = {
-    val clsAndRepr = stackSizeSignal.map(classAndRepr)
-    L.span(
-      L.cls <-- clsAndRepr.map(_._1),
-      L.child <-- clsAndRepr.map(_._2)
-    )
+object StackQuantityElement {
+  def apply(quantity: Int): L.Span = {
+    val clsAndRepr = classAndRepr(quantity)
+    L.span(L.cls(clsAndRepr.cls), clsAndRepr.repr)
   }
 
-  @js.native @JSImport("/styles/planning/player/item/stackSizeElement.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/player/item/stackQuantityElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val under100K: String = js.native
     val under10M: String = js.native
     val over10M: String = js.native
   }
 
-  private def classAndRepr(stackSize: Int): (String, String) =
-    stackSize match {
+  private def classAndRepr(quantity: Int): (cls: String, repr: String) =
+    quantity match {
       case n if n == 1 =>
         (Styles.under100K, "")
       case n if n < 100000 =>

@@ -4,8 +4,7 @@ import com.leagueplans.ui.dom.planning.player.item.StackElement
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.Stack
-import com.raquo.airstream.state.Val
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
@@ -24,8 +23,7 @@ object DescribedRequirement {
         line(
           text(s"${location.name}:"),
           StackElement(
-            Stack(cache.items(item), noted = false),
-            sizeSignal = Val(1)
+            ItemStack(cache.items(item), noted = false, quantity = 1)
           ).amend(L.cls(Styles.itemIcon))
         )
 

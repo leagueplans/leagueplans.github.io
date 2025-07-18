@@ -4,7 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
 import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
@@ -59,12 +59,11 @@ object InventoryElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
-  )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
-    StackElement(stack, stackSizeSignal).amend(
+  )(stack: ItemStack): L.Div =
+    StackElement(stack).amend(
       bindItemContextMenu(
         stack,
         cache,
-        stackSizeSignal,
         playerSignal,
         effectObserverSignal,
         contextMenuController,
@@ -87,21 +86,16 @@ object InventoryElement {
     )
 
   private def bindItemContextMenu(
-    stack: Stack,
+    stack: ItemStack,
     cache: Cache,
-    stackSizeSignal: Signal[Int],
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
-      Signal
-        .combine(stackSizeSignal, effectObserverSignal)
-        .map((stackSize, maybeEffectObserver) =>
-          maybeEffectObserver.map(effectObserver =>
-            InventoryItemContextMenu(stack, cache, stackSize, playerSignal, effectObserver, menuCloser, modal)
-          )
-        )
+      effectObserverSignal.map(_.map(effectObserver =>
+        InventoryItemContextMenu(stack, cache, playerSignal, effectObserver, menuCloser, modal)
+      ))
     )
 }

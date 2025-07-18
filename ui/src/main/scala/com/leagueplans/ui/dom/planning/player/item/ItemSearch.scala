@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.form.{FuseSearch, RadioGroup, StylisedRadio}
 import com.leagueplans.ui.dom.common.{KeyValuePairs, Tooltip}
-import com.leagueplans.ui.model.player.item.Stack
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
@@ -54,7 +54,9 @@ object ItemSearch {
     quantitySignal: Signal[Int]
   ): L.Modifier[L.Label] =
     List[L.Modifier[L.Label]](
-      L.child <-- noteSignal.map(note => StackIcon(Stack(item, note && item.noteable), quantitySignal)),
+      L.child <-- Signal.combine(noteSignal, quantitySignal).map((note, quantity) =>
+        StackIcon(ItemStack(item, note && item.noteable, quantity))
+      ),
       item.name,
       tooltip(item)
     )

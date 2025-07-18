@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.common.{ContextMenu, Modal}
 import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
@@ -61,11 +61,11 @@ object BankElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
-  )(stack: Stack, stackSizeSignal: Signal[Int]): L.Div =
-    StackElement(stack, stackSizeSignal).amend(
+  )(stack: ItemStack): L.Div =
+    StackElement(stack).amend(
       bindContextMenu(
         stack.item,
-        stackSizeSignal,
+        stack.quantity,
         effectObserverSignal,
         contextMenuController,
         modal
@@ -74,18 +74,14 @@ object BankElement {
 
   private def bindContextMenu(
     item: Item,
-    stackSizeSignal: Signal[Int],
+    quantity: Int,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
-      Signal
-        .combine(effectObserverSignal, stackSizeSignal)
-        .map((maybeEffectObserver, stackSize) =>
-          maybeEffectObserver.map(effectObserver =>
-            BankItemContextMenu(item, stackSize, effectObserver, menuCloser, modal)
-          )
-        )
+      effectObserverSignal.map(_.map(effectObserver =>
+        BankItemContextMenu(item, quantity, effectObserver, menuCloser, modal)
+      ))
     )
 }

@@ -56,11 +56,11 @@ final case class Item(
   noteable: Boolean,
   equipmentType: Option[EquipmentType]
 ) {
-  def imageFor(count: Int): Item.Image.Path = {
+  def imageFor(quantity: Int): Item.Image.Path = {
     val (_, path) =
       images
         .toList
-        .takeWhile((bin, _) => bin.floor <= count)
+        .takeWhile((bin, _) => bin.floor <= quantity)
         .lastOption
         .getOrElse(images.head)
 

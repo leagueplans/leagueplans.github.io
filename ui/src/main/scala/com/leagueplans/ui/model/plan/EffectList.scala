@@ -46,8 +46,8 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
         oldEffect.target == newEffect.target &&
         oldEffect.note == newEffect.note
     )((oldEffect, newEffect) =>
-      Some(oldEffect.copy(count = oldEffect.count + newEffect.count))
-        .filter(_.count != 0)
+      Some(oldEffect.copy(quantity = oldEffect.quantity + newEffect.quantity))
+        .filter(_.quantity != 0)
     )
 
   // In theory you can minimise more moves than this.
@@ -81,11 +81,11 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
       )
     )((oldEffect, newEffect) =>
       if (oldEffect.target == newEffect.target)
-        Some(oldEffect.copy(count = oldEffect.count + newEffect.count))
-      else if (oldEffect.count > newEffect.count)
-        Some(oldEffect.copy(count = oldEffect.count - newEffect.count))
-      else if (oldEffect.count < newEffect.count)
-        Some(newEffect.copy(count = newEffect.count - oldEffect.count))
+        Some(oldEffect.copy(quantity = oldEffect.quantity + newEffect.quantity))
+      else if (oldEffect.quantity > newEffect.quantity)
+        Some(oldEffect.copy(quantity = oldEffect.quantity - newEffect.quantity))
+      else if (oldEffect.quantity < newEffect.quantity)
+        Some(newEffect.copy(quantity = newEffect.quantity - oldEffect.quantity))
       else
         None
     )

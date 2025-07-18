@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.model.player.item.Stack
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
@@ -15,7 +15,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object ExportBankTagsButton {
   def apply(
-    stacksSignal: Signal[List[(Stack, List[Int])]],
+    stacksSignal: Signal[List[ItemStack]],
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Button =
@@ -40,7 +40,7 @@ object ExportBankTagsButton {
   }
 
   private def toFormOpener(
-    stacksSignal: Signal[List[(Stack, List[Int])]],
+    stacksSignal: Signal[List[ItemStack]],
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): FormOpener = {
@@ -69,7 +69,7 @@ object ExportBankTagsButton {
 
   private def toClipboardStream(
     formSubmissions: EventStream[Option[String]],
-    stacksSignal: Signal[List[(Stack, List[Int])]]
+    stacksSignal: Signal[List[ItemStack]]
   ): EventStream[Unit] =
     formSubmissions
       .collect { case Some(name) => name }
@@ -85,35 +85,16 @@ object ExportBankTagsButton {
       )
 
   @tailrec
-  private def convertToLayoutTags(
-    stacks: List[(Stack, List[Int])],
-    index: Int,
-    acc: String
-  ): String =
+  private def convertToLayoutTags(stacks: List[ItemStack], index: Int, acc: String): String =
     stacks match {
       case Nil =>
         acc
-      case (stack, splits) :: remaining =>
-        val (nextIndex, updatedAcc) = convertStackToTags(stack.item.gameID, splits.size, index, acc)
-        convertToLayoutTags(remaining, nextIndex, updatedAcc)
-    }
-
-  @tailrec
-  private def convertStackToTags(
-    maybeID: Option[Int],
-    remaining: Int,
-    index: Int,
-    acc: String
-  ): (Int, String) =
-    if (remaining <= 0)
-      (index, acc)
-    else {
-      val updatedAcc = maybeID match {
-        case Some(id) => s"$acc,$index,$id"
-        case None => acc
-      }
-
-      convertStackToTags(maybeID, remaining - 1, increment(index), updatedAcc)
+      case stack :: remaining =>
+        val updatedAcc = stack.item.gameID match {
+          case Some(id) => s"$acc,$index,$id"
+          case None => acc
+        }
+        convertToLayoutTags(remaining, increment(index), updatedAcc)
     }
 
   /* Accounts for the fact that the bank & inventories have different widths */

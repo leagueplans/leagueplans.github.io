@@ -9,10 +9,10 @@ import com.leagueplans.ui.model.player.skill.Exp
 enum Effect {
   case GainExp(skill: Skill, baseExp: Exp)
 
-  case AddItem(item: Item.ID, count: Int, target: Depository.Kind, note: Boolean)
+  case AddItem(item: Item.ID, quantity: Int, target: Depository.Kind, note: Boolean)
   case MoveItem(
     item: Item.ID,
-    count: Int,
+    quantity: Int,
     source: Depository.Kind,
     notedInSource: Boolean,
     target: Depository.Kind,

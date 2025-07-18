@@ -2,21 +2,20 @@ package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.MoveItem
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
 object MoveItemForm {
   def apply(
-    stack: Stack,
-    heldQuantity: Int,
+    stack: ItemStack,
     source: Depository.Kind,
     target: Depository.Kind,
     noteInTarget: Boolean
   ): (L.FormElement, EventStream[Option[MoveItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
-    val (quantityInput, quantityLabel, quantitySignal) = toQuantityInput(heldQuantity)
+    val (quantityInput, quantityLabel, quantitySignal) = toQuantityInput(stack.quantity)
 
     val form = emptyForm.amend(L.padding("1rem"), quantityLabel, quantityInput, submitButton)
     (form, effectSubmissions(stack, source, target, noteInTarget, quantitySignal, formSubmissions))
@@ -39,7 +38,7 @@ object MoveItemForm {
   }
 
   private def effectSubmissions(
-    stack: Stack,
+    stack: ItemStack,
     source: Depository.Kind,
     target: Depository.Kind,
     noteInTarget: Boolean,

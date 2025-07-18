@@ -1,18 +1,17 @@
 package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.player.item.Stack
-import com.raquo.airstream.core.Signal
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.raquo.laminar.api.{L, StringSeqValueMapper, seqToModifier}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StackIcon {
-  def apply(stack: Stack, stackSizeSignal: Signal[Int]): L.Div = {
+  def apply(stack: ItemStack): L.Div = {
     val itemImage = L.img(
       L.cls(Styles.item),
-      L.src <-- stackSizeSignal.map(iconPath(stack.item, _)),
+      L.src(iconPath(stack.item, stack.quantity)),
       L.alt(s"${stack.item.name} icon")
     )
 
@@ -34,10 +33,10 @@ object StackIcon {
     val noted: String = js.native
   }
 
-  private def iconPath(item: Item, stackSize: Int): String =
-    s"assets/images/items/${item.imageFor(stackSize).raw}"
+  private def iconPath(item: Item, quantity: Int): String =
+    s"assets/images/items/${item.imageFor(quantity).raw}"
 
-  private def accountForNoting(itemImage: L.Image, noted: Boolean): List[L.Node] = {
+  private def accountForNoting(itemImage: L.Image, noted: Boolean): List[L.Node] =
     if (noted)
       List(
         L.img(L.cls(Styles.item), L.src(note)),
@@ -48,5 +47,4 @@ object StackIcon {
       )
     else
       List(itemImage)
-  }
 }

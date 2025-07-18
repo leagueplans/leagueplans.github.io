@@ -14,11 +14,11 @@ object Validator {
   def depositorySize(kind: Depository.Kind): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
-        val size = cache.itemise(player.get(kind)).map((_, stacks) => stacks.size).sum
+        val stackCount = cache.itemise(player.get(kind)).size
         Either.cond(
-          size <= kind.capacity,
+          stackCount <= kind.capacity,
           right = (),
-          left = s"${kind.name} requires $size spaces (max ${kind.capacity})"
+          left = s"${kind.name} requires $stackCount spaces (max ${kind.capacity})"
         )
       }
     }

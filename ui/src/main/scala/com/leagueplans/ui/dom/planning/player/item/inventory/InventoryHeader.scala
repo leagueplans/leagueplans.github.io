@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.ui.dom.common.{Modal, ToastHub}
-import com.leagueplans.ui.model.player.item.Stack
+import com.leagueplans.ui.model.player.item.ItemStack
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 
@@ -9,11 +9,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object InventoryHeader {
-  def apply(
-    stacks: Signal[List[(Stack, List[Int])]],
-    modal: Modal,
-    toastPublisher: ToastHub.Publisher
-  ): L.Element =
+  def apply(stacks: Signal[List[ItemStack]], modal: Modal, toastPublisher: ToastHub.Publisher): L.Element =
     L.div(
       L.cls(Styles.header),
       L.span(

@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.MoveItem
-import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
@@ -63,8 +63,7 @@ object BankItemContextMenu {
     FormOpener(
       modal: Modal,
       MoveItemForm(
-        Stack(item, noted = false),
-        heldQuantity,
+        ItemStack(item, noted = false, heldQuantity),
         Depository.Kind.Bank,
         Depository.Kind.Inventory,
         note
