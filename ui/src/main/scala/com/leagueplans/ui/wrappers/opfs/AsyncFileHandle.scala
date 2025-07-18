@@ -31,7 +31,7 @@ final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) 
       .asObservable
       .recoverToTry
       .map {
-        case Failure(DOMException.NoModificationAllowed(message)) => Left(UnableToAcquireFileLock(fileName))
+        case Failure(DOMException.NoModificationAllowed(_)) => Left(UnableToAcquireFileLock(fileName))
         case Failure(ex) => Left(UnexpectedFileSystemError(ex))
         case Success(syncHandle) => Right(new SyncFileHandle(fileName, syncHandle))
       }
@@ -43,7 +43,7 @@ final class AsyncFileHandle(fileName: String, underlying: FileSystemFileHandle) 
       .recoverToTry
       .map {
         case Failure(TypeError(_)) => Left(InvalidFileName(newName))
-        case Failure(DOMException.NoModificationAllowed) => Left(UnableToAcquireFileLock(s"One of $fileName OR $newName"))
+        case Failure(DOMException.NoModificationAllowed(_)) => Left(UnableToAcquireFileLock(s"One of $fileName OR $newName"))
         case Failure(ex) => Left(UnexpectedFileSystemError(ex))
         case Success(_) => Right(new AsyncFileHandle(newName, underlying))
       }

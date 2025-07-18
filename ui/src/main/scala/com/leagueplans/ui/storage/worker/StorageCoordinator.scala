@@ -53,7 +53,7 @@ import scala.scalajs.js.timers
 //   further messages it has queued. In order for the coordinator to be restarted,
 //   the user must close all tabs the app is open in, which means if the
 //   coordinator does hang the user is likely to have an awful experience.
-//   To mitigate this, a 30 second timer is started on the sending of M2. If this
+//   To mitigate this, a 30-second timer is started on the sending of M2. If this
 //   timer elapses before the receipt of M5, then the coordinator aborts and
 //   proceeds to the next message.
 object StorageCoordinator {
@@ -200,7 +200,7 @@ private final class StorageCoordinator(
           (port, broadcast)
         }.toList.prepended((sourcePort, failure))
 
-      case success: Outbound.UpdateSucceeded =>
+      case _: Outbound.UpdateSucceeded =>
         subscriptions.incrementLamport(message.planID)
         val broadcast = Outbound.Update(message.planID, message.lamport, message.update)
         otherSubscribers.map((_, broadcast)) +

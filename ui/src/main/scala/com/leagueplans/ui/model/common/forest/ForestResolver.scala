@@ -3,6 +3,8 @@ package com.leagueplans.ui.model.common.forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.Forest.Update.*
 
+import scala.annotation.nowarn
+
 object ForestResolver {
   def resolve[ID, T](forest: Forest[ID, T], updates: List[Update[ID, T]]): Forest[ID, T] =
     updates.foldLeft(forest)(resolve)
@@ -52,6 +54,7 @@ object ForestResolver {
         make(forest)(updatedRoots = roots)
     }
 
+  @nowarn("msg=unused explicit parameter")
   private def make[ID, T](forest: Forest[ID, T])(
     updatedNodes: Map[ID, T] = forest.nodes,
     updatedToParent: Map[ID, ID] = forest.toParent,

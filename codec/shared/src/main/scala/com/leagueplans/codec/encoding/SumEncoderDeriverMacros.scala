@@ -4,7 +4,6 @@ import com.leagueplans.codec.Encoding
 
 import scala.annotation.tailrec
 import scala.deriving.Mirror
-import scala.quoted.quotes
 import scala.quoted.{Expr, Quotes, Type}
 
 private[encoding] object SumEncoderDeriverMacros {

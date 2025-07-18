@@ -57,7 +57,7 @@ final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHan
 
   private def truncate(newSize: Int): Either[FileSystemError, Unit] =
     Try(underlying.truncate(newSize)) match {
-      case Failure(DOMException.QuotaExceeded) => Left(StorageQuotaExceeded)
+      case Failure(DOMException.QuotaExceeded(_)) => Left(StorageQuotaExceeded)
       case Failure(ex) => Left(UnexpectedFileSystemError(ex))
       case Success(_) => Right(())
     }
@@ -71,7 +71,7 @@ final class SyncFileHandle(fileName: String, underlying: FileSystemSyncAccessHan
         new FileSystemReadWriteOptions { var at: Double = startAt }
       )
     ) match {
-      case Failure(DOMException.QuotaExceeded) => Left(StorageQuotaExceeded)
+      case Failure(DOMException.QuotaExceeded(_)) => Left(StorageQuotaExceeded)
       case Failure(ex) => Left(UnexpectedFileSystemError(ex))
       case Success(`size`) => Right(())
       case Success(amountWritten) =>

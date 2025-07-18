@@ -13,7 +13,7 @@ object ObserverOps {
   extension [T](self: SignalSource[Observer[T]]) {
     def latest(owner: Owner): Observer[T] =
       Observer[T](t =>
-        self.toObservable.observe(owner).tryNow().foreach(_.onNext(t))
+        self.toObservable.observe(using owner).tryNow().foreach(_.onNext(t))
       )
   }
 }

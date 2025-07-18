@@ -7,7 +7,7 @@ object InfoboxVersion {
   given Decoder[InfoboxVersion] = Decoder[List[String]].map(InfoboxVersion.apply)
 
   given Ordering[InfoboxVersion] =
-    Ordering.by[InfoboxVersion, List[String]](_.raw)(Ordering.Implicits.seqOrdering)
+    Ordering.by[InfoboxVersion, List[String]](_.raw)(using Ordering.Implicits.seqOrdering)
 }
 
 final case class InfoboxVersion(raw: List[String]) extends AnyVal {

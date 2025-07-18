@@ -93,7 +93,7 @@ final class ForestUpdateConsumer[ID, Data, Node] private(
         val childNodes = children.flatMap(state.get).map(_.node)
         state.get(parent).foreach(_.childrenUpdater.set(childNodes))
 
-      case Reorder(roots, None) =>
+      case Reorder(_, None) =>
         /* Nothing to do - we don't need to track root node ordering here */
     }
 }

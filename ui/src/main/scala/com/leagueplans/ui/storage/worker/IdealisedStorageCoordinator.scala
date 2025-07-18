@@ -131,7 +131,7 @@ private final class IdealisedStorageCoordinator(
           (port, broadcast)
         }.toList.prepended((sourcePort, failure))
 
-      case success: Outbound.UpdateSucceeded =>
+      case _: Outbound.UpdateSucceeded =>
         subscriptions.incrementLamport(message.planID)
         val broadcast = Outbound.Update(message.planID, message.lamport, message.update)
         otherSubscribers.map((_, broadcast)) +

@@ -109,7 +109,7 @@ enum Level(val raw: Int, val bound: Exp) {
   def next: Option[Level] =
     this match {
       case L99 => None
-      case other => Some(Level(raw + 1))
+      case _ => Some(Level(raw + 1))
     }
 
   override def toString: String =

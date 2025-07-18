@@ -5,7 +5,6 @@ import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.codec.{Encoding, FieldNumber}
 
 import scala.annotation.nowarn
-import scala.compiletime.codeOf
 
 final class ProductCodecTest extends CodecSpec {
   "ProductCodec" - {
@@ -110,27 +109,27 @@ final class ProductCodecTest extends CodecSpec {
     // error somewhere, rather than because it can't derive the
     // encoder for type B.
     "sanity check for testing inability to derive codecs" in {
+      import scala.compiletime.codeOf
+
       case object A
 
-      @nowarn("msg=unused local definition")
       inline def encoder: Encoder[A.type] = Encoder.derived
       codeOf(encoder) should compile
 
-      @nowarn("msg=unused local definition")
       inline def decoder: Decoder[A.type] = Decoder.derived
       codeOf(decoder) should compile
-    }
+    }: @nowarn("msg=unused import")
 
     "should not be able to derive codecs for" - {
+      import scala.compiletime.codeOf
+
       "case classes with fields that themselves don't have codecs" in {
         case object A
         final case class B(field: A.type)
 
-        @nowarn("msg=unused local definition")
         inline def encoder: Encoder[B] = Encoder.derived
         codeOf(encoder) shouldNot compile
 
-        @nowarn("msg=unused local definition")
         inline def decoder: Decoder[B] = Decoder.derived
         codeOf(decoder) shouldNot compile
       }
@@ -143,14 +142,12 @@ final class ProductCodecTest extends CodecSpec {
       "case classes with a nested collection field" in {
         final case class A(field: List[List[Int]])
 
-        @nowarn("msg=unused local definition")
         inline def encoder: Encoder[A] = Encoder.derived
         codeOf(encoder) shouldNot compile
 
-        @nowarn("msg=unused local definition")
         inline def decoder: Decoder[A] = Decoder.derived
         codeOf(decoder) shouldNot compile
       }
-    }
+    }: @nowarn("msg=unused import")
   }
 }

@@ -181,8 +181,7 @@ object StepElement {
       headerHeightSignal
     ).map {
       case (InvertibleAnimationController.Status.Open, offset, headerHeight) =>
-        // Not sure why, but without the -1, there's sometimes a gap between the elements
-        offset + headerHeight - 1
+        offset + headerHeight
       case _ =>
         0
     }

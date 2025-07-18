@@ -42,7 +42,7 @@ abstract class MigrationSpec(migration: Migration, testCases: String*)
         buffer.byteOffset.asInstanceOf[Int],
         buffer.length.asInstanceOf[Int]
       ).toArray
-    )(descriptor =>
+    )(using descriptor =>
       // https://nodejs.org/api/fs.html#fsclosesyncfd
       fs.closeSync(descriptor): @nowarn("msg=discarded non-Unit value")
     )

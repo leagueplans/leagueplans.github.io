@@ -21,9 +21,9 @@ object StepDragListeners {
 
     def style: String =
       this match {
-        case DropLocation.Before => Styles.dropBefore
-        case DropLocation.Into => Styles.dropInto
-        case DropLocation.After => Styles.dropAfter
+        case Before => Styles.dropBefore
+        case Into => Styles.dropInto
+        case After => Styles.dropAfter
       }
   }
 

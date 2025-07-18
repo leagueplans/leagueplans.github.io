@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.{Depository, Stack}
+import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
@@ -29,7 +30,8 @@ object MoveItemForm {
       L.required(true),
       L.minAttr("1"),
       L.maxAttr(heldQuantity.toString),
-      L.stepAttr("1")
+      L.stepAttr("1"),
+      L.selectOnFocus
     )
     val amendedLabel = label.amend("Quantity:")
 

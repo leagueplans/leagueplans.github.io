@@ -5,7 +5,6 @@ import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.codec.{BinaryString, Encoding, FieldNumber}
 
 import scala.annotation.nowarn
-import scala.compiletime.codeOf
 import scala.deriving.Mirror
 
 final class SumCodecTest extends CodecSpec {
@@ -94,35 +93,37 @@ final class SumCodecTest extends CodecSpec {
     // error somewhere, rather than because it can't derive the
     // encoder for type A.
     "sanity check for testing inability to derive codecs" in {
+      import scala.compiletime.codeOf
+
       sealed trait A
       case object B extends A
 
-      @nowarn("msg=unused local definition")
       @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def encoder: Encoder[A] = Encoder.derived
       codeOf(encoder) should compile
 
-      @nowarn("msg=unused local definition")
       @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def decoder: Decoder[A] = Decoder.derived
       codeOf(decoder) should compile
-    }
+    }: @nowarn("msg=unused import")
 
     "should not be able to derive codecs for types that are not subtypes" in {
+      import scala.compiletime.codeOf
+
+      @nowarn("msg=unused local definition")
       final case class A(i: Int)
       
       sealed trait B
+      @nowarn("msg=unused local definition")
       final case class C(a: A) extends B
 
-      @nowarn("msg=unused local definition")
       @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def encoder: Encoder[B] = Encoder.derived
       codeOf(encoder) shouldNot compile
 
-      @nowarn("msg=unused local definition")
       @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
       inline def decoder: Decoder[B] = Decoder.derived
       codeOf(decoder) shouldNot compile
-    }
+    }: @nowarn("msg=unused import")
   }
 }

@@ -54,7 +54,7 @@ final class ForesterIntegrationTest
         actualForest.roots shouldEqual expectedForest.roots
         persistedForest.roots shouldEqual expectedForest.roots
       }
-    )(_.killSubscriptions()).get
+    )(using _.killSubscriptions()).get
   }
 
   private def setUpStreaming(

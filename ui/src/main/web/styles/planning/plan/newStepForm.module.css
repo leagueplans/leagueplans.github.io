@@ -62,10 +62,6 @@
   font-size: 1rem;
 }
 
-.submit:disabled {
-  background-color: #ababab;
-}
-
 .submit:enabled {
   background-color: #41c526;
 }

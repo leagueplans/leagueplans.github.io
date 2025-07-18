@@ -1,7 +1,6 @@
 package com.leagueplans.ui.wrappers.workers
 
 import com.leagueplans.ui.facades.workers.{SharedWorker, Worker}
-import org.scalajs.dom
 import org.scalajs.dom.{DedicatedWorkerGlobalScope, MessageEvent, MessagePort, Transferable}
 
 import scala.scalajs.js

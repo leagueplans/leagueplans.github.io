@@ -24,10 +24,7 @@ object ParsingFailure {
       s"Unrecognised discriminant ordinal: $ord"
     )
     
-    case NotEnoughBytesRemaining(
-      bytesRequired: Int,
-      discriminant: Discriminant
-    ) extends Cause(
+    case NotEnoughBytesRemaining(bytesRequired: Int, discriminant: Discriminant) extends Cause(
       s"Fewer than $bytesRequired bytes available for $discriminant"
     )
     
@@ -35,10 +32,7 @@ object ParsingFailure {
       s"Parsed length of $discriminant was negative: $i"
     )
     
-    case FailedToParseLength(
-      binary: String,
-      discriminant: Discriminant
-    ) extends Cause(
+    case FailedToParseLength(binary: String, discriminant: Discriminant) extends Cause(
       s"Could not parse length of $discriminant - binary: [$binary]"
     )
   }

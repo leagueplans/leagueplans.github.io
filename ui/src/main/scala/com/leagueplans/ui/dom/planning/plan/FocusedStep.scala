@@ -107,7 +107,7 @@ object FocusedStep {
 
     def parent(): Unit =
       updateObserver.onNext {
-        case (None, forest) => None
+        case (None, _) => None
         case (Some(step), forest) => forest.toParent.get(step).orElse(Some(step))
       }
   }

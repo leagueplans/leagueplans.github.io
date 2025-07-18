@@ -124,7 +124,7 @@ object QuestList {
       L.cls(Styles.category),
       L.children <--
         questsSignal
-          .map(_.sorted(questOrdering))
+          .map(_.sorted(using questOrdering))
           .split(_.name)((_, quest, _) =>
             L.li(
               L.cls(Styles.quest),

@@ -2,8 +2,6 @@ package com.leagueplans.codec.encoding
 
 import com.leagueplans.codec.Encoding
 
-import scala.annotation.nowarn
-
 trait CollectionEncoder[T] {
   extension [S <: T](s: S) def encoded: List[Encoding]
   
@@ -15,10 +13,10 @@ object CollectionEncoder {
   def apply[T : CollectionEncoder as encoder]: encoder.type =
     encoder
 
-  inline def apply[T](f: T => List[Encoding]): CollectionEncoder[T] =
+  def apply[T](f: T => List[Encoding]): CollectionEncoder[T] =
     new CollectionEncoder[T] {
       extension [S <: T](s: S) def encoded: List[Encoding] = f(s)
-    }: @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
+    }
 
   def encode[T : CollectionEncoder](t: T): List[Encoding] =
     t.encoded

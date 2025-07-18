@@ -11,5 +11,5 @@ object Main extends App {
     val container = document.createElement("div")
     document.body.appendChild(container)
     L.render(container, Bootstrap())
-  }(L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
+  }(using L.unsafeWindowOwner): @nowarn("msg=discarded non-Unit value")
 }

@@ -121,14 +121,16 @@ final class HTTPClient(
     retryPolicy: Schedule[Any, Response, ?],
     recordResponse: Response => UIO[Unit]
   )(using Trace): Schedule[Any, Response, Response] =
-    (Schedule.count && Schedule.identity[Response] <* retryPolicy)
-      .onDecision { case (_, (retryCount, response), _) =>
-        WithAnnotation.forLogs("retry-count" -> retryCount.toString)(recordResponse(response))
-      }
+    (Schedule.count && retryPolicy.passthrough[Response])
+      .tapOutput((retryCount, response) =>
+        WithAnnotation.forLogs("retry-count" -> retryCount.toString)(
+          recordResponse(response)
+        )
+      )
       .onDecision {
-        case (_, (retryCount, response), Schedule.Decision.Done) =>
+        case (_, (_, _), Schedule.Decision.Done) =>
           ZIO.unit
-        case (_, (retryCount, response), _: Schedule.Decision.Continue) =>
+        case (_, (retryCount, _), _: Schedule.Decision.Continue) =>
           WithAnnotation.forLogs("retry-count" -> (retryCount + 1).toString)(
             ZIO.logDebug("Scheduling retry for request")
           )

@@ -2,7 +2,7 @@ package com.leagueplans.codec.encoding
 
 import com.leagueplans.codec.{Encoding, FieldNumber}
 
-import scala.compiletime.{erasedValue, summonFrom, summonInline}
+import scala.compiletime.{summonFrom, summonInline}
 import scala.deriving.Mirror
 
 object ProductEncoderDeriver {

@@ -27,7 +27,6 @@ object NewStepForm {
       submitButton.amend(
         L.cls(Styles.submit),
         L.value("Add step"),
-        L.disabled <-- descriptionSignal.map(_.isEmpty)
       )
     )
 

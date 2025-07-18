@@ -6,7 +6,6 @@ import com.leagueplans.ui.dom.landing.form.NewPlanForm
 import com.leagueplans.ui.dom.landing.menu.PlansMenu
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
-import com.leagueplans.ui.storage.model.errors.FileSystemError
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}

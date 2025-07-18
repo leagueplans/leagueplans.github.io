@@ -11,7 +11,7 @@ import com.leagueplans.ui.facades.fusejs.FuseOptions
 import com.leagueplans.ui.model.EffectResolver
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Plan.Settings
-import com.leagueplans.ui.model.plan.{Effect, LeaguePointScoring, Plan, Step}
+import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.validation.StepValidator
 import com.leagueplans.ui.storage.client.PlanSubscription

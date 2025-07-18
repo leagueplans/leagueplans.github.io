@@ -9,7 +9,6 @@ import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
-import com.raquo.laminar.nodes.ReactiveHtmlElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

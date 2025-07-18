@@ -1,8 +1,6 @@
-import org.scalajs.linker.interface.ModuleSplitStyle
-
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.6.3"
+ThisBuild / scalaVersion := "3.7.1"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
@@ -26,7 +24,7 @@ lazy val codec =
       )
     )
 
-val circeVersion = "0.14.10"
+val circeVersion = "0.14.14"
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -39,18 +37,18 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
-val scrimageVersion = "4.3.0"
-val zioVersion = "2.1.15"
-val zioLoggingVersion = "2.4.0"
+val scrimageVersion = "4.3.2"
+val zioVersion = "2.1.19"
+val zioLoggingVersion = "2.5.1"
 
 lazy val wikiScraper =
   project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
-        "ch.qos.logback" % "logback-classic" % "1.5.16",
+        "ch.qos.logback" % "logback-classic" % "1.5.18",
         "dev.zio" %% "zio" % zioVersion,
         "dev.zio" %% "zio-streams" % zioVersion,
-        "dev.zio" %% "zio-http" % "3.0.1",
+        "dev.zio" %% "zio-http" % "3.3.3",
         "dev.zio" %% "zio-logging" % zioLoggingVersion,
         "dev.zio" %% "zio-logging-slf4j2" % zioLoggingVersion,
         "org.parboiled" %% "parboiled" % "2.5.1",
@@ -74,7 +72,7 @@ lazy val ui =
       libraryDependencies ++= List(
         "org.scala-js" %%% "scalajs-dom" % "2.8.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
-        "com.raquo" %%% "laminar" % "17.2.0",
+        "com.raquo" %%% "laminar" % "17.2.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       scalaJSUseMainModuleInitializer := true,

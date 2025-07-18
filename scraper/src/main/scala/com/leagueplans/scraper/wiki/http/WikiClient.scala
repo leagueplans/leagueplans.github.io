@@ -5,7 +5,7 @@ import com.leagueplans.common.utils.circe.JsonObjectOps.{decodeNestedField, deco
 import com.leagueplans.scraper.http.HTTPClient
 import com.leagueplans.scraper.telemetry.{WithAnnotation, WithStreamAnnotation}
 import com.leagueplans.scraper.wiki.http.response.WikiResponse
-import com.leagueplans.scraper.wiki.model.{Page, PageDescriptor}
+import com.leagueplans.scraper.wiki.model.PageDescriptor
 import com.leagueplans.scraper.wiki.streaming.*
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import zio.http.*

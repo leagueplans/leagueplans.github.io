@@ -30,7 +30,7 @@ object V2Migration extends Migration {
     toChildren.keys.filterNot(allChildren.contains).toList match {
       case root :: Nil => Right(root)
       case Nil => Left(MigrationError.Custom("Failed to find a root node"))
-      case multiple => Left(MigrationError.Custom("Found more than one root node"))
+      case _ => Left(MigrationError.Custom("Found more than one root node"))
     }
   }
 }
