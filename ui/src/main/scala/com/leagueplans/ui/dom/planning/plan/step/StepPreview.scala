@@ -61,7 +61,7 @@ object StepPreview {
   ): L.Div =
     L.div(
       L.cls(Styles.header),
-      L.top <-- offsetSignal.map(offset => s"${offset}px"),
+      L.top <-- offsetSignal.map(offset => L.style.px(offset)),
       Option.when(hasSubsteps)(
         CollapseButton(
           animationController,

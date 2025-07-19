@@ -10,7 +10,6 @@ object Depository {
 
   sealed trait Kind {
     def name: String
-    def autoStack: Boolean
     def capacity: Int
   }
 
@@ -30,14 +29,12 @@ object Depository {
 
     case object Inventory extends Kind {
       val name: String = "Inventory"
-      val autoStack: Boolean = false
       val capacity: Int = 28
     }
 
     case object Bank extends Kind {
       val name: String = "Bank"
-      val autoStack: Boolean = true
-      val capacity: Int = 820
+      val capacity: Int = 800
     }
 
     enum EquipmentSlot(slotName: String) extends Kind {
@@ -54,7 +51,6 @@ object Depository {
       case Ring extends EquipmentSlot("Ring")
 
       val name: String = s"$slotName slot"
-      val autoStack: Boolean = false
       val capacity: Int = 1
     }
 

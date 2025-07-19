@@ -66,7 +66,7 @@ object ContextMenu {
     )
 
   private def toCoords(status: Signal[Status])(pick: Status.Open => Double): EventStream[String] =
-    status.changes.collect { case open: Status.Open => s"${pick(open)}px" }
+    status.changes.collect { case open: Status.Open => L.style.px(pick(open).toInt) }
 
   private def closeOnClickOutside(status: Observer[Status]): L.Modifier[L.Element] =
     L.inContext(node =>

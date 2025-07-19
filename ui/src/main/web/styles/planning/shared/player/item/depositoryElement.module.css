@@ -8,22 +8,6 @@
   flex-direction: column;
 }
 
-.contents {
-  width: fit-content;
-  height: fit-content;
-  max-height: 100%;
-  overflow-y: auto;
-  box-sizing: border-box;
-
-  margin: 0;
-  padding: 0 0.4rem;
-  list-style-type: none;
-
-  display: grid;
-  grid-auto-rows: 36px;
-  column-gap: 2px;
-}
-
 .header {
   align-self: center;
   margin-bottom: 0.3rem;

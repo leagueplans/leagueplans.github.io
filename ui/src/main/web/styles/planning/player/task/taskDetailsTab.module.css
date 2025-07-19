@@ -26,4 +26,5 @@
   max-height: 100%;
   height: fit-content;
   overflow-y: auto;
+  scrollbar-color: #61553e #252019;
 }

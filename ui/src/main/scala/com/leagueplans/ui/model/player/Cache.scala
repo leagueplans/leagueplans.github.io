@@ -27,9 +27,14 @@ final case class Cache(
       .map { case ((id, noted), count) => (items(id), noted, count) }
       .sortBy((item, noted, _) => (item.name, noted))
       .flatMap {
-        case (item, noted, quantity) if item.stackable || noted || depository.kind.autoStack =>
+        case (item, noted, quantity) if isStacked(item, noted, depository.kind) =>
           List(ItemStack(item, noted, quantity))
         case (item, noted, quantity) =>
           List.fill(quantity)(ItemStack(item, noted, quantity = 1))
       }
+  
+  private def isStacked(item: Item, noted: Boolean, depository: Depository.Kind): Boolean =
+    item.stackable || noted || (
+      depository == Depository.Kind.Bank && item.bankable == Item.Bankable.Yes(stacks = true)
+    )
 }

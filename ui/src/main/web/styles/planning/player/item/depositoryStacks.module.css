@@ -1,0 +1,53 @@
+.content {
+  overflow-y: auto;
+  box-sizing: border-box;
+
+  scrollbar-color: #61553e #252019;
+}
+
+.stacks {
+  margin: 0;
+  padding: 0 0.4rem;
+  list-style-type: none;
+
+  display: grid;
+  column-gap: 2px;
+}
+
+.overflowStacks {
+  composes: stacks;
+
+  border-radius: 0.1rem;
+  background: rgba(255, 0, 0, 0.3);
+}
+
+.overflowWarning {
+  padding: 0.2rem;
+
+  border-color: darkorange;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 0.1rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+}
+
+.overflowIcon {
+  margin: 0.4rem;
+
+  color: orange;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.overflowText {
+  color: darkorange;
+  text-align: center;
+  text-wrap: balance;
+  font-size: 0.8rem;
+}
+
+.overflowTooltip {}

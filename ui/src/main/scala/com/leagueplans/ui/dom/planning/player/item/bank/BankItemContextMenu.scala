@@ -13,34 +13,34 @@ import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
 object BankItemContextMenu {
   def apply(
     item: Item,
-    stackSize: Int,
+    heldQuantity: Int,
     effectObserver: Observer[Effect],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modal: Modal
   ): L.Div =
     L.div(
-      withdrawButton(item, stackSize, note = false, effectObserver, menuCloser, modal),
+      withdrawButton(item, heldQuantity, note = false, effectObserver, menuCloser, modal),
       Option.when(item.noteable)(
-        withdrawButton(item, stackSize, note = true, effectObserver, menuCloser, modal)
+        withdrawButton(item, heldQuantity, note = true, effectObserver, menuCloser, modal)
       )
     )
 
   private def withdrawButton(
     item: Item,
-    stackSize: Int,
+    heldQuantity: Int,
     note: Boolean,
     effectObserver: Observer[MoveItem],
     menuCloser: Observer[ContextMenu.CloseCommand],
     modal: Modal
   ): L.Node = {
     val observer =
-      if (stackSize > 1)
-        toWithdrawItemFormOpener(item, stackSize, note, effectObserver, modal)
+      if (heldQuantity > 1)
+        toWithdrawItemFormOpener(item, heldQuantity, note, effectObserver, modal)
       else
         effectObserver.contramap[Unit](_ =>
           MoveItem(
             item.id,
-            stackSize,
+            heldQuantity,
             Depository.Kind.Bank,
             notedInSource = false,
             Depository.Kind.Inventory,

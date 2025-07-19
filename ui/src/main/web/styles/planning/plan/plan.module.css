@@ -21,4 +21,6 @@
 
   overflow: auto;
   scroll-behavior: smooth;
+
+  scrollbar-color: #89a0b7 #000000;
 }

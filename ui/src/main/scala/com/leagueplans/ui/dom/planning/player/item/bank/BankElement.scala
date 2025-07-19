@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal}
-import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
+import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
@@ -28,10 +28,13 @@ object BankElement {
         L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Bank icon")),
         "Bank"
       ),
-      StackList(
+      DepositoryStacks(
         bankSignal.map(cache.itemise),
-        toStackElement(effectObserverSignal, contextMenuController, modal)
-      ).amend(L.cls(Styles.contents, DepositoryStyles.contents))
+        columnCount = 8,
+        rowCount = 100,
+        overflowRowCount = 10,
+        toStackElement(bankSignal, effectObserverSignal, contextMenuController, modal)
+      ).amend(L.cls(Styles.contents))
     )
 
   @js.native @JSImport("/images/bank-icon.png", JSImport.Default)
@@ -46,7 +49,6 @@ object BankElement {
   @js.native @JSImport("/styles/planning/shared/player/item/depositoryElement.module.css", JSImport.Default)
   private object DepositoryStyles extends js.Object {
     val depository: String = js.native
-    val contents: String = js.native
     val header: String = js.native
     val icon: String = js.native
   }
@@ -58,6 +60,7 @@ object BankElement {
   }
 
   private def toStackElement(
+    bankSignal: Signal[Depository],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
@@ -65,7 +68,7 @@ object BankElement {
     StackElement(stack).amend(
       bindContextMenu(
         stack.item,
-        stack.quantity,
+        bankSignal,
         effectObserverSignal,
         contextMenuController,
         modal
@@ -74,14 +77,19 @@ object BankElement {
 
   private def bindContextMenu(
     item: Item,
-    quantity: Int,
+    bankSignal: Signal[Depository],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): Binder[L.Element] =
     contextMenuController.bind(menuCloser =>
-      effectObserverSignal.map(_.map(effectObserver =>
-        BankItemContextMenu(item, quantity, effectObserver, menuCloser, modal)
-      ))
+      Signal
+        .combine(bankSignal, effectObserverSignal)
+        .map((bank, maybeEffectObserver) =>
+          maybeEffectObserver.map { effectObserver =>
+            val heldQuantity = bank.contents.getOrElse((item.id, false), 0)
+            BankItemContextMenu(item, heldQuantity, effectObserver, menuCloser, modal)
+          }
+        )
     )
 }

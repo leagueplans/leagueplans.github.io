@@ -21,6 +21,7 @@
   margin: 0.25rem 0;
 
   overflow: auto;
+  scrollbar-color: #61553e #252019;
 }
 
 .footer {

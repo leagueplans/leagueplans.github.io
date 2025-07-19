@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
-import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
+import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -29,10 +29,13 @@ object InventoryElement {
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
       InventoryHeader(stacks, modal, toastPublisher),
-      StackList(
+      DepositoryStacks(
         stacks,
+        columnCount = 4,
+        rowCount = 7,
+        overflowRowCount = 20,
         toStackElement(playerSignal, cache, effectObserverSignal, contextMenuController, modal)
-      ).amend(L.cls(Styles.contents, DepositoryStyles.contents)),
+      ).amend(L.cls(Styles.contents)),
       bindPanelContextMenu(itemFuse, effectObserverSignal, contextMenuController, modal)
     )
   }
@@ -45,7 +48,6 @@ object InventoryElement {
   @js.native @JSImport("/styles/planning/shared/player/item/depositoryElement.module.css", JSImport.Default)
   private object DepositoryStyles extends js.Object {
     val depository: String = js.native
-    val contents: String = js.native
   }
 
   @js.native @JSImport("/styles/planning/shared/player/panel.module.css", JSImport.Default)

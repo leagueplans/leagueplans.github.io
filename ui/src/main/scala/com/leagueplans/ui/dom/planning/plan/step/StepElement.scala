@@ -119,7 +119,7 @@ object StepElement {
         whenTrue = _ => Styles.headerWhileDragging,
         whenFalse = _ => Styles.headerWhileNotDragging
       ),
-      L.top <-- positionOffset.map(offset => s"${offset}px")
+      L.top <-- positionOffset.map(offset => L.style.px(offset))
     )
 
   private def toSubsteps(

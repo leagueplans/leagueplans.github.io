@@ -1,4 +1,3 @@
 .contents {
-  grid-template-columns: repeat(4, 36px);
-  grid-template-rows: repeat(7, 36px);
+  max-height: 350px;
 }

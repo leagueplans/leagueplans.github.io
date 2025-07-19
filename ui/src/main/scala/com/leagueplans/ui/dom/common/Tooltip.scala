@@ -90,5 +90,5 @@ object Tooltip {
   private def toOffset(
     visibility: Signal[(Double, Double)]
   )(pick: ((Double, Double)) => Double): Signal[String] =
-    visibility.map(coords => s"${pick(coords)}px")
+    visibility.map(coords => L.style.px(pick(coords).toInt))
 }

@@ -16,7 +16,7 @@ object HeightMask {
         case (InvertibleAnimationController.Status.Closed, _, _) => Styles.maskClosed
         case (_: InvertibleAnimationController.Status.Animating, _, _) => Styles.maskAnimating
       },
-      L.height.maybe(Option.when(controller.isClosed)("0px")),
+      L.height.maybe(Option.when(controller.isClosed)(L.style.px(0))),
       content,
       controller(
         open(_, getHeight(content)),
@@ -50,9 +50,9 @@ object HeightMask {
         fill = FillMode.forwards
       },
       List(KeyframeProperty.height(contentHeight), KeyframeProperty.offset(0)),
-      List(KeyframeProperty.height("0px"), KeyframeProperty.opacity(0))
+      List(KeyframeProperty.height(L.style.px(0)), KeyframeProperty.opacity(0))
     )
 
   private def getHeight(content: L.Element): String =
-    s"${content.ref.clientHeight}px"
+    L.style.px(content.ref.clientHeight)
 }
