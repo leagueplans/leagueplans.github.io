@@ -4,7 +4,6 @@ import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.help.HelpButton
 import com.leagueplans.ui.dom.planning.plan.{FocusedStep, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.facades.fusejs.FuseOptions
@@ -100,8 +99,9 @@ object PlanningPage {
             ),
             forester,
             modal
-          )
+          ).amend(L.cls(Styles.editor))
         )
+        .map(_.getOrElse(createEditorFallback(stateSignal)))
 
     val stepsWithErrorsStream =
       Signal
@@ -115,10 +115,9 @@ object PlanningPage {
       L.div(
         L.cls(Styles.lhs),
         L.child <-- visualiser.map(_.amend(L.cls(Styles.state))),
-        L.child.maybe <-- editorElement.map(_.map(_.amend(L.cls(Styles.editor))))
+        L.child <-- editorElement
       ),
       planElement.amend(L.cls(Styles.plan)),
-      HelpButton(modal).amend(L.cls(Styles.help)),
       focusedStepBinder(forester.signal),
       //TODO Move evaluation to a worker, since this is expensive to run on the main thread
       stepsWithErrorsStream --> stepsWithErrorsVar,
@@ -134,8 +133,8 @@ object PlanningPage {
     val lhs: String = js.native
     val state: String = js.native
     val editor: String = js.native
+    val editorFallback: String = js.native
     val plan: String = js.native
-    val help: String = js.native
   }
 
   private final case class State(
@@ -210,6 +209,31 @@ object PlanningPage {
         )
       )
     ))
+
+  private def createEditorFallback(stateSignal: Signal[State]): L.Div =
+    L.div(
+      L.cls(Styles.editorFallback),
+      L.p(
+        "Your plan is built from steps. You can use the 'Add step' button in the top-right to create steps."
+      ),
+      L.child.maybe <-- stateSignal.map(state =>
+        Option.when(!state.plan.isEmpty)(
+          L.p(
+            "Clicking on a step will focus it. Focusing a step unlocks editing tools which let you add effects to the " +
+              "step, like adding items to the inventory, or gaining experience. This website is a work-in-progress, " +
+              "and most editing tools are currently found in right-click menus."
+          )
+        )
+      ),
+      L.child.maybe <-- stateSignal.map(state =>
+        Option.when(!state.plan.isEmpty)(
+          L.p(
+            "You can flick back and forth between steps to see what your character should look like at any point in " +
+              "your plan. Steps can be easily reordered, so you can freely experiment with different plans."
+          )
+        )
+      )
+    )
 
   private def createStatusObserver(toastPublisher: ToastHub.Publisher): Observer[PlanSubscription.Status] =
     Observer {

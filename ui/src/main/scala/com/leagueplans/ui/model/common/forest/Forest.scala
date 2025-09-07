@@ -70,6 +70,9 @@ final class Forest[ID, T] private[forest](
 
   override def toString: String =
     s"Forest$asProduct"
+    
+  def isEmpty: Boolean =
+    nodes.isEmpty
 
   def map[S](f: (ID, T) => S): Forest[ID, S] =
     Forest(
