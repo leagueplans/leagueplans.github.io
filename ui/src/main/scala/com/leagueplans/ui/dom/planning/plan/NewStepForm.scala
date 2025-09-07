@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{FormOpener, Modal}
 import com.leagueplans.ui.dom.common.form.{Form, TextInput}
+import com.leagueplans.ui.dom.common.{FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.Paragraph
 
@@ -19,13 +19,13 @@ object NewStepForm {
     val (input, label, descriptionSignal) = createInput()
 
     form.amend(
-      L.cls(Styles.form),
-      L.p(L.cls(Styles.title), "Add a new step"),
+      L.cls(Styles.form, Modal.Styles.form),
+      L.p(L.cls(Styles.title, Modal.Styles.title), "Add a new step"),
       label,
       input,
       explainer(),
       submitButton.amend(
-        L.cls(Styles.submit),
+        L.cls(Styles.submit, Modal.Styles.confirmationButton),
         L.value("Add step"),
       )
     )

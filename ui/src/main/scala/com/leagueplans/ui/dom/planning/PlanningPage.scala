@@ -107,7 +107,7 @@ object PlanningPage {
       Signal
         .combine(forester.signal, settingsVar, effectResolverSignal)
         .changes
-        .debounce(1500)
+        .debounce(ms = 1500)
         .map((forest, settings, resolver) => findStepsWithErrors(forest, resolver, settings, cache))
 
     L.div(

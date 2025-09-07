@@ -26,7 +26,7 @@ object NewRequirementForm {
     val form = emptyForm.amend(
       L.cls(Styles.form),
       L.div(
-        typeLabel.amend("Requirement type:"),
+        typeLabel.amend("Requirement type"),
         typeSelector.amend(L.cls(Styles.input)),
         submitButton.amend(L.cls(Styles.submit))
       ),
@@ -68,7 +68,7 @@ object NewRequirementForm {
       )
 
     val div = L.div(
-      searchLabel,
+      searchLabel.amend("Item"),
       search.amend(L.cls(Styles.input)),
       radios
     )

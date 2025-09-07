@@ -1,9 +1,10 @@
-package com.leagueplans.ui.dom.planning.player.item.inventory
+package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
 import com.leagueplans.common.model.EquipmentType
 import com.leagueplans.common.model.Item.Bankable
 import com.leagueplans.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
+import com.leagueplans.ui.dom.planning.player.item.inventory.forms.RemoveItemForm
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot

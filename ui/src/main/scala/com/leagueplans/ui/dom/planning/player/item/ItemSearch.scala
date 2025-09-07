@@ -32,7 +32,7 @@ object ItemSearch {
         maxResults = 30
       )
 
-    (search.amend(L.placeholder("Logs")), label.amend("Item:"), options.map(_.getOrElse(List.empty)))
+    (search.amend(L.placeholder("Logs")), label, options.map(_.getOrElse(List.empty)))
   }
 
   private def radioGroup(

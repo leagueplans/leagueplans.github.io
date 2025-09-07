@@ -84,8 +84,8 @@ object DepositoryStacks {
     )
 
   private def templateVector(s: "rows" | "columns", length: Int) =
-    L.styleProp[String](
-      s"grid-template-$s")(s"repeat($length, ${L.style.px(36)})"
+    L.styleProp[String](s"grid-template-$s")(
+      s"repeat($length, ${L.style.px(36)})"
     )
 
   private def maybeOverflowWarning(
@@ -125,8 +125,7 @@ object DepositoryStacks {
     Tooltip(
       L.span(
         L.cls(Styles.overflowTooltip),
-        "You've got too many items. The number of items shown is clamped to avoid rendering issues (like what " +
-          "might happen if you were to add 30,000 unnoted logs to your inventory)."
+        "You're holding too many items. The number of items shown is clamped to avoid rendering issues."
       )
     )
 }

@@ -1,3 +1,8 @@
-.contents {
-  max-height: 350px;
+.element {
+  display: flex;
+  column-gap: 0.3rem;
 }
+
+.panel {}
+
+.sidebar {}

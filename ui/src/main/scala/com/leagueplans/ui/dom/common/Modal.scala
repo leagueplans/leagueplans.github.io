@@ -34,8 +34,14 @@ object Modal {
   }
 
   @js.native @JSImport("/styles/common/modal.module.css", JSImport.Default)
-  private object Styles extends js.Object {
+  object Styles extends js.Object {
     val dialog: String = js.native
+    val form: String = js.native
+    val title: String = js.native
+    
+    val button: String = js.native
+    val confirmationButton: String = js.native
+    val deletionButton: String = js.native
   }
 }
 

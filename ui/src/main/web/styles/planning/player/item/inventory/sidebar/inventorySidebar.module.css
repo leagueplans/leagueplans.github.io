@@ -1,0 +1,47 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.3rem;
+}
+
+.button {
+  border-style: solid;
+  border-color: black;
+  border-radius: 0.3rem;
+
+  padding: 0.5rem;
+  background-color: #494034;
+
+  text-wrap: nowrap;
+  color: white;
+  font-weight: bold;
+  text-shadow: 1px 1px black;
+
+  transition:
+    color 175ms ease-out,
+    background-color 175ms ease-out;
+}
+
+.button:enabled:hover, .button:enabled:focus-visible {
+  background-color: #6d5f4d;
+}
+
+.button:enabled:active {
+  scale: 0.95;
+}
+
+.button:disabled {
+  color: #656565;
+}
+
+.addItemButton {
+  composes: button;
+}
+
+.bankAllButton {
+  composes: button;
+}
+
+.exportBankTagsButton {
+  composes: button;
+}

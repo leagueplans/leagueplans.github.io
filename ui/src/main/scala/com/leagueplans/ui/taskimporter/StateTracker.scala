@@ -31,7 +31,7 @@ object StateTracker {
     val stateVar = Var(initialState)
     // Debouncing here avoids repainting on changes to the state when processing the
     // initial exact task merges
-    val signal = stateVar.signal.changes.debounce(10).toSignal(initialState)
+    val signal = stateVar.signal.changes.debounce(ms = 10).toSignal(initialState)
 
     (decisionStream --> stateVar.updater(handle), signal)
   }

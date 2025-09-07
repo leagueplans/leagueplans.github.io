@@ -13,6 +13,15 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2025, 8, 7),
+        "UX improvements to the inventory",
+        List(
+          "New buttons for adding items to the inventory, banking all items in the inventory, and exporting bank tags",
+          "Spruced up the modals for adding items to the inventory and exporting bank tags",
+          "Part of ongoing work to move away from hidden right-click menus and improve UX"
+        )
+      ),
+      item(
         new Date(2025, 2, 8),
         "Support for keyboard shortcuts",
         List(
@@ -30,14 +39,6 @@ object Changelog {
           "Steps can now be copy/pasted between browser tabs (except Firefox)",
           "Tidied up the layout of the plan section",
           "Toggling a step's visibility with the keyboard no longer changes the focused step"
-        )
-      ),
-      item(
-        new Date(2024, 10, 15),
-        "RuneLite bank tags",
-        List(
-          "You can now click a button in the inventory to export the current inventory contents as a" +
-            " RuneLite bank tag."
         )
       )
     )

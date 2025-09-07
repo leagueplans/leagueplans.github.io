@@ -92,7 +92,6 @@ object QuestList {
     (search.amend(L.placeholder("filter")), signal.map(_.getOrElse(quests)))
   }
 
-
   private def toFuse(quests: List[Quest]) =
     Fuse(
       quests,

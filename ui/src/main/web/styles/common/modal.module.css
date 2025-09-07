@@ -2,3 +2,66 @@
   border-radius: 1rem;
   padding: 0;
 }
+
+.form {
+  padding: 1rem;
+  background-color: #f7ffff;
+}
+
+.title {
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+}
+
+.button {
+  border-style: solid;
+  border-width: 2px;
+  border-color: #4f4f4f;
+  border-radius: 1rem;
+
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.button:enabled:focus-visible {
+  outline-style: dashed;
+  outline-width: 2px;
+  outline-offset: 1px;
+  outline-color: rgba(0, 0, 0, 0.7);
+}
+
+.button:enabled:active {
+  scale: 0.97;
+}
+
+.confirmationButton {
+  composes: button;
+}
+
+.confirmationButton:enabled {
+  color: black;
+  background-color: #f9f3d5;
+}
+
+.confirmationButton:enabled:hover, .confirmationButton:enabled:focus-visible {
+  background-color: #edffd8;
+}
+
+.deletionButton {
+  composes: button;
+}
+
+.deletionButton:enabled {
+  color: white;
+  text-shadow:
+    -1px 0   black,
+     0   1px black,
+     1px 0   black,
+     0  -1px black;
+
+  background-color: #6f6f6f;
+}
+
+.deletionButton:enabled:hover, .deletionButton:enabled:focus-visible {
+  background-color: #bf2626;
+}

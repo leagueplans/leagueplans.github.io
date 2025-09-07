@@ -1,5 +1,8 @@
 .button {
-  transition: background-color 175ms ease-out;
+  transition:
+    background-color 175ms ease-out,
+    color 175ms ease-out,
+    scale 50ms ease-out;
 }
 
 .button:enabled {

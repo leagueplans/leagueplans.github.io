@@ -1,4 +1,4 @@
-package com.leagueplans.ui.dom.planning.player.item.inventory
+package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.AddItem
