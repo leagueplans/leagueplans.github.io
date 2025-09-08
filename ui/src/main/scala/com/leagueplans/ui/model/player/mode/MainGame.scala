@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.mode
 
 import com.leagueplans.common.model.Skill.Hitpoints
 import com.leagueplans.common.model.{Item, Skill}
-import com.leagueplans.ui.model.plan.{ExpMultiplierStrategy, Plan}
+import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.league.LeagueStatus
@@ -54,10 +54,10 @@ object MainGame extends Mode {
       )
     )
 
-  val settings: Plan.Settings =
-    Plan.Settings(
+  val settings: Plan.Settings.Explicit =
+    Plan.Settings.Explicit(
       initialPlayer,
-      ExpMultiplierStrategy.Fixed(1),
+      List(ExpMultiplier(Skill.values.toSet, base = 1, thresholds = List.empty)),
       maybeLeaguePointScoring = None
     )
 }

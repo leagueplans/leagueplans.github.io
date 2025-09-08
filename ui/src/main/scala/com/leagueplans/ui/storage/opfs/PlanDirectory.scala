@@ -28,13 +28,13 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
   private def readSettings(): EventStream[Either[FileSystemError, Plan.Settings]] =
     underlying.read(settingsFileName)
     
-  private def writeSettings(settings: Plan.Settings) =
+  private def writeSettings(settings: Plan.Settings): EventStream[Either[FileSystemError, ?]] =
     underlying.replaceFileContent(settingsFileName, settings)
 
   private def readMappings(): EventStream[Either[FileSystemError, StepMappings]] =
     underlying.read(parentChildMappingsFileName)
 
-  private def writeMappings(mappings: StepMappings) =
+  private def writeMappings(mappings: StepMappings): EventStream[Either[FileSystemError, ?]] =
     underlying.replaceFileContent(parentChildMappingsFileName, mappings)
 
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, ?]] = {

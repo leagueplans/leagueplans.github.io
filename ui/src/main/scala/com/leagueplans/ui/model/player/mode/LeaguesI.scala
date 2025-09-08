@@ -1,15 +1,15 @@
 package com.leagueplans.ui.model.player.mode
 
-import com.leagueplans.common.model.LeagueTaskTier
+import com.leagueplans.common.model.{LeagueTaskTier, Skill}
 import com.leagueplans.common.model.Skill.{Agility, Herblore, Hitpoints}
-import com.leagueplans.ui.model.plan.{ExpMultiplierStrategy, LeaguePointScoring, Plan}
+import com.leagueplans.ui.model.plan.{ExpMultiplier, LeaguePointScoring, Plan}
 import com.leagueplans.ui.model.player.skill.{Level, Stats}
 
 object LeaguesI extends Mode.League {
   val name: String = "Twisted League"
 
-  val settings: Plan.Settings =
-    Plan.Settings(
+  val settings: Plan.Settings.Explicit =
+    Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
         stats = Stats(
           Agility -> Level(15).bound,
@@ -27,7 +27,7 @@ object LeaguesI extends Mode.League {
           278 // Cast Monster Examine on a mountain troll south of Mount Quidamortem
         )
       ),
-      expMultiplierStrategy = ExpMultiplierStrategy.Fixed(5),
+      expMultipliers = List(ExpMultiplier(Skill.values.toSet, base = 5, thresholds = List.empty)),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
         LeaguesI,
         Map(

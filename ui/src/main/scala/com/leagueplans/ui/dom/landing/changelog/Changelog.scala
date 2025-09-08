@@ -13,6 +13,15 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2025, 8, 8),
+        "XP multiplier rework",
+        List(
+          "XP multipliers can now affect a subset of skills, and be based on combat levels",
+          "The Deadman: Armageddon XP multiplier has been corrected",
+          "Fixed an issue where plans would need to be reimported to pick up config changes for game modes"
+        )
+      ),
+      item(
         new Date(2025, 8, 7),
         "UX improvements to the inventory",
         List(

@@ -1,16 +1,16 @@
 package com.leagueplans.ui.model.player.mode
 
-import com.leagueplans.common.model.Item
+import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.common.model.Skill.{Herblore, Hitpoints}
-import com.leagueplans.ui.model.plan.{ExpMultiplierStrategy, Plan}
+import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.{Level, Stats}
 
 object Armageddon extends Mode.Deadman {
   val name: String = "Deadman: Armageddon"
 
-  val settings: Plan.Settings =
-    Plan.Settings(
+  val settings: Plan.Settings.Explicit =
+    Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
         stats = Stats(
           Herblore -> Level(3).bound,
@@ -43,7 +43,18 @@ object Armageddon extends Mode.Deadman {
           193 // Read the blackboard at Barbarian Assault after reaching level 5 in every role
         )
       ),
-      expMultiplierStrategy = ExpMultiplierStrategy.Fixed(10),
+      expMultipliers = List(
+        ExpMultiplier(
+          Skill.combats,
+          base = 10,
+          thresholds = List(15 -> ExpMultiplier.Condition.CombatLevel(71))
+        ),
+        ExpMultiplier(
+          Skill.nonCombats,
+          base = 10,
+          thresholds = List.empty
+        )
+      ),
       maybeLeaguePointScoring = None
     )
 }

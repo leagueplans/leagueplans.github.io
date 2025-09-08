@@ -8,7 +8,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.league.LeagueStatus
-import com.leagueplans.ui.model.player.mode.LeaguesIII
+import com.leagueplans.ui.model.player.mode.{LeaguesIII, MainGame, Mode}
 import com.leagueplans.ui.model.player.skill.{Exp, Stats}
 
 final class PlanTest extends CodecSpec {
@@ -24,19 +24,26 @@ final class PlanTest extends CodecSpec {
         skillsUnlocked = Set(Skill.Woodcutting)
       )
     )
-    val expMultiplierStrategy = ExpMultiplierStrategy.Fixed(10)
+    val expMultiplier = ExpMultiplier(Skill.values.toSet, base = 10, thresholds = List.empty)
     val leaguePointScoring = LeaguePointScoring(LeaguesIII, Map(LeagueTaskTier.Easy -> 5))
-    val settings = Plan.Settings(player, expMultiplierStrategy, Some(leaguePointScoring))
+    val deferredSettings = Plan.Settings.Deferred(MainGame)
 
     "Settings" - {
-      "encoding values to and decoding values from an expected encoding" in
-        testRoundTripSerialisation(
-          settings,
+      "encoding values to and decoding values from an expected encoding" - {
+        "Deferred" in testRoundTripSerialisation(
+          deferredSettings,
           Decoder.decodeMessage,
-          Array[Byte](0b100, 0b100101) ++ Encoder.encode(player).getBytes ++
-            Array[Byte](0b1100, 0b110) ++ Encoder.encode[ExpMultiplierStrategy](expMultiplierStrategy).getBytes ++
+          Array[Byte](0, 0, 0b1100, 0b1011, 0b11, 0b1001) ++ Encoder.encode[Mode](MainGame).getBytes
+        )
+
+        "Explicit" in testRoundTripSerialisation(
+          Plan.Settings.Explicit(player, List(expMultiplier), Some(leaguePointScoring)),
+          Decoder.decodeMessage,
+          Array[Byte](0, 0b1, 0b1100, -0b110011, 0b1, 0b100, 0b100101) ++ Encoder.encode(player).getBytes ++
+            Array[Byte](0b1100, -0b1110100, 0b1) ++ Encoder.encode(expMultiplier).getBytes ++
             Array[Byte](0b10100, 0b10101) ++ Encoder.encode(leaguePointScoring).getBytes
         )
+      }
     }
 
     "encoding values to and decoding values from an expected encoding" in {
@@ -58,11 +65,11 @@ final class PlanTest extends CodecSpec {
       )
 
       testRoundTripSerialisation(
-        Plan(name, forest, settings),
+        Plan(name, forest, deferredSettings),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b11000) ++ Encoder.encode(name).getBytes ++
           Array[Byte](0b1100, 0b1000111) ++ Encoder.encode(forest).getBytes ++
-          Array[Byte](0b10100, 0b1000110) ++ Encoder.encode(settings).getBytes
+          Array[Byte](0b10100, 0b1111) ++ Encoder.encode[Plan.Settings](deferredSettings).getBytes
       )
     }
   }

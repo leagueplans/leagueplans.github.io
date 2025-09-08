@@ -71,10 +71,9 @@ object PlanningPage {
         .map((forest, focusedStep, settings, resolver) => State(forest, focusedStep, settings.initialPlayer, resolver))
 
     val visualiser =
-      settingsVar.signal.splitOne(_.maybeLeaguePointScoring.nonEmpty)((isLeague, _, settingsSignal) =>
+      settingsVar.signal.splitOne(_.maybeLeaguePointScoring.nonEmpty)((isLeague, _, _) =>
         Visualiser(
           stateSignal.map(_.playerAtFocusedStep),
-          settingsSignal.map(_.expMultiplierStrategy),
           isLeague,
           cache,
           itemFuse,
@@ -171,7 +170,7 @@ object PlanningPage {
 
   private def createEffectResolver(settings: Settings, cache: Cache): EffectResolver =
     EffectResolver(
-      settings.expMultiplierStrategy,
+      settings.expMultipliers,
       settings.maybeLeaguePointScoring match {
         case Some(scoring) => scoring.apply
         case None => (_: LeagueTask) => 0

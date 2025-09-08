@@ -167,7 +167,7 @@ object NewPlanForm {
           roots = List.empty
         )
         EventStream.fromValue(
-          Right((PlanMetadata(name), Plan(name, steps, mode.settings))),
+          Right((PlanMetadata(name), Plan(name, steps, Plan.Settings.Deferred(mode)))),
           emitOnce = true
         )
 
@@ -175,7 +175,7 @@ object NewPlanForm {
         ExportedPlanDecoder
           .decode(planImport)
           .map(_.map((metadata, plan) =>
-            (metadata.copy(name = name), plan.copy(name = name, settings = mode.settings))
+            (metadata.copy(name = name), plan.copy(name = name, settings = Plan.Settings.Deferred(mode)))
           ))
     }
 }

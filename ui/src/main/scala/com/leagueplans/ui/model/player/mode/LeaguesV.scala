@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.mode
 
 import com.leagueplans.common.model.Skill.{Herblore, Hitpoints, Runecraft}
 import com.leagueplans.common.model.{Item, LeagueTaskTier, Skill}
-import com.leagueplans.ui.model.plan.{ExpMultiplierStrategy, LeaguePointScoring, Plan}
+import com.leagueplans.ui.model.plan.{ExpMultiplier, LeaguePointScoring, Plan}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.skill.{Level, Stats}
@@ -10,8 +10,8 @@ import com.leagueplans.ui.model.player.skill.{Level, Stats}
 object LeaguesV extends Mode.League {
   val name: String = "Leagues V: Raging Echoes"
 
-  val settings: Plan.Settings =
-    Plan.Settings(
+  val settings: Plan.Settings.Explicit =
+    Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
         stats = Stats(
           Herblore -> Level(3).bound,
@@ -86,10 +86,15 @@ object LeaguesV extends Mode.League {
           skillsUnlocked = Skill.values.toSet
         )
       ),
-      expMultiplierStrategy = ExpMultiplierStrategy.LeaguePointBased(
-        5,
-        List(750 -> 8, 5000 -> 12, 16000 -> 16)
-      ),
+      expMultipliers = List(ExpMultiplier(
+        Skill.values.toSet,
+        base = 5,
+        thresholds = List(
+          8 -> ExpMultiplier.Condition.LeaguePoints(750),
+          12 -> ExpMultiplier.Condition.LeaguePoints(5000),
+          16 -> ExpMultiplier.Condition.LeaguePoints(16000),
+        )
+      )),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
         LeaguesV,
         Map(

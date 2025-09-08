@@ -8,6 +8,52 @@ import org.scalatest.Assertion
 
 final class ModeTest extends CodecSpec {
   "Mode" - {
+    "encoding values to and decoding values from an expected encoding" - {
+      def test(mode: Mode, expectedEncoding: Array[Byte]): Assertion =
+        testRoundTripSerialisation(mode, Decoder.decodeLen, expectedEncoding)
+
+      "MainGame" in test(
+        MainGame,
+        Array(`m`, CE.`a`, `i`, `n`, `-`, `g`, CE.`a`, `m`, `e`)
+      )
+
+      "LeaguesI" in test(
+        LeaguesI,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `1`)
+      )
+
+      "LeaguesII" in test(
+        LeaguesII,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `2`)
+      )
+
+      "LeaguesIII" in test(
+        LeaguesIII,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `3`)
+      )
+
+      "LeaguesIV" in test(
+        LeaguesIV,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `4`)
+      )
+
+      "LeaguesV" in test(
+        LeaguesV,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `5`)
+      )
+      
+      "Armageddon" in test(
+        Armageddon,
+        Array(`d`, `e`, CE.`a`, `d`, `m`, CE.`a`, `n`, `-`, CE.`a`, `r`, `m`, CE.`a`, `g`, `e`, `d`, `d`, `o`, `n`)
+      )
+    }
+
+    "decoding should fail for an unexpected encoding" in (
+      Decoder.decodeLen[Mode](
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `6`)
+      ).left.value shouldBe a[DecodingFailure]
+    )
+    
     "League" - {
       "encoding values to and decoding values from an expected encoding" - {
         def test(league: Mode.League, expectedEncoding: Array[Byte]): Assertion =
@@ -41,7 +87,7 @@ final class ModeTest extends CodecSpec {
 
       "decoding should fail for an unexpected encoding" in(
         Decoder.decodeLen[Mode.League](
-          Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `6`)
+          Array(`m`, CE.`a`, `i`, `n`, `-`, `g`, CE.`a`, `m`, `e`)
         ).left.value shouldBe a[DecodingFailure]
       )
     }

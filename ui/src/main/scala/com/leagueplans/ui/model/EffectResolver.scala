@@ -1,25 +1,22 @@
 package com.leagueplans.ui.model
 
 import com.leagueplans.common.model.LeagueTask
-import com.leagueplans.ui.model.plan.{Effect, ExpMultiplierStrategy}
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.skill.Stats
 import com.leagueplans.ui.model.player.{Cache, Player}
 
 final class EffectResolver(
-  expMultiplierStrategy: ExpMultiplierStrategy,
+  expMultipliers: List[ExpMultiplier],
   leaguePointScoring: LeagueTask => Int,
   cache: Cache
 ) {
   def resolve(player: Player, effect: Effect): Player =
     effect match {
       case Effect.GainExp(skill, exp) =>
-        val multiplier = expMultiplierStrategy match {
-          case ExpMultiplierStrategy.Fixed(multiplier) => multiplier
-          case ems: ExpMultiplierStrategy.LeaguePointBased =>
-            ems.multiplierAt(player.leagueStatus.leaguePoints)
-        }
-
-        val gainedExp = exp * multiplier
+        val gainedExp =
+          expMultipliers.foldLeft(exp)((acc, multiplier) => 
+            acc * multiplier.multiplierFor(skill, player)
+          )
         player.copy(stats =
           Stats(
             player.stats.raw + (skill -> (player.stats(skill) + gainedExp))

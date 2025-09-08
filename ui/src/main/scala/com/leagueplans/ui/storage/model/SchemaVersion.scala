@@ -15,6 +15,8 @@ enum SchemaVersion(val date: Date) {
   case V1 extends SchemaVersion(new Date(2024, 3, 17))
   /** Adds support for arbitrary numbers of root steps in plans */
   case V2 extends SchemaVersion(new Date(2025, 1, 21))
+  /** Adds support for new types of exp multipliers, and allows mode settings updates without reimporting plans */
+  case V3 extends SchemaVersion(new Date(2025, 8, 7))
 
   def number: Int = ordinal + 1
 }

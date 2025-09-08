@@ -17,6 +17,12 @@ object Skill {
   given JsonDecoder[Skill] = JsonDecoder[String].emapTry(s =>
     Try(Skill.valueOf(s))
   )
+  
+  val combats: Set[Skill] =
+    Set(Attack, Defence, Hitpoints, Magic, Prayer, Ranged, Strength)
+  
+  val nonCombats: Set[Skill] =
+    values.toSet -- combats
 
   given Encoder[Skill] = Encoder.derived
   given Decoder[Skill] = Decoder.derived

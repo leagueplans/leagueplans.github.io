@@ -23,7 +23,8 @@ object Migrator {
   private def toMigration(schemaVersion: SchemaVersion): Option[Promise[Migration]] =
     schemaVersion match {
       case SchemaVersion.V1 => Some(dynamicImport(V2Migration))
-      case SchemaVersion.V2 => None
+      case SchemaVersion.V2 => Some(dynamicImport(V3Migration))
+      case SchemaVersion.V3 => None
     }
 
   private def run(
