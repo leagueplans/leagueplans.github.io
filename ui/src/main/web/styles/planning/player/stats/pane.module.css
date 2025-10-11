@@ -2,6 +2,18 @@
   position: relative;
   width: 60px;
   height: 30px;
+  border: none;
+
+  display: block;
+  padding: 0;
+
+  background-image: url(/images/stat-window/stat-background.png);
+  background-size: cover;
+  background-color: #c5a200;
+}
+
+.pane:enabled:hover {
+  background-blend-mode: hard-light;
 }
 
 .icon {

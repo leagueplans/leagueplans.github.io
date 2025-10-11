@@ -1,0 +1,49 @@
+.progress {}
+
+.bar {
+  position: relative;
+  height: min-content;
+  margin-bottom: 0.5rem;
+
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  border-radius: 0.5rem;
+
+  overflow: hidden;
+  background-color: #ebebeb;
+}
+
+.indicator {
+  position: absolute;
+  height: 100%;
+  border-radius: 0.3rem;
+
+  transition:
+    width 500ms ease-in-out,
+    background-color 175ms ease-in-out;
+}
+
+.level {
+  position: relative;
+  z-index: 1;
+
+  padding: 0.5rem;
+  color: white;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+.currentLevel {
+  composes: level;
+  float: left;
+}
+
+.nextLevel {
+  composes: level;
+  float: right;
+}
+
+.expRemaining {
+  justify-self: center;
+  font-size: 0.75rem;
+}

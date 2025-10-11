@@ -1,0 +1,27 @@
+.tab {
+  border-radius: 0.8rem;
+  transition: background-color 175ms ease-out;
+}
+
+.selected {
+  background-color: #c5ff6d;
+}
+
+.notSelected {}
+
+.notSelected:hover {
+  background-color: #acfff6;
+}
+
+.label {
+  cursor: pointer;
+}
+
+.icon {
+  display: block;
+  padding: 0.6rem;
+}
+
+.radio {
+  display: none;
+}

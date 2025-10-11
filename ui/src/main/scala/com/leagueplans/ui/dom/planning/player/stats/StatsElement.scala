@@ -1,12 +1,13 @@
 package com.leagueplans.ui.dom.planning.player.stats
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.common.model.Skill.*
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal}
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.ui.dom.planning.player.stats.form.StatsDetailForm
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.skill.{Stat, Stats}
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
@@ -15,47 +16,42 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StatsElement {
-  def from(
+  def apply(
     playerSignal: Signal[Player],
-    effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
+    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    expMultipliers: List[ExpMultiplier],
     modal: Modal
-  ): ReactiveHtmlElement[OList] =
-    StatsElement(
+  ): ReactiveHtmlElement[OList] = {
+    val activeSkill = Var[Skill](Skill.values.head)
+    val statsDetailForm = StatsDetailForm(
+      activeSkill,
+      playerSignal,
+      effectObserverSignal,
+      expMultipliers
+    )
+    
+    val statsSignal =
       playerSignal.map(player =>
-        orderedSkills.map(skill =>
+        Skill.ordered.map(skill =>
           Stat(
             skill,
             player.stats(skill),
             player.leagueStatus.skillsUnlocked.contains(skill)
           )
         )
-      ),
-      effectObserver,
-      contextMenuController,
-      modal
-    )
+      )
 
-  private val orderedSkills: List[Skill] =
-    List(
-      Attack,       Hitpoints, Mining,
-      Strength,     Agility,   Smithing,
-      Defence,      Herblore,  Fishing,
-      Ranged,       Thieving,  Cooking,
-      Prayer,       Crafting,  Firemaking,
-      Magic,        Fletching, Woodcutting,
-      Runecraft,    Slayer,    Farming,
-      Construction, Hunter
-    )
-
-  def apply(
-    statsSignal: Signal[List[Stat]],
-    effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
-    modal: Modal
-  ): ReactiveHtmlElement[OList] = {
-    val statPanes = statsSignal.split(_.skill)((_, _, signal) =>
-      L.li(StatPane(signal, effectObserver, contextMenuController, modal))
+    val statPanes = statsSignal.split(_.skill)((skill, _, signal) =>
+      L.li(
+        StatPane(
+          signal,
+          showStatsDetailForm = () => {
+            activeSkill.set(skill)
+            modal.show(statsDetailForm)
+          },
+          formEnabled = effectObserverSignal.map(_.nonEmpty)
+        )
+      )
     )
 
     L.ol(

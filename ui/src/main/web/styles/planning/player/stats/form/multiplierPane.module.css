@@ -1,0 +1,18 @@
+.pane {
+  display: flex;
+  flex-direction: column;
+}
+
+.multiplier {
+  align-self: center;
+  font-size: 5rem;
+}
+
+.multiplierSymbol {
+  font-size: 4rem;
+}
+
+.explainer {
+  align-self: center;
+  font-size: 1rem;
+}

@@ -71,13 +71,14 @@ object PlanningPage {
         .map((forest, focusedStep, settings, resolver) => State(forest, focusedStep, settings.initialPlayer, resolver))
 
     val visualiser =
-      settingsVar.signal.splitOne(_.maybeLeaguePointScoring.nonEmpty)((isLeague, _, _) =>
+      settingsVar.signal.map(settings =>
         Visualiser(
           stateSignal.map(_.playerAtFocusedStep),
-          isLeague,
+          isLeague = settings.maybeLeaguePointScoring.nonEmpty,
           cache,
           itemFuse,
-          addEffectToFocus(focusController.signal, forester),
+          createEffectObserver(focusController.signal, forester),
+          settings.expMultipliers,
           contextMenuController,
           modal,
           toastPublisher
@@ -197,7 +198,7 @@ object PlanningPage {
     stepsWithErrors
   }
 
-  private def addEffectToFocus(
+  private def createEffectObserver(
     focusedStepSignal: Signal[Option[Step.ID]],
     forester: Forester[Step.ID, Step]
   ): Signal[Option[Observer[Effect]]] =

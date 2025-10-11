@@ -49,7 +49,7 @@ object LeagueTaskElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(completeSignal, effectObserverSignal)

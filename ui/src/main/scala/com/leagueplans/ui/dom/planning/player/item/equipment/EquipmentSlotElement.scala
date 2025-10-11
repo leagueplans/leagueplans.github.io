@@ -92,7 +92,7 @@ object EquipmentSlotElement {
     slot: EquipmentSlot,
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       effectObserverSignal.map(_.map(effectObserver =>
         EquippedItemContextMenu(stack, slot, effectObserver, menuCloser)

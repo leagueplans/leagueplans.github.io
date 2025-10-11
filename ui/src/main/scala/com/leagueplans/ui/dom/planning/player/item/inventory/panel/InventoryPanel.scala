@@ -72,7 +72,7 @@ object InventoryPanel {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       effectObserverSignal.map(_.map(effectObserver =>
         InventoryItemContextMenu(stack, cache, playerSignal, effectObserver, menuCloser, modal)

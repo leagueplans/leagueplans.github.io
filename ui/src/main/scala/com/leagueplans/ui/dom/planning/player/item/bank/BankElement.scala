@@ -81,7 +81,7 @@ object BankElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     contextMenuController: ContextMenu.Controller,
     modal: Modal
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(bankSignal, effectObserverSignal)

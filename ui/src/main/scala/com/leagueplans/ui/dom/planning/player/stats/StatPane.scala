@@ -1,14 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.stats
 
 import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.plan.Effect.{GainExp, UnlockSkill}
 import com.leagueplans.ui.model.player.skill.Stat
-import com.leagueplans.ui.utils.airstream.ObserverOps.observer
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, seqToModifier, textToTextNode}
-import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -16,51 +12,12 @@ import scala.scalajs.js.annotation.JSImport
 object StatPane {
   def apply(
     stat: Signal[Stat],
-    effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
-    modal: Modal
-  ): L.Div = {
-    val pane = toPane(stat).amend(toTooltip(stat))
-
-    val gainXPFormOpener =
-      stat
-        .map(_.skill)
-        .combineWith(effectObserver)
-        .map((skill, maybeObserver) =>
-          FormOpener(
-            modal,
-            GainXPForm(skill),
-            maybeObserver.observer.contracollect[Option[GainExp]] { case Some(effect) => effect }
-          )
-        )
-
-    val menuBinder = toMenuBinder(
-      contextMenuController,
-      stat,
-      effectObserver,
-      gainXPFormOpener
-    )
-
-    pane.amend(menuBinder)
-  }
-
-  @js.native @JSImport("/images/stat-window/stat-background.png", JSImport.Default)
-  private val statBackground: String = js.native
-
-  @js.native @JSImport("/styles/planning/player/stats/pane.module.css", JSImport.Default)
-  private object Styles extends js.Object {
-    val pane: String = js.native
-    val icon: String = js.native
-    val locked: String = js.native
-    val background: String = js.native
-    val numerator: String = js.native
-    val denominator: String = js.native
-    val xp: String = js.native
-  }
-
-  private def toPane(stat: Signal[Stat]): L.Div =
-    L.div(
+    showStatsDetailForm: () => Unit,
+    formEnabled: Signal[Boolean]
+  ): L.Button =
+    Button(_.handled --> (_ => showStatsDetailForm())).amend(
       L.cls(Styles.pane),
+      L.disabled <-- formEnabled.invert,
       L.children <-- stat.splitOne(_.level)((level, _, _) =>
         List(
           L.span(L.cls(Styles.numerator), level.raw),
@@ -72,15 +29,22 @@ object StatPane {
           SkillIcon(skill).amend(
             L.cls(Styles.icon),
             L.cls <-- stat.map(s => List(Styles.locked -> !s.unlocked))
-          ),
-          L.img(
-            L.cls(Styles.background),
-            L.src(statBackground),
-            L.alt <-- stat.map(s => s"${s.skill} level")
           )
         )
-      )
+      ),
+      toTooltip(stat)
     )
+
+  @js.native @JSImport("/styles/planning/player/stats/pane.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val pane: String = js.native
+    val icon: String = js.native
+    val locked: String = js.native
+    val background: String = js.native
+    val numerator: String = js.native
+    val denominator: String = js.native
+    val xp: String = js.native
+  }
 
   private def toTooltip(statSignal: Signal[Stat]): L.Modifier[L.HtmlElement] = {
     val xpRow = dynamicSpan(statSignal)(s => s"${s.skill} XP:") -> xpValue(dynamicSpan(statSignal)(_.exp.toString))
@@ -110,36 +74,4 @@ object StatPane {
 
   private def xpValue(span: L.Span): L.Modifier[L.HtmlElement] =
     List(L.cls(Styles.xp), span)
-
-  private def toMenuBinder(
-    controller: ContextMenu.Controller,
-    statSignal: Signal[Stat],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-    gainXPFormOpenerSignal: Signal[FormOpener]
-  ): Binder[L.Element] =
-    controller.bind(closer =>
-      Signal
-        .combine(statSignal, effectObserverSignal, gainXPFormOpenerSignal)
-        .map((stat, maybeEffectObserver, gainXPFormOpener) =>
-          maybeEffectObserver.map(observer =>
-            toMenu(stat, gainXPFormOpener, observer, closer)
-          )
-        )
-    )
-
-  private def toMenu(
-    stat: Stat,
-    gainXPFormOpener: FormOpener,
-    effectObserver: Observer[UnlockSkill],
-    menuCloser: Observer[ContextMenu.CloseCommand]
-  ): L.Button =
-    if (stat.unlocked)
-      Button(_.handled --> Observer.combine(menuCloser, gainXPFormOpener.toObserver)).amend("Gain XP")
-    else
-      Button(
-        _.handled --> Observer.combine(
-          menuCloser,
-          effectObserver.contramap[Any](_ => UnlockSkill(stat.skill))
-        )
-      ).amend("Unlock skill")
 }

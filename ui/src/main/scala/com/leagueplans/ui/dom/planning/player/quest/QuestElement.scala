@@ -37,7 +37,7 @@ object QuestElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(completeSignal, effectObserverSignal)

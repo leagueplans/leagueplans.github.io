@@ -13,10 +13,7 @@ final class EffectResolver(
   def resolve(player: Player, effect: Effect): Player =
     effect match {
       case Effect.GainExp(skill, exp) =>
-        val gainedExp =
-          expMultipliers.foldLeft(exp)((acc, multiplier) => 
-            acc * multiplier.multiplierFor(skill, player)
-          )
+        val gainedExp = exp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player)
         player.copy(stats =
           Stats(
             player.stats.raw + (skill -> (player.stats(skill) + gainedExp))

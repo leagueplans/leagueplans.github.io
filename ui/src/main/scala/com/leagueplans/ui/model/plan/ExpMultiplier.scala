@@ -23,6 +23,13 @@ object ExpMultiplier {
 
   given Encoder[ExpMultiplier] = Encoder.derived
   given Decoder[ExpMultiplier] = Decoder.derived
+  
+  def calculateMultiplier(
+    multipliers: List[ExpMultiplier]
+  )(skill: Skill, player: Player): Int =
+    multipliers.foldLeft(1)((acc, multiplier) =>
+      acc * multiplier.multiplierFor(skill, player)
+    )
 }
 
 final case class ExpMultiplier(

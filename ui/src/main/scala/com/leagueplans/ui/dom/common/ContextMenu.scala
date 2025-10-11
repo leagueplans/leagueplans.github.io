@@ -5,7 +5,7 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.modifiers.Binder
-import org.scalajs.dom.{Element, MouseEvent}
+import org.scalajs.dom.Element
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -13,22 +13,26 @@ import scala.scalajs.js.annotation.JSImport
 object ContextMenu {
   type CloseCommand = Any
 
-  final class Controller(
-    opener: Observer[(MouseEvent, Option[L.Node])],
-    closer: Observer[CloseCommand]
-  ) {
-    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder[L.Element] = {
+  final class Controller private[ContextMenu](status: Var[Status]) {
+    private val closer = status.writer.contramap[CloseCommand](_ => Status.Closed)
+
+    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder.Base = {
       val contents = toContents(closer)
-      L.onContextMenu.ifUnhandled.compose(_.withCurrentValueOf(contents)) --> opener
+      L.onContextMenu
+        .ifUnhandled
+        .compose(events =>
+          events.withCurrentValueOf(contents).collect {
+            case (event, Some(contents)) =>
+              event.preventDefault()
+              Status.Open(event.pageX, event.pageY, contents)
+          }
+        ) --> status
     }
   }
 
   def apply(): (L.Div, Controller) = {
     val status = Var[Status](Status.Closed)
-    val controller = Controller(
-      opener(status.writer),
-      closer = status.writer.contramap(_ => Status.Closed)
-    )
+    val controller = Controller(status)
     (toMenu(status), controller)
   }
 
@@ -42,12 +46,6 @@ object ContextMenu {
     val open: String = js.native
     val closed: String = js.native
   }
-
-  private def opener(status: Observer[Status.Open]): Observer[(MouseEvent, Option[L.Node])] =
-    status.contracollect[(MouseEvent, Option[L.Node])] { case (event, Some(contents)) =>
-      event.preventDefault()
-      Status.Open(event.pageX, event.pageY, contents)
-    }
 
   private def toMenu(status: Var[Status]): L.Div =
     L.div(
@@ -78,6 +76,6 @@ object ContextMenu {
       ) --> status
     )
 
-  private def closeIfAnotherMenuIsOpened(status: Observer[Status]): Binder[L.Element] =
+  private def closeIfAnotherMenuIsOpened(status: Observer[Status]): Binder.Base =
     L.documentEvents(_.onContextMenu.ifUnhandled.mapToStrict(Status.Closed)) --> status
 }

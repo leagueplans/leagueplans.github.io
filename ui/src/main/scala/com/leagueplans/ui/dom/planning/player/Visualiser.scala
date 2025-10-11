@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.player.view.{CharacterTab, LeagueTab, QuestAndDiaryTab, View}
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
@@ -16,11 +16,12 @@ object Visualiser {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    expMultipliers: List[ExpMultiplier],
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, contextMenuController, modal, toastPublisher))
+    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, expMultipliers, contextMenuController, modal, toastPublisher))
     val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, contextMenuController))
 
     if (isLeague)

@@ -52,7 +52,7 @@ object DiaryTaskElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     contextMenuController: ContextMenu.Controller
-  ): Binder[L.Element] =
+  ): Binder.Base =
     contextMenuController.bind(menuCloser =>
       Signal
         .combine(completeSignal, effectObserverSignal)

@@ -3,32 +3,31 @@ package com.raquo.airstream
 import com.raquo.airstream.common.{InternalNextErrorObserver, InternalTryObserver, SingleParentStream}
 import com.raquo.airstream.core.{EventStream, Observable, Transaction}
 
-import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Success, Try}
+import scala.collection.mutable
+import scala.util.Try
 
+/** A stream implementation intended for running an asynchronous function sequentially on the
+  * input stream.
+  * 
+  * @param process A function which is expected to convert an input into an EventStream that
+  *                will eventually emit a single output value. The resulting EventStream will
+  *                be disconnected after the first value is emitted.
+  */
 final class BufferedStream[In, Out](
   protected val parent: Observable[In],
   process: In => EventStream[Out]
 ) extends SingleParentStream[In, Out] with InternalNextErrorObserver[In] {
+  // The topoRank is reset to 1 because downstream events are emitted asynchronously in separate transactions
   protected val topoRank: Int = 1
 
   private var maybeProcessor = Option.empty[EventStream[Out]]
-  private val buffer = ListBuffer.empty[In]
+  private val buffer = mutable.Queue.empty[In]
 
   private val processorObserver = new InternalTryObserver[Out] {
     protected def onTry(nextValue: Try[Out], transaction: Transaction): Unit = {
       stopProcessing()
-      buffer.headOption.foreach { bufferedValue =>
-        buffer.dropInPlace(1)
-        startProcessing(bufferedValue)
-      }
-
-      Transaction(trx =>
-        nextValue match {
-          case Failure(error) => fireError(error, trx)
-          case Success(value) => fireValue(value, trx)
-        }
-      )
+      buffer.removeHeadOption().foreach(startProcessing)
+      fireTry(nextValue, transaction)
     }
   }
 

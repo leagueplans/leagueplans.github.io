@@ -23,6 +23,18 @@ object Skill {
   
   val nonCombats: Set[Skill] =
     values.toSet -- combats
+    
+  val ordered: List[Skill] =
+    List(
+      Attack,       Hitpoints, Mining,
+      Strength,     Agility,   Smithing,
+      Defence,      Herblore,  Fishing,
+      Ranged,       Thieving,  Cooking,
+      Prayer,       Crafting,  Firemaking,
+      Magic,        Fletching, Woodcutting,
+      Runecraft,    Slayer,    Farming,
+      Construction, Hunter
+    )
 
   given Encoder[Skill] = Encoder.derived
   given Decoder[Skill] = Decoder.derived

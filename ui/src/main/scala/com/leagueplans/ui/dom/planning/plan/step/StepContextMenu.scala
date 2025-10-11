@@ -20,7 +20,7 @@ object StepContextMenu {
     clipboard: Clipboard[Step],
     completionController: CompletedStep.Controller,
     editingEnabledSignal: Signal[Boolean]
-  ): Binder[L.Element] =
+  ): Binder.Base =
     controller.bind(closer =>
       Signal
         .combine(editingEnabledSignal, completionController.signalFor(stepID))

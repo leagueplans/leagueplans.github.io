@@ -1,0 +1,20 @@
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin-bottom: 1.2rem;
+  align-self: center;
+
+  font-size: 1.2rem;
+}
+
+.button {
+  margin-bottom: 1rem;
+  align-self: center;
+  height: 5rem;
+  width: 80%;
+
+  font-size: 1.2rem;
+}

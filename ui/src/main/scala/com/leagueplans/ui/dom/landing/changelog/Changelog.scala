@@ -13,11 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2025, 8, 8),
-        "XP multiplier rework",
+        new Date(2025, 9, 11),
+        "Stat pane rework",
         List(
+          "The gain-xp modal has been significantly improved. You'll now see a projection of the level you'll end up at," +
+            " and it should be less tedious to add XP to multiple skills at once",
+          "The right-click menus on skill tabs have been removed. You can now just click the skills instead",
           "XP multipliers can now affect a subset of skills, and be based on combat levels",
-          "The Deadman: Armageddon XP multiplier has been corrected",
+          "The Deadman: Armageddon XP multiplier now reflects the 15x multiplier once the player hits 71 combat",
           "Fixed an issue where plans would need to be reimported to pick up config changes for game modes"
         )
       ),

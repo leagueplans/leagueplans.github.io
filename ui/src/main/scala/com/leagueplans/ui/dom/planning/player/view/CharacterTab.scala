@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.player.item.bank.BankElement
 import com.leagueplans.ui.dom.planning.player.item.equipment.EquipmentElement
 import com.leagueplans.ui.dom.planning.player.item.inventory.InventoryElement
 import com.leagueplans.ui.dom.planning.player.stats.StatsElement
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
@@ -22,6 +22,7 @@ object CharacterTab {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    expMultipliers: List[ExpMultiplier],
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -50,10 +51,10 @@ object CharacterTab {
         contextMenuController,
         modal
       ).amend(L.cls(Styles.bankPanel)),
-      StatsElement.from(
+      StatsElement(
         playerSignal,
         effectObserverSignal,
-        contextMenuController,
+        expMultipliers,
         modal
       ).amend(L.cls(Styles.statsPanel))
     )
