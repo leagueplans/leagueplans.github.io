@@ -1,10 +1,12 @@
 .changelog {
-  list-style-type: none;
-  padding: 0;
   margin: 1rem;
 
   width: max-content;
   max-width: 45rem;
+  
+  padding: 0;
+  overflow: auto;
+  list-style-type: none;
 }
 
 .change + .change {

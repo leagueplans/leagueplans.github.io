@@ -41,6 +41,11 @@ final class ModeTest extends CodecSpec {
         LeaguesV,
         Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `5`)
       )
+
+      "GridMaster" in test(
+        GridMaster,
+        Array(`g`, `r`, `i`, `d`, `-`, `m`, CE.`a`, `s`, `t`, `e`, `r`)
+      )
       
       "Armageddon" in test(
         Armageddon,

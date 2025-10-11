@@ -45,7 +45,7 @@ object Mode {
   }
 
   val all: List[Mode] =
-    (MainGame +: League.all) ++ Deadman.all
+    ((MainGame +: League.all) :+ GridMaster) ++ Deadman.all
     
   given Encoder[Mode] =
     Encoder[String].contramap {
@@ -55,6 +55,7 @@ object Mode {
       case LeaguesIII => "leagues-3"
       case LeaguesIV => "leagues-4"
       case LeaguesV => "leagues-5"
+      case GridMaster => "grid-master"
       case Armageddon => "deadman-armageddon"
       case other => throw IllegalArgumentException(s"Could not encode unexpected mode: [$other]")
     }
@@ -67,6 +68,7 @@ object Mode {
       case "leagues-3" => Right(LeaguesIII)
       case "leagues-4" => Right(LeaguesIV)
       case "leagues-5" => Right(LeaguesV)
+      case "grid-master" => Right(GridMaster)
       case "deadman-armageddon" => Right(Armageddon)
       case other => Left(DecodingFailure(s"Could not decode unexpected mode: [$other]"))
     }

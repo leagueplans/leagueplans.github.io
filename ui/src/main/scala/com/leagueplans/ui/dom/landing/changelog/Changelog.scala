@@ -14,6 +14,17 @@ object Changelog {
       L.cls(Styles.changelog),
       item(
         new Date(2025, 9, 11),
+        "Provisional Grid Master support",
+        List(
+          "Grid Master is now available as a game mode option. I've set a 4x XP multiplier and configured the starting" +
+            " character based on the limited info I've heard, but if we get any further confirmations, please do let me" +
+            " know. :)",
+          "I'm not intending to prioritised more involved support for Grid Master right now (e.g. replicating the grid)," +
+            " but other folks have built some great tools that you can find in the leagues discord."
+        )
+      ),
+      item(
+        new Date(2025, 9, 11),
         "Stat pane rework",
         List(
           "The gain-xp modal has been significantly improved. You'll now see a projection of the level you'll end up at," +
