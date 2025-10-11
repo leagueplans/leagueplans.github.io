@@ -23,7 +23,9 @@ object GainExpForm {
     effectObserverSignal: Signal[Option[Observer[GainExp]]],
   ): L.FormElement = {
     val (form, submitButton, formSubmissions) = Form()
+    val actionsInput = createActionsInput()
     val expInput = createExpInput()
+    val expSignal = Signal.combine(expInput.signal, actionsInput.signal).map(_ * _)
 
     form.amend(
       L.cls(Styles.form),
@@ -31,12 +33,14 @@ object GainExpForm {
         L.cls(Styles.title),
         L.text <-- skillSignal.map(skill => s"Gain ${skill.toString.toLowerCase} xp")
       ),
+      actionsInput.label,
+      actionsInput.input,
       expInput.label,
       expInput.input,
       createProjection(
         skillSignal,
         playerSignal,
-        calculatePostMultiplierGainedExp(skillSignal, playerSignal, expInput.signal, expMultipliers),
+        calculatePostMultiplierGainedExp(skillSignal, playerSignal, expSignal, expMultipliers),
         hasExpMultipliers = expMultipliers.nonEmpty
       ),
       submitButton.amend(
@@ -44,7 +48,7 @@ object GainExpForm {
         L.value("Gain xp"),
         L.disabled <-- effectObserverSignal.map(_.isEmpty)
       ),
-      bindEffectSubmissions(skillSignal, expInput.signal, formSubmissions, effectObserverSignal)
+      bindEffectSubmissions(skillSignal, expSignal, formSubmissions, effectObserverSignal)
     )
   }
 
@@ -52,6 +56,9 @@ object GainExpForm {
   private object Styles extends js.Object {
     val form: String = js.native
     val title: String = js.native
+
+    val actionsLabel: String = js.native
+    val actionsInput: String = js.native
 
     val expLabel: String = js.native
     val expInput: String = js.native
@@ -63,8 +70,22 @@ object GainExpForm {
     val submit: String = js.native
   }
 
+  private def createActionsInput(): (input: L.Input, label: L.Label, signal: Signal[Int]) = {
+    val (input, label, signal) = NumberInput(id = "gain-exp-actions-input", initial = 1)
+
+    label.amend(L.cls(Styles.actionsLabel), "Number of actions")
+    input.amend(
+      L.cls(Styles.actionsInput),
+      L.required(true),
+      L.stepAttr("1"),
+      L.selectOnFocus
+    )
+
+    (input, label, signal)
+  }
+
   private def createExpInput(): (input: L.Input, label: L.Label, signal: Signal[Exp]) = {
-    val (input, label, signal) = NumberInput(id = "gain-exp-input", initial = 0.0)
+    val (input, label, signal) = NumberInput(id = "gain-exp-exp-input", initial = 0.0)
 
     label.amend(L.cls(Styles.expLabel), "Base xp")
     input.amend(
