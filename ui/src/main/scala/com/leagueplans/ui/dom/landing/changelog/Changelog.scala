@@ -13,10 +13,10 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2025, 9, 11),
+        new Date(2025, 9, 13),
         "Provisional Grid Master support",
         List(
-          "Grid Master is now available as a game mode option. I've set a 4x XP multiplier and configured the starting" +
+          "Grid Master is now available as a game mode option. I've set a 5x XP multiplier and configured the starting" +
             " character based on the limited info I've heard, but if we get any further confirmations, please do let me" +
             " know. :)",
           "I'm not intending to prioritised more involved support for Grid Master right now (e.g. replicating the grid)," +
