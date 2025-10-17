@@ -17,12 +17,34 @@ object GridMaster extends Mode {
           )
         ),
         completedQuests = Set(
-          19, // Lost city
-          56, // Priest in peril
-          57, // Nature spirit
-          105, // Fairytale I - growing pains
-          122, // Fairytale II - cure a queen
-          156, // Corsair curse
+          10, // Prince Ali Rescue
+          18, // Druidic Ritual
+          19, // Lost City
+          40, // Jungle Potion
+          42, // Shilo Village
+          45, // The Tourist Trap
+          49, // The Dig Site
+          50, // Gertrude's Cat
+          53, // Rune Mysteries
+          56, // Priest in Peril
+          57, // Nature Spirit
+          58, // Death Plateau
+          60, // Tai Bwo Wannai Trio
+          80, // Icthlarin's Little Helper
+          105, // Fairytale I - Growing Pains
+          122, // Fairytale II - Cure a Queen
+          132, // Contact!
+          147, // Client of Kourend
+          152, // Bone Voyage
+          153, // The Queen of Thieves
+          154, // The Depths of Despair
+          156, // Corsair Curse
+          158, // Tale of the Righteous
+          161, // The Forsaken Tower
+          162, // The Ascent of Arceuus
+          163, // X Marks the Spot
+          173, // A Kingdom Divided
+          178, // Beneath Cursed Sands
           198 // Children of the Sun
         )
       ),
