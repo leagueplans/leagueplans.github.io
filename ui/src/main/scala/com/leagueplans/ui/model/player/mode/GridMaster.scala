@@ -1,6 +1,6 @@
 package com.leagueplans.ui.model.player.mode
 
-import com.leagueplans.common.model.Skill.Herblore
+import com.leagueplans.common.model.Skill.{Herblore, Hitpoints}
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan}
 import com.leagueplans.ui.model.player.item.Depository
@@ -12,7 +12,10 @@ object GridMaster extends Mode {
   val settings: Plan.Settings.Explicit =
     Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
-        stats = Stats(Herblore -> Level(3).bound),
+        stats = Stats(
+          Herblore -> Level(3).bound,
+          Hitpoints -> Level(10).bound
+        ),
         depositories = MainGame.initialPlayer.depositories + (
           Depository.Kind.Inventory -> Depository(
             MainGame.initialInventory + ((Item.ID(3737), false) -> 1), // Dramen staff
