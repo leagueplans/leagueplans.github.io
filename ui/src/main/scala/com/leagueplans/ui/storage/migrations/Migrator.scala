@@ -20,15 +20,16 @@ object Migrator {
         }
       )
 
-  private def toMigration(schemaVersion: SchemaVersion): Option[Promise[Migration]] =
+  private def toMigration(schemaVersion: SchemaVersion): Option[Promise[PlanMigration]] =
     schemaVersion match {
-      case SchemaVersion.V1 => Some(dynamicImport(V2Migration))
-      case SchemaVersion.V2 => Some(dynamicImport(V3Migration))
-      case SchemaVersion.V3 => None
+      case SchemaVersion.V1 => Some(dynamicImport(V2PlanMigration))
+      case SchemaVersion.V2 => Some(dynamicImport(V3PlanMigration))
+      case SchemaVersion.V3 => Some(dynamicImport(V4PlanMigration))
+      case SchemaVersion.V4 => None
     }
 
   private def run(
-    importedMigration: Promise[Migration],
+    importedMigration: Promise[PlanMigration],
     plan: PlanExport
   ): EventStream[Either[DecodingFailure | MigrationError, PlanExport]] =
     importedMigration.asObservable.map(migration => migration(plan))

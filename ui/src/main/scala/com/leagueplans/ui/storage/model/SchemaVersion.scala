@@ -17,6 +17,8 @@ enum SchemaVersion(val date: Date) {
   case V2 extends SchemaVersion(new Date(2025, 1, 21))
   /** Adds support for new types of exp multipliers, and allows mode settings updates without reimporting plans */
   case V3 extends SchemaVersion(new Date(2025, 8, 7))
+  /** An item ID migration */
+  case V4 extends SchemaVersion(new Date(2025, 9, 18))
 
   def number: Int = ordinal + 1
 }
