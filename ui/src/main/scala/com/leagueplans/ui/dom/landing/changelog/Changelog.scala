@@ -13,6 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2025, 9, 20),
+        "Added the Grid Master grid",
+        List(
+          "Turns out Grid Master is pretty fun. I've added a very basic implementation of the grid to the site, which " +
+            "will properly update the XP multiplier as you mark tiles off.",
+        )
+      ),
+      item(
         new Date(2025, 9, 13),
         "Provisional Grid Master support",
         List(
@@ -51,17 +59,6 @@ object Changelog {
           "This updates adds a few initial keyboard shortcuts to make the process of creating a plan smoother. Give me" +
             " a ping if you'd like to suggest additional shortcuts.",
           "Spruced up the modals for adding and deleting steps"
-        )
-      ),
-      item(
-        new Date(2025, 1, 23),
-        "UX improvements to the plan section",
-        List(
-          "Substep management functionality has been moved to the plan section, from the editor section",
-          "Steps can now be repositioned much more easily due to the addition of a drag button on the focused step",
-          "Steps can now be copy/pasted between browser tabs (except Firefox)",
-          "Tidied up the layout of the plan section",
-          "Toggling a step's visibility with the keyboard no longer changes the focused step"
         )
       )
     )

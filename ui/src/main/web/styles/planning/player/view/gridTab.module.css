@@ -1,0 +1,19 @@
+.tabContent {
+  display: flex;
+  justify-content: space-around;
+}
+
+.explainer {
+  align-self: center;
+  width: 15rem;
+}
+
+.explainerContent {
+  text-wrap: balance;
+  text-align: center;
+  color: white;
+}
+
+.panel {
+  max-width: 60rem;
+}

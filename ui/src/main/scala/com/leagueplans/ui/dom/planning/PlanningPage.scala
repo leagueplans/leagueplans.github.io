@@ -11,6 +11,7 @@ import com.leagueplans.ui.model.EffectResolver
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Plan.Settings
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
+import com.leagueplans.ui.model.player.mode.GridMaster
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.validation.StepValidator
 import com.leagueplans.ui.storage.client.PlanSubscription
@@ -75,6 +76,8 @@ object PlanningPage {
         Visualiser(
           stateSignal.map(_.playerAtFocusedStep),
           isLeague = settings.maybeLeaguePointScoring.nonEmpty,
+          // TODO - This will break if you support changing settings
+          isGridMaster = settings == Plan.Settings.Deferred(GridMaster),
           cache,
           itemFuse,
           createEffectObserver(focusController.signal, forester),

@@ -1,0 +1,10 @@
+.panel {
+  display: grid;
+  column-gap: 0.3rem;
+  row-gap: 0.3rem;
+
+  overflow: auto;
+  scrollbar-color: #61553e #252019;
+}
+
+.tile {}

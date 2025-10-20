@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.dom.planning.player.view.{CharacterTab, LeagueTab, QuestAndDiaryTab, View}
+import com.leagueplans.ui.dom.planning.player.view.{CharacterTab, GridTab, LeagueTab, QuestAndDiaryTab, View}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
@@ -13,6 +13,7 @@ object Visualiser {
   def apply(
     playerSignal: Signal[Player],
     isLeague: Boolean,
+    isGridMaster: Boolean,
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
@@ -29,6 +30,12 @@ object Visualiser {
         characterTab,
         questTab,
         View.Tab("League progress", LeagueTab(playerSignal, cache, effectObserverSignal, contextMenuController))
+      )
+    else if (isGridMaster)
+      View(
+        characterTab,
+        questTab,
+        View.Tab("Grid progress", GridTab(playerSignal, cache, effectObserverSignal))
       )
     else
       View(characterTab, questTab)
