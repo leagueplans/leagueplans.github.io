@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player.stats.form
 import com.leagueplans.common.model.Skill
 import com.leagueplans.ui.dom.common.Modal
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
-import com.leagueplans.ui.model.player.Player
+import com.leagueplans.ui.model.player.{Cache, Player}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier}
@@ -17,10 +17,11 @@ object StatsDetailForm {
     activeSkill: Var[Skill],
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    expMultipliers: List[ExpMultiplier]
+    expMultipliers: List[ExpMultiplier],
+    cache: Cache
   ): L.Div = {
     val skillSignal = activeSkill.toObservable
-    val gainExpForm = GainExpForm(skillSignal, playerSignal, expMultipliers, effectObserverSignal)
+    val gainExpForm = GainExpForm(skillSignal, playerSignal, expMultipliers, effectObserverSignal, cache)
     val unlockSkillForm = UnlockSkillForm(skillSignal, effectObserverSignal)
 
     L.div(
@@ -39,7 +40,7 @@ object StatsDetailForm {
         unlockSkillForm
       ).map(_.amend(L.cls(Styles.mutatorPane))),
       Option.when(expMultipliers.nonEmpty)(
-        MultiplierPane(skillSignal, playerSignal, expMultipliers).amend(
+        MultiplierPane(skillSignal, playerSignal, expMultipliers, cache).amend(
           L.cls(Styles.multiplierPane)
         )
       )

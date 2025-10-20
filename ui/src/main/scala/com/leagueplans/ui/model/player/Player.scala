@@ -12,7 +12,8 @@ object Player {
     depositories: Iterable[Depository],
     completedQuests: Set[Int],
     completedDiaryTasks: Set[Int],
-    leagueStatus: LeagueStatus
+    leagueStatus: LeagueStatus,
+    gridStatus: GridStatus
   )
 
   given Encoder[Player] = Encoder.derived[Simplified].contramap(player =>
@@ -21,7 +22,8 @@ object Player {
       player.depositories.values,
       player.completedQuests,
       player.completedDiaryTasks,
-      player.leagueStatus
+      player.leagueStatus,
+      player.gridStatus
     )
   )
 
@@ -31,7 +33,8 @@ object Player {
       simplified.depositories.map(d => d.kind -> d).toMap,
       simplified.completedQuests,
       simplified.completedDiaryTasks,
-      simplified.leagueStatus
+      simplified.leagueStatus,
+      simplified.gridStatus
     )
   )
 }
@@ -41,7 +44,8 @@ final case class Player(
   depositories: Map[Depository.Kind, Depository],
   completedQuests: Set[Int],
   completedDiaryTasks: Set[Int],
-  leagueStatus: LeagueStatus
+  leagueStatus: LeagueStatus,
+  gridStatus: GridStatus
 ) {
   def get(kind: Depository.Kind): Depository =
     depositories.getOrElse(kind, Depository.empty(kind))

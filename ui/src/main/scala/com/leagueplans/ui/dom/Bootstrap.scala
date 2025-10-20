@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom
 
-import com.leagueplans.common.model.{Item, LeagueTask}
+import com.leagueplans.common.model.{GridTile, Item, LeagueTask}
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPage
@@ -65,7 +65,8 @@ object Bootstrap {
           decode[Set[Item]](itemsJson, toastPublisher, "Failed to decode item data"),
           decode[Set[Quest]](questsJson, toastPublisher, "Failed to decode quest data"),
           decode[Set[DiaryTask]](diaryTasksJson, toastPublisher, "Failed to decode diary task data"),
-          decode[Set[LeagueTask]](leagueTasksJson, toastPublisher, "Failed to decode league task data")
+          decode[Set[LeagueTask]](leagueTasksJson, toastPublisher, "Failed to decode league task data"),
+          decode[Set[GridTile]](gridTilesJson, toastPublisher, "Failed to decode grid master data"),
         )
       )
     )
@@ -93,6 +94,9 @@ object Bootstrap {
 
   @js.native @JSImport("/data/leagueTasks.json", JSImport.Default)
   private def leagueTasksJson: js.Object = js.native
+
+  @js.native @JSImport("/data/gridMaster.json", JSImport.Default)
+  private def gridTilesJson: js.Object = js.native
 
   private def feedbackToast(): ToastHub.Toast =
     ToastHub.Toast(

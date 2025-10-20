@@ -42,6 +42,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: CompleteQuest => completeQuestValidator.validate(e)(player, resolver, league, cache)
       case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, resolver, league, cache)
       case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(player, resolver, league, cache)
+      case e: CompleteGridTile => completeGridTileValidator.validate(e)(player, resolver, league, cache)
     }
 
   private val gainExpValidator: EffectValidator[GainExp] =
@@ -83,6 +84,12 @@ object EffectValidator extends EffectValidator[Effect] {
   private val completeLeagueTaskValidator: EffectValidator[CompleteLeagueTask] =
     from(
       pre = effect => List(Validator.leagueTaskIncomplete(effect.task), Validator.leagueTaskIsPartOfLeague(effect.task)),
+      post = _ => List.empty
+    )
+
+  private val completeGridTileValidator: EffectValidator[CompleteGridTile] =
+    from(
+      pre = effect => List(Validator.gridTileIncomplete(effect.tile)),
       post = _ => List.empty
     )
 

@@ -86,6 +86,16 @@ object Validator {
         )
     }
 
+  def gridTileIncomplete(tileID: Int): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
+        Either.cond(
+          !player.gridStatus.completedTiles.contains(tileID),
+          right = (),
+          left = s"\"${cache.gridTiles(tileID).description}\" has already been completed"
+        )
+    }
+
   def leagueTaskIsPartOfLeague(taskID: Int): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {

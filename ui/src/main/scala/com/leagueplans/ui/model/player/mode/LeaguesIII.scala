@@ -22,6 +22,7 @@ object LeaguesIII extends Mode.League {
       ),
       expMultipliers = List(ExpMultiplier(
         Skill.values.toSet,
+        ExpMultiplier.Kind.Multiplicative,
         base = 5,
         thresholds = List(
           8 -> ExpMultiplier.Condition.LeaguePoints(300),

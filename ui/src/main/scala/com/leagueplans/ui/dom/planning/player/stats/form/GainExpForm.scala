@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.common.Modal
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.GainExp
 import com.leagueplans.ui.model.plan.ExpMultiplier
-import com.leagueplans.ui.model.player.Player
+import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.skill.Exp
 import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
@@ -21,6 +21,7 @@ object GainExpForm {
     playerSignal: Signal[Player],
     expMultipliers: List[ExpMultiplier],
     effectObserverSignal: Signal[Option[Observer[GainExp]]],
+    cache: Cache
   ): L.FormElement = {
     val (form, submitButton, formSubmissions) = Form()
     val actionsInput = createActionsInput()
@@ -40,7 +41,7 @@ object GainExpForm {
       createProjection(
         skillSignal,
         playerSignal,
-        calculatePostMultiplierGainedExp(skillSignal, playerSignal, expSignal, expMultipliers),
+        calculatePostMultiplierGainedExp(skillSignal, playerSignal, expSignal, expMultipliers, cache),
         hasExpMultipliers = expMultipliers.nonEmpty
       ),
       submitButton.amend(
@@ -135,12 +136,13 @@ object GainExpForm {
     skillSignal: Signal[Skill],
     playerSignal: Signal[Player],
     gainedExpSignal: Signal[Exp],
-    expMultipliers: List[ExpMultiplier]
+    expMultipliers: List[ExpMultiplier],
+    cache: Cache
   ): Signal[Exp] =
     Signal
       .combine(skillSignal, playerSignal, gainedExpSignal)
       .map((skill, player, gainedExp) =>
-        gainedExp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player)
+        gainedExp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player, cache)
       )
 
   private def bindEffectSubmissions(

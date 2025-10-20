@@ -46,11 +46,13 @@ object Armageddon extends Mode.Deadman {
       expMultipliers = List(
         ExpMultiplier(
           Skill.combats,
+          ExpMultiplier.Kind.Multiplicative,
           base = 10,
           thresholds = List(15 -> ExpMultiplier.Condition.CombatLevel(71))
         ),
         ExpMultiplier(
           Skill.nonCombats,
+          ExpMultiplier.Kind.Multiplicative,
           base = 10,
           thresholds = List.empty
         )

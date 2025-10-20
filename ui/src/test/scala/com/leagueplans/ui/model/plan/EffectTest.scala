@@ -81,6 +81,11 @@ final class EffectTest extends CodecSpec {
         Effect.CompleteLeagueTask(147),
         Array[Byte](0, 0b110, 0b1100, 0b11, 0) ++ Encoder.encode(147).getBytes
       )
+
+      "CompleteGridTile" in test(
+        Effect.CompleteGridTile(14),
+        Array[Byte](0, 0b111, 0b1100, 0b10, 0) ++ Encoder.encode(14).getBytes
+      )
     }
   }
 }

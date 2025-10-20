@@ -55,6 +55,7 @@ object CharacterTab {
         playerSignal,
         effectObserverSignal,
         expMultipliers,
+        cache,
         modal
       ).amend(L.cls(Styles.statsPanel))
     )

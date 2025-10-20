@@ -54,7 +54,44 @@ object GridMaster extends Mode {
           198 // Children of the Sun
         )
       ),
-      expMultipliers = List(ExpMultiplier(Skill.values.toSet, base = 5, thresholds = List.empty)),
+      expMultipliers = List(
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 4,
+          thresholds = List.empty
+        ),
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 0,
+          thresholds = List(2 -> ExpMultiplier.Condition.GridAxis(ExpMultiplier.GridAxisDirection.Row, 4))
+        ),
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 0,
+          thresholds = List(2 -> ExpMultiplier.Condition.GridAxis(ExpMultiplier.GridAxisDirection.Column, 4))
+        ),
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 0,
+          thresholds = List(2 -> ExpMultiplier.Condition.GridTile(16)) // Obtain a rare unique from the Barrows chest while wearing some Barrows equipment
+        ),
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 0,
+          thresholds = List(2 -> ExpMultiplier.Condition.GridTile(9)) // Subdue the Moons of Peril
+        ),
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Additive,
+          base = 0,
+          thresholds = List(2 -> ExpMultiplier.Condition.GridTile(48)) // Obtain a rare drop from Araxxor
+        ),
+      ),
       maybeLeaguePointScoring = None
     )
 }

@@ -27,7 +27,12 @@ object LeaguesI extends Mode.League {
           278 // Cast Monster Examine on a mountain troll south of Mount Quidamortem
         )
       ),
-      expMultipliers = List(ExpMultiplier(Skill.values.toSet, base = 5, thresholds = List.empty)),
+      expMultipliers = List(ExpMultiplier(
+        Skill.values.toSet,
+        ExpMultiplier.Kind.Multiplicative,
+        base = 5,
+        thresholds = List.empty
+      )),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
         LeaguesI,
         Map(

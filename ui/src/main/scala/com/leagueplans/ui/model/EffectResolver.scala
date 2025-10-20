@@ -3,7 +3,7 @@ package com.leagueplans.ui.model
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.skill.Stats
-import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.player.{Cache, GridStatus, Player}
 
 final class EffectResolver(
   expMultipliers: List[ExpMultiplier],
@@ -13,7 +13,7 @@ final class EffectResolver(
   def resolve(player: Player, effect: Effect): Player =
     effect match {
       case Effect.GainExp(skill, exp) =>
-        val gainedExp = exp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player)
+        val gainedExp = exp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player, cache)
         player.copy(stats =
           Stats(
             player.stats.raw + (skill -> (player.stats(skill) + gainedExp))
@@ -60,6 +60,14 @@ final class EffectResolver(
               leaguePoints = player.leagueStatus.leaguePoints + leaguePointScoring(cache.leagueTasks(taskID)),
               completedTasks = player.leagueStatus.completedTasks + taskID
             )
+          )
+
+      case Effect.CompleteGridTile(tileID) =>
+        if (player.gridStatus.completedTiles.contains(tileID))
+          player
+        else
+          player.copy(gridStatus =
+            player.gridStatus.copy(completedTiles = player.gridStatus.completedTiles + tileID)
           )
 
       case Effect.UnlockSkill(skill) =>

@@ -67,6 +67,10 @@ object DescribedEffect {
       case Effect.CompleteLeagueTask(taskID) =>
         val task = cache.leagueTasks(taskID)
         line(text(s"Completed \"${task.name}: ${task.description}\""))
+
+      case Effect.CompleteGridTile(tileID) =>
+        val tile = cache.gridTiles(tileID)
+        line(text(s"Completed \"${tile.description}\""))
     }
 
   private def line(content: L.Modifier[L.Div]*): L.Div =

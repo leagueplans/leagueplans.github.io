@@ -24,6 +24,7 @@ enum Effect {
   case CompleteQuest(quest: Int)
   case CompleteDiaryTask(task: Int)
   case CompleteLeagueTask(task: Int)
+  case CompleteGridTile(tile: Int)
 }
 
 object Effect {

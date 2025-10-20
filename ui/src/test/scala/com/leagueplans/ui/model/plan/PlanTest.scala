@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.common.model.{Item, LeagueTaskTier, Skill}
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.player.Player
+import com.leagueplans.ui.model.player.{GridStatus, Player}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.mode.{LeaguesIII, MainGame, Mode}
@@ -22,9 +22,15 @@ final class PlanTest extends CodecSpec {
         leaguePoints = 5,
         completedTasks = Set(123),
         skillsUnlocked = Set(Skill.Woodcutting)
-      )
+      ),
+      GridStatus(completedTiles = Set(62))
     )
-    val expMultiplier = ExpMultiplier(Skill.values.toSet, base = 10, thresholds = List.empty)
+    val expMultiplier = ExpMultiplier(
+      Skill.values.toSet,
+      ExpMultiplier.Kind.Multiplicative,
+      base = 10,
+      thresholds = List.empty
+    )
     val leaguePointScoring = LeaguePointScoring(LeaguesIII, Map(LeagueTaskTier.Easy -> 5))
     val deferredSettings = Plan.Settings.Deferred(MainGame)
 
@@ -39,8 +45,8 @@ final class PlanTest extends CodecSpec {
         "Explicit" in testRoundTripSerialisation(
           Plan.Settings.Explicit(player, List(expMultiplier), Some(leaguePointScoring)),
           Decoder.decodeMessage,
-          Array[Byte](0, 0b1, 0b1100, -0b110011, 0b1, 0b100, 0b100101) ++ Encoder.encode(player).getBytes ++
-            Array[Byte](0b1100, -0b1110100, 0b1) ++ Encoder.encode(expMultiplier).getBytes ++
+          Array[Byte](0, 0b1, 0b1100, -0b101001, 0b1, 0b100, 0b101001) ++ Encoder.encode(player).getBytes ++
+            Array[Byte](0b1100, -0b1101110, 0b1) ++ Encoder.encode(expMultiplier).getBytes ++
             Array[Byte](0b10100, 0b10101) ++ Encoder.encode(leaguePointScoring).getBytes
         )
       }

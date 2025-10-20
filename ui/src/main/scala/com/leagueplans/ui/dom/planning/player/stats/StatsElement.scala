@@ -4,7 +4,7 @@ import com.leagueplans.common.model.Skill
 import com.leagueplans.ui.dom.common.Modal
 import com.leagueplans.ui.dom.planning.player.stats.form.StatsDetailForm
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
-import com.leagueplans.ui.model.player.Player
+import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.skill.{Stat, Stats}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
@@ -20,6 +20,7 @@ object StatsElement {
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     expMultipliers: List[ExpMultiplier],
+    cache: Cache,
     modal: Modal
   ): ReactiveHtmlElement[OList] = {
     val activeSkill = Var[Skill](Skill.values.head)
@@ -27,7 +28,8 @@ object StatsElement {
       activeSkill,
       playerSignal,
       effectObserverSignal,
-      expMultipliers
+      expMultipliers,
+      cache
     )
     
     val statsSignal =
