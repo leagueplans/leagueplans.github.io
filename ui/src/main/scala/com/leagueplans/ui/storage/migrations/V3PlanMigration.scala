@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.storage.model.{PlanExport, SchemaVersion}
 
-object V3Migration extends Migration {
+object V3PlanMigration extends PlanMigration {
   val fromVersion: SchemaVersion = SchemaVersion.V2
   val toVersion: SchemaVersion = SchemaVersion.V3
 
@@ -38,7 +38,7 @@ object V3Migration extends Migration {
         }
       
       case None =>
-        expMultiplierStrategy.as[(Int, Encoding)].flatMap {
+        decodeOrdinal(expMultiplierStrategy).flatMap {
           case (0, fixedMultiplier) =>
             fixedMultiplier.as[Tuple1[Int]].map {
               case Tuple1(1) => mainGameEncoding
@@ -57,6 +57,8 @@ object V3Migration extends Migration {
   private val leagues5Encoding: Encoding = toSettingsEncoding("leagues-5")
   private val armageddonEncoding: Encoding = toSettingsEncoding("deadman-armageddon")
 
-  private def toSettingsEncoding(mode: String): Encoding =
+  private def toSettingsEncoding(mode: String): Encoding = {
+    given Encoder[Int] = Encoder.unsignedIntEncoder
     Encoder.encode((0, Tuple1(mode)))
+  }
 }

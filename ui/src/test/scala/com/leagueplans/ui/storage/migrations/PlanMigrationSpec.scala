@@ -14,7 +14,7 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array, TA2AB}
 import scala.util.{Try, Using}
 import scala.util.Using.Releasable
 
-abstract class MigrationSpec(migration: Migration, testCases: String*)
+abstract class PlanMigrationSpec(migration: PlanMigration, testCases: String*)
   extends AnyFreeSpec
     with Matchers
     with EitherValues

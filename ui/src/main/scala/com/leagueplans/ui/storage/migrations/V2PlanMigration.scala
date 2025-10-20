@@ -7,7 +7,7 @@ import com.leagueplans.ui.storage.model.{PlanExport, SchemaVersion}
 
 import scala.collection.mutable
 
-object V2Migration extends Migration {
+object V2PlanMigration extends PlanMigration {
   val fromVersion: SchemaVersion = SchemaVersion.V1
   val toVersion: SchemaVersion = SchemaVersion.V2
 

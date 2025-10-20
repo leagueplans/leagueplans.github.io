@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.migrations
 
-final class V3MigrationTest extends MigrationSpec(
-  V3Migration,
+final class V3PlanMigrationTest extends PlanMigrationSpec(
+  V3PlanMigration,
   testCases = 
     "main-game",
     "leagues-1",
