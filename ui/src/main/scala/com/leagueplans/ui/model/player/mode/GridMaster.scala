@@ -23,6 +23,7 @@ object GridMaster extends Mode {
           )
         ),
         completedQuests = Set(
+          3, // The Restless Ghost
           10, // Prince Ali Rescue
           18, // Druidic Ritual
           19, // Lost City
@@ -51,7 +52,7 @@ object GridMaster extends Mode {
           163, // X Marks the Spot
           173, // A Kingdom Divided
           178, // Beneath Cursed Sands
-          198 // Children of the Sun
+          186 // Children of the Sun
         )
       ),
       expMultipliers = List(
