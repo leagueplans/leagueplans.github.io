@@ -72,6 +72,7 @@ lazy val ui =
       libraryDependencies ++= List(
         "org.scala-js" %%% "scalajs-dom" % "2.8.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
         "com.raquo" %%% "laminar" % "17.2.1",
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),

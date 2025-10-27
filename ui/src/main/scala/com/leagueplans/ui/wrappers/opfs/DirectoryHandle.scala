@@ -9,6 +9,7 @@ import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
 import com.leagueplans.ui.utils.dom.DOMException
 import com.leagueplans.ui.utils.js.TypeError
+import com.leagueplans.ui.wrappers.js.AsyncIteratorOps.sequenced
 import com.leagueplans.ui.wrappers.opfs.DirectoryHandle.*
 import com.leagueplans.ui.wrappers.opfs.FileSystemError.*
 import com.raquo.airstream.core.EventStream
@@ -35,7 +36,7 @@ object DirectoryHandle {
 
 final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
   def listSubDirectories(): EventStream[Either[UnexpectedFileSystemError, List[(String, DirectoryHandle)]]] =
-    listContents(underlying.values(), List.empty).map(_.map(handles =>
+    listContents(underlying.values()).map(_.map(handles =>
       handles.collect {
         case handle if handle.kind == FileSystemHandleKind.directory =>
           (handle.name, DirectoryHandle(handle.asInstanceOf[FileSystemDirectoryHandle]))
@@ -43,7 +44,7 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
     ))
     
   def listFiles(): EventStream[Either[UnexpectedFileSystemError, List[String]]] =
-    listContents(underlying.values(), List.empty).map(_.map(handles =>
+    listContents(underlying.values()).map(_.map(handles =>
       handles.collect {
         case handle if handle.kind == FileSystemHandleKind.file =>
           nonTmpFileName(handle.name)
@@ -51,17 +52,15 @@ final class DirectoryHandle(underlying: FileSystemDirectoryHandle) {
     ))
 
   private def listContents(
-    iterator: AsyncIterator[FileSystemHandle],
-    acc: List[FileSystemHandle]
+    iterator: AsyncIterator[FileSystemHandle]
   ): EventStream[Either[UnexpectedFileSystemError, List[FileSystemHandle]]] =
     iterator
-      .next()
+      .sequenced
       .asObservable
       .recoverToTry
-      .flatMapSwitch {
-        case Success(entry) if entry.done => liftValue(Right(acc))
-        case Success(entry) => listContents(iterator, acc :+ entry.value)
-        case Failure(ex) => liftValue(Left(UnexpectedFileSystemError(ex)))
+      .map {
+        case Success(files) => Right(files)
+        case Failure(ex) => Left(UnexpectedFileSystemError(ex))
       }
 
   def getSubDirectory(name: String): EventStream[Either[FileSystemError, Option[DirectoryHandle]]] =
