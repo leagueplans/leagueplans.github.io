@@ -41,7 +41,7 @@ object Mode {
 
   object Deadman {
     val all: List[Deadman] =
-      List(Armageddon)
+      List(Armageddon, Annihilation)
   }
 
   val all: List[Mode] =
@@ -57,6 +57,7 @@ object Mode {
       case LeaguesV => "leagues-5"
       case GridMaster => "grid-master"
       case Armageddon => "deadman-armageddon"
+      case Annihilation => "deadman-annihilation"
       case other => throw IllegalArgumentException(s"Could not encode unexpected mode: [$other]")
     }
 
@@ -70,6 +71,7 @@ object Mode {
       case "leagues-5" => Right(LeaguesV)
       case "grid-master" => Right(GridMaster)
       case "deadman-armageddon" => Right(Armageddon)
+      case "deadman-annihilation" => Right(Annihilation)
       case other => Left(DecodingFailure(s"Could not decode unexpected mode: [$other]"))
     }
 }

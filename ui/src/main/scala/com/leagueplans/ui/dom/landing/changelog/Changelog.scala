@@ -13,22 +13,10 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2025, 9, 20),
-        "Added the Grid Master grid",
+        new Date(2026, 0, 25),
+        "Deadman: Annihilation support",
         List(
-          "Turns out Grid Master is pretty fun. I've added a very basic implementation of the grid to the site, which " +
-            "will properly update the XP multiplier as you mark tiles off.",
-        )
-      ),
-      item(
-        new Date(2025, 9, 13),
-        "Provisional Grid Master support",
-        List(
-          "Grid Master is now available as a game mode option. I've set a 5x XP multiplier and configured the starting" +
-            " character based on the limited info I've heard, but if we get any further confirmations, please do let me" +
-            " know. :)",
-          "I'm not intending to prioritised more involved support for Grid Master right now (e.g. replicating the grid)," +
-            " but other folks have built some great tools that you can find in the leagues discord."
+          "Annihilation is now available as a game mode option."
         )
       ),
       item(

@@ -51,6 +51,11 @@ final class ModeTest extends CodecSpec {
         Armageddon,
         Array(`d`, `e`, CE.`a`, `d`, `m`, CE.`a`, `n`, `-`, CE.`a`, `r`, `m`, CE.`a`, `g`, `e`, `d`, `d`, `o`, `n`)
       )
+      
+      "Annihilation" in test(
+        Annihilation,
+        Array(`d`, `e`, CE.`a`, `d`, `m`, CE.`a`, `n`, `-`, CE.`a`, `n`, `n`, `i`, `h`, `i`, `l`, CE.`a`, `t`, `i`, `o`, `n`)
+      )
     }
 
     "decoding should fail for an unexpected encoding" in (
