@@ -5,7 +5,7 @@ import com.leagueplans.scraper.dumper.{ImageDumper, JsonDumper}
 import com.leagueplans.scraper.main.CommandLineArgs
 import com.leagueplans.scraper.telemetry.Metric
 import com.leagueplans.scraper.wiki.model.WikiItem.GameID
-import com.leagueplans.scraper.wiki.model.{InfoboxVersion, PageDescriptor, WikiItem}
+import com.leagueplans.scraper.wiki.model.{InfoboxVersion, Page, PageDescriptor, WikiItem}
 import io.circe.parser.decode
 import zio.stream.{ZPipeline, ZSink}
 import zio.{Chunk, Task, Trace, ZIO}
@@ -14,7 +14,7 @@ import java.nio.file.{Files, Path}
 import scala.util.Try
 
 object ItemDumper {
-  private type PipelineOutput = (WikiKey, Item, Chunk[(Path, Array[Byte])])
+  private type PipelineOutput = (wikiKey: WikiKey, item: Item, images: Chunk[(Path, Array[Byte])])
   
   def make(args: CommandLineArgs, targetDirectory: Path)(using Trace): Task[ItemDumper] = {
     for {
@@ -76,10 +76,10 @@ final class ItemDumper(
   iconDumper: ImageDumper,
   itemCounter: Metric.Counter[Long]
 ) {
-  def sink(using Trace): ZSink[Any, Throwable, (PageDescriptor, WikiItem), Nothing, Unit] =
+  def sink(using Trace): ZSink[Any, Throwable, Page[WikiItem], Nothing, Unit] =
     pipeline.tap(_ => itemCounter.increment) >>> (dataSink <&> idMapSink <&> iconSink)
 
-  private def pipeline(using Trace): ZPipeline[Any, Nothing, (PageDescriptor, WikiItem), ItemDumper.PipelineOutput] =
+  private def pipeline(using Trace): ZPipeline[Any, Nothing, Page[WikiItem], ItemDumper.PipelineOutput] =
     ZPipeline.mapZIO((page, wikiItem) =>
       val wikiKey = (page.id, wikiItem.infoboxes.version)
       idAllocator.get(wikiKey).map(id =>
@@ -90,20 +90,20 @@ final class ItemDumper(
   private def dataSink(using Trace): ZSink[Any, Throwable, ItemDumper.PipelineOutput, Nothing, Unit] =
     ZSink
       .collectAll[Item]
-      .contramap[ItemDumper.PipelineOutput]((_, item, _) => item)
+      .contramap[ItemDumper.PipelineOutput](_.item)
       .mapZIO(items => ZIO.fromTry(dataDumper.dump(items.toVector.sorted)))
 
   private def idMapSink(using Trace): ZSink[Any, Throwable, ItemDumper.PipelineOutput, Nothing, Unit] =
     ZSink
       .collectAll[(WikiKey, Item.ID)]
-      .contramap[ItemDumper.PipelineOutput]((wikiKey, item, _) => wikiKey -> item.id)
+      .contramap[ItemDumper.PipelineOutput](data => data.wikiKey -> data.item.id)
       .mapZIO(data => ZIO.fromTry(idMapDumper.dump(data.toVector)))
 
   private def iconSink(using Trace): ZSink[Any, Throwable, ItemDumper.PipelineOutput, Nothing, Unit] =
     ZSink
       .foreach[Any, Throwable, (Path, Array[Byte])]((path, icon) => iconDumper.dump(path, icon))
       .contramapChunks[Chunk[(Path, Array[Byte])]](_.flatten)
-      .contramap[ItemDumper.PipelineOutput]((_, _, images) => Chunk.fromIterator(images.iterator))
+      .contramap[ItemDumper.PipelineOutput](data => Chunk.fromIterator(data.images.iterator))
 
   private def toItem(id: Item.ID, wikiItem: WikiItem): Item =
     Item(

@@ -1,6 +1,6 @@
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.7.1"
+ThisBuild / scalaVersion := "3.7.4"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
@@ -24,7 +24,7 @@ lazy val codec =
       )
     )
 
-val circeVersion = "0.14.14"
+val circeVersion = "0.14.15"
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -37,18 +37,18 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
-val scrimageVersion = "4.3.2"
-val zioVersion = "2.1.19"
-val zioLoggingVersion = "2.5.1"
+val scrimageVersion = "4.3.5"
+val zioVersion = "2.1.24"
+val zioLoggingVersion = "2.5.3"
 
 lazy val wikiScraper =
   project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
-        "ch.qos.logback" % "logback-classic" % "1.5.18",
+        "ch.qos.logback" % "logback-classic" % "1.5.26",
         "dev.zio" %% "zio" % zioVersion,
         "dev.zio" %% "zio-streams" % zioVersion,
-        "dev.zio" %% "zio-http" % "3.3.3",
+        "dev.zio" %% "zio-http" % "3.8.0",
         "dev.zio" %% "zio-logging" % zioLoggingVersion,
         "dev.zio" %% "zio-logging-slf4j2" % zioLoggingVersion,
         "org.parboiled" %% "parboiled" % "2.5.1",

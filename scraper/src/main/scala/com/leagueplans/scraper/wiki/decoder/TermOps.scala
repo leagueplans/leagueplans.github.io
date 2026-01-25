@@ -3,10 +3,9 @@ package com.leagueplans.scraper.wiki.decoder
 import com.leagueplans.scraper.wiki.parser.Term
 import com.leagueplans.scraper.wiki.parser.Term.*
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.reflect.TypeTest
 
-@nowarn("msg=unused explicit parameter")
 object TermOps {
   extension (self: Template.Object) {
     def decode[T](name: String)(f: List[Term] => DecoderResult[T]): DecoderResult[T] =

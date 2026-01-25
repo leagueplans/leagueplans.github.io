@@ -110,11 +110,9 @@ final class SumCodecTest extends CodecSpec {
     "should not be able to derive codecs for types that are not subtypes" in {
       import scala.compiletime.codeOf
 
-      @nowarn("msg=unused local definition")
       final case class A(i: Int)
       
       sealed trait B
-      @nowarn("msg=unused local definition")
       final case class C(a: A) extends B
 
       @nowarn("msg=New anonymous class definition will be duplicated at each inline site")
