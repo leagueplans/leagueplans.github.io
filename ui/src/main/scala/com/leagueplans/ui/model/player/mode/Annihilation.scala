@@ -9,13 +9,9 @@ import com.leagueplans.ui.model.player.skill.{Level, Stats}
 object Annihilation extends Mode.Deadman {
   val name: String = "Deadman: Annihilation"
 
-  val settings: Plan.Settings.Explicit =
-    Plan.Settings.Explicit(
-      initialPlayer = MainGame.initialPlayer.copy(
-        stats = Stats(
-          Herblore -> Level(3).bound,
-          Hitpoints -> Level(10).bound
-        ),
+  val settings: Plan.Settings.Explicit = {
+    Armageddon.settings.copy(
+      initialPlayer = Armageddon.settings.initialPlayer.copy(
         depositories = List(
           Depository(
             Map(
@@ -65,7 +61,8 @@ object Annihilation extends Mode.Deadman {
           186, // Children of the Sun
         ),
         completedDiaryTasks = Set(
-          193 // Read the blackboard at Barbarian Assault after reaching level 5 in every role
+          193, // Read the blackboard at Barbarian Assault after reaching level 5 in every role
+          246 // Hand in a book at the Arceuus Library
         )
       ),
       expMultipliers = List(
@@ -84,7 +81,7 @@ object Annihilation extends Mode.Deadman {
           base = 10,
           thresholds = List.empty
         )
-      ),
-      maybeLeaguePointScoring = None
+      )
     )
+  }
 }
