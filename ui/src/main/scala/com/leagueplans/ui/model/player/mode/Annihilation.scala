@@ -61,8 +61,8 @@ object Annihilation extends Mode.Deadman {
           186, // Children of the Sun
         ),
         completedDiaryTasks = Set(
-          193, // Read the blackboard at Barbarian Assault after reaching level 5 in every role
-          246 // Hand in a book at the Arceuus Library
+          246, // Hand in a book at the Arceuus Library
+          292, // Pickpocket a man or woman in Lumbridge
         )
       ),
       expMultipliers = List(
