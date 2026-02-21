@@ -35,7 +35,7 @@ object StepDragListeners {
     closeSubsteps: () => Unit,
     forester: Forester[Step.ID, Step]
   ): L.Modifier[L.HtmlElement] = {
-    val dropLocation = Var(Option.empty[DropLocation])
+    val dropLocation = Var(Option.empty[DropLocation]).distinct
 
     List(
       L.child.maybe <-- toStyling(dropLocation.signal),
