@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.plan.step
 import com.leagueplans.ui.dom.common.collapse.{HeightMask, InvertibleAnimationController}
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
+import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusedStep}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
@@ -28,7 +29,7 @@ object StepElement {
     forester: Forester[Step.ID, Step],
     focusController: FocusedStep.Controller,
     completionController: CompletedStep.Controller,
-    isDragging: Var[Boolean],
+    draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     contextMenuController: ContextMenu.Controller,
@@ -38,6 +39,7 @@ object StepElement {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
     val isDraggable = Var(false)
+    val isDraggingSignal = draggingStatus.signal.map(_ != StepDraggingStatus.NotDragging).distinct
     val animationController = InvertibleAnimationController(
       startOpen = true,
       animationDuration = 200.millis
@@ -45,7 +47,7 @@ object StepElement {
     val header = toHeader(
       step,
       substepsSignal,
-      isDragging.signal,
+      isDraggingSignal,
       isFocused,
       isDraggable,
       animationController,
@@ -61,14 +63,14 @@ object StepElement {
         L.draggable <-- isDraggable,
         header,
         L.div(L.cls(Styles.substepsSidebar)),
-        toSubsteps(substepsSignal, isDragging.signal, animationController),
+        toSubsteps(substepsSignal, isDraggingSignal, animationController),
         Tooltip(L.span("Click to toggle focus")),
         toFocusListeners(stepID, focusController),
         toHoverListeners(isHovering),
         StepDragListeners(
           stepID,
           hasSubsteps = substepsSignal.map(_.nonEmpty),
-          isDragging.writer,
+          draggingStatus.writer,
           header,
           closeSubsteps = animationController.close,
           forester

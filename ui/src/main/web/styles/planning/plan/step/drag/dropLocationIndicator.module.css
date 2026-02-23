@@ -1,0 +1,15 @@
+.indicator {
+  position: absolute;
+  z-index: 1;
+
+  border-width: 2px 0px 2px 2px;
+  border-radius: 0.5rem 0 0 0.5rem;
+  border-style: solid;
+  border-color: yellow;
+
+  pointer-events: none;
+
+  transition:
+    height 100ms ease-out,
+    top 100ms ease-out;
+}

@@ -6,21 +6,25 @@
    */
   display: grid;
   grid-template-rows: auto 1fr;
+  isolation: isolate;
 
   background-color: #00172e;
 }
 
 .header {
+  position: relative;
   grid-row: 1;
+  z-index: 1;
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .steps {
+  position: relative;
   grid-row: 2;
+  z-index: 0;
 
-  overflow: auto;
+  overflow-y: auto;
   scroll-behavior: smooth;
-
   scrollbar-color: #89a0b7 #000000;
 }

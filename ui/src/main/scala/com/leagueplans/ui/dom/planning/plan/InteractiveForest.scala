@@ -4,6 +4,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub}
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
+import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
@@ -30,13 +31,9 @@ object InteractiveForest {
   ): ReactiveHtmlElement[OList] = {
     val clipboard = Clipboard[Step]("step", toastPublisher, Decoder.decodeMessage)
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
-    // Performance suffers a lot when a step is being dragged while the css for allowing step
-    // headers to stick to the top of the plan is enabled. Dragging a step onto a stickied step
-    // doesn't work too well either, since the box-shadows don't wrap around the header.
-    //
-    // As a result, we track whether we're dragging a step, and disable the sticky-step css
-    // when we are.
-    val isDragging = Var(false)
+    // Dragging a step onto a stickied step doesn't have great UX, so we disable the
+    // sticky-step css when dragging
+    val draggingStatus = Var(StepDraggingStatus.NotDragging).distinct
 
     val dom =
       ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])](
@@ -53,7 +50,7 @@ object InteractiveForest {
             forester,
             focusController,
             completionController,
-            isDragging,
+            draggingStatus,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
             contextMenuController,
@@ -68,6 +65,7 @@ object InteractiveForest {
     L.ol(
       L.cls(Styles.forest),
       L.children <-- toSteps(forester, dom),
+      L.inContext(StepDropLocationIndicator(draggingStatus.signal, _)),
       completedStepBinder,
       subscriptionEvents --> forester.process,
       subscriptionEvents --> (update => dom.eval(update)),
