@@ -65,7 +65,7 @@ object InteractiveForest {
     L.ol(
       L.cls(Styles.forest),
       L.children <-- toSteps(forester, dom),
-      L.inContext(StepDropLocationIndicator(draggingStatus.signal, _)),
+      L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
       completedStepBinder,
       subscriptionEvents --> forester.process,
       subscriptionEvents --> (update => dom.eval(update)),

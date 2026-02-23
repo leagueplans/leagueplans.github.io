@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan.step.drag
 
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier}
 
@@ -11,13 +11,17 @@ object StepDropLocationIndicator {
   private type BoundingRect = (width: Double, height: Double, top: Double, left: Double)
 
   def apply(
-    locationSignal: Signal[StepDraggingStatus],
+    draggingStatusStream: EventStream[StepDraggingStatus],
     parentElement: L.HtmlElement
   ): L.Modifier[L.HtmlElement] = {
     val maybeDimensions = Var[Option[BoundingRect]](None)
+    val maybeDimensionsStream =
+      draggingStatusStream
+        .throttle(ms = 30, leading = true)
+        .map(getBoundingRect(_, parentElement))
 
     List(
-      locationSignal.distinct.map(getBoundingRect(_, parentElement)) --> maybeDimensions.writer,
+      maybeDimensionsStream --> maybeDimensions,
       L.child.maybe <-- maybeDimensions.signal.splitOption((_, dimensions) =>
         L.div(
           L.cls(Styles.indicator),
