@@ -11,10 +11,10 @@ object DiaryTaskContextMenu {
   def apply(
     diaryTask: DiaryTask,
     effectObserver: Observer[CompleteDiaryTask],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller
   ): L.Button =
     Button(
       _.handledAs[CompleteDiaryTask](CompleteDiaryTask(diaryTask.id)) --> 
-        Observer.combine(effectObserver, menuCloser)
+        Observer.combine(effectObserver, Observer(_ => controller.close()))
     ).amend("Complete")
 }

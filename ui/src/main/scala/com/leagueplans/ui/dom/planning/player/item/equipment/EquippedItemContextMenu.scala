@@ -13,7 +13,7 @@ object EquippedItemContextMenu {
     stack: ItemStack,
     slot: EquipmentSlot,
     effectObserver: Observer[MoveItem],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller
   ): L.Button = {
     val observer = effectObserver.contramap[Unit](_ =>
       MoveItem(
@@ -26,6 +26,11 @@ object EquippedItemContextMenu {
       )
     )
 
-    Button(_.handled --> Observer.combine(observer, menuCloser)).amend("Unequip")
+    Button(
+      _.handled --> Observer.combine(
+        observer,
+        Observer(_ => controller.close())
+      )
+    ).amend("Unequip")
   }
 }

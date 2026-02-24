@@ -11,13 +11,8 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object ContextMenu {
-  type CloseCommand = Any
-
   final class Controller private[ContextMenu](status: Var[Status]) {
-    private val closer = status.writer.contramap[CloseCommand](_ => Status.Closed)
-
-    def bind(toContents: Observer[CloseCommand] => Signal[Option[L.Node]]): Binder.Base = {
-      val contents = toContents(closer)
+    def register(contents: Signal[Option[L.Node]]): Binder.Base =
       L.onContextMenu
         .ifUnhandled
         .compose(events =>
@@ -27,7 +22,9 @@ object ContextMenu {
               Status.Open(event.pageX, event.pageY, contents)
           }
         ) --> status
-    }
+    
+    def close(): Unit =
+      status.set(Status.Closed)
   }
 
   def apply(): (L.Div, Controller) = {

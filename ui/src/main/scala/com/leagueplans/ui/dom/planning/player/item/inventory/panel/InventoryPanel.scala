@@ -73,9 +73,9 @@ object InventoryPanel {
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       effectObserverSignal.map(_.map(effectObserver =>
-        InventoryItemContextMenu(stack, cache, playerSignal, effectObserver, menuCloser, modal)
+        InventoryItemContextMenu(stack, cache, playerSignal, effectObserver, contextMenuController, modal)
       ))
     )
 }

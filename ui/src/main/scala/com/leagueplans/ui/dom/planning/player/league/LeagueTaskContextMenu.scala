@@ -11,10 +11,10 @@ object LeagueTaskContextMenu {
   def apply(
     leagueTask: LeagueTask,
     effectObserver: Observer[CompleteLeagueTask],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller
   ): L.Button =
     Button(
       _.handledAs[CompleteLeagueTask](CompleteLeagueTask(leagueTask.id)) -->
-        Observer.combine(effectObserver, menuCloser)
+        Observer.combine(effectObserver, Observer(_ => controller.close()))
     ).amend("Complete")
 }

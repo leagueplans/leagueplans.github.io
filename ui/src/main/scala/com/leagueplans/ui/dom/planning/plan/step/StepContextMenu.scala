@@ -21,34 +21,34 @@ object StepContextMenu {
     completionController: CompletedStep.Controller,
     editingEnabledSignal: Signal[Boolean]
   ): Binder.Base =
-    controller.bind(closer =>
+    controller.register(
       Signal
         .combine(editingEnabledSignal, completionController.signalFor(stepID))
         .map((editingEnabled, isComplete) =>
           Some(
             if (editingEnabled && clipboard.isSupported)
               L.div(
-                cutButton(stepSignal, clipboard, closer),
-                pasteButton(stepID, clipboard, forester, closer),
-                changeStatusButton(stepID, isComplete, completionController, closer)
+                cutButton(stepSignal, controller, clipboard),
+                pasteButton(stepID, controller, clipboard, forester),
+                changeStatusButton(stepID, isComplete, controller, completionController)
               )
             else
-              L.div(changeStatusButton(stepID, isComplete, completionController, closer))
+              L.div(changeStatusButton(stepID, isComplete, controller, completionController))
           )
         )
     )
 
   private def cutButton(
     stepSignal: Signal[Step],
-    clipboard: Clipboard[Step],
-    closer: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller,
+    clipboard: Clipboard[Step]
   ): L.Button =
     Button(
       _.handledWith(
         _.sample(stepSignal).flatMapSwitch(step =>
           clipboard.write(step).asObservable
         )
-      ) --> closer
+      ) --> Observer(_ => controller.close())
     ).amend("Cut")
 
   // There's an edge case to be aware of here.
@@ -60,28 +60,28 @@ object StepContextMenu {
   // undo changes.
   private def pasteButton(
     stepID: Step.ID,
+    controller: ContextMenu.Controller,
     clipboard: Clipboard[Step],
-    forester: Forester[Step.ID, Step],
-    closer: Observer[ContextMenu.CloseCommand]
+    forester: Forester[Step.ID, Step]
   ): L.Button = {
     val stepMover = Observer[Step](step => forester.add(child = step, parent = stepID))
     Button(
       _.handledWith(_.flatMapSwitch(_ =>
         clipboard.read().asObservable.collectSome
-      )) --> Observer.combine(stepMover, closer)
+      )) --> Observer.combine(stepMover, Observer(_ => controller.close()))
     ).amend("Paste")
   }
 
   private def changeStatusButton(
     stepID: Step.ID,
     isComplete: Boolean,
-    completionController: CompletedStep.Controller,
-    closer: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller,
+    completionController: CompletedStep.Controller
   ): L.Button =
     Button(
-      _.handledAs(!isComplete) --> Observer.combine(
-        Observer(completionController.setStatus(stepID, _)),
-        closer
+      _.handledAs(!isComplete) --> (isComplete =>
+        completionController.setStatus(stepID, isComplete)
+        controller.close()
       )
     ).amend(if (isComplete) "Mark incomplete" else "Mark complete")
 }

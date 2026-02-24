@@ -11,10 +11,10 @@ object QuestContextMenu {
   def apply(
     quest: Quest,
     effectObserver: Observer[CompleteQuest],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller
   ): L.Button =
     Button(
       _.handledAs[CompleteQuest](CompleteQuest(quest.id)) --> 
-        Observer.combine(effectObserver, menuCloser)
+        Observer.combine(effectObserver, Observer(_ => controller.close()))
     ).amend("Complete")
 }

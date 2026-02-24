@@ -38,12 +38,12 @@ object QuestElement {
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
     contextMenuController: ContextMenu.Controller
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(QuestContextMenu(quest, effectObserver, menuCloser))
+            Some(QuestContextMenu(quest, effectObserver, contextMenuController))
           case _ =>
             None
         }

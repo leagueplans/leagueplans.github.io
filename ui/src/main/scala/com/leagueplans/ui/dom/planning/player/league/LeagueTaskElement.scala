@@ -50,12 +50,12 @@ object LeagueTaskElement {
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
     contextMenuController: ContextMenu.Controller
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(LeagueTaskContextMenu(task, effectObserver, menuCloser))
+            Some(LeagueTaskContextMenu(task, effectObserver, contextMenuController))
           case _ =>
             None
         }

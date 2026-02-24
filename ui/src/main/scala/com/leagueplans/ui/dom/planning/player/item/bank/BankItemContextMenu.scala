@@ -15,13 +15,13 @@ object BankItemContextMenu {
     item: Item,
     heldQuantity: Int,
     effectObserver: Observer[Effect],
-    menuCloser: Observer[ContextMenu.CloseCommand],
+    controller: ContextMenu.Controller,
     modal: Modal
   ): L.Div =
     L.div(
-      withdrawButton(item, heldQuantity, note = false, effectObserver, menuCloser, modal),
+      withdrawButton(item, heldQuantity, note = false, effectObserver, controller, modal),
       Option.when(item.noteable)(
-        withdrawButton(item, heldQuantity, note = true, effectObserver, menuCloser, modal)
+        withdrawButton(item, heldQuantity, note = true, effectObserver, controller, modal)
       )
     )
 
@@ -30,7 +30,7 @@ object BankItemContextMenu {
     heldQuantity: Int,
     note: Boolean,
     effectObserver: Observer[MoveItem],
-    menuCloser: Observer[ContextMenu.CloseCommand],
+    controller: ContextMenu.Controller,
     modal: Modal
   ): L.Node = {
     val observer =
@@ -49,7 +49,7 @@ object BankItemContextMenu {
         )
 
     Button(
-      _.handled --> Observer.combine(observer, menuCloser)
+      _.handled --> Observer.combine(observer, Observer(_ => controller.close()))
     ).amend(if (note) "Withdraw noted" else "Withdraw")
   }
 

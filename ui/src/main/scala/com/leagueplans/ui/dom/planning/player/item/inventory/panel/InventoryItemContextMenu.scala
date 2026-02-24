@@ -22,7 +22,7 @@ object InventoryItemContextMenu {
     cache: Cache,
     playerSignal: Signal[Player],
     effectObserver: Observer[Effect],
-    menuCloser: Observer[ContextMenu.CloseCommand],
+    controller: ContextMenu.Controller,
     modal: Modal
   ): L.Div = {
     val allStacksSignal = playerSignal.map(player =>
@@ -32,16 +32,16 @@ object InventoryItemContextMenu {
     )
 
     L.div(
-      L.child <-- allStacksSignal.map(bankButton(_, effectObserver, menuCloser, modal)),
-      L.child <-- playerSignal.map(equipButton(stack, cache, _, effectObserver, menuCloser)),
-      L.child <-- allStacksSignal.map(removeButton(_, effectObserver, menuCloser, modal)),
+      L.child <-- allStacksSignal.map(bankButton(_, effectObserver, controller, modal)),
+      L.child <-- playerSignal.map(equipButton(stack, cache, _, effectObserver, controller)),
+      L.child <-- allStacksSignal.map(removeButton(_, effectObserver, controller, modal)),
     )
   }
 
   private def bankButton(
     stack: ItemStack,
     effectObserver: Observer[MoveItem],
-    menuCloser: Observer[ContextMenu.CloseCommand],
+    controller: ContextMenu.Controller,
     modal: Modal
   ): L.Node =
     stack.item.bankable match {
@@ -62,7 +62,7 @@ object InventoryItemContextMenu {
               )
             )
 
-        button("Bank", observer, menuCloser)
+        button("Bank", observer, controller)
     }
 
   private def toBankItemFormOpener(
@@ -81,7 +81,7 @@ object InventoryItemContextMenu {
     cache: Cache,
     player: Player,
     effectObserver: Observer[MoveItem],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller,
   ): L.Node =
     (stack.noted, stack.item.equipmentType) match {
       case (false, Some(tpe)) =>
@@ -114,7 +114,7 @@ object InventoryItemContextMenu {
         val observer = Observer[Unit](_ =>
           (unequipEffects.toList :+ equipEffect).foreach(effectObserver.onNext)
         )
-        button("Equip", observer, menuCloser)
+        button("Equip", observer, controller)
 
       case _ =>
         L.emptyNode
@@ -141,7 +141,7 @@ object InventoryItemContextMenu {
   private def removeButton(
     stack: ItemStack,
     effectObserver: Observer[AddItem],
-    menuCloser: Observer[ContextMenu.CloseCommand],
+    controller: ContextMenu.Controller,
     modal: Modal
   ): L.Button = {
     val observer =
@@ -150,7 +150,7 @@ object InventoryItemContextMenu {
       else
         effectObserver.contramap[Unit](_ => AddItem(stack.item.id, -stack.quantity, inventory, stack.noted))
 
-    button("Remove", observer, menuCloser)
+    button("Remove", observer, controller)
   }
 
   private def toRemoveItemFormOpener(
@@ -167,7 +167,12 @@ object InventoryItemContextMenu {
   private def button(
     text: String,
     clickObserver: Observer[Unit],
-    menuCloser: Observer[ContextMenu.CloseCommand]
+    controller: ContextMenu.Controller
   ): L.Button =
-    Button(_.handled --> Observer.combine(clickObserver, menuCloser)).amend(text)
+    Button(
+      _.handled --> Observer.combine(
+        clickObserver,
+        Observer(_ => controller.close())
+      )
+    ).amend(text)
 }

@@ -53,12 +53,12 @@ object DiaryTaskElement {
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     contextMenuController: ContextMenu.Controller
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(DiaryTaskContextMenu(task, effectObserver, menuCloser))
+            Some(DiaryTaskContextMenu(task, effectObserver, contextMenuController))
           case _ =>
             None
         }

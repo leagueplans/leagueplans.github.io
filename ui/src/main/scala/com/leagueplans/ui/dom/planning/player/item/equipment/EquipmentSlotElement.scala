@@ -93,9 +93,9 @@ object EquipmentSlotElement {
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     contextMenuController: ContextMenu.Controller
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       effectObserverSignal.map(_.map(effectObserver =>
-        EquippedItemContextMenu(stack, slot, effectObserver, menuCloser)
+        EquippedItemContextMenu(stack, slot, effectObserver, contextMenuController)
       ))
     )
 }

@@ -82,13 +82,13 @@ object BankElement {
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): Binder.Base =
-    contextMenuController.bind(menuCloser =>
+    contextMenuController.register(
       Signal
         .combine(bankSignal, effectObserverSignal)
         .map((bank, maybeEffectObserver) =>
           maybeEffectObserver.map { effectObserver =>
             val heldQuantity = bank.contents.getOrElse((item.id, false), 0)
-            BankItemContextMenu(item, heldQuantity, effectObserver, menuCloser, modal)
+            BankItemContextMenu(item, heldQuantity, effectObserver, contextMenuController, modal)
           }
         )
     )
