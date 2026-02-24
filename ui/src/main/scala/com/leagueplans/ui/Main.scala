@@ -6,7 +6,8 @@ import org.scalajs.dom.document
 
 import scala.annotation.nowarn
 
-object Main extends App {
+@main
+def main(): Unit = {
   L.documentEvents(_.onDomContentLoaded).foreach { _ =>
     val container = document.createElement("div")
     document.body.appendChild(container)

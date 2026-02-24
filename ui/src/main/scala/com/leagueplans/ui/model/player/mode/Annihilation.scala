@@ -1,10 +1,8 @@
 package com.leagueplans.ui.model.player.mode
 
-import com.leagueplans.common.model.Skill.{Herblore, Hitpoints}
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan}
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.model.player.skill.{Level, Stats}
 
 object Annihilation extends Mode.Deadman {
   val name: String = "Deadman: Annihilation"

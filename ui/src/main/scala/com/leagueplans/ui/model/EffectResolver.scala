@@ -3,7 +3,7 @@ package com.leagueplans.ui.model
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.skill.Stats
-import com.leagueplans.ui.model.player.{Cache, GridStatus, Player}
+import com.leagueplans.ui.model.player.{Cache, Player}
 
 final class EffectResolver(
   expMultipliers: List[ExpMultiplier],
