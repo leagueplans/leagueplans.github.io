@@ -1,3 +1,5 @@
+import org.scalajs.linker.interface.ESVersion
+
 name := "league-plans"
 
 ThisBuild / scalaVersion := "3.8.2"
@@ -77,7 +79,10 @@ lazy val ui =
         "io.circe" %%% "circe-scalajs" % circeVersion
       ),
       scalaJSUseMainModuleInitializer := true,
-      scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
+      scalaJSLinkerConfig ~= (
+        _.withModuleKind(ModuleKind.ESModule)
+          .withESFeatures(_.withESVersion(ESVersion.ES2017))
+      ),
       fastLinkOutputDir := {
         // Ensure that fastLinkJS has run, then return its output directory
         (Compile / fastLinkJS).value
