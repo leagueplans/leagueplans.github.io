@@ -1,0 +1,6 @@
+.arrow {
+  position: absolute;
+  z-index: -1;
+  transform: rotate(45deg);
+  background: inherit;
+}
