@@ -8,7 +8,9 @@ object StepDetails {
     StepDetails(
       description,
       EffectList.empty,
-      requirements = List.empty
+      requirements = List.empty,
+      repetitions = 1,
+      duration = Duration.ticks(0)
     )
   
   given Encoder[StepDetails] = Encoder.derived
@@ -18,5 +20,7 @@ object StepDetails {
 final case class StepDetails(
   description: String,
   directEffects: EffectList,
-  requirements: List[Requirement]
+  requirements: List[Requirement],
+  repetitions: Int,
+  duration: Duration
 )

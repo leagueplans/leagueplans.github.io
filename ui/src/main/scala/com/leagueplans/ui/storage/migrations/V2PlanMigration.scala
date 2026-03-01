@@ -11,17 +11,15 @@ object V2PlanMigration extends PlanMigration {
   val fromVersion: SchemaVersion = SchemaVersion.V1
   val toVersion: SchemaVersion = SchemaVersion.V2
 
-  def apply(plan: PlanExport): Either[DecodingFailure | MigrationError, PlanExport] =
+  def apply(plan: PlanExport): MigrationResult[PlanExport] =
     for {
       (name, timestamp, schemaVersion) <- plan.metadata.as[(Encoding, Encoding, SchemaVersion)]
       _ <- validateInputVersion(schemaVersion)
       Tuple1(toChildren) <- plan.mappings.as[Tuple1[Map[String, List[String]]]]
       root <- findRoot(toChildren)
-    } yield PlanExport(
-      Encoder.encode((name, timestamp, toVersion)),
-      plan.settings,
-      Encoder.encode(toChildren, List(root)),
-      plan.steps
+    } yield plan.copy(
+      metadata = Encoder.encode((name, timestamp, toVersion)),
+      mappings = Encoder.encode(toChildren, List(root))
     )
 
   private def findRoot(toChildren: Map[String, List[String]]): Either[MigrationError, String] = {

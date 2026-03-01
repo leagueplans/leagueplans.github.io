@@ -53,13 +53,15 @@ final class ExpMultiplierTest extends CodecSpec {
         )
 
         "GridAxis" in test(
-          ExpMultiplier.Condition.LeagueTasks(164),
-          Array[Byte](0, 0b100, 0b1100, 0b11, 0) ++ Encoder.encode(164).getBytes
+          ExpMultiplier.Condition.GridAxis(ExpMultiplier.GridAxisDirection.Row, 4),
+          Array[Byte](0, 0b101, 0b1100, 0b1000, 0b100, 0b100) ++
+            Encoder.encode(ExpMultiplier.GridAxisDirection.Row).getBytes ++
+            Array[Byte](0b1000) ++ Encoder.encode(4).getBytes
         )
 
         "GridTile" in test(
-          ExpMultiplier.Condition.LeagueTasks(164),
-          Array[Byte](0, 0b100, 0b1100, 0b11, 0) ++ Encoder.encode(164).getBytes
+          ExpMultiplier.Condition.GridTile(26),
+          Array[Byte](0, 0b110, 0b1100, 0b10, 0) ++ Encoder.encode(26).getBytes
         )
       }
     }

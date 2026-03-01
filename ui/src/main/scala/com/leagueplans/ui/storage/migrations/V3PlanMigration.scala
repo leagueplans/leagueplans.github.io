@@ -9,23 +9,21 @@ object V3PlanMigration extends PlanMigration {
   val fromVersion: SchemaVersion = SchemaVersion.V2
   val toVersion: SchemaVersion = SchemaVersion.V3
 
-  def apply(plan: PlanExport): Either[DecodingFailure | MigrationError, PlanExport] =
+  def apply(plan: PlanExport): MigrationResult[PlanExport] =
     for {
       (name, timestamp, schemaVersion) <- plan.metadata.as[(Encoding, Encoding, SchemaVersion)]
       _ <- validateInputVersion(schemaVersion)
       (_, expMultiplierStrategy, maybeLeaguePointScoring) <- plan.settings.as[(Encoding, Encoding, Option[Encoding])]
       migratedSettings <- identifyMode(expMultiplierStrategy, maybeLeaguePointScoring)
-    } yield PlanExport(
-      Encoder.encode((name, timestamp, toVersion)),
-      migratedSettings,
-      plan.mappings,
-      plan.steps
+    } yield plan.copy(
+      metadata = Encoder.encode((name, timestamp, toVersion)),
+      settings = migratedSettings
     )
   
   private def identifyMode(
     expMultiplierStrategy: Encoding,
     maybeLeaguePointScoring: Option[Encoding]
-  ): Either[DecodingFailure | MigrationError, Encoding] =
+  ): MigrationResult[Encoding] =
     maybeLeaguePointScoring match {
       case Some(leaguePointScoring) =>
         leaguePointScoring.as[(String, List[Encoding])].flatMap {
@@ -57,8 +55,6 @@ object V3PlanMigration extends PlanMigration {
   private val leagues5Encoding: Encoding = toSettingsEncoding("leagues-5")
   private val armageddonEncoding: Encoding = toSettingsEncoding("deadman-armageddon")
 
-  private def toSettingsEncoding(mode: String): Encoding = {
-    given Encoder[Int] = Encoder.unsignedIntEncoder
-    Encoder.encode((0, Tuple1(mode)))
-  }
+  private def toSettingsEncoding(mode: String): Encoding =
+    encodeCoproduct(ordinal = 0, value = Tuple1(mode))
 }

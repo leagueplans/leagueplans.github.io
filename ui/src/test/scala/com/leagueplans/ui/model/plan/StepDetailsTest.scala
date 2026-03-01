@@ -13,13 +13,17 @@ final class StepDetailsTest extends CodecSpec {
       val description = "Chop a tree"
       val effect = Effect.GainExp(Skill.Woodcutting, Exp(25))
       val requirement = Requirement.Tool(Item.ID(241), Depository.Kind.EquipmentSlot.Weapon)
+      val repetitions = 2
+      val duration = Duration.seconds(15)
 
       testRoundTripSerialisation(
-        StepDetails(description, EffectList(List(effect)), List(requirement)),
+        StepDetails(description, EffectList(List(effect)), List(requirement), repetitions, duration),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b1011) ++ Encoder.encode(description).getBytes ++
           Array[Byte](0b1100, 0b1101) ++ Encoder.encode(effect).getBytes ++
-          Array[Byte](0b10100, 0b10001) ++ Encoder.encode(requirement).getBytes
+          Array[Byte](0b10100, 0b10001) ++ Encoder.encode(requirement).getBytes ++
+          Array[Byte](0b11000) ++ Encoder.encode(repetitions).getBytes ++
+          Array[Byte](0b100100, 0b1000) ++ Encoder.encode(duration).getBytes
       )
     }
   }

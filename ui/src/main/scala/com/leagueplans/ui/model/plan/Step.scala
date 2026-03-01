@@ -36,7 +36,9 @@ final case class Step(id: Step.ID, details: StepDetails) {
     id: Step.ID = id,
     description: String = details.description,
     directEffects: EffectList = details.directEffects,
-    requirements: List[Requirement] = details.requirements
+    requirements: List[Requirement] = details.requirements,
+    repetitions: Int = details.repetitions,
+    duration: Duration = details.duration
   ): Step =
-    Step(id, StepDetails(description, directEffects, requirements))
+    Step(id, StepDetails(description, directEffects, requirements, repetitions, duration))
 }

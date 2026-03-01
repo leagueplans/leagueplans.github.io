@@ -44,14 +44,16 @@ final class StepTest extends CodecSpec {
       val details = StepDetails(
         description = "Chop a tree",
         directEffects = EffectList(List(Effect.GainExp(Skill.Woodcutting, Exp(25)))),
-        requirements = List(Requirement.Tool(Item.ID(241), Depository.Kind.EquipmentSlot.Weapon))
+        requirements = List(Requirement.Tool(Item.ID(241), Depository.Kind.EquipmentSlot.Weapon)),
+        repetitions = 2,
+        duration = Duration.seconds(15)
       )
 
       testRoundTripSerialisation(
         Step(id, details),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b10) ++ Encoder.encode(id).getBytes ++
-          Array[Byte](0b1100, 0b101111) ++ Encoder.encode(details).getBytes
+          Array[Byte](0b1100, 0b111011) ++ Encoder.encode(details).getBytes
       )
     }
   }

@@ -32,10 +32,8 @@ object V4PlanMigration extends PlanMigration {
       (name, timestamp, schemaVersion) <- plan.metadata.as[(Encoding, Encoding, SchemaVersion)]
       _ <- validateInputVersion(schemaVersion)
       updatedSteps <- ItemIDMigrator(itemIDMigrations, plan.steps)
-    } yield PlanExport(
-      Encoder.encode((name, timestamp, toVersion)),
-      plan.settings,
-      plan.mappings,
-      updatedSteps
+    } yield plan.copy(
+      metadata = Encoder.encode((name, timestamp, toVersion)),
+      steps = updatedSteps
     )
 }

@@ -10,7 +10,7 @@ import com.raquo.airstream.core.EventStream
 import scala.scalajs.js.{Promise, dynamicImport}
 
 object Migrator {
-  def run(plan: PlanExport): EventStream[Either[DecodingFailure | MigrationError, PlanExport]] =
+  def run(plan: PlanExport): EventStream[MigrationResult[PlanExport]] =
     EventStream
       .fromValue(plan.metadata.as[(Encoding, Encoding, SchemaVersion)])
       .andThen((_, _, schemaVersion) =>
@@ -25,12 +25,13 @@ object Migrator {
       case SchemaVersion.V1 => Some(dynamicImport(V2PlanMigration))
       case SchemaVersion.V2 => Some(dynamicImport(V3PlanMigration))
       case SchemaVersion.V3 => Some(dynamicImport(V4PlanMigration))
-      case SchemaVersion.V4 => None
+      case SchemaVersion.V4 => Some(dynamicImport(V5PlanMigration))
+      case SchemaVersion.V5 => None
     }
 
   private def run(
     importedMigration: Promise[PlanMigration],
     plan: PlanExport
-  ): EventStream[Either[DecodingFailure | MigrationError, PlanExport]] =
+  ): EventStream[MigrationResult[PlanExport]] =
     importedMigration.asObservable.map(migration => migration(plan))
 }

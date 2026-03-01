@@ -19,6 +19,8 @@ enum SchemaVersion(val date: Date) {
   case V3 extends SchemaVersion(new Date(2025, 8, 7))
   /** An item ID migration */
   case V4 extends SchemaVersion(new Date(2025, 9, 18))
+  /** Adds repetitions and durations to steps */
+  case V5 extends SchemaVersion(new Date(2026, 2, 1))
 
   def number: Int = ordinal + 1
 }

@@ -5,39 +5,22 @@ import com.leagueplans.codec.decoding.{Decoder, DecodingFailure}
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Step
 
-import scala.annotation.tailrec
-
 private[migrations] object ItemIDMigrator {
   def apply(
     oldToNewIDs: Map[Int, Int],
     steps: Map[Step.ID, Encoding]
-  ): Either[DecodingFailure | MigrationError, Map[Step.ID, Encoding]] = 
-    migrateHelper(oldToNewIDs, steps.toList)(
-      migrateCoproduct(generateEffectMigrations(oldToNewIDs))
-    )
-  
-  @tailrec
-  private def migrateHelper(
-    oldToNewIDs: Map[Int, Int],
-    steps: List[(Step.ID, Encoding)],
-    acc: List[(Step.ID, Encoding)] = List.empty
-  )(migrateEffect: Migration): Either[DecodingFailure | MigrationError, Map[Step.ID, Encoding]] =
-    steps match {
-      case Nil => Right(acc.toMap)
-      case (id, details) :: t =>
-        migrateStep(details, oldToNewIDs, migrateEffect) match {
-          case Left(error) => 
-            Left(error)
-          case Right(updatedDetails) =>
-            migrateHelper(oldToNewIDs, t, acc :+ (id, updatedDetails))(migrateEffect)
-        }
-    }
+  ): MigrationResult[Map[Step.ID, Encoding]] = {
+    val migrateEffect = migrateCoproduct(generateEffectMigrations(oldToNewIDs))
+    migrateList(steps.toList)((id, details) =>
+      migrateDetails(details, oldToNewIDs, migrateEffect).map((id, _))
+    ).map(_.toMap)
+  }
     
-  private def migrateStep(
+  private def migrateDetails(
     details: Encoding,
     oldToNewIDs: Map[Int, Int],
     migrateEffect: Migration,
-  ): Either[DecodingFailure | MigrationError, Encoding] =
+  ): MigrationResult[Encoding] =
     for {
       (description, effects, requirements) <- details.as[(Encoding, List[Encoding], List[Encoding])]
       updatedEffects <- migrateList(effects)(migrateEffect)
@@ -66,7 +49,7 @@ private[migrations] object ItemIDMigrator {
   private def migrateRequirement(
     oldToNewIDs: Map[Int, Int],
     requirement: Encoding
-  ): Either[DecodingFailure | MigrationError, Encoding] =
+  ): MigrationResult[Encoding] =
     decodeOrdinal(requirement).flatMap {
       case (1, tool) =>
         val encodedOrdinal = Encoder.encode(1)(using Encoder.unsignedIntEncoder)
