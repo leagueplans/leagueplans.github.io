@@ -22,9 +22,7 @@ object LaminarOps {
     
     def selectOnFocus[E <: self.Input]: self.Modifier[E] =
       self.inContext(ctx =>
-        self.onFocus
-          .filterByTarget(_ == ctx.ref)
-          .handled --> (_ => ctx.ref.select())
+        self.onFocus.handled --> (_ => ctx.ref.select())
       )
 
     def withResizeObserver[E <: self.Element](

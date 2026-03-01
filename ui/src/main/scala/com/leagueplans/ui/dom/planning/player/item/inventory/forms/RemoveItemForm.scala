@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.AddItem
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
@@ -25,7 +26,8 @@ object RemoveItemForm {
       L.required(true),
       L.minAttr("1"),
       L.maxAttr(heldQuantity.toString),
-      L.stepAttr("1")
+      L.stepAttr("1"),
+      L.selectOnFocus
     )
     val amendedLabel = label.amend("Quantity:")
 
