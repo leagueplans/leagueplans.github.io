@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.stats
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.stats.form.StatsDetailForm
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -21,6 +21,7 @@ object StatsElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     expMultipliers: List[ExpMultiplier],
     cache: Cache,
+    tooltip: Tooltip,
     modal: Modal
   ): ReactiveHtmlElement[OList] = {
     val activeSkill = Var[Skill](Skill.values.head)
@@ -29,7 +30,8 @@ object StatsElement {
       playerSignal,
       effectObserverSignal,
       expMultipliers,
-      cache
+      cache,
+      tooltip
     )
     
     val statsSignal =
@@ -50,8 +52,7 @@ object StatsElement {
           showStatsDetailForm = () => {
             activeSkill.set(skill)
             modal.show(statsDetailForm)
-          },
-          formEnabled = effectObserverSignal.map(_.nonEmpty)
+          }
         )
       )
     )
@@ -59,9 +60,14 @@ object StatsElement {
     L.ol(
       L.cls(Styles.stats),
       L.children <-- statPanes,
-      L.li(TotalLevelPane(statsSignal.map(stats =>
-        Stats(stats.map(stat => stat.skill -> stat.exp).toMap))
-      ))
+      L.li(
+        TotalLevelPane(
+          statsSignal.map(stats => 
+            Stats(stats.map(stat => stat.skill -> stat.exp).toMap)
+          ),
+          tooltip
+        )
+      )
     )
   }
 

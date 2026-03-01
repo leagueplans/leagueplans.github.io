@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.league
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.TaskPanel
 import com.leagueplans.ui.model.plan.Effect.CompleteLeagueTask
 import com.leagueplans.ui.model.player.mode.Mode
@@ -17,6 +17,7 @@ object LeagueTaskPanel {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div = {
     val completeTasksSignal = playerSignal.map(_.leagueStatus.completedTasks)
@@ -41,7 +42,8 @@ object LeagueTaskPanel {
         effectObserverSignal,
         contextMenuController,
         leagueVar
-      )
+      ),
+      tooltip
     )
   }
 

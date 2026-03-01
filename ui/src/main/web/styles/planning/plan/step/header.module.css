@@ -26,3 +26,8 @@
 .dragIcon + .description {
   padding-left: 0;
 }
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}

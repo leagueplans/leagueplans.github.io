@@ -31,6 +31,7 @@ object PlanningPage {
     initialPlan: Plan,
     subscription: PlanSubscription,
     cache: Cache,
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -57,6 +58,7 @@ object PlanningPage {
       subscription,
       editingEnabled = Val(true),
       stepsWithErrorsVar.signal.map(_.keySet),
+      tooltip,
       contextMenuController,
       focusController,
       modal,
@@ -82,6 +84,7 @@ object PlanningPage {
           itemFuse,
           createEffectObserver(focusController.signal, forester),
           settings.expMultipliers,
+          tooltip,
           contextMenuController,
           modal,
           toastPublisher
@@ -101,6 +104,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
+            tooltip,
             modal
           ).amend(L.cls(Styles.editor))
         )

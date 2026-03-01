@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskFilters}
 import com.leagueplans.ui.facades.fusejs.FuseOptions
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
@@ -18,6 +18,7 @@ object DiaryDetailsTab {
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     regionVar: Var[Option[DiaryRegion]],
     tierVar: Var[Option[DiaryTier]]
@@ -52,6 +53,7 @@ object DiaryDetailsTab {
         completedTasksSignal,
         cache,
         effectObserverSignal,
+        tooltip,
         contextMenuController,
         regionVar.signal,
         tierVar.signal,

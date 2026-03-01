@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.sidebar
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.item.Depository
@@ -18,10 +18,11 @@ object InventorySidebar {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    tooltip: Tooltip,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val addItemButton = AddItemButton(itemFuse, effectObserverSignal, modal)
+    val addItemButton = AddItemButton(itemFuse, effectObserverSignal, tooltip, modal)
 
     val bankAllButton =
       BankAllButton(

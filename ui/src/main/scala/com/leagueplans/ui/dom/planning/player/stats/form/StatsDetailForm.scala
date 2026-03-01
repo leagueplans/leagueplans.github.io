@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.raquo.airstream.core.{Observer, Signal}
@@ -18,10 +18,11 @@ object StatsDetailForm {
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     expMultipliers: List[ExpMultiplier],
-    cache: Cache
+    cache: Cache,
+    tooltip: Tooltip
   ): L.Div = {
     val skillSignal = activeSkill.toObservable
-    val gainExpForm = GainExpForm(skillSignal, playerSignal, expMultipliers, effectObserverSignal, cache)
+    val gainExpForm = GainExpForm(skillSignal, playerSignal, expMultipliers, effectObserverSignal, cache, tooltip)
     val unlockSkillForm = UnlockSkillForm(skillSignal, effectObserverSignal)
 
     L.div(
@@ -31,11 +32,13 @@ object StatsDetailForm {
         skillSignal,
         Signal.combine(playerSignal, skillSignal).map((player, skill) =>
           player.stats(skill)
-        )
+        ),
+        tooltip
       ).amend(L.cls(Styles.overviewPane)),
       L.child <-- toMutatorPane(
         skillSignal,
         playerSignal,
+        effectObserverSignal,
         gainExpForm,
         unlockSkillForm
       ).map(_.amend(L.cls(Styles.mutatorPane))),
@@ -59,14 +62,20 @@ object StatsDetailForm {
   private def toMutatorPane(
     activeSkill: Signal[Skill],
     playerSignal: Signal[Player],
+    effectObserverSignal: Signal[Option[Observer[Effect]]],
     gainExpForm: L.HtmlElement,
     unlockSkillForm: L.HtmlElement
   ): Signal[L.HtmlElement] =
     Signal
-      .combine(activeSkill, playerSignal)
-      .splitOne(
-        (skill, player) => player.leagueStatus.skillsUnlocked.contains(skill)
-      )((skillUnlocked, _, _) =>
-        if (skillUnlocked) gainExpForm else unlockSkillForm
+      .combine(activeSkill, playerSignal, effectObserverSignal)
+      .splitOne((skill, player, effectObserver) =>
+        effectObserver.map(_ => player.leagueStatus.skillsUnlocked.contains(skill))
+      )((state, _, _) =>
+        state match {
+          case Some(skillUnlocked) =>
+            if (skillUnlocked) gainExpForm else unlockSkillForm
+          case None =>
+            L.div()
+        }
       )
 }

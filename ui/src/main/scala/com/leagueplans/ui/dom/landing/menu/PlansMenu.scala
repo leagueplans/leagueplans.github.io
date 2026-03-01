@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.common.{Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata, SchemaVersion}
@@ -17,12 +17,13 @@ object PlansMenu {
   def apply(
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.list),
-      L.children <-- toEntries(storage, selectionObserver, toastPublisher, modal)
+      L.children <-- toEntries(storage, selectionObserver, tooltip, toastPublisher, modal)
     )
 
   @js.native @JSImport("/styles/landing/menu/plansMenu.module.css", JSImport.Default)
@@ -40,6 +41,7 @@ object PlansMenu {
   private def toEntries(
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): Signal[List[L.LI]] =
@@ -47,7 +49,7 @@ object PlansMenu {
       .plansSignal
       .map(sort)
       .split((id, _) => id) { case (_, (id, metadata), _) =>
-        toEntry(id, metadata, storage, selectionObserver, toastPublisher, modal)
+        toEntry(id, metadata, storage, selectionObserver, tooltip, toastPublisher, modal)
       }
 
   private given Ordering[Date] =
@@ -61,16 +63,17 @@ object PlansMenu {
     metadata: PlanMetadata,
     storage: StorageClient,
     selectionObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): L.LI =
     L.li(
       L.cls(Styles.row),
-      DeleteButton(id, metadata.name, storage, toastPublisher, modal).amend(
+      DeleteButton(id, metadata.name, storage, tooltip, toastPublisher, modal).amend(
         L.cls(Styles.button, Styles.deleteButton)
       ),
       PlanDescriptor(metadata).amend(L.cls(Styles.descriptor)),
-      DownloadButton(id, metadata.name, storage, toastPublisher).amend(
+      DownloadButton(id, metadata.name, storage, tooltip, toastPublisher).amend(
         L.cls(Styles.button, Styles.downloadButton)
       ),
       if (metadata.schemaVersion == SchemaVersion.values.last)

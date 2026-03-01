@@ -3,7 +3,9 @@ package com.leagueplans.ui.dom.planning.player.stats.form
 import com.leagueplans.common.model.Skill
 import com.leagueplans.common.model.Skill.*
 import com.leagueplans.ui.dom.common.Tooltip
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -20,7 +22,11 @@ object ProgressBar {
     progress: Double
   )
 
-  def apply(skillSignal: Signal[Skill], expSignal: Signal[Exp]): L.Div = {
+  def apply(
+    skillSignal: Signal[Skill],
+    expSignal: Signal[Exp],
+    tooltip: Tooltip
+  ): L.Div = {
     val paramsSignal = expSignal.map(convertToParams)
     L.div(
       L.cls(Styles.progress),
@@ -34,7 +40,10 @@ object ProgressBar {
         L.child.maybe <-- paramsSignal.map(_.next.map(level =>
           L.p(L.cls(Styles.nextLevel), level.toString)
         )),
-        createTooltip(paramsSignal)
+        tooltip.register(
+          toTooltipContents(paramsSignal),
+          FloatingConfig.basicTooltip(Placement.top)
+        )
       ),
       createExpRemainingIndicator(paramsSignal),
     )
@@ -48,6 +57,7 @@ object ProgressBar {
     val currentLevel: String = js.native
     val nextLevel: String = js.native
     val expRemaining: String = js.native
+    val tooltip: String = js.native
   }
   
   private def convertToParams(exp: Exp): Params = {
@@ -114,12 +124,10 @@ object ProgressBar {
       )
     )
 
-  private def createTooltip(paramsSignal: Signal[Params]): L.Modifier[L.HtmlElement] =
-    Tooltip(
-      L.span(
-        L.text <-- paramsSignal.map(params =>
-          s"${String.format("%.2f", params.progress)}%"
-        )
+  private def toTooltipContents(paramsSignal: Signal[Params]): L.Span =
+    L.span(
+      L.text <-- paramsSignal.map(params =>
+        s"${String.format("%.2f", params.progress)}%"
       )
     )
 }

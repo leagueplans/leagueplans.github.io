@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.landing.menu
 
 import com.leagueplans.ui.dom.common.*
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.PlanID
@@ -17,6 +18,7 @@ object DeleteButton {
     id: PlanID,
     name: String,
     storage: StorageClient,
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): L.Button = {
@@ -30,8 +32,10 @@ object DeleteButton {
     Button(_.handled --> confirmer).amend(
       FontAwesome.icon(FreeSolid.faXmark),
       IconButtonModifiers(
-        tooltip = "Delete",
-        screenReaderDescription = "delete"
+        tooltipContents = "Delete",
+        screenReaderDescription = "delete",
+        tooltip,
+        tooltipPlacement = Placement.left
       )
     )
   }

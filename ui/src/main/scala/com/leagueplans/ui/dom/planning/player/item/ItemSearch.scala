@@ -2,11 +2,13 @@ package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.form.{FuseSearch, RadioGroup, StylisedRadio}
-import com.leagueplans.ui.dom.common.{KeyValuePairs, Tooltip}
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, textToTextNode}
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 
 object ItemSearch {
   def apply(
@@ -18,6 +20,14 @@ object ItemSearch {
     val (search, searchLabel, options) = fuseSearch(items, id)
     val (radios, selection) = radioGroup(options, noteSignal, quantitySignal, id)
     (search, searchLabel, radios, selection)
+  }
+
+  @js.native @JSImport("/styles/planning/player/item/search.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val searchResult: String = js.native
+    val itemIcon: String = js.native
+    val itemName: String = js.native
+    val itemExamine: String = js.native
   }
 
   private def fuseSearch(
@@ -53,14 +63,12 @@ object ItemSearch {
     noteSignal: Signal[Boolean],
     quantitySignal: Signal[Int]
   ): L.Modifier[L.Label] =
-    List[L.Modifier[L.Label]](
+    L.div(
+      L.cls(Styles.searchResult),
       L.child <-- Signal.combine(noteSignal, quantitySignal).map((note, quantity) =>
-        StackIcon(ItemStack(item, note && item.noteable, quantity))
+        StackIcon(ItemStack(item, note && item.noteable, quantity)).amend(L.cls(Styles.itemIcon))
       ),
-      item.name,
-      tooltip(item)
+      L.p(L.cls(Styles.itemName), item.name),
+      L.p(L.cls(Styles.itemExamine), item.examine),
     )
-
-  private def tooltip(item: Item): L.Modifier[L.HtmlElement] =
-    Tooltip(KeyValuePairs(L.span("Examine:") -> L.span(item.examine)))
 }

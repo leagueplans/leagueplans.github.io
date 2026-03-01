@@ -20,7 +20,7 @@ object Floating {
 
     val (arrowData, arrow) = config.arrow.map { arrowConfig =>
       val data = Var(Option.empty[ArrowPositioningData])
-      val element = toArrow(arrowConfig.size, data.signal)
+      val element = toArrow(arrowConfig.size, arrowConfig.padding.isDefined, data.signal)
       (data, element)
     }.unzip
     val positionConfig = translateConfig(config, arrow)
@@ -69,13 +69,17 @@ object Floating {
       )
     }
 
-  private def toArrow(size: Double, dataSignal: Signal[Option[ArrowPositioningData]]): L.Div = {
+  private def toArrow(
+    size: Double,
+    hasPaddingDefined: Boolean,
+    dataSignal: Signal[Option[ArrowPositioningData]]
+  ): L.Div = {
     val sideOffset = -size / 2
 
     L.div(
       L.cls(Styles.arrow),
       L.display <-- dataSignal.map {
-        case Some(data) if data.coords.centerOffset != 0.0 => "none"
+        case Some(data) if !hasPaddingDefined && data.coords.centerOffset != 0.0 => "none"
         case _ => ""
       },
       L.left <-- dataSignal.map(translateArrowPosition(_) {

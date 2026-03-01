@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskList}
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.Cache
@@ -14,6 +14,7 @@ object DiaryTaskList {
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     regionFilterSignal: Signal[Option[DiaryRegion]],
     tierFilterSignal: Signal[Option[DiaryTier]],
@@ -33,6 +34,7 @@ object DiaryTaskList {
         task,
         completedTasksSignal.map(_.contains(task.id)),
         effectObserverSignal,
+        tooltip,
         contextMenuController
       )
     )

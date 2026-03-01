@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
+import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.common.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
@@ -15,14 +16,15 @@ object StepPreview {
   def apply(
     step: Step,
     forest: Forest[Step.ID, Step],
-    headerOffset: Signal[Int]
+    headerOffset: Signal[Int],
+    tooltip: Tooltip
   ): L.Div = {
     val substeps = forest.toChildren.get(step.id).toList.flatten
     val animationController = InvertibleAnimationController(
       startOpen = true,
       animationDuration = 200.millis
     )
-    val header = toHeader(step, substeps.nonEmpty, headerOffset, animationController)
+    val header = toHeader(step, substeps.nonEmpty, headerOffset, animationController, tooltip)
     val headerHeight = header.trackHeight()
 
     L.div(
@@ -33,7 +35,8 @@ object StepPreview {
         substeps,
         forest,
         toChildOffset(animationController, headerOffset, headerHeight),
-        animationController
+        animationController,
+        tooltip
       )
     )
   }
@@ -58,6 +61,7 @@ object StepPreview {
     hasSubsteps: Boolean,
     offsetSignal: Signal[Int],
     animationController: InvertibleAnimationController,
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.header),
@@ -65,9 +69,10 @@ object StepPreview {
       Option.when(hasSubsteps)(
         CollapseButton(
           animationController,
-          tooltip = "Toggle substep visibility",
+          tooltipContents = "Toggle substep visibility",
           screenReaderDescription = "toggle substep visibility",
-          L.svg.cls(Styles.substepsToggleIcon)
+          L.svg.cls(Styles.substepsToggleIcon),
+          tooltip
         ).amend(L.cls(Styles.substepsToggle)),
       ),
       L.p(L.cls(Styles.description), step.description)
@@ -77,14 +82,15 @@ object StepPreview {
     substeps: List[Step.ID],
     forest: Forest[Step.ID, Step],
     headerOffset: Signal[Int],
-    animationController: InvertibleAnimationController
+    animationController: InvertibleAnimationController,
+    tooltip: Tooltip
   ): L.Div = {
     val list = L.ol(
       L.cls(Styles.substepList),
       substeps.flatMap(forest.nodes.get).map(substep =>
         L.li(
           L.cls(Styles.substep),
-          StepPreview(substep, forest, headerOffset)
+          StepPreview(substep, forest, headerOffset, tooltip)
         )
       )
     )

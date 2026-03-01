@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.league
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
+import com.leagueplans.ui.dom.common.Button
 import com.leagueplans.ui.model.player.mode.*
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.Observer
@@ -13,11 +13,7 @@ object LeagueOption {
   def apply(league: Mode.League, leagueObserver: Observer[Unit]): L.Button =
     Button(_.handled --> leagueObserver).amend(
       L.cls(Styles.option, PanelStyles.header),
-      toLogo(league).getOrElse(league.name),
-      IconButtonModifiers(
-        tooltip = league.name,
-        screenReaderDescription = league.name
-      )
+      toLogo(league).getOrElse(league.name)
     )
 
   private object Logos {

@@ -23,6 +23,7 @@ object CharacterTab {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     expMultipliers: List[ExpMultiplier],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -33,6 +34,7 @@ object CharacterTab {
         playerSignal,
         cache,
         effectObserverSignal,
+        tooltip,
         contextMenuController
       ).amend(L.cls(Styles.equipmentPanel)),
       InventoryElement(
@@ -40,6 +42,7 @@ object CharacterTab {
         cache,
         itemFuse,
         effectObserverSignal,
+        tooltip,
         contextMenuController,
         modal,
         toastPublisher
@@ -48,6 +51,7 @@ object CharacterTab {
         playerSignal.map(_.get(Depository.Kind.Bank)),
         cache,
         effectObserverSignal,
+        tooltip,
         contextMenuController,
         modal
       ).amend(L.cls(Styles.bankPanel)),
@@ -56,6 +60,7 @@ object CharacterTab {
         effectObserverSignal,
         expMultipliers,
         cache,
+        tooltip,
         modal
       ).amend(L.cls(Styles.statsPanel))
     )

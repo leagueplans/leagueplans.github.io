@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom
 
 import com.leagueplans.common.model.{GridTile, Item, LeagueTask}
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPage
 import com.leagueplans.ui.model.plan.Plan
@@ -20,23 +20,45 @@ import scala.scalajs.js.annotation.JSImport
 
 object Bootstrap {
   def apply(): L.Div = {
+    val (tooltipContainer, tooltipController) = Tooltip()
     val (contextMenu, contextMenuController) = ContextMenu()
-    val (modalElement, modalController) = Modal()
-    val (toastHub, toastPublisher) = ToastHub()
+    val (toastHub, toastPublisher) = ToastHub(tooltipController)
+
+    val popovers = L.div(
+      L.cls(Styles.popovers),
+      tooltipContainer.amend(L.cls(Styles.tooltip)),
+      contextMenu.amend(L.cls(Styles.contextMenu)),
+      toastHub.amend(L.cls(Styles.toastHub)),
+    )
+
+    val (modalElement, modalController) = Modal(popovers)
 
     L.div(
-      L.idAttr("bootstrap"),
-      contextMenu,
-      modalElement,
-      toastHub,
-      L.child <-- toPageSignal(contextMenuController, modalController, toastPublisher),
+      L.cls(Styles.bootstrap),
+      L.child.maybe <-- modalController.isOpen.invert.map(Option.when(_)(popovers)),
+      modalElement.amend(L.cls(Styles.modal)),
+      L.child <-- toPageSignal(
+        tooltipController, contextMenuController, modalController, toastPublisher
+      ).map(_.amend(L.cls(Styles.page))),
       EventStream.unit(emitOnce = true).delay(2000) --> (_ =>
         toastPublisher.publish(feedbackToast())
       )
     )
   }
 
+  @js.native @JSImport("/styles/bootstrap.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val bootstrap: String = js.native
+    val popovers: String = js.native
+    val tooltip: String = js.native
+    val contextMenu: String = js.native
+    val toastHub: String = js.native
+    val modal: String = js.native
+    val page: String = js.native
+  }
+
   private def toPageSignal(
+    tooltipController: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -50,12 +72,13 @@ object Bootstrap {
           plan,
           subscription,
           cache,
+          tooltipController,
           contextMenuController,
           modal,
           toastPublisher
         )
       )
-      .toSignal(initial = LandingPage(planBus.writer, toastPublisher, modal))
+      .toSignal(initial = LandingPage(planBus.writer, tooltipController, toastPublisher, modal))
   }
 
   private def loadCache(toastPublisher: ToastHub.Publisher): EventStream[Cache] =

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.landing
 
-import com.leagueplans.ui.dom.common.{LoadingIcon, Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{LoadingIcon, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.landing.changelog.Changelog
 import com.leagueplans.ui.dom.landing.form.NewPlanForm
 import com.leagueplans.ui.dom.landing.menu.PlansMenu
@@ -17,13 +17,14 @@ import scala.scalajs.js.annotation.JSImport
 object LandingPage {
   def apply(
     planObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): L.Div =
     L.div(
       L.cls(Styles.page),
       changeLog(),
-      plansForm(planObserver, toastPublisher, modal)
+      plansForm(planObserver, tooltip, toastPublisher, modal)
     )
 
   @js.native @JSImport("/styles/landing/landingPage.module.css", JSImport.Default)
@@ -46,17 +47,18 @@ object LandingPage {
   
   private def plansForm(
     planObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): L.Div = {
     val storage = StorageClient()
-    val newPlanForm = NewPlanForm(storage, planObserver, toastPublisher)
+    val newPlanForm = NewPlanForm(storage, planObserver, tooltip, toastPublisher)
 
     L.div(
       L.cls(Styles.content),
-      L.p(L.cls(Styles.intro), "Start a new plan from scratch"),
+      L.p(L.cls(Styles.intro), "Create a new plan"),
       newPlanForm,
-      L.child <-- toExistingPlans(storage, planObserver, toastPublisher, modal),
+      L.child <-- toExistingPlans(storage, planObserver, tooltip, toastPublisher, modal),
       L.p(
         L.cls(Styles.disclaimer),
         "Plans are saved against your browser's local storage. As a result, wiping your" +
@@ -68,6 +70,7 @@ object LandingPage {
   private def toExistingPlans(
     storage: StorageClient,
     planObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): Signal[L.Node] = {
@@ -78,7 +81,7 @@ object LandingPage {
       .splitOne((plans, hasRefreshed) => (hasRefreshed, plans.isEmpty)) {
         case ((false, true), _, _) => toLoadingNode(storage, toastPublisher, hasRefreshedState)
         case ((true, true), _, _) => L.emptyNode
-        case ((_, false), _, _) => toMenu(storage, planObserver, toastPublisher, modal)
+        case ((_, false), _, _) => toMenu(storage, planObserver, tooltip, toastPublisher, modal)
       }
   }
 
@@ -106,15 +109,17 @@ object LandingPage {
   def toMenu(
     storage: StorageClient,
     planObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
   ): L.Div =
     L.div(
       L.cls(Styles.menu),
-      L.p(L.cls(Styles.intro), "Or select an existing plan"),
+      L.p(L.cls(Styles.intro), "Or load an existing plan"),
       PlansMenu(
         storage,
         planObserver,
+        tooltip,
         toastPublisher,
         modal
       ).amend(L.cls(Styles.menuContent))

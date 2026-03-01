@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.inventory.panel.InventoryPanel
 import com.leagueplans.ui.dom.planning.player.item.inventory.sidebar.InventorySidebar
 import com.leagueplans.ui.model.plan.Effect
@@ -19,6 +19,7 @@ object InventoryElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -27,6 +28,7 @@ object InventoryElement {
       playerSignal,
       cache,
       effectObserverSignal,
+      tooltip,
       contextMenuController,
       modal
     )
@@ -35,6 +37,7 @@ object InventoryElement {
       cache,
       itemFuse,
       effectObserverSignal,
+      tooltip,
       modal,
       toastPublisher
     )

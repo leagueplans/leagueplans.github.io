@@ -47,3 +47,8 @@
   justify-self: center;
   font-size: 0.75rem;
 }
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}

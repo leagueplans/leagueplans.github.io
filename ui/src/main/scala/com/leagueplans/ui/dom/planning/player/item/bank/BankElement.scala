@@ -1,11 +1,13 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal}
+import com.leagueplans.ui.dom.common.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
@@ -18,6 +20,7 @@ object BankElement {
     bankSignal: Signal[Depository],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   ): L.Div =
@@ -28,13 +31,16 @@ object BankElement {
         L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Bank icon")),
         "Bank"
       ),
-      DepositoryStacks(
-        bankSignal.map(cache.itemise),
-        columnCount = 8,
-        rowCount = 100,
-        overflowRowCount = 10,
-        toStackElement(bankSignal, effectObserverSignal, contextMenuController, modal)
-      ).amend(L.cls(Styles.contents))
+      L.inContext(panel =>
+        DepositoryStacks(
+          bankSignal.map(cache.itemise),
+          columnCount = 8,
+          rowCount = 100,
+          overflowRowCount = 10,
+          toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenuController, modal),
+          tooltip
+        ).amend(L.cls(Styles.contents))
+      )
     )
 
   @js.native @JSImport("/images/bank-icon.png", JSImport.Default)
@@ -62,18 +68,16 @@ object BankElement {
   private def toStackElement(
     bankSignal: Signal[Depository],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    panel: L.HtmlElement,
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal
   )(stack: ItemStack): L.Div =
-    StackElement(stack).amend(
-      bindContextMenu(
-        stack.item,
-        bankSignal,
-        effectObserverSignal,
-        contextMenuController,
-        modal
-      )
-    )
+    StackElement(
+      stack,
+      tooltip,
+      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2, fadeIn = false)
+    ).amend(bindContextMenu(stack.item, bankSignal, effectObserverSignal, contextMenuController, modal))
 
   private def bindContextMenu(
     item: Item,

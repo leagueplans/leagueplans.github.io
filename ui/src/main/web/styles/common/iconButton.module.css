@@ -1,0 +1,5 @@
+.tooltip {
+  width: max-content;
+  max-width: 15rem;
+  text-align: center;
+}

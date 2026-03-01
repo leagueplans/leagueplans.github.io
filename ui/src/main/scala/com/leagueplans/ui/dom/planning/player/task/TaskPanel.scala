@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.task
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
+import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Tooltip}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
@@ -15,7 +16,8 @@ object TaskPanel {
   def apply(
     title: L.HtmlElement,
     toSummaryTab: Observer[Unit] => L.HtmlElement,
-    detailsTab: L.HtmlElement
+    detailsTab: L.HtmlElement,
+    tooltip: Tooltip
   ): L.Div = {
     val tabVar = Var[Tab](Tab.Summary)
     val summaryTab = toSummaryTab(tabVar.writer.contramap[Unit](_ => Tab.Details))
@@ -24,7 +26,7 @@ object TaskPanel {
       L.cls(Styles.panel, PanelStyles.panel),
       L.div(
         L.cls(Styles.header),
-        toTabToggle(tabVar),
+        toTabToggle(tabVar, tooltip),
         title.amend(L.cls(Styles.title, PanelStyles.header))
       ),
       L.child <-- tabVar.signal.map {
@@ -53,7 +55,7 @@ object TaskPanel {
     val header: String = js.native
   }
 
-  private def toTabToggle(tabVar: Var[Tab]): L.Button =
+  private def toTabToggle(tabVar: Var[Tab], tooltip: Tooltip): L.Button =
     Button(_.handled --> tabVar.updater {
       case (Tab.Summary, _) => Tab.Details
       case (Tab.Details, _) => Tab.Summary
@@ -63,15 +65,17 @@ object TaskPanel {
         case Tab.Summary => FontAwesome.icon(FreeSolid.faBars)
         case Tab.Details => FontAwesome.icon(FreeSolid.faHouse)
       },
-      IconButtonModifiers(
-        tooltip = tabVar.signal.map {
+      IconButtonModifiers.using(
+        tooltipContents = tabVar.signal.map {
           case Tab.Summary => "Switch to the detailed view"
           case Tab.Details => "Switch to the summary view"
         },
         screenReaderDescription = tabVar.signal.map {
           case Tab.Summary => "detailed view"
           case Tab.Details => "summary view"
-        }
+        },
+        tooltip,
+        tooltipPlacement = Placement.top
       )
     )
 }

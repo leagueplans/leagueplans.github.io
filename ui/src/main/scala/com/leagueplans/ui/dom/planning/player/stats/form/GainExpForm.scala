@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.GainExp
 import com.leagueplans.ui.model.plan.ExpMultiplier
@@ -21,7 +21,8 @@ object GainExpForm {
     playerSignal: Signal[Player],
     expMultipliers: List[ExpMultiplier],
     effectObserverSignal: Signal[Option[Observer[GainExp]]],
-    cache: Cache
+    cache: Cache,
+    tooltip: Tooltip
   ): L.FormElement = {
     val (form, submitButton, formSubmissions) = Form()
     val actionsInput = createActionsInput()
@@ -42,7 +43,8 @@ object GainExpForm {
         skillSignal,
         playerSignal,
         calculatePostMultiplierGainedExp(skillSignal, playerSignal, expSignal, expMultipliers, cache),
-        hasExpMultipliers = expMultipliers.nonEmpty
+        hasExpMultipliers = expMultipliers.nonEmpty,
+        tooltip
       ),
       submitButton.amend(
         L.cls(Styles.submit, Modal.Styles.confirmationButton),
@@ -105,7 +107,8 @@ object GainExpForm {
     skillSignal: Signal[Skill],
     playerSignal: Signal[Player],
     gainedExpSignal: Signal[Exp],
-    hasExpMultipliers: Boolean
+    hasExpMultipliers: Boolean,
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.projection),
@@ -119,7 +122,8 @@ object GainExpForm {
       ),
       ProgressBar(
         skillSignal,
-        calculateEndExp(skillSignal, playerSignal, gainedExpSignal)
+        calculateEndExp(skillSignal, playerSignal, gainedExpSignal),
+        tooltip
       ).amend(L.cls(Styles.progressBar))
     )
 

@@ -20,6 +20,17 @@
   color: orange;
 }
 
+.warningTooltip {
+  width: max-content;
+  max-width: 20rem;
+}
+
+.warningTooltip>p {
+  +p {
+    margin-top: 0.3rem;
+  }
+}
+
 .sections {
   grid-row: 2;
   grid-column: 1 / 3;

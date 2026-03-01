@@ -5,11 +5,13 @@ import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusedStep}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.leagueplans.ui.utils.laminar.HtmlElementOps.trackHeight
 import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.leagueplans.ui.wrappers.Clipboard
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
@@ -32,6 +34,7 @@ object StepElement {
     draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     clipboard: Clipboard[Step]
   ): (L.Div, Signal[Int]) = {
@@ -51,7 +54,8 @@ object StepElement {
       isFocused,
       isDraggable,
       animationController,
-      positionOffset
+      positionOffset,
+      tooltip
     )
     val headerHeight = header.trackHeight()
 
@@ -64,7 +68,10 @@ object StepElement {
         header,
         L.div(L.cls(Styles.substepsSidebar)),
         toSubsteps(substepsSignal, isDraggingSignal, animationController),
-        Tooltip(L.span("Click to toggle focus")),
+        tooltip.register(
+          L.span(L.cls(Styles.tooltip), "Click to toggle focus"),
+          FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
+        ),
         toFocusListeners(stepID, focusController),
         toHoverListeners(isHovering),
         StepDragListeners(
@@ -99,6 +106,7 @@ object StepElement {
     val substepsWhileDragging: String = js.native
     val substepList: String = js.native
     val substep: String = js.native
+    val tooltip: String = js.native
   }
 
   private def toHeader(
@@ -108,14 +116,16 @@ object StepElement {
     isFocused: Signal[Boolean],
     isDraggable: Var[Boolean],
     animationController: InvertibleAnimationController,
-    positionOffset: Signal[Int]
+    positionOffset: Signal[Int],
+    tooltip: Tooltip
   ): L.Div =
     StepHeader(
       step,
       substepsSignal.map(_.nonEmpty),
       isFocused,
       isDraggable.writer,
-      animationController
+      animationController,
+      tooltip
     ).amend(
       L.cls <-- isDragging.splitBoolean(
         whenTrue = _ => Styles.headerWhileDragging,

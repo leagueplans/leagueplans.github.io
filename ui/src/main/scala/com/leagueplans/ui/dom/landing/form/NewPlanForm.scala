@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.ui.dom.common.form.{Form, Select, TextInput}
 import com.leagueplans.ui.dom.common.*
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.mode.Mode
@@ -14,6 +15,7 @@ import com.leagueplans.ui.storage.model.errors.FileSystemError
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
 import com.leagueplans.ui.utils.airstream.PromiseLikeOps.onComplete
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
@@ -26,6 +28,7 @@ object NewPlanForm {
   def apply(
     storage: StorageClient,
     planObserver: Observer[(Plan, PlanSubscription)],
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher
   ): L.FormElement = {
     val (nameInput, nameLabel, nameSignal) = createNameInput()
@@ -50,9 +53,10 @@ object NewPlanForm {
       L.div(
         InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
         importLabel.amend(L.cls(Styles.label), "Initial data:"),
-        Tooltip(L.p(
-          "If you have a save file for an existing plan, then you can import it here. Otherwise, you can ignore this."
-        ))
+        tooltip.register(
+          L.span(L.cls(Styles.tooltip), "You can ignore this if you'd like to start from scratch"),
+          FloatingConfig.basicTooltip(Placement.left)
+        )
       ),
       importInput.amend(L.cls(Styles.input)),
       L.child <-- submitButton.map(_.amend(L.cls(Styles.submit)))
@@ -67,6 +71,7 @@ object NewPlanForm {
     val submit: String = js.native
 
     val infoIcon: String = js.native
+    val tooltip: String = js.native
   }
 
   private def createNameInput(): (L.Input, L.Label, Signal[String]) = {

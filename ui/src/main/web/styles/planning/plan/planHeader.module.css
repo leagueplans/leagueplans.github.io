@@ -98,3 +98,8 @@
     1px 0 black,
     0 -1px black;
 }
+
+.disabledDeleteStepButtonExplainer {
+  width: max-content;
+  text-align: center;
+}

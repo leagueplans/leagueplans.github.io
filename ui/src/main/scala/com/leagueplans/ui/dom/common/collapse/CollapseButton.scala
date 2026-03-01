@@ -1,7 +1,8 @@
 package com.leagueplans.ui.dom.common.collapse
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers}
+import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Tooltip}
 import com.leagueplans.ui.facades.animation.{FillMode, KeyframeAnimationOptions}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.ui.utils.laminar.FontAwesome
@@ -14,9 +15,10 @@ import scala.concurrent.duration.Duration
 object CollapseButton {
   def apply(
     controller: InvertibleAnimationController,
-    tooltip: String,
+    tooltipContents: String,
     screenReaderDescription: String,
-    iconModifiers: L.Modifier[L.SvgElement]
+    iconModifiers: L.Modifier[L.SvgElement],
+    tooltip: Tooltip
   ): L.Button =
     CollapseButton(
       FontAwesome.icon(FreeSolid.faCaretRight).amend(
@@ -28,19 +30,26 @@ object CollapseButton {
         )
       ),
       controller,
-      tooltip, 
-      screenReaderDescription
+      tooltipContents, 
+      screenReaderDescription,
+      tooltip
     )
   
   def apply(
     icon: L.SvgElement,
     controller: InvertibleAnimationController,
-    tooltip: String,
-    screenReaderDescription: String
+    tooltipContents: String,
+    screenReaderDescription: String,
+    tooltip: Tooltip
   ): L.Button =
     Button(_.handled --> controller.toggle()).amend(
       icon,
-      IconButtonModifiers(tooltip, screenReaderDescription)
+      IconButtonModifiers(
+        tooltipContents,
+        screenReaderDescription,
+        tooltip,
+        tooltipPlacement = Placement.left
+      )
     )
 
   private def rotate(animationDuration: Duration, targetRotation: Double): Animation =

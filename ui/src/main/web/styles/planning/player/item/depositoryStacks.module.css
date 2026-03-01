@@ -50,4 +50,13 @@
   font-size: 0.8rem;
 }
 
-.overflowTooltip {}
+.overflowTooltip {
+  width: 14rem;
+  text-align: center;
+}
+
+.overflowTooltip>p {
+  +p {
+    margin-top: 0.3rem;
+  }
+}

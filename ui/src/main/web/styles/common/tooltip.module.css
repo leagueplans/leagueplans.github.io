@@ -1,15 +1,24 @@
+.tooltipContainer {
+  filter: drop-shadow(0 0 2px black);
+}
+
 .hasTooltip {}
 
 .tooltip {
-  padding: 0.5rem;
-  border-radius: 0.75rem;
+  padding: 0.4rem;
+  border-radius: 0.5rem;
 
-  position: fixed;
-  /* Should be a larger index than anything else in the project */
-  z-index: 2;
-
-  background-color: black;
-  color: white;
-  opacity: 0.9;
+  background-color: #ededed;
+  color: black;
   font-size: 0.9rem;
+}
+
+/* This is a trick which creates a small region around the tooltip where
+ * the mouse is still considered to be hovering over the tooltip, despite
+ * visually being outside it's borders.
+ */
+.tooltip::before {
+  position: absolute;
+  inset: -0.2rem;
+  content: "";
 }

@@ -7,3 +7,22 @@
   top: 0;
   left: 0;
 }
+
+.tooltip {
+  width: max-content;
+  max-width: 16rem;
+  text-align: center;
+}
+
+.tooltipHeader {}
+
+.tooltipExamine {
+  color: grey;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.tooltipCount {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+}

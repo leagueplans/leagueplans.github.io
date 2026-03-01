@@ -1,10 +1,12 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemStack
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.L
@@ -18,6 +20,8 @@ object EquipmentSlotElement {
     slot: EquipmentSlot,
     stacks: List[ItemStack],
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
+    itemTooltipAnchor: L.HtmlElement,
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div =
     L.div(
@@ -29,9 +33,11 @@ object EquipmentSlotElement {
       ),
       StackList(
         Val(stacks),
-        stack => StackElement(stack).amend(
-          bindContextMenu(stack, slot, effectObserverSignal, contextMenuController)
-        )
+        stack => StackElement(
+          stack,
+          tooltip,
+          tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2, fadeIn = false)
+        ).amend(bindContextMenu(stack, slot, effectObserverSignal, contextMenuController))
       ).amend(L.cls(Styles.contents))
     )
 

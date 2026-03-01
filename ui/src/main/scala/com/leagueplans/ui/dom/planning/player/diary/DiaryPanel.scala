@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.TaskPanel
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTier}
@@ -17,6 +17,7 @@ object DiaryPanel {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div = {
     val completeTasksSignal = playerSignal.map(_.completedDiaryTasks)
@@ -35,7 +36,8 @@ object DiaryPanel {
           Observer.combine(
             toggleObserver.contramap[Option[DiaryTier]](_ => ()),
             tierVar.writer
-          )
+          ),
+          tooltip
         )
 
     TaskPanel(
@@ -48,10 +50,12 @@ object DiaryPanel {
         completeTasksSignal,
         cache,
         effectObserverSignal,
+        tooltip,
         contextMenuController,
         regionVar,
         tierVar
-      )
+      ),
+      tooltip
     )
   }
 

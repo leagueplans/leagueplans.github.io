@@ -76,3 +76,8 @@
 }
 
 .substep {}
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}

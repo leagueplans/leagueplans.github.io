@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.ui.dom.common.form.Form
-import com.leagueplans.ui.dom.common.{CancelModalButton, FormOpener, Modal}
+import com.leagueplans.ui.dom.common.{CancelModalButton, FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.DeleteStepForm.Styles
 import com.leagueplans.ui.dom.planning.plan.step.StepPreview
@@ -28,6 +28,7 @@ object DeleteStepForm {
 final class DeleteStepForm(
   forester: Forester[Step.ID, Step],
   focusController: FocusedStep.Controller,
+  tooltip: Tooltip,
   modal: Modal
 ) {
   def open(step: Step.ID): Unit =
@@ -57,7 +58,8 @@ final class DeleteStepForm(
         StepPreview(
           _,
           steps,
-          headerOffset = Signal.fromValue(0)
+          headerOffset = Signal.fromValue(0),
+          tooltip
         ).amend(L.cls(Styles.preview))
       ),
       CancelModalButton(modal).amend(

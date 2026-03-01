@@ -1,7 +1,8 @@
 package com.leagueplans.ui.dom.landing.menu
 
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, ToastHub}
+import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, ToastHub, Tooltip}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID}
@@ -21,14 +22,17 @@ object DownloadButton {
     id: PlanID,
     name: String,
     storage: StorageClient,
+    tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher
   ): L.Button = {
     val clickStream = EventBus[Unit]()
 
     Button(_.handled --> clickStream.writer).amend(
       IconButtonModifiers(
-        tooltip = "Download",
-        screenReaderDescription = "download"
+        tooltipContents = "Download",
+        screenReaderDescription = "download",
+        tooltip,
+        tooltipPlacement = Placement.left
       ),
       AsyncButtonModifiers(
         FontAwesome.icon(FreeSolid.faDownload),

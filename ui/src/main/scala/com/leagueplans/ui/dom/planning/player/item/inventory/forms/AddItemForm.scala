@@ -4,8 +4,10 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.form.{CheckboxInput, Form, NumberInput}
 import com.leagueplans.ui.dom.common.{CancelModalButton, InfoIcon, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.ItemSearch
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect.AddItem
 import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextNode}
@@ -17,11 +19,12 @@ object AddItemForm {
   def apply(
     target: Depository.Kind,
     items: Fuse[Item],
+    tooltip: Tooltip,
     modal: Modal
   ): (L.FormElement, EventStream[Option[AddItem]]) = {
     val (emptyForm, submitButton, formSubmissions) = Form()
     val quantity = createQuantityInput()
-    val note = createNoteInput()
+    val note = createNoteInput(tooltip)
     val item = createItemInput(items, note.signal, quantity.signal)
 
     val form = emptyForm.amend(
@@ -57,6 +60,7 @@ object AddItemForm {
     val title: String = js.native
 
     val inputs: String = js.native
+    val tooltip: String = js.native
     val radios: String = js.native
     val buttons: String = js.native
 
@@ -115,13 +119,18 @@ object AddItemForm {
     (search, label, radios, signal)
   }
 
-  private def createNoteInput(): (input: L.Input, label: L.Label, signal: Signal[Boolean]) = {
+  private def createNoteInput(
+    tooltip: Tooltip
+  ): (input: L.Input, label: L.Label, signal: Signal[Boolean]) = {
     val (checkbox, label, signal) = CheckboxInput("gain-item-note-checkbox", initial = false)
 
     label.amend(
       L.cls(Styles.noteLabel),
       InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
-      Tooltip(L.span("Items that cannot be noted will ignore this setting")),
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), "Items that cannot be noted will ignore this setting"),
+        FloatingConfig.basicTooltip(Placement.left)
+      ),
       "Should the items be noted?"
     )
     checkbox.amend(L.cls(Styles.noteInput))

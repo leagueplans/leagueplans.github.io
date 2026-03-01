@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.codec.decoding.Decoder
-import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub}
+import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
@@ -25,6 +25,7 @@ object InteractiveForest {
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     focusController: FocusedStep.Controller,
     toastPublisher: ToastHub.Publisher
@@ -53,6 +54,7 @@ object InteractiveForest {
             draggingStatus,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
+            tooltip,
             contextMenuController,
             clipboard
           )

@@ -1,11 +1,4 @@
-.toastHub {
-  position: absolute;
-  z-index: 1;
-  bottom: 0.4rem;
-  right: 0.4rem;
-
-  width: min(90%, 40rem);
-}
+.toastHub {}
 
 .icon {
   margin-right: 0.5rem;

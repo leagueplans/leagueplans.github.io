@@ -58,3 +58,8 @@
   border-style: groove;
   background-color: white;
 }
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}

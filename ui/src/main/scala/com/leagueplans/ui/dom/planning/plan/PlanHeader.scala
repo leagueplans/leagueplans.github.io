@@ -1,11 +1,13 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Modal}
+import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Modal, Tooltip}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.raquo.airstream.core.{EventStream, Signal}
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
@@ -14,6 +16,7 @@ import scala.scalajs.js.annotation.JSImport
 object PlanHeader {
   def apply(
     planName: String,
+    tooltip: Tooltip,
     focusController: FocusedStep.Controller,
     modal: Modal,
     newStepForm: NewStepForm,
@@ -21,11 +24,11 @@ object PlanHeader {
   ): L.Div =
     L.div(
       L.cls(Styles.header),
-      showShortcutsButton(modal),
+      showShortcutsButton(tooltip, modal),
       L.img(L.cls(Styles.planIcon), L.src(planIcon), L.alt("Plan section icon")),
       L.span(L.cls(Styles.name), planName),
       toAddStepButton(focusController, newStepForm),
-      toDeleteStepButton(focusController.signal, deleteStepForm)
+      L.child <-- toDeleteStepButton(focusController.signal, deleteStepForm, tooltip)
     )
 
   @js.native @JSImport("/assets/images/favicon.png", JSImport.Default)
@@ -41,16 +44,19 @@ object PlanHeader {
     val addStepButton: String = js.native
     val deleteStepButton: String = js.native
     val buttonText: String = js.native
+    val disabledDeleteStepButtonExplainer: String = js.native
   }
 
-  private def showShortcutsButton(modal: Modal): L.Button = {
+  private def showShortcutsButton(tooltip: Tooltip, modal: Modal): L.Button = {
     val shortcutsModal = KeyboardShortcutsModal(modal)
     Button(_.handled --> (_ => shortcutsModal.open())).amend(
       L.cls(Styles.showShortcutsButton),
       FontAwesome.icon(FreeSolid.faKeyboard).amend(L.svg.cls(Styles.showShortcutsIcon)),
       IconButtonModifiers(
-        tooltip = "Show keyboard shortcuts",
-        screenReaderDescription = "show keyboard shortcuts"
+        tooltipContents = "Show keyboard shortcuts",
+        screenReaderDescription = "show keyboard shortcuts",
+        tooltip,
+        tooltipPlacement = Placement.bottom
       )
     )
   }
@@ -64,16 +70,32 @@ object PlanHeader {
       L.span(L.cls(Styles.buttonText), "Add step")
     )
 
-  //TODO It'd be nice to have a tooltip here explaining why when the button is disabled.
-  // This'll need to wait for a rework of tooltips though, as currently it isn't possible
-  // to optionally define a tooltip without splitting the button.
   private def toDeleteStepButton(
-    step: Signal[Option[Step.ID]],
-    deleteStepForm: DeleteStepForm
-  ): L.Button =
-    Button(_.handledWith(_.sample(step).collectSome) --> deleteStepForm.open).amend(
-      L.cls(Styles.deleteStepButton),
-      L.disabled <-- step.map(_.isEmpty),
-      L.span(L.cls(Styles.buttonText), "Delete step"),
+    maybeStepSignal: Signal[Option[Step.ID]],
+    deleteStepForm: DeleteStepForm,
+    tooltip: Tooltip
+  ): Signal[L.Button] = {
+    val description = L.span(L.cls(Styles.buttonText), "Delete step")
+
+    maybeStepSignal.splitOption(
+      project = (_, step) =>
+        Button(_.handledWith(_.sample(step)) --> deleteStepForm.open).amend(
+          L.cls(Styles.deleteStepButton),
+          description
+        ),
+      ifEmpty =
+        Button(_ --> Observer.empty).amend(
+          L.cls(Styles.deleteStepButton),
+          L.disabled(true),
+          description,
+          tooltip.register(
+            L.span(
+              L.cls(Styles.disabledDeleteStepButtonExplainer),
+              "You must focus the step you wish to delete"
+            ),
+            FloatingConfig.basicTooltip(Placement.bottom)
+          )
+        )
     )
+  }
 }

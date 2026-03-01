@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import com.raquo.airstream.core.Signal
@@ -13,13 +13,17 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StatsDetailOverview {
-  def apply(skillSignal: Signal[Skill], expSignal: Signal[Exp]): L.Div =
+  def apply(
+    skillSignal: Signal[Skill],
+    expSignal: Signal[Exp],
+    tooltip: Tooltip
+  ): L.Div =
     L.div(
       L.cls(Styles.overview),
       createTitle(skillSignal),
       L.child <-- expSignal.map(exp => L.p(L.cls(Styles.level), s"Level ${Level.of(exp)}")),
       L.child <-- expSignal.map(exp => L.p(L.cls(Styles.xp), s"$exp xp")),
-      ProgressBar(skillSignal, expSignal).amend(L.cls(Styles.progressBar))
+      ProgressBar(skillSignal, expSignal, tooltip).amend(L.cls(Styles.progressBar))
     )
 
   @js.native @JSImport("/styles/planning/player/stats/form/statsDetailOverview.module.css", JSImport.Default)

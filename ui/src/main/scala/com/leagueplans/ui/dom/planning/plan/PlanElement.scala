@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub}
+import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.client.PlanSubscription
@@ -19,17 +19,18 @@ object PlanElement {
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
     focusController: FocusedStep.Controller,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val newStepForm = NewStepForm(forester, modal)
-    val deleteStepForm = DeleteStepForm(forester, focusController, modal)
+    val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
 
     L.div(
       L.cls(Styles.plan),
-      PlanHeader(planName, focusController, modal, newStepForm, deleteStepForm).amend(
+      PlanHeader(planName, tooltip, focusController, modal, newStepForm, deleteStepForm).amend(
         L.cls(Styles.header)
       ),
       InteractiveForest(
@@ -37,6 +38,7 @@ object PlanElement {
         subscription,
         editingEnabled,
         stepsWithErrorsSignal,
+        tooltip,
         contextMenuController,
         focusController,
         toastPublisher

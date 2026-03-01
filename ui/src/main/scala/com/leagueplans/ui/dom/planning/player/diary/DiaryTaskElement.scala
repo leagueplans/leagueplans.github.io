@@ -1,8 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.diary.DiaryTask
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
@@ -15,13 +17,17 @@ object DiaryTaskElement {
     task: DiaryTask,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.element),
       DiaryTierIcon(task.region, task.tier, complete = false).amend(
         L.cls(Styles.icon),
-        Tooltip(L.span(s"${task.tier} ${task.region.name}"))
+        tooltip.register(
+          L.span(L.cls(Styles.tooltip), s"${task.tier} ${task.region.name}"),
+          FloatingConfig.basicTooltip(Placement.left)
+        )
       ),
       L.span(
         L.cls <-- completeSignal.map {
@@ -45,6 +51,7 @@ object DiaryTaskElement {
     val element: String = js.native
     val icon: String = js.native
     val description: String = js.native
+    val tooltip: String = js.native
   }
 
   private def bindContextMenu(

@@ -4,13 +4,13 @@
 }
 
 .selected {
-  background-color: #c5ff6d;
+  background-color: #99d321;
 }
 
 .notSelected {}
 
 .notSelected:hover {
-  background-color: #acfff6;
+  background-color: #6eada6;
 }
 
 .label {

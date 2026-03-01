@@ -3,92 +3,165 @@ package com.leagueplans.ui.dom.common
 import com.leagueplans.ui.facades.animation.KeyframeAnimationOptions
 import com.leagueplans.ui.utils.laminar.LaminarOps.onMountAnimate
 import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.leagueplans.ui.wrappers.floatingui.{Floating, FloatingConfig}
+import com.raquo.airstream.core.Source.SignalSource
+import com.raquo.airstream.core.{Observer, Signal, Sink}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
+import com.raquo.laminar.nodes.ChildNode
 import org.scalajs.dom.{Element, MouseEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-//TODO There should really only be a single tooltip for the app
-// An issue with the current approach is that tooltips are interactive like their
-// parent element
-//TODO Anchoring seems like a better approach to position tooltips
 object Tooltip {
-  def apply(contents: L.HtmlElement): L.Modifier[L.HtmlElement] = {
-    val mouseOver = Var(false)
-    val mouseCoords = Var((0.0, 0.0))
-    val isVisible = Var(false)
-    val visibilityStream = toVisibilityStream(mouseOver.signal, mouseCoords.signal, isVisible.signal)
+  private type Key = Any
 
-    List(
-      L.cls(Styles.hasTooltip),
-      mouseEventListeners(mouseOver.writer, mouseCoords.writer),
-      L.child.maybe <-- visibilityStream.splitOption((_, coords) =>
-        contents.amend(tooltipModifiers(coords))
-      ),
-      visibilityStream.map(_.nonEmpty) --> isVisible
-    )
+  private enum Command {
+    case Open(key: Any, contents: ChildNode.Base)
+    case Close(key: Any)
   }
 
-  @js.native @JSImport("/styles/common/tooltip.module.css", JSImport.Default)
-  private object Styles extends js.Object {
-    val hasTooltip: String = js.native
-    val tooltip: String = js.native
-  }
+  private val toggleTooltipDelayMs = 75
 
-  private def mouseEventListeners(
-    mouseOver: Observer[Boolean],
-    mouseCoords: Observer[(Double, Double)]
-  ): L.Modifier[L.HtmlElement] =
-    List(
-      L.inContext[L.HtmlElement](node =>
-        L.onMouseOver.map(isClosestListener(_, node.ref)) --> mouseOver
-      ),
-      L.onMouseLeave.mapToStrict(false) --> mouseOver,
-      L.onMouseMove.map(event => (event.clientX, event.clientY)) --> mouseCoords
-    )
-
-  private def isClosestListener(event: MouseEvent, parent: Element): Boolean =
-    event.target.isInstanceOf[Element] &&
-      Option(event.target.asInstanceOf[Element].closest(s".${Styles.hasTooltip}")).contains(parent)
-    
-  private val fadeIn = Animation(
+  private val fadeInAnimation: Animation = Animation(
     new KeyframeAnimationOptions {
       duration = 250
-      easing = "ease-in-out"
+      easing = "ease-out"
     },
     KeyframeProperty.opacity(0, 1)
   )
 
-  private def tooltipModifiers(mouseCoords: Signal[(Double, Double)]): L.Modifier[L.HtmlElement] =
-    List(
-      L.cls(Styles.tooltip),
-      L.left <-- toOffset(mouseCoords)(_._1 + 12), // the +12 is to offset from the cursor
-      L.top <-- toOffset(mouseCoords)(_._2 - 10),
-      L.onMountAnimate(fadeIn.play)
+  private val fadeIn: L.Modifier[L.Element] =
+    L.onMountAnimate(fadeInAnimation.play)
+
+  def apply(): (L.Div, Tooltip) = {
+    val keyedContents = Var(Option.empty[(key: Key, contents: ChildNode.Base)]).distinct
+    val hoveringOver = Var(Option.empty[Key])
+
+    val tooltipContainer = L.div(
+      L.cls(Styles.tooltipContainer),
+      L.child.maybe <-- keyedContents.signal.map(_.map(_.contents)),
+      registerTooltipHoverListeners(keyedContents.signal.map(_.map(_.key)), hoveringOver)
     )
 
-  private def toVisibilityStream(
-    mouseOver: Signal[Boolean],
-    mouseCoords: Signal[(Double, Double)],
-    isVisible: Signal[Boolean]
-  ): EventStream[Option[(Double, Double)]] = {
-    val showEvents =
-      mouseCoords
-        .changes
-        .debounce(ms = 400)
-        .withCurrentValueOf(mouseOver, isVisible)
-        .collect { case (x, y, true, false) => Some((x, y)) }
+    val contentsUpdater = keyedContents.updater[Command] {
+      case (current @ Some((currentKey, _)), Command.Open(newKey, newContents)) =>
+        if (newKey == currentKey) current else Some((newKey, newContents))
 
-    val hideEvents = mouseOver.changes.collect { case false => None }
+      case (current @ Some((currentKey, _)), Command.Close(closeKey)) =>
+        if (closeKey == currentKey) None else current
 
-    EventStream.merge(showEvents, hideEvents)
+      case (None, Command.Open(newKey, newContents)) =>
+        Some((newKey, newContents))
+
+      case (None, _: Command.Close) =>
+        None
+    }
+
+    (tooltipContainer, new Tooltip(contentsUpdater, hoveringOver.signal))
   }
 
-  private def toOffset(
-    visibility: Signal[(Double, Double)]
-  )(pick: ((Double, Double)) => Double): Signal[String] =
-    visibility.map(coords => L.style.px(pick(coords).toInt))
+  @js.native @JSImport("/styles/common/tooltip.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val tooltipContainer: String = js.native
+    val hasTooltip: String = js.native
+    val tooltip: String = js.native
+  }
+
+  private def registerTooltipHoverListeners(
+    currentContents: SignalSource[Option[Key]],
+    hoveringOver: Sink[Option[Key]]
+  ): L.Modifier[L.Element] =
+    L.inContext(ctx =>
+      List(
+        L.onMouseEnter
+          .filter(_.target == ctx.ref)
+          .compose(_.sample(currentContents)) --> hoveringOver,
+        L.onMouseLeave
+          .filter(_.target == ctx.ref)
+          .mapToStrict(None) --> hoveringOver
+      )
+    )
+}
+
+final class Tooltip private[Tooltip] (
+  commandSink: Observer[Tooltip.Command],
+  hoveringOverTooltipWithContents: Signal[Option[Tooltip.Key]]
+) {
+  def register(contents: L.HtmlElement, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
+    contents.amend(
+      L.cls(Tooltip.Styles.tooltip),
+      L.when(config.fadeIn)(Tooltip.fadeIn)
+    )
+
+    config.anchor match {
+      case Some(anchor) =>
+        contents.amend(Floating.anchorTo(anchor.ref, config))
+        List(
+          L.cls(Tooltip.Styles.hasTooltip),
+          L.inContext(element => configureTooltipVisibility(element, contents))
+        )
+
+      case None =>
+        List(
+          L.cls(Tooltip.Styles.hasTooltip),
+          L.inContext { anchor =>
+            contents.amend(Floating.anchorTo(anchor.ref, config))
+            configureTooltipVisibility(anchor, contents)
+          }
+        )
+    }
+  }
+
+  // Allow a brief delay before both showing the tooltip, and before hiding it after the cursor moves away
+  private def configureTooltipVisibility(element: L.Element, tooltip: ChildNode.Base): L.Modifier[L.Element] = {
+    val shouldShowTooltip = Var(false).distinct
+    val showTooltipUpdater =
+      shouldShowTooltip.updater[(nowHovering: Boolean, wasHovering: Boolean)] {
+        case (_, (true, true)) => true
+        case (_, (false, false)) => false
+        case (true, (nowHovering, wasHovering)) => nowHovering || wasHovering
+        case (false, (nowHovering, wasHovering)) => nowHovering && wasHovering
+      }
+
+    val isHoveringOverElement = Var(false).distinct
+    val isHoveringOverTooltip = hoveringOverTooltipWithContents.map(_.contains(element)).distinct
+    val isHoveringOverEither = Signal.combine(isHoveringOverElement, isHoveringOverTooltip).map(_ || _)
+    val wasHoveringOverEither = isHoveringOverEither.changes.delay(Tooltip.toggleTooltipDelayMs).toSignal(initial = false)
+
+    List(
+      registerElementHoverListeners(element.ref, isHoveringOverElement),
+      Signal.combine(isHoveringOverEither, wasHoveringOverEither) --> showTooltipUpdater,
+      shouldShowTooltip.signal.map {
+        case true => Tooltip.Command.Open(key = element, tooltip)
+        case false => Tooltip.Command.Close(key = element)
+      } --> commandSink,
+      // Blur events aren't reliably fired when an element unmounts, so we need a fallback
+      L.onUnmountCallback(_ =>
+        isHoveringOverElement.set(false)
+        // We've unmounted, so we need to explicitly trigger the command
+        commandSink.onNext(Tooltip.Command.Close(key = element))
+      )
+    )
+  }
+
+  private def registerElementHoverListeners(element: Element, isHovering: Sink[Boolean]): L.Modifier[L.Element] =
+    List(
+      L.onMouseOver
+        .collect(targetExtractor)
+        .map(isClosestListener(_, element)) --> isHovering,
+      L.onMouseLeave.mapToStrict(false) --> isHovering,
+      L.onFocus.mapToStrict(true) --> isHovering,
+      L.onBlur.mapToStrict(false) --> isHovering
+    )
+
+  private val targetExtractor: PartialFunction[MouseEvent, Element] =
+    Function.unlift(_.target match {
+      case target: Element => Some(target)
+      case _ => None
+    })
+
+  private def isClosestListener(target: Element, listener: Element): Boolean =
+    target.closest(s".${Tooltip.Styles.hasTooltip}").contains(listener)
 }

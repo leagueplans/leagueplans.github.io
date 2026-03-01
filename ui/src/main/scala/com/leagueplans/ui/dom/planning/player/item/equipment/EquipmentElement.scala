@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -15,7 +15,8 @@ object EquipmentElement {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserver: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
+    tooltip: Tooltip,
+    contextMenuController: ContextMenu.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.pane),
@@ -23,14 +24,18 @@ object EquipmentElement {
         L.cls(Styles.background),
         L.src(background)
       ),
-      L.children <-- playerSignal.map(player =>
-        EquipmentSlot.values.toList.map(slot =>
-          EquipmentSlotElement(
-            slot,
-            cache.itemise(player.get(slot)),
-            effectObserver,
-            contextMenuController
-          ).amend(L.cls(toStyle(slot)))
+      L.inContext(panel =>
+        L.children <-- playerSignal.map(player =>
+          EquipmentSlot.values.toList.map(slot =>
+            EquipmentSlotElement(
+              slot,
+              cache.itemise(player.get(slot)),
+              effectObserver,
+              panel,
+              tooltip,
+              contextMenuController
+            ).amend(L.cls(toStyle(slot)))
+          )
         )
       )
     )

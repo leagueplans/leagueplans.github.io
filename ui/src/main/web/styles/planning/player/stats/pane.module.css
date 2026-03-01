@@ -16,6 +16,11 @@
   background-blend-mode: hard-light;
 }
 
+.tooltip {
+  width: max-content;
+  text-align: center;
+}
+
 .icon {
   position: absolute;
   top: 10%;

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.view
 
-import com.leagueplans.ui.dom.common.ContextMenu
+import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.diary.DiaryPanel
 import com.leagueplans.ui.dom.planning.player.quest.QuestList
 import com.leagueplans.ui.model.plan.Effect
@@ -16,12 +16,13 @@ object QuestAndDiaryTab {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
       QuestList(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.questPanel)),
-      DiaryPanel(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.diaryPanel))
+      DiaryPanel(playerSignal, cache, effectObserverSignal, tooltip, contextMenuController).amend(L.cls(Styles.diaryPanel))
     )
 
   @js.native @JSImport("/styles/planning/player/view/questAndDiaryTab.module.css", JSImport.Default)

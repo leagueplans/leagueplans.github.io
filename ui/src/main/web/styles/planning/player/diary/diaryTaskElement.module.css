@@ -10,3 +10,8 @@
 .description {
   text-shadow: 1px 1px black;
 }
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}

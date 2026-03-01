@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.view
 
-import com.leagueplans.ui.dom.common.{ContextMenu, KeyValuePairs}
+import com.leagueplans.ui.dom.common.{ContextMenu, KeyValuePairs, Tooltip}
 import com.leagueplans.ui.dom.planning.player.league.LeagueTaskPanel
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -17,12 +17,19 @@ object LeagueTab {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
+    tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
       L.child <-- playerSignal.map(stats),
-      LeagueTaskPanel(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.tasksPanel))
+      LeagueTaskPanel(
+        playerSignal,
+        cache,
+        effectObserverSignal,
+        tooltip,
+        contextMenuController
+      ).amend(L.cls(Styles.tasksPanel))
     )
 
   @js.native @JSImport("/styles/planning/player/view/leagueTab.module.css", JSImport.Default)

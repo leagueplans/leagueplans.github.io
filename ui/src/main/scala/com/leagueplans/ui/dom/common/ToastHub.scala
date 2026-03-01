@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.common
 
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.commontypes.IconDefinition
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.utils.laminar.FontAwesome
@@ -28,7 +29,7 @@ object ToastHub {
       underlying.onNext(toast)
   }
 
-  def apply(): (L.Div, Publisher) = {
+  def apply(tooltip: Tooltip): (L.Div, Publisher) = {
     val bus = EventBus[Toast]()
     val activeToastVar = Var(List.empty[Toast])
     val filterer = activeToastVar.updater[Toast]((acc, toast) => acc.filterNot(_ == toast))
@@ -36,10 +37,10 @@ object ToastHub {
     val node = L.div(
       L.cls(Styles.toastHub),
       L.children <-- activeToastVar.signal.split(identity)((_, toast, _) =>
-        toNode(toast, filterer.contramap[Unit](_ => toast))
+        toNode(toast, filterer.contramap[Unit](_ => toast), tooltip)
       ),
       bus.events.withCurrentValueOf(activeToastVar)
-        .map((toast, acc) => toast +: acc) --> activeToastVar,
+        .map((toast, acc) => toast +: acc) --> activeToastVar
     )
 
     (node, Publisher(bus.writer))
@@ -55,7 +56,11 @@ object ToastHub {
     val dismiss: String = js.native
   }
 
-  private def toNode(toast: Toast, dismissObserver: Observer[Unit]): L.Div =
+  private def toNode(
+    toast: Toast,
+    dismissObserver: Observer[Unit],
+    tooltip: Tooltip
+  ): L.Div =
     L.div(
       toast.`type` match {
         case Type.Info => typeSpecificAttributes(Styles.info, FreeSolid.faCircleInfo)
@@ -63,7 +68,7 @@ object ToastHub {
         case Type.Error => typeSpecificAttributes(Styles.error, FreeSolid.faCircleExclamation)
       },
       toast.content,
-      dismissButton(dismissObserver),
+      dismissButton(dismissObserver, tooltip),
       autoDismiss(toast.duration) --> dismissObserver
     )
 
@@ -76,13 +81,15 @@ object ToastHub {
       FontAwesome.icon(icon).amend(L.svg.cls(Styles.icon))
     )
 
-  private def dismissButton(observer: Observer[Unit]): L.Button =
+  private def dismissButton(observer: Observer[Unit], tooltip: Tooltip): L.Button =
     Button(_.handled --> observer).amend(
       L.cls(Styles.dismiss),
       FontAwesome.icon(FreeSolid.faXmark),
       IconButtonModifiers(
-        tooltip = "Dismiss",
-        screenReaderDescription = "dismiss"
+        tooltipContents = "Dismiss",
+        screenReaderDescription = "dismiss",
+        tooltip,
+        tooltipPlacement = Placement.left
       )
     )
 

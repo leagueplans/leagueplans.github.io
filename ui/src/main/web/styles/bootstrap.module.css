@@ -1,0 +1,35 @@
+.bootstrap {
+  isolation: isolate;
+}
+
+.popovers {
+  position: fixed;
+  z-index: 1;
+  isolation: isolate;
+  display: contents;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 3;
+}
+
+.contextMenu {
+  position: absolute;
+  z-index: 2;
+}
+
+.toastHub {
+  position: fixed;
+  z-index: 1;
+  bottom: 0.4rem;
+  right: 0.4rem;
+
+  width: min(90%, 40rem);
+}
+
+.modal {}
+
+.page {
+  isolation: isolate;
+}

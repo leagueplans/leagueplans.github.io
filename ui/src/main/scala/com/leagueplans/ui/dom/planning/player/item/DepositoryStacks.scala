@@ -1,9 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.ui.dom.common.Tooltip
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -18,7 +20,8 @@ object DepositoryStacks {
     columnCount: Int,
     rowCount: Int,
     overflowRowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement]
+    toElement: ItemStack => L.Modifier[L.HtmlElement],
+    tooltip: Tooltip
   ): L.Div = {
     val maxContents = columnCount * rowCount
 
@@ -26,7 +29,7 @@ object DepositoryStacks {
       L.cls(Styles.content),
       mainStacks(stacksSignal, maxContents, columnCount, rowCount, toElement),
       L.child.maybe <-- maybeOverflowStacks(stacksSignal, maxContents, columnCount, overflowRowCount, toElement),
-      L.child.maybe <-- maybeOverflowWarning(stacksSignal, maxContents, columnCount, overflowRowCount)
+      L.child.maybe <-- maybeOverflowWarning(stacksSignal, maxContents, columnCount, overflowRowCount, tooltip)
     )
   }
 
@@ -92,22 +95,26 @@ object DepositoryStacks {
     stacksSignal: Signal[List[ItemStack]],
     maxContents: Int,
     columnCount: Int,
-    overflowRowCount: Int
+    overflowRowCount: Int,
+    tooltip: Tooltip
   ): Signal[Option[L.Div]] =
     stacksSignal
       .map(_.size - maxContents)
       .splitOne(_ > columnCount * overflowRowCount)((shouldRender, _, overflowCount) =>
-        Option.when(shouldRender)(overflowWarning(overflowCount))
+        Option.when(shouldRender)(overflowWarning(overflowCount, tooltip))
       )
 
-  private def overflowWarning(overflowCount: Signal[Int]): L.Div =
+  private def overflowWarning(
+    overflowCount: Signal[Int],
+    tooltip: Tooltip
+  ): L.Div =
     L.div(
       L.cls(Styles.overflowWarning),
       FontAwesome.icon(
         FreeSolid.faTriangleExclamation
       ).amend(L.svg.cls(Styles.overflowIcon)),
       overflowText(overflowCount),
-      overflowTooltip
+      tooltip.register(overflowTooltip, FloatingConfig.basicTooltip(Placement.top))
     )
 
   private def overflowText(overflowCount: Signal[Int]): L.Span =
@@ -121,11 +128,10 @@ object DepositoryStacks {
       )
     )
 
-  private val overflowTooltip: L.Modifier[L.HtmlElement] =
-    Tooltip(
-      L.span(
-        L.cls(Styles.overflowTooltip),
-        "You're holding too many items. The number of items shown is clamped to avoid rendering issues."
-      )
+  private val overflowTooltip: L.Div =
+    L.div(
+      L.cls(Styles.overflowTooltip),
+      L.p("You're holding too many items."),
+      L.p("Excess items have been hidden to avoid impacting UI performance.")
     )
 }

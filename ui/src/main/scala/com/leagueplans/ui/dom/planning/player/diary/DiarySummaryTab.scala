@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
+import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.planning.player.task.TaskSummaryTab
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTask, DiaryTier}
@@ -13,7 +14,8 @@ object DiarySummaryTab {
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
     regionObserver: Observer[DiaryRegion],
-    tierObserver: Observer[Option[DiaryTier]]
+    tierObserver: Observer[Option[DiaryTier]],
+    tooltip: Tooltip
   ): L.Div = {
     val groupedTasks = groupTasks(cache)
 
@@ -27,7 +29,8 @@ object DiarySummaryTab {
           completedHardSignal = completedTasksSignal.map(isTierComplete(tiers(DiaryTier.Hard), _)),
           completedEliteSignal = completedTasksSignal.map(isTierComplete(tiers(DiaryTier.Elite), _)),
           regionObserver = regionObserver.contramap[Unit](_ => region),
-          tierObserver = tierObserver
+          tierObserver = tierObserver,
+          tooltip
         )
       }.toList
     )

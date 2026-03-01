@@ -3,11 +3,13 @@ package com.leagueplans.ui.dom.planning.plan.step
 import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.common.collapse.{CollapseButton, InvertibleAnimationController}
 import com.leagueplans.ui.facades.animation.KeyframeAnimationOptions
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.utils.laminar.LaminarOps.onMountAnimate
 import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
 
@@ -29,11 +31,12 @@ object StepHeader {
     isFocusedSignal: Signal[Boolean],
     draggableObserver: Observer[Boolean],
     animationController: InvertibleAnimationController,
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.header),
-      L.child <-- toSubstepToggle(animationController, hasSubstepsSignal),
-      toTitle(stepSignal, isFocusedSignal, draggableObserver)
+      L.child <-- toSubstepToggle(animationController, hasSubstepsSignal, tooltip),
+      toTitle(stepSignal, isFocusedSignal, draggableObserver, tooltip)
     )
 
   @js.native @JSImport("/styles/planning/plan/step/header.module.css", JSImport.Default)
@@ -44,11 +47,13 @@ object StepHeader {
     val title: String = js.native
     val dragIcon: String = js.native
     val description: String = js.native
+    val tooltip: String = js.native
   }
   
   private def toSubstepToggle(
     animationController: InvertibleAnimationController,
-    hasSubstepsSignal: Signal[Boolean]
+    hasSubstepsSignal: Signal[Boolean],
+    tooltip: Tooltip
   ): Signal[L.Node] =
     // We choose the icon's orientation based on whether the animation controller is
     // currently open, so we need to make sure that we only create the button at the
@@ -57,9 +62,10 @@ object StepHeader {
       case true =>
         CollapseButton(
           animationController,
-          tooltip = "Toggle substep visibility",
+          tooltipContents = "Toggle substep visibility",
           screenReaderDescription = "toggle substep visibility",
-          L.svg.cls(Styles.substepsToggleIcon)
+          L.svg.cls(Styles.substepsToggleIcon),
+          tooltip
         ).amend(L.cls(Styles.substepsToggle))
       case false =>
         L.emptyNode
@@ -68,13 +74,14 @@ object StepHeader {
   private def toTitle(
     stepSignal: Signal[Step],
     isFocusedSignal: Signal[Boolean],
-    draggableObserver: Observer[Boolean]
+    draggableObserver: Observer[Boolean],
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.title),
       isFocusedSignal.changes.filterNot(identity) --> draggableObserver,
       L.child <-- isFocusedSignal.splitBoolean(
-        whenTrue = _ => toDragIcon(draggableObserver),
+        whenTrue = _ => toDragIcon(draggableObserver, tooltip),
         whenFalse = _ => L.emptyNode
       ),
       L.p(
@@ -83,13 +90,19 @@ object StepHeader {
       )
     )
 
-  private def toDragIcon(draggableObserver: Observer[Boolean]): L.Div =
+  private def toDragIcon(
+    draggableObserver: Observer[Boolean],
+    tooltip: Tooltip
+  ): L.Div =
     L.div(
       L.cls(Styles.dragIcon),
       FontAwesome.icon(FreeSolid.faGripVertical),
       L.onMountAnimate(bounceIn.play),
       L.onMouseEnter.mapToStrict(true) --> draggableObserver,
       L.onMouseLeave.mapToStrict(false) --> draggableObserver,
-      Tooltip(L.span("Drag to reposition"))
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), "Drag to reposition"),
+        FloatingConfig.basicTooltip(placement = Placement.left)
+      )
     )
 }
