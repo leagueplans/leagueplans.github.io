@@ -25,27 +25,28 @@ object LeaguesV extends Mode.League {
           )
         ),
         completedQuests = Set(
-          3, // Restless ghost
+          3, // Restless Ghost
           4, // Romeo & Juliet
-          15, // Goblin diplomacy
-          17, // Dragon slayer
-          18, // Druidic ritual
-          19, // Lost city
-          40, // Jungle potion
-          42, // Shilo village
-          49, // Dig site
-          50, // Gertrude's cat
-          53, // Rune mysteries
-          55, // Elemental workshop
-          56, // Priest in peril
-          57, // Nature spirit
+          15, // Goblin Diplomacy
+          17, // Dragon Slayer
+          18, // Druidic Ritual
+          19, // Lost City
+          40, // Jungle Potion
+          42, // Shilo Village
+          49, // Dig Site
+          50, // Gertrude's Cat
+          53, // Rune Mysteries
+          55, // Elemental Workshop
+          56, // Priest in Peril
+          57, // Nature Spirit
           81, // Tears of Guthix
-          83, // The lost tribe
+          83, // The lost Tribe
           105, // Fairytale I
           121, // Death to the Dorgeshuun
           122, // Fairytale II
-          152, // Bone voyage
-          187 // Defender of Varrock
+          152, // Bone Voyage
+          187, // Defender of Varrock
+          202 // Learning the Ropes
         ),
         completedDiaryTasks = Set(
           203, // Travel to Port Sarim via the dock, east of Musa Point

@@ -10,6 +10,9 @@ object LeaguesIII extends Mode.League {
   val settings: Plan.Settings.Explicit =
     Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
+        completedQuests = Set(
+          202 // Learning the Ropes
+        ),
         leagueStatus = LeagueStatus(
           leaguePoints = 0,
           completedTasks = Set.empty,

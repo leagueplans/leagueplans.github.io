@@ -52,7 +52,8 @@ object GridMaster extends Mode {
           163, // X Marks the Spot
           173, // A Kingdom Divided
           178, // Beneath Cursed Sands
-          186 // Children of the Sun
+          186, // Children of the Sun
+          202 // Learning the Ropes
         )
       ),
       expMultipliers = List(

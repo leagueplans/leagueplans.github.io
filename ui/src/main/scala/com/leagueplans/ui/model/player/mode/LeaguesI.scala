@@ -17,10 +17,11 @@ object LeaguesI extends Mode.League {
           Hitpoints -> Level(10).bound
         ),
         completedQuests = Set(
-          17, // Dragon slayer
-          18, // Druidic ritual
-          53, // Rune mysteries
-          130 // Eagle's peak
+          17, // Dragon Slayer
+          18, // Druidic Ritual
+          53, // Rune Mysteries
+          130, // Eagle's Peak
+          202 // Learning the Ropes
         ),
         completedDiaryTasks = Set(
           256, // Travel to the fairy ring south of Mount Karuulm

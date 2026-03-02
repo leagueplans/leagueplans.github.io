@@ -23,21 +23,22 @@ object Armageddon extends Mode.Deadman {
           )
         ),
         completedQuests = Set(
-          3, // The restless ghost
+          3, // The Restless Ghost
           6, // Shield of Arrav
-          7, // Ernest the chicken
-          15, // Goblin diplomacy
-          18, // Druidic ritual
-          19, // Lost city
-          21, // Merlin's crystal
-          23, // Alfred Grimhand's barcrawl
-          31, // Holy grail
-          53, // Rune mysteries
-          56, // Priest in peril
-          57, // Nature spirit
-          105, // Fairytale I - growing pains
-          122, // Fairytale II - cure a queen
-          131 // Animal magnetism
+          7, // Ernest the Chicken
+          15, // Goblin Diplomacy
+          18, // Druidic Ritual
+          19, // Lost City
+          21, // Merlin's Crystal
+          23, // Alfred Grimhand's Barcrawl
+          31, // Holy Grail
+          53, // Rune Mysteries
+          56, // Priest in Peril
+          57, // Nature Spirit
+          105, // Fairytale I - Growing Pains
+          122, // Fairytale II - Cure a Queen
+          131, // Animal Magnetism
+          202 // Learning the Ropes
         ),
         completedDiaryTasks = Set(
           193 // Read the blackboard at Barbarian Assault after reaching level 5 in every role

@@ -57,6 +57,7 @@ object Annihilation extends Mode.Deadman {
           162, // The Ascent of Arceuus
           163, // X Marks the Spot
           186, // Children of the Sun
+          202 // Learning the Ropes
         ),
         completedDiaryTasks = Set(
           246, // Hand in a book at the Arceuus Library
