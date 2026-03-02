@@ -31,10 +31,10 @@ private def migrateCoproduct(migrations: Map[Int, Migration]): Migration =
   )
 
 @tailrec
-private def migrateList[T](
-  list: List[T],
-  acc: List[T] = List.empty
-)(migration: T => MigrationResult[T]): MigrationResult[List[T]] =
+private def migrateList[In, Out](
+  list: List[In],
+  acc: List[Out] = List.empty
+)(migration: In => MigrationResult[Out]): MigrationResult[List[Out]] =
   list match {
     case Nil => Right(acc)
     case h :: t =>
