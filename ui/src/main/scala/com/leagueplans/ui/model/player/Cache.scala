@@ -3,6 +3,11 @@ package com.leagueplans.ui.model.player
 import com.leagueplans.common.model.{GridTile, Item, LeagueTask}
 import com.leagueplans.ui.model.player.diary.DiaryTask
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import io.circe.Decoder
+import io.circe.scalajs.decodeJs
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 
 object Cache {
   def apply(
@@ -19,6 +24,35 @@ object Cache {
       leagueTasks.map(task => task.id -> task).toMap,
       gridTiles.map(task => task.id -> task).toMap,
     )
+    
+  def load(): js.Promise[Either[(String, Throwable), Cache]] =
+    js.dynamicImport(
+      for {
+        items <- decode[Set[Item]]("items", itemsJson)
+        quests <- decode[Set[Quest]]("quests", questsJson)
+        diaryTasks <- decode[Set[DiaryTask]]("diary tasks", diaryTasksJson)
+        leagueTasks <- decode[Set[LeagueTask]]("league tasks", leagueTasksJson)
+        gridTiles <- decode[Set[GridTile]]("grid tiles", gridTilesJson)
+      } yield Cache(items, quests, diaryTasks, leagueTasks, gridTiles)
+    )
+  
+  private def decode[T : Decoder](key: String, json: js.Object): Either[(String, Throwable), T] =
+    decodeJs[T](json).left.map((key, _))
+
+  @js.native @JSImport("/data/items.json", JSImport.Default)
+  private def itemsJson: js.Object = js.native
+
+  @js.native @JSImport("/data/quests.json", JSImport.Default)
+  private def questsJson: js.Object = js.native
+
+  @js.native @JSImport("/data/diaryTasks.json", JSImport.Default)
+  private def diaryTasksJson: js.Object = js.native
+
+  @js.native @JSImport("/data/leagueTasks.json", JSImport.Default)
+  private def leagueTasksJson: js.Object = js.native
+
+  @js.native @JSImport("/data/gridMaster.json", JSImport.Default)
+  private def gridTilesJson: js.Object = js.native
 }
 
 final case class Cache(
