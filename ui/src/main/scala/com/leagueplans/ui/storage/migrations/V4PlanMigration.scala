@@ -27,7 +27,7 @@ object V4PlanMigration extends PlanMigration {
       14044 -> 14045, // Stone tablet (The Final Dawn)
     )
 
-  def apply(plan: PlanExport): Either[DecodingFailure | MigrationError, PlanExport] =
+  def apply(plan: PlanExport): MigrationResult[PlanExport] =
     for {
       (name, timestamp, schemaVersion) <- plan.metadata.as[(Encoding, Encoding, SchemaVersion)]
       _ <- validateInputVersion(schemaVersion)

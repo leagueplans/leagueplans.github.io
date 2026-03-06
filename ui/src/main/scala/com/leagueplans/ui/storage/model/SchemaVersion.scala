@@ -21,6 +21,8 @@ enum SchemaVersion(val date: Date) {
   case V4 extends SchemaVersion(new Date(2025, 9, 18))
   /** Adds repetitions and durations to steps */
   case V5 extends SchemaVersion(new Date(2026, 2, 1))
+  /** Fixes repetitions default from 0 to 1 */
+  case V6 extends SchemaVersion(new Date(2026, 2, 6))
 
   def number: Int = ordinal + 1
 }

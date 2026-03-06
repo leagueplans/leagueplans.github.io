@@ -6,9 +6,9 @@ import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.storage.model.{PlanExport, SchemaVersion}
 
-object V5PlanMigration extends PlanMigration {
-  val fromVersion: SchemaVersion = SchemaVersion.V4
-  val toVersion: SchemaVersion = SchemaVersion.V5
+object V6PlanMigration extends PlanMigration {
+  val fromVersion: SchemaVersion = SchemaVersion.V5
+  val toVersion: SchemaVersion = SchemaVersion.V6
 
   def apply(plan: PlanExport): MigrationResult[PlanExport] =
     for {
@@ -27,19 +27,10 @@ object V5PlanMigration extends PlanMigration {
 
   private def migrateDetails(details: Encoding): MigrationResult[Encoding] =
     details
-      .as[(Encoding, List[Encoding], List[Encoding])]
-      .map((description, effects, requirements) =>
+      .as[(Encoding, List[Encoding], List[Encoding], Int, Encoding)]
+      .map((description, effects, requirements, repetitions, duration) =>
         Encoder.encode(
-          (description, effects, requirements, defaultRepetitions, defaultDuration)
+          (description, effects, requirements, if repetitions == 0 then 1 else repetitions, duration)
         )
       )
-
-  private val defaultRepetitions: Encoding =
-    Encoder.encode(0)
-
-  private val defaultDuration: Encoding =
-    Encoder.encode((
-      0, // Length
-      encodeCoproduct(ordinal = /* Ticks */ 0, value = EmptyTuple) // Unit
-    ))
 }
