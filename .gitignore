@@ -8,6 +8,10 @@ target/
 # npm
 node_modules
 
+# Claude
+.claude
+CLAUDE.md
+
 # Created when running a scraper
 /logs
 
