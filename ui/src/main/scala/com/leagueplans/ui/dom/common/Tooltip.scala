@@ -6,10 +6,11 @@ import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
 import com.leagueplans.ui.wrappers.floatingui.{Floating, FloatingConfig}
 import com.raquo.airstream.core.Source.SignalSource
 import com.raquo.airstream.core.{Observer, Signal, Sink}
+import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ChildNode
-import org.scalajs.dom.{Element, MouseEvent}
+import org.scalajs.dom.{Element, KeyValue, MouseEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -153,7 +154,11 @@ final class Tooltip private[Tooltip] (
         .map(isClosestListener(_, element)) --> isHovering,
       L.onMouseLeave.mapToStrict(false) --> isHovering,
       L.onFocus.mapToStrict(true) --> isHovering,
-      L.onBlur.mapToStrict(false) --> isHovering
+      L.onBlur.mapToStrict(false) --> isHovering,
+      // We may need more logic here for when to emit false, and
+      // we may want to disable the mouseover checks until the mouse
+      // leaves the element, but this seems good enough for now
+      L.onKey(KeyValue.Escape).mapToStrict(false) --> isHovering
     )
 
   private val targetExtractor: PartialFunction[MouseEvent, Element] =
