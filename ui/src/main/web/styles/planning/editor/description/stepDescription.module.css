@@ -1,0 +1,24 @@
+.content {
+}
+
+.font {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.editButton {
+  composes: font;
+  background: none;
+  border: none;
+  padding: 0 0.25rem 0 0;
+}
+
+.editButton:active {
+  scale: 0.90;
+}
+
+.description {
+  composes: font;
+  display: inline;
+  white-space-collapse: preserve-breaks;
+}

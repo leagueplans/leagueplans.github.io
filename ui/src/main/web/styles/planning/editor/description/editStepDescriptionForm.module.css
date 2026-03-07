@@ -1,0 +1,28 @@
+.form {
+  width: 33rem;
+}
+
+.title {}
+
+.input {
+  width: stretch;
+  font-size: 1rem;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.button {
+  margin-top: 0.8rem;
+  width: 8rem;
+}
+
+.cancel {
+  composes: button;
+}
+
+.confirm {
+  composes: button;
+}

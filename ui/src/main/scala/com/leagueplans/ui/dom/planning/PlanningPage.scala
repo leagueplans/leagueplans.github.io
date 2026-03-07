@@ -95,20 +95,21 @@ object PlanningPage {
       Signal
         .combine(focusController.signal, forester.signal)
         .map((maybeFocus, forest) => maybeFocus.flatMap(forest.nodes.get))
-        .split(_.id)((_, _, stepSignal) =>
-          EditorElement(
-            cache,
-            itemFuse,
-            stepSignal,
-            Signal.combine(stepSignal, stepsWithErrorsVar).map((step, stepsWithErrors) =>
-              stepsWithErrors.getOrElse(step.id, List.empty)
-            ),
-            forester,
-            tooltip,
-            modal
-          ).amend(L.cls(Styles.editor))
+        .splitOption(
+          project = (_, stepSignal) =>
+            EditorElement(
+              cache,
+              itemFuse,
+              stepSignal,
+              Signal.combine(stepSignal, stepsWithErrorsVar).map((step, stepsWithErrors) =>
+                stepsWithErrors.getOrElse(step.id, List.empty)
+              ),
+              forester,
+              tooltip,
+              modal
+            ).amend(L.cls(Styles.editor)),
+          ifEmpty = createEditorFallback(stateSignal)
         )
-        .map(_.getOrElse(createEditorFallback(stateSignal)))
 
     val stepsWithErrorsStream =
       Signal

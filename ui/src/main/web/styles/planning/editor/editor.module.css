@@ -3,11 +3,13 @@
 
   display: grid;
   grid-template-rows: auto 1fr;
+  row-gap: 1rem;
 }
 
 .description {
   grid-row: 1;
   grid-column: 1;
+  margin: 0.2rem 0.2rem 0.2rem 0.4rem;
 }
 
 .warningIcon {
@@ -37,6 +39,7 @@
   overflow-y: hidden;
 
   display: flex;
+  background: inherit;
 }
 
 .section {

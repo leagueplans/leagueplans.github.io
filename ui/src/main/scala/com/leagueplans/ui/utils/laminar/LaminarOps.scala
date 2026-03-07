@@ -5,7 +5,7 @@ import com.leagueplans.ui.wrappers.animation.Animation
 import com.raquo.laminar.api.{Laminar, eventPropToProcessor}
 import com.raquo.laminar.defs.eventProps.GlobalEventProps
 import com.raquo.laminar.keys.EventProcessor
-import org.scalajs.dom.{KeyboardEvent, ResizeObserver, ResizeObserverEntry, ResizeObserverOptions}
+import org.scalajs.dom.*
 
 object LaminarOps {
   extension (self: GlobalEventProps) {
@@ -20,9 +20,12 @@ object LaminarOps {
         (_, maybeAnimation) => maybeAnimation.foreach(_.cancel())
       )
     
-    def selectOnFocus[E <: self.Input]: self.Modifier[E] =
+    def selectOnFocus[E <: self.Input | self.TextArea]: self.Modifier[E] =
       self.inContext(ctx =>
-        self.onFocus.handled --> (_ => ctx.ref.select())
+        self.onFocus.handled --> (_ => ctx.ref match {
+          case input: HTMLInputElement => input.select()
+          case area: HTMLTextAreaElement => area.select()
+        })
       )
 
     def withResizeObserver[E <: self.Element](

@@ -1,12 +1,13 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.form.{Form, TextInput}
+import com.leagueplans.ui.dom.common.form.Form
 import com.leagueplans.ui.dom.common.{FormOpener, Modal}
+import com.leagueplans.ui.dom.planning.common.StepDescriptionInput
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
-import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.eventbus.EventBus
+import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.Paragraph
 
@@ -15,26 +16,29 @@ import scala.scalajs.js.annotation.JSImport
 
 object NewStepForm {
   def apply(forester: Forester[Step.ID, Step], modal: Modal): NewStepForm = {
+    val submissions = EventBus[Unit]()
     val (form, submitButton, formSubmissions) = Form()
-    val (input, label, descriptionSignal) = createInput()
+    val (input, label, description) =
+      StepDescriptionInput(id = "new", initial = "")(submissions.writer)
 
     form.amend(
       L.cls(Styles.form, Modal.Styles.form),
       L.p(L.cls(Styles.title, Modal.Styles.title), "Add a new step"),
-      label,
-      input,
+      label.amend(L.cls(Styles.label), "Description"),
+      input.amend(L.cls(Styles.input)),
       explainer(),
       submitButton.amend(
         L.cls(Styles.submit, Modal.Styles.confirmationButton),
         L.value("Add step"),
-      )
+      ),
+      formSubmissions --> submissions
     )
 
     new NewStepForm(
       forester,
       modal,
       form,
-      stepSubmissions(formSubmissions, descriptionSignal)
+      submissions.events.sample(description).map(Step(_))
     )
   }
 
@@ -48,24 +52,6 @@ object NewStepForm {
     val submit: String = js.native
   }
 
-  private def createInput(): (L.Input, L.Label, Signal[String]) = {
-    val (input, label, description) = TextInput(
-      TextInput.Type.Text,
-      id = "new-step-description",
-      initial = ""
-    )
-
-    input.amend(
-      L.cls(Styles.input),
-      L.required(true),
-      L.placeholder("Chop some logs"),
-      L.selectOnFocus
-    )
-    label.amend(L.cls(Styles.label), "Enter a description")
-
-    (input, label, description)
-  }
-
   private def explainer(): ReactiveHtmlElement[Paragraph] =
     L.p(
       L.cls(Styles.explainer),
@@ -73,29 +59,16 @@ object NewStepForm {
         " set it as the focused step. Any effects you create, like gaining experience in a skill, will" +
         " be tracked against the focused step."
     )
-
-  private def stepSubmissions(
-    submissions: EventStream[Unit],
-    descriptionSignal: Signal[String]
-  ): EventStream[Option[Step]] =
-    submissions
-      .sample(descriptionSignal)
-      .map(description => Option.when(description.nonEmpty)(Step(description)))
 }
 
 final class NewStepForm private(
   forester: Forester[Step.ID, Step],
   modal: Modal,
   form: L.FormElement,
-  submissions: EventStream[Option[Step]]
+  submissions: EventStream[Step]
 ) {
   private var maybeParent = Option.empty[Step.ID]
-  private val opener = FormOpener(
-    modal,
-    form,
-    submissions,
-    _.foreach(forester.add(_, maybeParent))
-  )
+  private val opener = FormOpener(modal, form, submissions, forester.add(_, maybeParent))
 
   def open(maybeParent: Option[Step.ID]): Unit = {
     this.maybeParent = maybeParent

@@ -1,0 +1,71 @@
+.form {
+  width: 21rem;
+}
+
+.title {}
+
+.inputs {
+  justify-self: center;
+  width: fit-content;
+  display: grid;
+}
+
+.inputMargin {
+  margin: 0.125rem 0.25rem;
+}
+
+.lengthLabel {
+  composes: inputMargin;
+
+  grid-row: 1;
+  grid-column: 1;
+
+  justify-self: end;
+}
+
+.lengthInput {
+  composes: inputMargin;
+
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.unitLabel {
+  composes: inputMargin;
+
+  grid-row: 2;
+  grid-column: 1;
+
+  justify-self: end;
+}
+
+.unitInput {
+  composes: inputMargin;
+
+  grid-row: 2;
+  grid-column: 2;
+}
+
+.note {
+  margin: 0.5rem;
+  font-size: 0.8rem;
+  color: #515151;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.button {
+  margin-top: 0.8rem;
+  width: 8rem;
+}
+
+.cancel {
+  composes: button;
+}
+
+.confirm {
+  composes: button;
+}

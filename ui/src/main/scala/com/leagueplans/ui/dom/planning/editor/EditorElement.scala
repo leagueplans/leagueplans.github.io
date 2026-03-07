@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
+import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
@@ -32,7 +33,7 @@ object EditorElement {
     
     L.div(
       L.cls(Styles.editor),
-      StepDescription(stepSignal, forester).amend(L.cls(Styles.description)),
+      StepDescription(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.description)),
       L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
       L.div(
         L.cls(Styles.sections),

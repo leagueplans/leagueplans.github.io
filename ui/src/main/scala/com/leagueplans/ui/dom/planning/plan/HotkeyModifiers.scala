@@ -1,6 +1,5 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.planning.editor.StepDescription
 import com.leagueplans.ui.model.plan.Step
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
@@ -44,7 +43,7 @@ object HotkeyModifiers {
       }
 
   private val ignoredTags = Set("input")
-  private val ignoredIDs = Set(StepDescription.liveEditID)
+  private val ignoredIDs = Set.empty[String]
 
   private def shouldIgnore(event: KeyboardEvent): Boolean =
     event.target match {

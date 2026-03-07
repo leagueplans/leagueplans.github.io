@@ -1,5 +1,4 @@
 .dialog {
-  border-radius: 1rem;
   padding: 0;
   isolation: isolate;
   overflow: visible;
@@ -19,6 +18,7 @@
 .title {
   margin-bottom: 1rem;
   font-size: 1.6rem;
+  text-align: center;
 }
 
 .button {
