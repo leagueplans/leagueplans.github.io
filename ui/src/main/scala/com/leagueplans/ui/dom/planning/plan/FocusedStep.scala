@@ -47,16 +47,10 @@ object FocusedStep {
 
     @tailrec
     private def nextNonChild(step: Step.ID, forest: Forest[Step.ID, Step]): Option[Step.ID] = {
-      val maybeParent = forest.toParent.get(step)
-      val siblings = maybeParent match {
-        case None => forest.roots
-        case Some(parent) => forest.toChildren.get(parent).toList.flatten
-      }
-
-      siblings.dropWhile(_ != step).drop(1).headOption match {
+      forest.siblings(step).dropWhile(_ != step).drop(1).headOption match {
         case Some(sibling) => Some(sibling)
         case None =>
-          maybeParent match {
+          forest.toParent.get(step) match {
             case Some(parent) => nextNonChild(parent, forest)
             case None => None
           }
@@ -71,18 +65,13 @@ object FocusedStep {
           )
 
         case (Some(step), forest) =>
-          val maybeParent = forest.toParent.get(step)
-          val siblings = maybeParent match {
-            case None => forest.roots
-            case Some(parent) => forest.toChildren.get(parent).toList.flatten
-          }
-
-          siblings.takeWhile(_ != step).lastOption match {
+          forest.siblings(step).takeWhile(_ != step).lastOption match {
             case Some(prior) =>
               Some(if (ignoreChildren) prior else lowestDescendant(prior, forest))
 
             case None =>
-              maybeParent.orElse(
+              // No earlier sibling. Return the parent, or the final step in the plan
+              forest.toParent.get(step).orElse(
                 forest.roots.lastOption.map(step =>
                   if (ignoreChildren) step else lowestDescendant(step, forest)
                 )

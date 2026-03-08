@@ -87,7 +87,7 @@ object StepPreview {
   ): L.Div = {
     val list = L.ol(
       L.cls(Styles.substepList),
-      substeps.flatMap(forest.nodes.get).map(substep =>
+      substeps.flatMap(forest.get).map(substep =>
         L.li(
           L.cls(Styles.substep),
           StepPreview(substep, forest, headerOffset, tooltip)

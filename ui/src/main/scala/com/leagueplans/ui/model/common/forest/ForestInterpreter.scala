@@ -15,15 +15,15 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
 
   def addOption(data: T, maybeParentID: Option[ID]): List[Update[ID, T]] = {
     val childID = data.id
-    val maybeAddLink = maybeParentID.filter(forest.nodes.contains).map(new AddLink(childID, _))
+    val maybeAddLink = maybeParentID.filter(forest.contains).map(new AddLink(childID, _))
 
-    forest.nodes.get(childID) match {
+    forest.get(childID) match {
       case None =>
         AddNode(childID, data) +: maybeAddLink.toList
 
       case Some(existingData) =>
         val updateData = Option.when(existingData != data)(UpdateData(childID, data)).toList
-        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).exists(_.id == childID)
+        val targetParentHasChildAsAncestor = maybeParentID.toList.flatMap(forest.ancestors).contains(childID)
 
         if (targetParentHasChildAsAncestor || maybeParentID.contains(childID))
           updateData
@@ -51,7 +51,7 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
   }
 
   def move(childID: ID, maybeParentID: Option[ID]): List[Update[ID, T]] =
-    forest.nodes.get(childID).toList.flatMap(addOption(_, maybeParentID))
+    forest.get(childID).toList.flatMap(addOption(_, maybeParentID))
 
   def remove(id: ID): List[Update[ID, T]] =
     removeHelper(acc = List.empty, remaining = List(id))
@@ -63,20 +63,20 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
 
       case h :: t =>
         val removeLink = forest.toParent.get(h).map(RemoveLink(h, _)).toList
-        val removeNode = Option.when(forest.nodes.contains(h))(RemoveNode(h))
+        val removeNode = Option.when(forest.contains(h))(RemoveNode(h))
         val children = forest.toChildren.get(h).toList.flatten
         removeHelper(removeLink ++ removeNode ++ acc, children ++ t)
     }
 
   def update(id: ID, f: T => T): List[Update[ID, T]] =
-    forest.nodes.get(id).flatMap { existingData =>
+    forest.get(id).flatMap { existingData =>
       val updated = f(existingData)
       Option.when(updated != existingData)(UpdateData(id, updated))
     }.toList
 
   def update(data: T): List[Update[ID, T]] = {
     val id = data.id
-    forest.nodes.get(id) match {
+    forest.get(id) match {
       case Some(existingData) => Option.when(data != existingData)(UpdateData(id, data)).toList
       case None => List(AddNode(id, data))
     }

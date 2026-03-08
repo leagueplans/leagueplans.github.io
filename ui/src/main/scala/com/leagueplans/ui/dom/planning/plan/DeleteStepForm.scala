@@ -42,13 +42,13 @@ final class DeleteStepForm(
     ).open()
 
   private def toForm(steps: Forest[Step.ID, Step]): (L.FormElement, EventStream[Unit]) = {
-    val root = steps.roots.headOption.flatMap(steps.nodes.get)
+    val root = steps.roots.headOption.flatMap(steps.get)
     val (form, submitButton, submissions) = Form()
     form.amend(
       L.cls(Styles.form, Modal.Styles.form),
       L.p(
         L.cls(Styles.title, Modal.Styles.title),
-        if (steps.nodes.size > 1)
+        if (steps.size > 1)
           "Are you sure you want to delete these steps?"
         else
           "Are you sure you want to delete this step?"
@@ -68,7 +68,7 @@ final class DeleteStepForm(
       ),
       submitButton.amend(
         L.cls(Styles.confirm, Modal.Styles.deletionButton),
-        L.value(if (steps.nodes.size > 1) "Delete steps" else "Delete step")
+        L.value(if (steps.size > 1) "Delete steps" else "Delete step")
       )
     )
 

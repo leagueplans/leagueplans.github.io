@@ -94,7 +94,7 @@ object PlanningPage {
     val editorElement =
       Signal
         .combine(focusController.signal, forester.signal)
-        .map((maybeFocus, forest) => maybeFocus.flatMap(forest.nodes.get))
+        .map((maybeFocus, forest) => maybeFocus.flatMap(forest.get))
         .splitOption(
           project = (_, stepSignal) =>
             EditorElement(

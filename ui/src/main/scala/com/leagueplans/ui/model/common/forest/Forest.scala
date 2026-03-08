@@ -56,6 +56,8 @@ final class Forest[ID, T] private[forest](
   val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
+  export nodes.isEmpty, nodes.size, nodes.contains, nodes.get
+
   override def equals(obj: Any): Boolean =
     obj match {
       case forest: Forest[?, ?] => this.asProduct == forest.asProduct
@@ -70,9 +72,6 @@ final class Forest[ID, T] private[forest](
 
   override def toString: String =
     s"Forest$asProduct"
-    
-  def isEmpty: Boolean =
-    nodes.isEmpty
 
   def map[S](f: (ID, T) => S): Forest[ID, S] =
     Forest(
@@ -83,35 +82,31 @@ final class Forest[ID, T] private[forest](
     )
 
   def children(id: ID): List[T] =
-    toChildren(id).flatMap(nodes.get)
+    toChildren(id).flatMap(get)
 
-  def siblings(childID: ID): List[T] =
-    toParent
-      .get(childID)
-      .toList
-      .flatMap(toChildren)
-      .flatMap(nodes.get)
+  def siblings(childID: ID): List[ID] =
+    toParent.get(childID) match {
+      case None =>
+        if (roots.contains(childID)) roots else List.empty
+      case Some(parentID) =>
+        toChildren.get(parentID).toList.flatten
+    }
 
-  def ancestors(childID: ID): List[T] =
+  /** Returns a list of ancestors ordered from parent to root, excluding the child */
+  def ancestors(childID: ID): List[ID] =
     ancestorsHelper(childID, acc = List.empty)
 
   @tailrec
-  private def ancestorsHelper(childID: ID, acc: List[T]): List[T] = {
-    val maybeParent = for {
-      parentID <- toParent.get(childID)
-      parent <- nodes.get(parentID)
-    } yield (parentID, parent)
-
-    maybeParent match {
-      case Some((parentID, parent)) => ancestorsHelper(parentID, acc :+ parent)
+  private def ancestorsHelper(child: ID, acc: List[ID]): List[ID] =
+    toParent.get(child) match {
+      case Some(parent) => ancestorsHelper(parent, acc :+ parent)
       case None => acc
     }
-  }
 
   def subforest(id: ID): Forest[ID, T] = {
     val (subToChildren, subToParent) = 
-      recurse(initial = List(id))(
-        (parent, children) => (Map(parent -> children), children.map(_ -> parent).toMap),
+      recurse(initial = List(id))((parent, children) =>
+        (Map(parent -> children), children.map(_ -> parent).toMap),
       )(using Monoid.instance(
         (Map.empty, Map.empty),
         { case ((toChildren1, toParent1), (toChildren2, toParent2)) =>
@@ -127,16 +122,19 @@ final class Forest[ID, T] private[forest](
     )
   }
 
+  /* Depth-first */
   def toList: List[T] =
-    recurse()((id, _) => List(id)).flatMap(nodes.get)
+    recurse()((id, _) => List(id)).flatMap(get)
 
+  /* Depth-first */
   def foreachParent(f: (T, List[T]) => Unit): Unit =
     recurse()((id, children) =>
-      nodes.get(id).foreach(parent =>
-        f(parent, children.flatMap(nodes.get))
+      get(id).foreach(parent =>
+        f(parent, children.flatMap(get))
       )
     )
 
+  /* Depth-first */
   def recurse[Acc : Monoid](initial: List[ID] = roots)(f: (ID, List[ID]) => Acc): Acc =
     recursionHelper(acc = Monoid[Acc].empty, initial)(f)
 
@@ -153,5 +151,19 @@ final class Forest[ID, T] private[forest](
           acc = Monoid[Acc].combine(acc, f(h, children)),
           remaining = children ++ t
         )(f)
+    }
+
+  /* Depth-first */
+  def toLazyList: LazyList[ID] =
+    lazyListBuilder(remaining = roots)
+
+  // We don't need to support tail-recursion, as the recursive call is
+  // evaluated in a callback
+  private def lazyListBuilder(remaining: List[ID]): LazyList[ID] =
+    remaining match {
+      case Nil => LazyList.empty
+      case h :: t =>
+        val children = toChildren.get(h).toList.flatten
+        LazyList.cons(h, lazyListBuilder(children ++ t))
     }
 }
