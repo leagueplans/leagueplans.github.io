@@ -1,4 +1,4 @@
-package com.leagueplans.ui.model
+package com.leagueplans.ui.model.resolution
 
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}

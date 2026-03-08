@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.ui.model.plan.Step
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
 import org.scalajs.dom.{Element, KeyValue, KeyboardEvent, document}
@@ -8,16 +9,17 @@ import org.scalajs.dom.{Element, KeyValue, KeyboardEvent, document}
 //TODO Copy/paste
 object HotkeyModifiers {
   def apply(
-    focusController: FocusedStep.Controller,
+    focus: Signal[Option[Step.ID]],
+    focusController: FocusController,
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm
   ): L.Modifier[L.Element] =
     List(
       toFocusChangeListener(focusController),
-      toStepModifierListeners(focusController, newStepForm, deleteStepForm)
+      toStepModifierListeners(focus, newStepForm, deleteStepForm)
     )
 
-  private def toFocusChangeListener(controller: FocusedStep.Controller): Binder.Base =
+  private def toFocusChangeListener(controller: FocusController): Binder.Base =
     L.documentEvents(_.onKeyDown).filterNot(shouldIgnore).filter(_.ctrlKey) --> (event =>
       event.key match {
         case KeyValue.ArrowRight => controller.firstChild()
@@ -29,14 +31,14 @@ object HotkeyModifiers {
     )
 
   private def toStepModifierListeners(
-    focusController: FocusedStep.Controller,
+    focusSignal: Signal[Option[Step.ID]],
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm
   ): Binder.Base =
     L.documentEvents(_.onKeyUp)
       .filterNot(shouldIgnore)
       .map(_.key)
-      .compose(_.withCurrentValueOf(focusController.signal)) --> {
+      .compose(_.withCurrentValueOf(focusSignal)) --> {
         case ("n" | "N", focus) => newStepForm.open(focus)
         case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => deleteStepForm.open(step)
         case _ => /* Do nothing */

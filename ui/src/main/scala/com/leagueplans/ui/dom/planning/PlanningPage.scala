@@ -4,15 +4,15 @@ import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.{FocusedStep, PlanElement}
+import com.leagueplans.ui.dom.planning.plan.{FocusController, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.facades.fusejs.FuseOptions
-import com.leagueplans.ui.model.EffectResolver
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Plan.Settings
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
+import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.mode.GridMaster
-import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.resolution.{EffectResolver, FocusContext}
 import com.leagueplans.ui.model.validation.StepValidator
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
@@ -50,39 +50,45 @@ object PlanningPage {
       )
     )
     val forester = Forester(initialPlan.steps)
-    val (focusedStepBinder, focusController) = FocusedStep()
-
-    val planElement = PlanElement(
-      initialPlan.name,
-      forester,
-      subscription,
-      editingEnabled = Val(true),
-      stepsWithErrorsVar.signal.map(_.keySet),
-      tooltip,
-      contextMenuController,
-      focusController,
-      modal,
-      toastPublisher
-    )
+    val (focusedStep, focusController) = FocusController(forester)
 
     val settingsVar = Var(initialPlan.settings)
     val effectResolverSignal = settingsVar.signal.map(createEffectResolver(_, cache))
 
-    val stateSignal =
+    val focusContextSignal =
       Signal
-        .combine(forester.signal, focusController.signal, settingsVar.signal, effectResolverSignal)
-        .map((forest, focusedStep, settings, resolver) => State(forest, focusedStep, settings.initialPlayer, resolver))
+        .combine(settingsVar.signal, effectResolverSignal)
+        .map((settings, resolver) =>
+          FocusContext(settings.initialPlayer, focusedStep, forester.signal, resolver)
+        )
+
+    val planElement =
+      focusContextSignal.map(context =>
+        PlanElement(
+          initialPlan.name,
+          forester,
+          context,
+          subscription,
+          editingEnabled = Val(true),
+          stepsWithErrorsVar.signal.map(_.keySet),
+          tooltip,
+          contextMenuController,
+          focusController,
+          modal,
+          toastPublisher
+        )
+      )
 
     val visualiser =
-      settingsVar.signal.map(settings =>
+      Signal.combine(settingsVar.signal, focusContextSignal).map((settings, focusContext) =>
         Visualiser(
-          stateSignal.map(_.playerAtFocusedStep),
+          focusContext.playerAfterFirstRepOfCurrentFocus,
           isLeague = settings.maybeLeaguePointScoring.nonEmpty,
           // TODO - This will break if you support changing settings
           isGridMaster = settings == Plan.Settings.Deferred(GridMaster),
           cache,
           itemFuse,
-          createEffectObserver(focusController.signal, forester),
+          createEffectObserver(focusContext.focus, forester),
           settings.expMultipliers,
           tooltip,
           contextMenuController,
@@ -93,7 +99,7 @@ object PlanningPage {
 
     val editorElement =
       Signal
-        .combine(focusController.signal, forester.signal)
+        .combine(focusedStep, forester.signal)
         .map((maybeFocus, forest) => maybeFocus.flatMap(forest.get))
         .splitOption(
           project = (_, stepSignal) =>
@@ -108,7 +114,7 @@ object PlanningPage {
               tooltip,
               modal
             ).amend(L.cls(Styles.editor)),
-          ifEmpty = createEditorFallback(stateSignal)
+          ifEmpty = createEditorFallback(forester.signal)
         )
 
     val stepsWithErrorsStream =
@@ -125,8 +131,7 @@ object PlanningPage {
         L.child <-- visualiser.map(_.amend(L.cls(Styles.state))),
         L.child <-- editorElement
       ),
-      planElement.amend(L.cls(Styles.plan)),
-      focusedStepBinder(forester.signal),
+      L.child <-- planElement.map(_.amend(L.cls(Styles.plan))),
       //TODO Move evaluation to a worker, since this is expensive to run on the main thread
       stepsWithErrorsStream --> stepsWithErrorsVar,
       subscription.updates.collect { case settings: Plan.Settings => settings } --> settingsVar,
@@ -143,38 +148,6 @@ object PlanningPage {
     val editor: String = js.native
     val editorFallback: String = js.native
     val plan: String = js.native
-  }
-
-  private final case class State(
-    plan: Forest[Step.ID, Step],
-    focusedStepID: Option[Step.ID],
-    initialPlayer: Player,
-    effectResolver: EffectResolver
-  ) {
-    private val allSteps = plan.toList
-
-    private val (progressedSteps, focusedStep) =
-      focusedStepID match {
-        case Some(id) =>
-          val (lhs, rhs) = allSteps.span(_.id != id)
-          val focused = rhs.headOption
-          (lhs, focused)
-
-        case None =>
-          (allSteps, None)
-      }
-
-    private val playerPreFocusedStep: Player =
-      effectResolver.resolve(
-        initialPlayer,
-        progressedSteps.flatMap(_.directEffects.underlying)*
-      )
-
-    val playerAtFocusedStep: Player =
-      effectResolver.resolve(
-        playerPreFocusedStep,
-        focusedStep.toList.flatMap(_.directEffects.underlying)*
-      )
   }
 
   private def createEffectResolver(settings: Settings, cache: Cache): EffectResolver =
@@ -207,25 +180,25 @@ object PlanningPage {
   }
 
   private def createEffectObserver(
-    focusedStepSignal: Signal[Option[Step.ID]],
+    focusedStepSignal: Signal[Option[Step]],
     forester: Forester[Step.ID, Step]
   ): Signal[Option[Observer[Effect]]] =
-    focusedStepSignal.map(_.map(focusedStepID =>
+    focusedStepSignal.map(_.map(focusedStep =>
       Observer[Effect](effect =>
-        forester.update(focusedStepID, step =>
+        forester.update(focusedStep.id, step =>
           step.deepCopy(directEffects = step.directEffects + effect)
         )
       )
     ))
 
-  private def createEditorFallback(stateSignal: Signal[State]): L.Div =
+  private def createEditorFallback(forestSignal: Signal[Forest[Step.ID, Step]]): L.Div =
     L.div(
       L.cls(Styles.editorFallback),
       L.p(
         "Your plan is built from steps. You can use the 'Add step' button in the top-right to create steps."
       ),
-      L.child.maybe <-- stateSignal.map(state =>
-        Option.when(!state.plan.isEmpty)(
+      L.child.maybe <-- forestSignal.map(forest =>
+        Option.when(forest.nonEmpty)(
           L.p(
             "Clicking on a step will focus it. Focusing a step unlocks editing tools which let you add effects to the " +
               "step, like adding items to the inventory, or gaining experience. This website is a work-in-progress, " +
@@ -233,8 +206,8 @@ object PlanningPage {
           )
         )
       ),
-      L.child.maybe <-- stateSignal.map(state =>
-        Option.when(!state.plan.isEmpty)(
+      L.child.maybe <-- forestSignal.map(forest =>
+        Option.when(forest.nonEmpty)(
           L.p(
             "You can flick back and forth between steps to see what your character should look like at any point in " +
               "your plan. Steps can be easily reordered, so you can freely experiment with different plans."

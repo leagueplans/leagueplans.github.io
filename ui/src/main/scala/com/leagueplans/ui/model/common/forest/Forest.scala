@@ -56,7 +56,7 @@ final class Forest[ID, T] private[forest](
   val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
-  export nodes.isEmpty, nodes.size, nodes.contains, nodes.get
+  export nodes.isEmpty, nodes.nonEmpty, nodes.size, nodes.contains, nodes.get
 
   override def equals(obj: Any): Boolean =
     obj match {
@@ -103,7 +103,7 @@ final class Forest[ID, T] private[forest](
       case None => acc
     }
 
-  def subforest(id: ID): Forest[ID, T] = {
+  def subtree(id: ID): Forest[ID, T] = {
     val (subToChildren, subToParent) = 
       recurse(initial = List(id))((parent, children) =>
         (Map(parent -> children), children.map(_ -> parent).toMap),
@@ -121,6 +121,38 @@ final class Forest[ID, T] private[forest](
       roots = List(id).filter(subToChildren.contains)
     )
   }
+
+  /* Performs a depth-first exploration until it finds the ID. Returns a copy
+   * of the nodes discovered, excluding the provided node. */
+  def takeUntil(id: ID): Forest[ID, T] =
+    if (contains(id)) {
+      val remaining = toLazyList.takeWhile(_ != id).toSet
+      val ancs = ancestors(id).toSet
+
+      Forest(
+        nodes.view.filterKeys(remaining.contains).toMap,
+        toParent.view.filterKeys(remaining.contains).toMap,
+        toChildren.collect {
+          case (anc, children) if remaining.contains(anc) && ancs.contains(anc) =>
+            // In this case, we know anc is an ancestor of the ID we were given
+            // We look for the next ancestral descendant of this ancestor. If we
+            // can't find one, then we know it must be the ID we were provided.
+            // This descendant represents the last child we should take from the
+            // ancestor, as later children would come after our provided ID in a
+            // depth-first search.
+            val cutOff = ancs.takeWhile(_ != anc).lastOption
+            val updatedChildren = cutOff match {
+              case Some(id) => children.takeWhile(_ != id) :+ id
+              case None => children.takeWhile(_ != id)
+            }
+            (anc, updatedChildren)
+
+          case (parent, children) if remaining.contains(parent) =>
+            (parent, children)
+        },
+        roots.takeWhile(remaining.contains)
+      )
+    } else this
 
   /* Depth-first */
   def toList: List[T] =

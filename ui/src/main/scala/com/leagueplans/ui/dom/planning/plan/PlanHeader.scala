@@ -16,8 +16,8 @@ import scala.scalajs.js.annotation.JSImport
 object PlanHeader {
   def apply(
     planName: String,
+    focus: Signal[Option[Step.ID]],
     tooltip: Tooltip,
-    focusController: FocusedStep.Controller,
     modal: Modal,
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm
@@ -27,8 +27,8 @@ object PlanHeader {
       showShortcutsButton(tooltip, modal),
       L.img(L.cls(Styles.planIcon), L.src(planIcon), L.alt("Plan section icon")),
       L.span(L.cls(Styles.name), planName),
-      toAddStepButton(focusController, newStepForm),
-      L.child <-- toDeleteStepButton(focusController.signal, deleteStepForm, tooltip)
+      toAddStepButton(focus, newStepForm),
+      L.child <-- toDeleteStepButton(focus, deleteStepForm, tooltip)
     )
 
   @js.native @JSImport("/assets/images/favicon.png", JSImport.Default)
@@ -62,22 +62,22 @@ object PlanHeader {
   }
 
   private def toAddStepButton(
-    focusController: FocusedStep.Controller,
+    focus: Signal[Option[Step.ID]],
     newStepForm: NewStepForm
   ): L.Button =
-    Button(_.handledWith(_.sample(focusController.signal)) --> newStepForm.open).amend(
+    Button(_.handledWith(_.sample(focus)) --> newStepForm.open).amend(
       L.cls(Styles.addStepButton),
       L.span(L.cls(Styles.buttonText), "Add step")
     )
 
   private def toDeleteStepButton(
-    maybeStepSignal: Signal[Option[Step.ID]],
+    focus: Signal[Option[Step.ID]],
     deleteStepForm: DeleteStepForm,
     tooltip: Tooltip
   ): Signal[L.Button] = {
     val description = L.span(L.cls(Styles.buttonText), "Delete step")
 
-    maybeStepSignal.splitOption(
+    focus.splitOption(
       project = (_, step) =>
         Button(_.handledWith(_.sample(step)) --> deleteStepForm.open).amend(
           L.cls(Styles.deleteStepButton),

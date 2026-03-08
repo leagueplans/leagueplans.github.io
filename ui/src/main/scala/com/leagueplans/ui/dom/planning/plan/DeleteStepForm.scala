@@ -27,14 +27,14 @@ object DeleteStepForm {
 
 final class DeleteStepForm(
   forester: Forester[Step.ID, Step],
-  focusController: FocusedStep.Controller,
+  focusController: FocusController,
   tooltip: Tooltip,
   modal: Modal
 ) {
   def open(step: Step.ID): Unit =
     FormOpener(
       modal,
-      toForm(forester.signal.now().subforest(step)),
+      toForm(forester.signal.now().subtree(step)),
       _ => {
         focusController.next(ignoreChildren = true)
         forester.remove(step)

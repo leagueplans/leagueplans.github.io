@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.common.collapse.{HeightMask, InvertibleAnimationCo
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
-import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusedStep}
+import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController}
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
@@ -29,7 +29,8 @@ object StepElement {
     positionOffset: Signal[Int],
     substepsSignal: Signal[List[L.HtmlElement]],
     forester: Forester[Step.ID, Step],
-    focusController: FocusedStep.Controller,
+    isFocused: Signal[Boolean],
+    focusController: FocusController,
     completionController: CompletedStep.Controller,
     draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
@@ -38,7 +39,6 @@ object StepElement {
     contextMenuController: ContextMenu.Controller,
     clipboard: Clipboard[Step]
   ): (L.Div, Signal[Int]) = {
-    val isFocused = focusController.signalFor(stepID)
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
     val isDraggable = Var(false)
@@ -72,7 +72,7 @@ object StepElement {
           L.span(L.cls(Styles.tooltip), "Click to toggle focus"),
           FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
         ),
-        toFocusListeners(stepID, focusController),
+        toFocusListeners(stepID, isFocused, focusController),
         toHoverListeners(isHovering),
         StepDragListeners(
           stepID,
@@ -156,13 +156,14 @@ object StepElement {
 
   private def toFocusListeners(
     stepID: Step.ID,
-    focusController: FocusedStep.Controller,
+    isFocused: Signal[Boolean],
+    focusController: FocusController,
   ): L.Modifier[L.HtmlElement] =
     List(
       L.onClick.handledAs(stepID) --> focusController.toggle,
       L.onKey(KeyValue.Enter).handledAs(stepID) --> focusController.toggle,
       L.inContext[L.HtmlElement](ctx =>
-        focusController.signalFor(stepID).changes --> {
+        isFocused.changes --> {
           case true => ctx.ref.focus()
           case false => ctx.ref.blur()
         }

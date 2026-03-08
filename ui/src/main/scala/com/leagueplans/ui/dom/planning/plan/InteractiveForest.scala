@@ -7,10 +7,10 @@ import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.model.resolution.FocusContext
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.wrappers.Clipboard
-import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.airstream.misc.StreamFromSignal
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -22,18 +22,19 @@ import scala.scalajs.js.annotation.JSImport
 object InteractiveForest {
   def apply(
     forester: Forester[Step.ID, Step],
+    focusContext: FocusContext,
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
-    focusController: FocusedStep.Controller,
+    focusController: FocusController,
     toastPublisher: ToastHub.Publisher
   ): ReactiveHtmlElement[OList] = {
     val clipboard = Clipboard[Step]("step", toastPublisher, Decoder.decodeMessage)
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
-    // sticky-step css when dragging
+    // sticky-step CSS when dragging
     val draggingStatus = Var(StepDraggingStatus.NotDragging).distinct
 
     val dom =
@@ -49,6 +50,7 @@ object InteractiveForest {
             },
             substepsSignal.map(_.map((substep, _) => substep)),
             forester,
+            focusContext.signalFor(stepID),
             focusController,
             completionController,
             draggingStatus,
@@ -86,11 +88,10 @@ object InteractiveForest {
     forester: Forester[Step.ID, Step],
     dom: ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])]
   ): Signal[List[L.LI]] =
-    EventStream
-      .merge(
-        StreamFromSignal(forester.signal, changesOnly = false),
-        dom.nodeChanges.sample(forester.signal)
-      )
+    dom
+      .nodeChanges
+      .toSignal(initial = ())
+      .sample(forester.signal)
       .map(_.roots.flatMap(dom.get))
       .split(identity) { case ((element, _), _, _) => 
         L.li(L.cls(Styles.rootStep), element)

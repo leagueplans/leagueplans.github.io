@@ -30,7 +30,7 @@ object Step {
 }
 
 final case class Step(id: Step.ID, details: StepDetails) {
-  export details.{description, directEffects, requirements}
+  export details.{description, directEffects, requirements, repetitions, duration}
   
   def deepCopy(
     id: Step.ID = id,

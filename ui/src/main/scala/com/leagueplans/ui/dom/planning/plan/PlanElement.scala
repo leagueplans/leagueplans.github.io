@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.plan
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.model.resolution.FocusContext
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
@@ -16,12 +17,13 @@ object PlanElement {
   def apply(
     planName: String,
     forester: Forester[Step.ID, Step],
+    focusContext: FocusContext,
     subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
-    focusController: FocusedStep.Controller,
+    focusController: FocusController,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -30,11 +32,12 @@ object PlanElement {
 
     L.div(
       L.cls(Styles.plan),
-      PlanHeader(planName, tooltip, focusController, modal, newStepForm, deleteStepForm).amend(
+      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepForm, deleteStepForm).amend(
         L.cls(Styles.header)
       ),
       InteractiveForest(
         forester,
+        focusContext,
         subscription,
         editingEnabled,
         stepsWithErrorsSignal,
@@ -43,7 +46,7 @@ object PlanElement {
         focusController,
         toastPublisher
       ).amend(L.cls(Styles.steps)),
-      HotkeyModifiers(focusController, newStepForm, deleteStepForm)
+      HotkeyModifiers(focusContext.focusID, focusController, newStepForm, deleteStepForm)
     )
   }
 

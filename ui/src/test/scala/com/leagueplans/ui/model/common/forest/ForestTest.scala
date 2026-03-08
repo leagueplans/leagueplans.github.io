@@ -72,7 +72,7 @@ final class ForestTest extends CodecSpec {
       }
     }
 
-    "encoding values to and decoding values from an expected encoding" in
+    "encoding values to and decoding values from an expected encoding" in {
       testRoundTripSerialisation(
         Forest.from(
           nodes = Map(parentID -> parent, child1ID -> child1, child2ID -> child2),
@@ -93,5 +93,146 @@ final class ForestTest extends CodecSpec {
           Array[Byte](0b1100, 0b10, 0) ++ child2IDEnc ++
           Array[Byte](0b10000) ++ parentIDEnc
       )
+    }
+
+    "siblings" - {
+      val forest = Forest.from(
+        nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child1", 4 -> "child2", 5 -> "grandchild"),
+        parentsToChildren = Map(1 -> List(3, 4), 3 -> List(5)),
+        roots = List(1, 2)
+      )
+
+      "a root returns all roots in order, including itself" in {
+        forest.siblings(1) shouldEqual List(1, 2)
+        forest.siblings(2) shouldEqual List(1, 2)
+      }
+
+      "a non-root node returns all children of its parent in order, including itself" in {
+        forest.siblings(3) shouldEqual List(3, 4)
+        forest.siblings(4) shouldEqual List(3, 4)
+      }
+
+      "a node with no siblings returns just itself" in {
+        forest.siblings(5) shouldEqual List(5)
+      }
+
+      "an ID not in the forest returns an empty list" in {
+        forest.siblings(99) shouldEqual List.empty
+      }
+    }
+
+    "ancestors" - {
+      val forest = Forest.from(
+        nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child1", 4 -> "child2", 5 -> "grandchild"),
+        parentsToChildren = Map(1 -> List(3, 4), 3 -> List(5)),
+        roots = List(1, 2)
+      )
+
+      "a root returns an empty list" in {
+        forest.ancestors(1) shouldEqual List.empty
+        forest.ancestors(2) shouldEqual List.empty
+      }
+
+      "a child of a root returns a list containing just the root" in {
+        forest.ancestors(3) shouldEqual List(1)
+        forest.ancestors(4) shouldEqual List(1)
+      }
+
+      "a deeply nested node returns ancestors ordered from parent to root" in {
+        forest.ancestors(5) shouldEqual List(3, 1)
+      }
+
+      "an ID not in the forest returns an empty list" in {
+        forest.ancestors(99) shouldEqual List.empty
+      }
+    }
+
+    "subtree" - {
+      val forest = Forest.from(
+        nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child1", 4 -> "child2", 5 -> "grandchild1", 6 -> "grandchild2"),
+        parentsToChildren = Map(1 -> List(3, 4), 3 -> List(5), 4 -> List(6)),
+        roots = List(1, 2)
+      )
+
+      "a root node returns a forest containing all its descendants" in {
+        forest.subtree(1) shouldEqual Forest.from(
+          nodes = Map(1 -> "root1", 3 -> "child1", 4 -> "child2", 5 -> "grandchild1", 6 -> "grandchild2"),
+          parentsToChildren = Map(1 -> List(3, 4), 3 -> List(5), 4 -> List(6)),
+          roots = List(1)
+        )
+      }
+
+      "a leaf root returns a single-node forest" in {
+        forest.subtree(2) shouldEqual Forest.from(
+          nodes = Map(2 -> "root2"),
+          parentsToChildren = Map.empty,
+          roots = List(2)
+        )
+      }
+
+      "an intermediate node returns a forest rooted at that node, excluding its ancestors and siblings" in {
+        forest.subtree(3) shouldEqual Forest.from(
+          nodes = Map(3 -> "child1", 5 -> "grandchild1"),
+          parentsToChildren = Map(3 -> List(5)),
+          roots = List(3)
+        )
+      }
+
+      "a leaf node returns a single-node forest" in {
+        forest.subtree(5) shouldEqual Forest.from(
+          nodes = Map(5 -> "grandchild1"),
+          parentsToChildren = Map.empty,
+          roots = List(5)
+        )
+      }
+    }
+
+    "takeUntil" - {
+      val forest = Forest.from(
+        nodes = Map(
+          1 -> "root1",
+          2 -> "child1",
+          3 -> "grandchild1",
+          4 -> "grandchild2",
+          5 -> "grandchild3",
+          6 -> "child2",
+          7 -> "root2"
+        ),
+        parentsToChildren = Map(1 -> List(2, 6), 2 -> List(3, 4, 5)),
+        roots = List(1, 7)
+      )
+
+      "an ID not in the forest returns the unchanged forest" in {
+        forest.takeUntil(99) shouldEqual forest
+      }
+
+      "the first node in depth-first order returns an empty forest" in {
+        forest.takeUntil(1) shouldEqual Forest.empty[Int, String]
+      }
+
+      "a node with no preceding siblings returns only its ancestor chain" in {
+        forest.takeUntil(3) shouldEqual Forest.from(
+          nodes = Map(1 -> "root1", 2 -> "child1"),
+          parentsToChildren = Map(1 -> List(2)),
+          roots = List(1)
+        )
+      }
+
+      "siblings after the target are excluded from the parent's children, and subsequent subtrees are excluded" in {
+        forest.takeUntil(4) shouldEqual Forest.from(
+          nodes = Map(1 -> "root1", 2 -> "child1", 3 -> "grandchild1"),
+          parentsToChildren = Map(1 -> List(2), 2 -> List(3)),
+          roots = List(1)
+        )
+      }
+
+      "preceding subtrees are returned intact when the target is a non-root node" in {
+        forest.takeUntil(6) shouldEqual Forest.from(
+          nodes = Map(1 -> "root1", 2 -> "child1", 3 -> "grandchild1", 4 -> "grandchild2", 5 -> "grandchild3"),
+          parentsToChildren = Map(1 -> List(2), 2 -> List(3, 4, 5)),
+          roots = List(1)
+        )
+      }
+    }
   }
 }
