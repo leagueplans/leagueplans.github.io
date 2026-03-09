@@ -36,12 +36,14 @@
 }
 
 .categoryHeader {
+  user-select: none;
   margin: 0.25rem 0;
 }
 
 .quest {
   margin-bottom: 0.1rem;
   text-shadow: 1px 1px black;
+  user-select: none;
 }
 
 .quest:hover {
