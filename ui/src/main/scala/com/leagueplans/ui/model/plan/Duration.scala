@@ -3,6 +3,8 @@ package com.leagueplans.ui.model.plan
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+
 object Duration {
   def ticks(n: Int): Duration =
     Duration(n, Unit.Ticks)
@@ -23,4 +25,10 @@ object Duration {
   given Decoder[Duration] = Decoder.derived
 }
 
-final case class Duration(length: Int, unit: Duration.Unit)
+final case class Duration(length: Int, unit: Duration.Unit) {
+  def asScala: FiniteDuration =
+    unit match {
+      case Duration.Unit.Ticks => 600.milliseconds * length
+      case Duration.Unit.Seconds => 1.second * length
+    }
+}

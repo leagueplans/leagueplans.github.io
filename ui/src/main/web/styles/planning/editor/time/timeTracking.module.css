@@ -1,0 +1,100 @@
+.content {
+  min-width: 12.5rem;
+  display: grid;
+  grid-template-columns: min-content min-content auto;
+}
+
+.section {
+  grid-column: 1 / 4;
+
+  display: grid;
+  grid-template-columns: subgrid;
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.schedule {
+  composes: section;
+}
+
+.durations {
+  composes: section;
+}
+
+.sectionLabel {
+  grid-column: 1 / 4;
+  margin: 0.2rem 0 0.2rem 0.5rem;
+
+  color: #cdcdcd;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.row {
+  grid-column: 1 / 4;
+
+  padding: 0.2rem 0.5rem;
+  display: grid;
+  grid-template-columns: subgrid;
+
+  text-wrap-mode: nowrap;
+}
+
+.label {
+  grid-row: 1;
+  grid-column: 1;
+  margin-right: 0.5rem;
+  min-width: 5rem;
+
+  text-align: end;
+  font-size: 0.85rem;
+  color: rgba(255, 253, 214, 0.6);
+}
+
+.value {
+  grid-row: 1;
+  font-size: 0.85rem;
+  color: rgba(255, 253, 214, 0.9);
+}
+
+/* Set up so that we align the units as below, without pushing to the end of the container
+ *     05s
+ * 04h 30s
+ */
+.schedule .value {
+  grid-column: 2 / 3;
+  text-align: end;
+}
+
+.durations .value {
+  grid-column: 2 / 4;
+}
+
+.note {
+  font-size: 0.7rem;
+  color: rgba(255, 253, 214, 0.35);
+  font-style: italic;
+  padding: 0.1rem 0;
+}
+
+.editButton {
+  grid-column: 1 / 4;
+
+  border: none;
+  border-top: 2px solid var(--accent);
+
+  padding: 0.2rem;
+  background: #243860;
+  font-size: 1rem;
+  color: #cdcdcd;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+.editButton:enabled:hover, .editButton:enabled:focus-visible {
+  background-color: var(--accent);
+}
+
+.editButton:enabled:active {
+  background-color: #1a2b47;
+}

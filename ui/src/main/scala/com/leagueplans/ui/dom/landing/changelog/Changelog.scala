@@ -13,6 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 2, 9),
+        "Step duration tracking",
+        List(
+          "You can now set how long each step takes. The tool will use these to show you when" +
+            " you're expected to start and finish each step."
+        )
+      ),
+      item(
         new Date(2026, 2, 1),
         "Preparing for Leagues VI",
         List(

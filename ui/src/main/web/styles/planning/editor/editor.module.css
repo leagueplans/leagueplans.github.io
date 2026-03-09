@@ -42,6 +42,10 @@
   background: inherit;
 }
 
+.timeTracking {
+  margin: 0 0.5rem;
+}
+
 .section {
   align-self: flex-start;
   flex-grow: 1;

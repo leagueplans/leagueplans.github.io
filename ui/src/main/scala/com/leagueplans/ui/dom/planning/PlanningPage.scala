@@ -98,10 +98,8 @@ object PlanningPage {
       )
 
     val editorElement =
-      Signal
-        .combine(focusedStep, forester.signal)
-        .map((maybeFocus, forest) => maybeFocus.flatMap(forest.get))
-        .splitOption(
+      focusContextSignal.flatMapSwitch(focusContext =>
+        focusContext.focus.splitOption(
           project = (_, stepSignal) =>
             EditorElement(
               cache,
@@ -111,11 +109,13 @@ object PlanningPage {
                 stepsWithErrors.getOrElse(step.id, List.empty)
               ),
               forester,
+              focusContext,
               tooltip,
               modal
             ).amend(L.cls(Styles.editor)),
           ifEmpty = createEditorFallback(forester.signal)
         )
+      )
 
     val stepsWithErrorsStream =
       Signal

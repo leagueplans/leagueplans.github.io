@@ -10,6 +10,9 @@ object NumberInput {
     (input(id, state), label(id), state.signal)
   }
 
+  def apply[N : Numeric](id: String, state: Var[N]): (L.Input, L.Label) =
+    (input(id, state), label(id))
+
   private def input[N : Numeric](
     id: String,
     content: Var[N]

@@ -3,11 +3,13 @@ package com.leagueplans.ui.dom.planning.editor
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
+import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.resolution.FocusContext
 import com.leagueplans.ui.utils.HasID
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
@@ -25,6 +27,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
+    focusContext: FocusContext,
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
@@ -37,6 +40,7 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
       L.div(
         L.cls(Styles.sections),
+        TimeTracking(stepSignal, forester, focusContext, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
       )
@@ -50,6 +54,7 @@ object EditorElement {
     val warningIcon: String = js.native
     val warningTooltip: String = js.native
     val sections: String = js.native
+    val timeTracking: String = js.native
     val section: String = js.native
   }
 
