@@ -10,7 +10,7 @@ import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.resolution.FocusContext
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.wrappers.Clipboard
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -88,8 +88,10 @@ object InteractiveForest {
     forester: Forester[Step.ID, Step],
     dom: ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])]
   ): Signal[List[L.LI]] =
-    dom
-      .nodeChanges
+    // We listen to the forester signal as well so that we can identify
+    // situations where the root nodes have been reordered
+    EventStream
+      .merge(dom.nodeChanges, forester.signal.changes.mapToStrict(()))
       .toSignal(initial = ())
       .sample(forester.signal)
       .map(_.roots.flatMap(dom.get))
