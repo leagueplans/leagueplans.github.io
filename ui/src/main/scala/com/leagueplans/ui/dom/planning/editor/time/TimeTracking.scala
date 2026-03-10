@@ -1,12 +1,13 @@
 package com.leagueplans.ui.dom.planning.editor.time
 
-import com.leagueplans.ui.dom.common.{Button, Modal}
+import com.leagueplans.ui.dom.common.{Button, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.editor.SectionV2
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Step, Duration as StepDuration}
+import com.leagueplans.ui.facades.floatingui.Placement
+import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.resolution.FocusContext
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -21,19 +22,14 @@ object TimeTracking {
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
+    tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
-    val totalDuration =
-      Signal
-        .combine(focusContext.timeBeforeCurrentFocus, focusContext.timeAfterAllRepsOfCurrentFocus)
-        .map((before, after) => after - before)
-
-    val durationForm = EditStepDurationForm(forester, modal)
-
+    val durationForm = EditDurationForm(forester, modal)
     SectionV2("Time tracking")(
       L.cls(Styles.content),
-      toScheduleSection(stepSignal, totalDuration, forester, focusContext),
-      toDurationSection(stepSignal, totalDuration),
+      toScheduleSection(focusContext),
+      toDurationSection(stepSignal, focusContext, tooltip),
       Button(_.handledWith(_.sample(stepSignal)) --> Observer(durationForm.open)).amend(
         L.cls(Styles.editButton),
         "Set duration"
@@ -41,12 +37,7 @@ object TimeTracking {
     )
   }
 
-  private def toScheduleSection(
-    stepSignal: Signal[Step],
-    totalDurationSignal: Signal[FiniteDuration],
-    forester: Forester[Step.ID, Step],
-    focusContext: FocusContext
-  ): L.HtmlElement = {
+  private def toScheduleSection(focusContext: FocusContext): L.HtmlElement = {
     val loopFallback =
       L.p(
         L.cls(Styles.note),
@@ -54,85 +45,113 @@ object TimeTracking {
       )
 
     val scheduleDetails =
-      totalDurationSignal.map(_ == Duration.Zero).splitBoolean(
+      focusContext.durationOfRep.map(_ == Duration.Zero).splitBoolean(
         whenTrue = _ =>
           List(
-            toRow("Scheduled at", toSpan(focusContext.timeBeforeCurrentFocus.map(formatFiniteDuration)))
+            toScheduleRow("Scheduled at", focusContext.timeBeforeCurrentFocus)
           ),
         whenFalse = _ =>
           List(
-            toRow("Start at", toSpan(focusContext.timeBeforeCurrentFocus.map(formatFiniteDuration))),
-            toRow("Finish at", toSpan(focusContext.timeAfterAllRepsOfCurrentFocus.map(formatFiniteDuration))),
+            toScheduleRow("Start at", focusContext.timeBeforeCurrentFocus),
+            toScheduleRow("Finish at", focusContext.timeAfterCurrentFocus),
           )
       )
 
     val scheduleContent =
-      Signal
-        .combine(stepSignal, forester.signal)
-        .map(hasRepeatingAncestor)
-        .flatMapSwitch {
-          case true => Signal.fromValue(List(loopFallback))
-          case false => scheduleDetails
-        }
+      focusContext.ancestorRepetitions.map(_ == 1).flatMapSwitch {
+        case false => Signal.fromValue(List(loopFallback))
+        case true => scheduleDetails
+      }
 
-    L.sectionTag(
-      L.cls(Styles.schedule),
-      toSectionLabel("Scheduling"),
-      L.children <-- scheduleContent
-    )
+    L.sectionTag(L.cls(Styles.schedule), toSectionLabel("Scheduling"), L.children <-- scheduleContent)
   }
 
   private def toDurationSection(
     stepSignal: Signal[Step],
-    totalDurationSignal: Signal[FiniteDuration]
+    focusContext: FocusContext,
+    tooltip: Tooltip
   ): L.HtmlElement = {
-    val stepDuration =
-      stepSignal.map { step =>
-        val value = if (step.duration.length == 0) "—" else formatStepDuration(step.duration)
-        toRow("Step", L.span(value))
+    val rows =
+      Signal.combine(
+        stepSignal,
+        focusContext.ancestorRepetitions,
+        focusContext.durationOfRep
+      ).map { (step, ancestorReps, perRepDuration) =>
+        val hasDuration = perRepDuration != Duration.Zero
+        val totalReps = step.repetitions * ancestorReps
+        val stepDuration = step.duration.asScala
+        val substepsHaveDurations = perRepDuration != stepDuration
+
+        val stepRow = Option.when(substepsHaveDurations) {
+          val tooltipContents =
+            if (totalReps != 1)
+              "Time added by this step alone, ignoring substeps and repetitions"
+            else
+              "Time added by this step alone, ignoring substeps"
+
+          toDurationRow("Step", format(stepDuration), tooltipContents, tooltip)
+        }
+
+        val perRepRow = Option.when(hasDuration && totalReps != 1) {
+          val tooltipContents =
+            if (substepsHaveDurations)
+              "Time added per repetition, accounting for substeps"
+            else
+              "Time added per repetition"
+
+          toDurationRow("Per rep", format(perRepDuration), tooltipContents, tooltip)
+        }
+
+        val totalRow = {
+          val tooltipContents = (substepsHaveDurations, totalReps) match {
+            case (false, 1) => "Time added to the plan"
+            case (false, _) => "Time added to the plan, accounting for repetitions"
+            case (true, 1) => "Time added to the plan, accounting for substeps"
+            case (true, _) => "Time added to the plan, accounting for substeps and repetitions"
+          }
+          val rowContent = if (perRepDuration == Duration.Zero) "—" else format(perRepDuration * totalReps)
+          toDurationRow("Total", rowContent, tooltipContents, tooltip)
+        }
+
+        stepRow.toList ++ perRepRow :+ totalRow
       }
 
-    val totalDuration =
-      Signal.combine(stepSignal, totalDurationSignal).map((step, totalDuration) =>
-        if (step.duration.asScala == totalDuration)
-          L.emptyNode
-        else {
-          val value = if (totalDuration == Duration.Zero) "—" else formatFiniteDuration(totalDuration)
-          toRow("Total", L.span(value))
-        }
-      )
-
-    L.sectionTag(
-      L.cls(Styles.durations),
-      toSectionLabel("Durations"),
-      L.child <-- stepDuration,
-      L.child <-- totalDuration
-    )
+    L.sectionTag(L.cls(Styles.durations), toSectionLabel("Durations"), L.children <-- rows)
   }
 
   private def toSectionLabel(content: String): ReactiveHtmlElement[HTMLParagraphElement] =
     L.p(L.cls(Styles.sectionLabel), content)
 
-  private def toRow(label: String, value: L.Span): L.Div =
+  private def toScheduleRow(label: String, value: Signal[FiniteDuration]): L.Div =
     L.div(
       L.cls(Styles.row),
       L.span(L.cls(Styles.label), label),
-      value.amend(L.cls(Styles.value))
+      L.span(L.cls(Styles.value), L.text <-- value.map(format))
     )
 
-  private def toSpan(signal: Signal[String]): L.Span =
-    L.span(L.child.text <-- signal)
+  private def toDurationRow(
+    label: String,
+    value: String,
+    tooltipContents: String,
+    tooltip: Tooltip,
+  ): L.Div = {
+    val valueSpan = L.span(L.cls(Styles.value), value)
+    L.div(
+      L.cls(Styles.row),
+      L.span(L.cls(Styles.label), label),
+      valueSpan,
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), tooltipContents),
+        FloatingConfig.basicAnchoredTooltip(
+          anchor = valueSpan,
+          Placement.right,
+          includeArrow = true
+        )
+      )
+    )
+  }
 
-  private def hasRepeatingAncestor(step: Step, forest: Forest[Step.ID, Step]): Boolean =
-    forest
-      .ancestors(step.id)
-      .flatMap(forest.get)
-      .exists(_.repetitions > 1)
-
-  private def formatStepDuration(duration: StepDuration): String =
-    s"${duration.length} ${duration.unit.toString.toLowerCase}"
-
-  private def formatFiniteDuration(duration: FiniteDuration): String =
+  private def format(duration: FiniteDuration): String =
     List[(length: Long, token: Character)](
       (duration.toDays, 'd'),
       (duration.toHours % 24, 'h'),
@@ -151,6 +170,7 @@ object TimeTracking {
     val content: String = js.native
     val schedule: String = js.native
     val durations: String = js.native
+    val editButton: String = js.native
 
     val sectionLabel: String = js.native
     val row: String = js.native
@@ -158,6 +178,6 @@ object TimeTracking {
     val value: String = js.native
     val note: String = js.native
 
-    val editButton: String = js.native
+    val tooltip: String = js.native
   }
 }

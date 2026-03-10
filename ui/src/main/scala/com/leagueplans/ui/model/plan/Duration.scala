@@ -26,6 +26,9 @@ object Duration {
 }
 
 final case class Duration(length: Int, unit: Duration.Unit) {
+  infix def *(n: Int): Duration =
+    copy(length = n * length)
+  
   def asScala: FiniteDuration =
     unit match {
       case Duration.Unit.Ticks => 600.milliseconds * length

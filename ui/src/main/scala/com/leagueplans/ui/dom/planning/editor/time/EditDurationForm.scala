@@ -12,8 +12,8 @@ import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextN
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object EditStepDurationForm {
-  def apply(forester: Forester[Step.ID, Step], modal: Modal): EditStepDurationForm = {
+object EditDurationForm {
+  def apply(forester: Forester[Step.ID, Step], modal: Modal): EditDurationForm = {
     val (form, submitButton, formSubmissions) = Form()
 
     val lengthVar = Var(0)
@@ -55,22 +55,6 @@ object EditStepDurationForm {
     unitLabel.amend(L.cls(Styles.unitLabel), "Seconds or ticks?")
     unitSelect.amend(L.cls(Styles.unitInput))
 
-    val calculationNote =
-      showSubstepWarning.signal.splitBoolean(
-        whenTrue = _ =>
-          L.p(
-            L.cls(Styles.note),
-            "The total duration for this step is equal to the time you set here, plus the sum of the durations of its" +
-              " substeps, all multiplied by the number of repetitions of this step."
-          ),
-        whenFalse = _ =>
-          L.p(
-            L.cls(Styles.note),
-            "The total duration for this step is equal to the time you set here multiplied by the number of" +
-              " repetitions of this step."
-          )
-      )
-
     form.amend(
       L.cls(Styles.form, Modal.Styles.form),
       L.p(L.cls(Styles.title, Modal.Styles.title), "How long do you expect this step to take?"),
@@ -83,9 +67,8 @@ object EditStepDurationForm {
       ),
       L.p(
         L.cls(Styles.note),
-        "This should be the duration of a single repetition."
+        "This should be the duration of this step alone, ignoring substeps or repetitions."
       ),
-      L.child <-- calculationNote,
       L.div(
         L.cls(Styles.buttons),
         CancelModalButton(modal).amend(L.cls(Styles.cancel, Modal.Styles.confirmationButton)),
@@ -100,7 +83,7 @@ object EditStepDurationForm {
       .sample(Signal.combine(lengthVar.signal, unitVar.signal))
       .map { case (len, unit) => Duration(len, unit) }
 
-    new EditStepDurationForm(
+    new EditDurationForm(
       forester,
       modal,
       form,
@@ -117,7 +100,7 @@ object EditStepDurationForm {
       case Duration.Unit.Seconds => 21600
     }
 
-  @js.native @JSImport("/styles/planning/editor/time/editStepDurationForm.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/editor/time/editDurationForm.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val form: String = js.native
     val title: String = js.native
@@ -133,7 +116,7 @@ object EditStepDurationForm {
   }
 }
 
-final class EditStepDurationForm private(
+final class EditDurationForm private(
   forester: Forester[Step.ID, Step],
   modal: Modal,
   form: L.FormElement,

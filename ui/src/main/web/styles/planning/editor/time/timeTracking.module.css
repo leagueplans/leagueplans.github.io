@@ -1,11 +1,11 @@
 .content {
   min-width: 12.5rem;
   display: grid;
-  grid-template-columns: min-content min-content auto;
+  grid-template-columns: repeat(3, min-content) auto;
 }
 
 .section {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
 
   display: grid;
   grid-template-columns: subgrid;
@@ -21,8 +21,29 @@
   composes: section;
 }
 
+.editButton {
+  grid-column: 1 / 5;
+
+  border: none;
+  border-top: 2px solid var(--accent);
+
+  padding: 0.2rem;
+  background: #243860;
+  font-size: 1rem;
+  color: #cdcdcd;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+.editButton:enabled:hover, .editButton:enabled:focus-visible {
+  background-color: var(--accent);
+}
+
+.editButton:enabled:active {
+  background-color: #1a2b47;
+}
+
 .sectionLabel {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
   margin: 0.2rem 0 0.2rem 0.5rem;
 
   color: #cdcdcd;
@@ -32,9 +53,9 @@
 }
 
 .row {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
 
-  padding: 0.2rem 0.5rem;
+  margin: 0.2rem 0.5rem;
   display: grid;
   grid-template-columns: subgrid;
 
@@ -54,47 +75,41 @@
 
 .value {
   grid-row: 1;
-  font-size: 0.85rem;
   color: rgba(255, 253, 214, 0.9);
-}
-
-/* Set up so that we align the units as below, without pushing to the end of the container
- *     05s
- * 04h 30s
- */
-.schedule .value {
-  grid-column: 2 / 3;
+  font-size: 0.85rem;
   text-align: end;
 }
 
-.durations .value {
+/* The section-specific row/value styles enable two behaviours:
+ * - accurate positioning of tooltips
+ * - alignment of timestamps within a section
+ *
+ * We use an extra column for the schedule rows, since their
+ * timestamps will always be larger than the timestamps in the
+ * durations rows.
+ */
+.schedule .value {
   grid-column: 2 / 4;
 }
 
+
+.durations .value {
+  grid-column: 2 / 3;
+}
+
 .note {
-  font-size: 0.7rem;
+  grid-column: 1 / 5;
+  justify-self: center;
+  max-width: 11rem;
+
   color: rgba(255, 253, 214, 0.35);
+  font-size: 0.7rem;
   font-style: italic;
-  padding: 0.1rem 0;
+  text-align: center;
+  padding: 0.2rem 0.5rem;
 }
 
-.editButton {
-  grid-column: 1 / 4;
-
-  border: none;
-  border-top: 2px solid var(--accent);
-
-  padding: 0.2rem;
-  background: #243860;
-  font-size: 1rem;
-  color: #cdcdcd;
-  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
-}
-
-.editButton:enabled:hover, .editButton:enabled:focus-visible {
-  background-color: var(--accent);
-}
-
-.editButton:enabled:active {
-  background-color: #1a2b47;
+.tooltip {
+  min-width: 10rem;
+  text-align: center;
 }

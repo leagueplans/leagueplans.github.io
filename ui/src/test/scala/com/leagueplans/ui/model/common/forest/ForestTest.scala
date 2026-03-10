@@ -187,6 +187,42 @@ final class ForestTest extends CodecSpec {
       }
     }
 
+    "subforest" - {
+      val forest = Forest.from(
+        nodes = Map(1 -> "root1", 2 -> "child1", 3 -> "child2", 4 -> "grandchild1", 5 -> "grandchild2", 6 -> "root2"),
+        parentsToChildren = Map(1 -> List(2, 3), 3 -> List(4, 5)),
+        roots = List(1, 6)
+      )
+
+      "a node with multiple children promotes those children to roots with their subtrees" in {
+        forest.subforest(1) shouldEqual Forest.from(
+          nodes = Map(2 -> "child1", 3 -> "child2", 4 -> "grandchild1", 5 -> "grandchild2"),
+          parentsToChildren = Map(3 -> List(4, 5)),
+          roots = List(2, 3)
+        )
+      }
+
+      "a node whose children have no further descendants returns a flat multi-root forest" in {
+        forest.subforest(3) shouldEqual Forest.from(
+          nodes = Map(4 -> "grandchild1", 5 -> "grandchild2"),
+          parentsToChildren = Map.empty,
+          roots = List(4, 5)
+        )
+      }
+
+      "the node itself is not included in the result" in {
+        forest.subforest(1).contains(1) shouldBe false
+      }
+
+      "a leaf node returns an empty forest" in {
+        forest.subforest(2) shouldEqual Forest.empty[Int, String]
+      }
+
+      "an ID not in the forest returns an empty forest" in {
+        forest.subforest(99) shouldEqual Forest.empty[Int, String]
+      }
+    }
+
     "takeUntil" - {
       val forest = Forest.from(
         nodes = Map(

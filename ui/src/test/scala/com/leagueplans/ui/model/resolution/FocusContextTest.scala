@@ -118,7 +118,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       val b = makeStep("b", 20)
       val f = makeForest(Map(a.id -> a, b.id -> b), roots = List(a.id, b.id))
       withContext(forest = f) { (ctx, _, _) =>
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(30)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(30)
       }
     }
 
@@ -127,7 +127,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       val f = makeForest(Map(s.id -> s), roots = List(s.id))
       withContext(focusID = Some(s.id), forest = f) { (ctx, _, _) =>
         // directEffects applied once (not 5 times)
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(10)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(10)
       }
     }
 
@@ -141,7 +141,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       )
       withContext(focusID = Some(parent.id), forest = f) { (ctx, _, _) =>
         // Only parent's 10 xp, not child's 99 xp
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(10)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(10)
       }
     }
 
@@ -150,10 +150,10 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       val b = makeStep("b", 20)
       val f = makeForest(Map(a.id -> a, b.id -> b), roots = List(a.id, b.id))
       withContext(focusID = Some(a.id), forest = f) { (ctx, focusIDVar, _) =>
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(10)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(10)
         focusIDVar.set(Some(b.id))
         // playerBefore includes a(10) = 10; then b adds 20 → 30
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(30)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(30)
       }
     }
 
@@ -168,7 +168,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       withContext(focusID = Some(focused.id), forest = f) { (ctx, _, _) =>
         // root is an ancestor → capped to min(5, 1) = 1 rep = 10 xp
         // playerAfterFirst = 10 + 2 (focused) = 12
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(12)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(12)
       }
     }
 
@@ -183,7 +183,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       withContext(focusID = Some(focused.id), forest = f) { (ctx, _, _) =>
         // root has 0 reps → min(0, 1) = 0, so no root effects applied
         // playerAfterFirst = 0 + 2 (focused) = 2
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(2)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(2)
       }
     }
 
@@ -200,7 +200,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
         // root: ancestor, capped at 1 rep, contributes 0 xp
         // sibling: not an ancestor, full 4 reps = 10*4 = 40 xp
         // playerAfterFirst = 40 + 2 (focused) = 42
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(42)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(42)
       }
     }
 
@@ -227,7 +227,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
         //   StepSeries: outsideRoot(1)+outsideChild(1)+outsideRoot(1)+outsideChild(1) = 5+3+5+3 = 16 xp
         // root: ancestor of focused, capped to 1 rep → 7 xp
         // playerAfterFirst = 16 + 7 + 2 (focused) = 25
-        wc(now(ctx.playerAfterFirstRepOfCurrentFocus)).shouldBe(25)
+        wc(now(ctx.playerAfterFirstCompletionOfCurrentFocus)).shouldBe(25)
       }
     }
   }
@@ -246,7 +246,7 @@ final class FocusContextTest extends AnyFreeSpec with Matchers with TryValues {
       val s = makeStep("s", 10, reps = 1)
       val f = makeForest(Map(s.id -> s), roots = List(s.id))
       withContext(focusID = Some(s.id), forest = f) { (ctx, _, _) =>
-        now(ctx.playerAfterAllRepsOfCurrentFocus).shouldBe(now(ctx.playerAfterFirstRepOfCurrentFocus))
+        now(ctx.playerAfterAllRepsOfCurrentFocus).shouldBe(now(ctx.playerAfterFirstCompletionOfCurrentFocus))
       }
     }
 

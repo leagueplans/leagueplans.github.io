@@ -82,7 +82,7 @@ object PlanningPage {
     val visualiser =
       Signal.combine(settingsVar.signal, focusContextSignal).map((settings, focusContext) =>
         Visualiser(
-          focusContext.playerAfterFirstRepOfCurrentFocus,
+          focusContext.playerAfterFirstCompletionOfCurrentFocus,
           isLeague = settings.maybeLeaguePointScoring.nonEmpty,
           // TODO - This will break if you support changing settings
           isGridMaster = settings == Plan.Settings.Deferred(GridMaster),

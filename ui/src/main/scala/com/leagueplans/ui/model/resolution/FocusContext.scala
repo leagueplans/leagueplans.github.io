@@ -21,18 +21,27 @@ final class FocusContext(
     Signal.combine(focusID, forest).map((maybeID, f) =>
       maybeID.flatMap(f.get)
     ).distinct
+    
+  val ancestorRepetitions: Signal[Int] =
+    Signal.combine(focusID, forest).map {
+      case (Some(step), f) => f.ancestors(step).flatMap(f.get).map(_.repetitions).product
+      case (None, _) => 1
+    }.distinct
 
   def signalFor(id: Step.ID): Signal[Boolean] =
     focus.map(_.exists(_.id == id)).distinct
 
-  private val containingTree: Signal[Option[Forest[Step.ID, Step]]] =
-    Signal.combine(focusID, forest).map((maybeID, f) =>
-      maybeID.map { id =>
+  private val containingTree: Signal[Forest[Step.ID, Step]] =
+    Signal.combine(focusID, forest).map {
+      case (Some(id), f) =>
         val root = f.ancestors(id).lastOption.getOrElse(id)
         f.subtree(root)
-      }
-    ).distinct
+      case (None, _) =>
+        Forest.empty
+    }.distinct
 
+  // We override ancestors to use at most one repetition.
+  //
   // Consider a step with an ancestor that repeats. When the user focuses
   // that step, they'll usually be in the process of building out the
   // repetition cycle of the ancestor. It's less confusing in these cases
@@ -55,11 +64,10 @@ final class FocusContext(
   // to figure out what the correct number to bank is.
   //
   // This isn't too bad in our simple example, but the complexity
-  // increases exponentially for lengthier and/or nested loops. As such,
-  // we override ancestors to use at most one repetition.
-  private val transformedContainingTree =
-    Signal.combine(focusID, containingTree).map((maybeFocus, maybeTree) =>
-      maybeFocus.zip(maybeTree).map { (focus, tree) =>
+  // increases exponentially for lengthier and/or nested loops.
+  private val transformedContainingTree: Signal[Option[Forest[ID, Step]]] =
+    Signal.combine(focusID, containingTree).map((maybeFocus, tree) =>
+      maybeFocus.map { focus =>
         val ancestors = tree.ancestors(focus)
         tree.takeUntil(focus).map((id, step) =>
           if (ancestors.contains(id))
@@ -71,8 +79,8 @@ final class FocusContext(
     ).distinct
 
   private val precedingRootSteps: Signal[Forest[Step.ID, Step]] =
-    Signal.combine(containingTree, forest).map((maybeTree, f) =>
-      maybeTree.flatMap(_.roots.headOption) match {
+    Signal.combine(containingTree, forest).map((tree, f) =>
+      tree.roots.headOption match {
         case Some(root) => f.takeUntil(root)
         case None => f
       }
@@ -99,22 +107,30 @@ final class FocusContext(
       case (None, duration) => duration
     }.distinct
 
-  val playerAfterFirstRepOfCurrentFocus: Signal[Player] =
+  // i.e. we progress through just this step, but not its substeps
+  val playerAfterFirstCompletionOfCurrentFocus: Signal[Player] =
     Signal.combine(focus, playerBeforeCurrentFocus).map {
       case (Some(step), player) => effectResolver.resolve(player, step.directEffects.underlying*)
       case (None, player) => player
     }.distinct
 
-  val playerAfterAllRepsOfCurrentFocus: Signal[Player] =
-    Signal.combine(focusID, containingTree, playerBeforeCurrentFocus).map {
-      case (Some(step), Some(tree), player) => resolveEffects(tree.subtree(step), player)
-      case (_, _, player) => player
+  val durationOfRep: Signal[FiniteDuration] =
+    Signal.combine(focus, containingTree).map {
+      case (Some(step), tree) => resolveDuration(tree.subforest(step.id), step.duration.asScala)
+      case (None, _) => Duration.Zero
     }.distinct
 
-  val timeAfterAllRepsOfCurrentFocus: Signal[FiniteDuration] =
-    Signal.combine(focusID, containingTree, timeBeforeCurrentFocus).map {
-      case (Some(step), Some(tree), duration) => resolveDuration(tree.subtree(step), duration)
-      case (_, _, duration) => duration
+  val playerAfterAllRepsOfCurrentFocus: Signal[Player] =
+    Signal.combine(focusID, containingTree, playerBeforeCurrentFocus).map {
+      case (Some(step), tree, player) => resolveEffects(tree.subtree(step), player)
+      case (None, _, player) => player
+    }.distinct
+
+  // Assumes no ancestor repetitions, since we don't need to show a timestamp in those cases anyway
+  val timeAfterCurrentFocus: Signal[FiniteDuration] =
+    Signal.combine(focus, durationOfRep, timeBeforeCurrentFocus).map {
+      case (Some(step), repDuration, timeBeforeStep) => repDuration * step.repetitions + timeBeforeStep
+      case (None, _, duration) => duration
     }.distinct
 
   private def resolveEffects(forest: Forest[ID, Step], player: Player): Player =

@@ -40,7 +40,7 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
       L.div(
         L.cls(Styles.sections),
-        TimeTracking(stepSignal, forester, focusContext, modal).amend(L.cls(Styles.timeTracking)),
+        TimeTracking(stepSignal, forester, focusContext, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
       )

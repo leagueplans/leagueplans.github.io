@@ -103,9 +103,24 @@ final class Forest[ID, T] private[forest](
       case None => acc
     }
 
-  def subtree(id: ID): Forest[ID, T] = {
-    val (subToChildren, subToParent) = 
-      recurse(initial = List(id))((parent, children) =>
+  def subtree(id: ID): Forest[ID, T] =
+    if (!contains(id))
+      Forest.empty
+    else {
+      val childForest = subforest(id)
+      Forest(
+        childForest.nodes + (id -> nodes(id)),
+        childForest.toParent ++ childForest.roots.map(_ -> id),
+        childForest.toChildren + (id -> childForest.roots),
+        roots = List(id)
+      )
+    }
+
+  /* Returns the subforest produced by promoting children of the provided node to root */
+  def subforest(id: ID): Forest[ID, T] = {
+    val newRoots = toChildren.get(id).toList.flatten
+    val (subToChildren, subToParent) =
+      recurse(initial = newRoots)((parent, children) =>
         (Map(parent -> children), children.map(_ -> parent).toMap),
       )(using Monoid.instance(
         (Map.empty, Map.empty),
@@ -114,12 +129,8 @@ final class Forest[ID, T] private[forest](
         }
       ))
 
-    Forest(
-      nodes.view.filterKeys(subToChildren.contains).toMap,
-      subToParent,
-      subToChildren,
-      roots = List(id).filter(subToChildren.contains)
-    )
+    val newNodes = nodes.view.filterKeys(subToChildren.contains).toMap
+    Forest(newNodes, subToParent, subToChildren, newRoots)
   }
 
   /* Performs a depth-first exploration until it finds the ID. Returns a copy
