@@ -1,0 +1,56 @@
+.form {
+  width: 35rem;
+}
+
+.title {}
+
+.inputs {
+  justify-self: center;
+  width: fit-content;
+  display: grid;
+}
+
+.inputMargin {
+  margin: 0.125rem 0.25rem;
+}
+
+.label {
+  composes: inputMargin;
+
+  grid-row: 1;
+  grid-column: 1;
+
+  justify-self: end;
+}
+
+.input {
+  composes: inputMargin;
+
+  grid-row: 1;
+  grid-column: 2;
+  width: 4rem;
+}
+
+.note {
+  margin: 0.5rem;
+  font-size: 0.8rem;
+  color: #515151;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.button {
+  margin-top: 0.8rem;
+  width: 9rem;
+}
+
+.cancel {
+  composes: button;
+}
+
+.confirm {
+  composes: button;
+}
