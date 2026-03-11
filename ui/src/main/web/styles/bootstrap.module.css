@@ -31,5 +31,14 @@
 .modal {}
 
 .page {
+  height: 100vh;
   isolation: isolate;
+  display: grid;
+  grid-template-rows: auto min-content;
 }
+
+.pageContent {
+  overflow: auto;
+}
+
+.footer {}

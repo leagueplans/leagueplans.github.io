@@ -1,0 +1,37 @@
+.footer {
+  display: grid;
+  grid-template-columns: 1fr min-content 1fr;
+  grid-column-gap: 0.5rem;
+  align-items: center;
+
+  color: #aaa;
+  background-color: #1a1a1a;
+}
+
+.attributions {
+  padding: 0.2rem;
+}
+
+.attribution {
+  font-size: 0.65rem;
+
+  + .attribution {
+    margin-top: 0.2rem;
+  }
+}
+
+.attributionLink {
+  color: #d7e7f5;
+}
+
+.feedback {
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-wrap-mode: nowrap;
+}
+
+.discordIcon {
+  margin-right: 0.1rem;
+}
+
+.handle {}

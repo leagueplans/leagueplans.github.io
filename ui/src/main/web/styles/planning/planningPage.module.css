@@ -3,7 +3,6 @@
 }
 
 .lhs {
-  height: 100vh;
   flex: 65;
 
   display: flex;
@@ -21,7 +20,7 @@
 .editor {
   flex-grow: 0;
   flex-shrink: 0;
-  height: 35vh;
+  height: 33%;
 
   overflow: auto;
 }
@@ -45,5 +44,5 @@
 
 .plan {
   flex: 35;
-  height: 100vh;
+  height: 100%;
 }

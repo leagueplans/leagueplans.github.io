@@ -1,7 +1,5 @@
 .page {
   background-color: #00172e;
-  width: 100vw;
-  height: 100vh;
 
   display: flex;
   justify-content: space-evenly;
