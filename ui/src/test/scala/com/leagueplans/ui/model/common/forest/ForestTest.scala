@@ -269,6 +269,23 @@ final class ForestTest extends CodecSpec {
           roots = List(1)
         )
       }
+
+      // This test verifies a fix that we introduced in this commit. We were converting the
+      // ancestor list into a set, which meant that the ancestors would maintain ordering
+      // up to five elements, but would lose ordering beyond five elements (due to how sets
+      // are implemented in Scala).
+      "correctly handles the ancestor chain for a deeply nested node" in {
+        val deep = Forest.from(
+          nodes = Map(1 -> "l1", 2 -> "l2", 3 -> "l3", 4 -> "l4", 5 -> "l5", 6 -> "l6", 7 -> "l7"),
+          parentsToChildren = Map(1 -> List(2), 2 -> List(3), 3 -> List(4), 4 -> List(5), 5 -> List(6), 6 -> List(7)),
+          roots = List(1)
+        )
+        deep.takeUntil(7) shouldEqual Forest.from(
+          nodes = Map(1 -> "l1", 2 -> "l2", 3 -> "l3", 4 -> "l4", 5 -> "l5", 6 -> "l6"),
+          parentsToChildren = Map(1 -> List(2), 2 -> List(3), 3 -> List(4), 4 -> List(5), 5 -> List(6)),
+          roots = List(1)
+        )
+      }
     }
   }
 }

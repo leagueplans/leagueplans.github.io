@@ -138,13 +138,14 @@ final class Forest[ID, T] private[forest](
   def takeUntil(id: ID): Forest[ID, T] =
     if (contains(id)) {
       val remaining = toLazyList.takeWhile(_ != id).toSet
-      val ancs = ancestors(id).toSet
+      val ancs = ancestors(id)
+      val ancsSet = ancs.toSet
 
       Forest(
         nodes.view.filterKeys(remaining.contains).toMap,
         toParent.view.filterKeys(remaining.contains).toMap,
         toChildren.collect {
-          case (anc, children) if remaining.contains(anc) && ancs.contains(anc) =>
+          case (anc, children) if remaining.contains(anc) && ancsSet.contains(anc) =>
             // In this case, we know anc is an ancestor of the ID we were given
             // We look for the next ancestral descendant of this ancestor. If we
             // can't find one, then we know it must be the ID we were provided.
