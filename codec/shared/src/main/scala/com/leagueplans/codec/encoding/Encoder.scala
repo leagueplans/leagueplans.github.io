@@ -3,7 +3,8 @@ package com.leagueplans.codec.encoding
 import com.leagueplans.codec.{BinaryString, Encoding}
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration.FiniteDuration
+import scala.annotation.nowarn
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.deriving.Mirror
 
 trait Encoder[T] {
@@ -97,4 +98,15 @@ object Encoder {
   
   given finiteDurationEncoder: Encoder[FiniteDuration] =
     unsignedLongEncoder.contramap(_.toNanos)
+
+  @nowarn("msg=match may not be exhaustive")
+  given durationEncoder: Encoder[Duration] = {
+    given Encoder[Int] = unsignedIntEncoder
+    Encoder[Either[FiniteDuration, Int]].contramap {
+      case fd: FiniteDuration => Left(fd)
+      case Duration.Inf       => Right(2)
+      case Duration.MinusInf  => Right(1)
+      case undefined: Duration.Infinite if undefined.eq(Duration.Undefined) => Right(0)
+    }
+  }
 }

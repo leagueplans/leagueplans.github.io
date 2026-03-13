@@ -7,7 +7,7 @@ import java.lang.{ThreadLocal, Long as JLong}
 import java.nio.ByteBuffer
 import java.nio.charset.*
 import scala.collection.Factory
-import scala.concurrent.duration.{DurationLong, FiniteDuration}
+import scala.concurrent.duration.{Duration, DurationLong, FiniteDuration}
 import scala.deriving.Mirror
 import scala.reflect.TypeTest
 import scala.util.{Failure, Success, Try}
@@ -187,4 +187,15 @@ object Decoder {
       case Long.MinValue => Left(DecodingFailure("Long.MinValue is not a valid finite duration"))
       case l => Right(l.nanoseconds)
     }
+    
+  given durationDecoder: Decoder[Duration] = {
+    given Decoder[Int] = unsignedIntDecoder
+    Decoder[Either[FiniteDuration, Int]].emap {
+      case Left(fd) => Right(fd)
+      case Right(0) => Right(Duration.Undefined)
+      case Right(1) => Right(Duration.MinusInf)
+      case Right(2) => Right(Duration.Inf)
+      case Right(n) => Left(DecodingFailure(s"Unexpected Duration tag: [$n]"))
+    }
+  }
 }

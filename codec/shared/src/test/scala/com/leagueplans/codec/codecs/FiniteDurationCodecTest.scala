@@ -48,7 +48,7 @@ final class FiniteDurationCodecTest extends CodecSpec {
     "should receive back the same values after round-trip serialisation for generator-driven values" in
       forAll((l: Long) =>
         whenever(l != Long.MinValue)(
-          testRoundTripSerialisation(FiniteDuration(l, NANOSECONDS), Decoder.decodeVarint)
+          testRoundTripSerialisation[FiniteDuration](FiniteDuration(l, NANOSECONDS), Decoder.decodeVarint)
         )
       )
 
