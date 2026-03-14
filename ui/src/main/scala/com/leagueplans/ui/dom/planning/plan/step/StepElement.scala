@@ -80,7 +80,8 @@ object StepElement {
           draggingStatus.writer,
           header,
           closeSubsteps = animationController.close,
-          forester
+          forester,
+          tooltip
         ),
         StepContextMenu(
           stepID,

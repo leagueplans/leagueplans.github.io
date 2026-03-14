@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan.step.drag
 
+import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.StepDraggingStatus.DropTarget.RelativePosition
 import com.leagueplans.ui.model.common.forest.Forest
@@ -21,10 +22,11 @@ object StepDragListeners {
     draggingStatusObserver: Observer[StepDraggingStatus],
     header: L.Element,
     closeSubsteps: () => Unit,
-    forester: Forester[Step.ID, Step]
+    forester: Forester[Step.ID, Step],
+    tooltip: Tooltip
   ): L.Modifier[L.HtmlElement] =
     List(
-      onDragStart(stepID, hasSubsteps, draggingStatusObserver, header, closeSubsteps),
+      onDragStart(stepID, hasSubsteps, draggingStatusObserver, header, closeSubsteps, tooltip),
       onDragEnterOver(hasSubsteps, draggingStatusObserver),
       onDragLeave(draggingStatusObserver),
       onDragEnd(draggingStatusObserver),
@@ -36,7 +38,8 @@ object StepDragListeners {
     hasSubstepsSignal: Signal[Boolean],
     draggingStatusObserver: Observer[StepDraggingStatus],
     header: L.Element,
-    closeSubsteps: () => Unit
+    closeSubsteps: () => Unit,
+    tooltip: Tooltip
   ): L.Modifier[L.Element] =
     L.inContext { ctx =>
       val events =
@@ -49,6 +52,7 @@ object StepDragListeners {
         event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
         event.dataTransfer.setDragImage(header.ref, 0, 0)
         draggingStatusObserver.onNext(StepDraggingStatus.Dragging(currentDropTarget = None))
+        tooltip.close()
         if (hasSubsteps) closeSubsteps()
       }
     }

@@ -21,6 +21,7 @@ object Tooltip {
   private enum Command {
     case Open(key: Any, contents: ChildNode.Base)
     case Close(key: Any)
+    case ForceClose
   }
 
   private val toggleTooltipDelayMs = 75
@@ -57,6 +58,9 @@ object Tooltip {
         Some((newKey, newContents))
 
       case (None, _: Command.Close) =>
+        None
+
+      case (_, Command.ForceClose) =>
         None
     }
 
@@ -114,6 +118,9 @@ final class Tooltip private[Tooltip] (
         )
     }
   }
+  
+  def close(): Unit =
+    commandSink.onNext(Tooltip.Command.ForceClose)
 
   // Allow a brief delay before both showing the tooltip, and before hiding it after the cursor moves away
   private def configureTooltipVisibility(element: L.Element, tooltip: ChildNode.Base): L.Modifier[L.Element] = {
