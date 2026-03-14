@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.landing.LandingPage
-import com.leagueplans.ui.dom.planning.PlanningPage
+import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.storage.client.PlanSubscription
@@ -69,7 +69,7 @@ object Bootstrap {
     val cacheLoader = EventStream.fromJsPromise(loadCache(toastPublisher))
 
     planBus.events.combineWith(cacheLoader).map((plan, subscription, cache) =>
-      PlanningPage(
+      PlanningPageBootstrap(
         plan,
         subscription,
         cache,
@@ -89,7 +89,7 @@ object Bootstrap {
           toastPublisher.publish(
             ToastHub.Type.Error,
             Duration.Inf,
-            s"Failed to load data for $key"
+            s"Failed to load $key"
           )
           throw error
       }

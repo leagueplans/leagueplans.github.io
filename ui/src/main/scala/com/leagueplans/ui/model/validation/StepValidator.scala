@@ -3,7 +3,7 @@ package com.leagueplans.ui.model.validation
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.model.resolution.EffectResolver
+import com.leagueplans.ui.projection.calculation.EffectResolver
 
 object StepValidator {
   def validate(step: Step)(

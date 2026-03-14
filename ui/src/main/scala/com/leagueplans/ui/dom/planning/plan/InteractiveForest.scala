@@ -5,10 +5,8 @@ import com.leagueplans.ui.dom.common.{ContextMenu, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
-import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.model.resolution.FocusContext
-import com.leagueplans.ui.storage.client.PlanSubscription
+import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -23,7 +21,6 @@ object InteractiveForest {
   def apply(
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
-    subscription: PlanSubscription,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
@@ -62,19 +59,12 @@ object InteractiveForest {
           )
       )
 
-    val subscriptionEvents = subscription.updates.collect {
-      case update: Forest.Update[Step.ID @unchecked, Step @unchecked] => update
-    }
-
     L.ol(
       L.cls(Styles.forest),
       L.children <-- toSteps(forester, dom),
       L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
       completedStepBinder,
-      subscriptionEvents --> forester.process,
-      subscriptionEvents --> (update => dom.eval(update)),
-      forester.updateStream --> subscription.save,
-      forester.updateStream --> (update => dom.eval(update))
+      forester.updates --> (update => dom.eval(update))
     )
   }
 

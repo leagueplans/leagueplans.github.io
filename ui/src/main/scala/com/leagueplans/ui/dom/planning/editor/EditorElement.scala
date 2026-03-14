@@ -8,8 +8,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.resolution.FocusContext
+import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.utils.HasID
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig

@@ -8,6 +8,7 @@ import com.leagueplans.ui.storage.model.PlanMetadata
 import com.leagueplans.ui.storage.opfs.PlanDirectory
 import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
 import com.leagueplans.ui.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
+import com.raquo.airstream.core.Observer
 import com.raquo.airstream.ownership.{ManualOwner, Owner}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +28,7 @@ final class ForesterIntegrationTest
     expectedRoots: List[Step]
   ): Assertion = {
     val forest = Forest.empty[Step.ID, Step]
-    val forester = Forester(forest)
+    val forester = Forester(forest, externalObserver = Observer.empty)
     val directory = PlanDirectory(new MockDirectoryHandle)
     val expectedForest = toForest(expectedToChildren, expectedRoots)
 
@@ -69,7 +70,7 @@ final class ForesterIntegrationTest
       .create(PlanMetadata("test"), Plan("test", forest, Armageddon.settings))
       .foreach(_ => ())
     forester
-      .updateStream
+      .updates
       .flatMapConcat(directory.applyUpdate)
       .foreach(_ => ()): @nowarn("msg=discarded non-Unit value")
   }

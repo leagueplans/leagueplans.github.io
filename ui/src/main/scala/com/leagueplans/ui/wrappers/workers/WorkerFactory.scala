@@ -24,4 +24,13 @@ object WorkerFactory {
         `type` = WorkerType.module
       }
     )
+
+  def projectionWorker(): Worker =
+    new Worker(
+      new URL("/workers/projectionworker.js", js.`import`.meta.url.asInstanceOf[String]),
+      new WorkerOptions {
+        name = "leagueplans-projection-worker"
+        `type` = WorkerType.module
+      }
+    )
 }

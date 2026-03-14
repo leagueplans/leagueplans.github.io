@@ -3,22 +3,29 @@ package com.leagueplans.ui.dom.planning.forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.{Forest, ForestInterpreter, ForestResolver}
 import com.leagueplans.ui.utils.HasID
-import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
 
 object Forester {
-  def apply[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, ID]): Forester[ID, T] =
-    new Forester(Var(forest).distinct)
+  def apply[ID, T](
+    forest: Forest[ID, T],
+    externalObserver: Observer[Forest.Update[ID, T]]
+  )(using HasID.Aux[T, ID]): Forester[ID, T] =
+    new Forester(Var(forest).distinct, externalObserver)
 }
 
 /** Optimises updates to the forest */
-final class Forester[ID, T](forestState: Var[Forest[ID, T]])(using HasID.Aux[T, ID]) {
+final class Forester[ID, T](
+  forestState: Var[Forest[ID, T]],
+  externalObserver: Observer[Forest.Update[ID, T]]
+)(using HasID.Aux[T, ID]) {
   val signal: StrictSignal[Forest[ID, T]] =
     forestState.signal
 
   private val updateBus = EventBus[Update[ID, T]]()
-  val updateStream: EventStream[Update[ID, T]] = updateBus.events
+  /** A stream of _all_ events handled by this forester, including those that were injected */
+  val updates: EventStream[Update[ID, T]] = updateBus.events
 
   def add(data: T): Unit =
     run(_.add(data))
@@ -50,10 +57,17 @@ final class Forester[ID, T](forestState: Var[Forest[ID, T]])(using HasID.Aux[T, 
   private def run(f: ForestInterpreter[ID, T] => List[Update[ID, T]]): Unit =
     forestState.update { forest =>
       val updates = f(ForestInterpreter(forest))
-      updates.foreach(updateBus.emit)
+      updates.foreach { update =>
+        externalObserver.onNext(update)
+        updateBus.emit(update)
+      }
       ForestResolver.resolve(forest, updates)
     }
-
-  def process(update: Update[ID, T]): Unit =
-    forestState.update(ForestResolver.resolve(_, update))
+  
+  /** Intended for events that should not be propagated to an external observer */
+  def inject(update: Update[ID, T]): Unit =
+    forestState.update { forest =>
+      updateBus.emit(update)
+      ForestResolver.resolve(forest, update)
+    }
 }

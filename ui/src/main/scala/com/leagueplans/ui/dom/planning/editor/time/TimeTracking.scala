@@ -5,8 +5,9 @@ import com.leagueplans.ui.dom.planning.editor.SectionV2
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.model.resolution.FocusContext
+import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.ui.utils.scala.DurationOps.safeMul
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
@@ -109,7 +110,7 @@ object TimeTracking {
             case (true, 1) => "Time added to the plan, accounting for substeps"
             case (true, _) => "Time added to the plan, accounting for substeps and repetitions"
           }
-          val rowContent = if (perRepDuration == Duration.Zero) "—" else format(perRepDuration * totalReps)
+          val rowContent = if (perRepDuration == Duration.Zero) "—" else format(perRepDuration.safeMul(totalReps))
           toDurationRow("Total", rowContent, tooltipContents, tooltip)
         }
 
@@ -122,7 +123,7 @@ object TimeTracking {
   private def toSectionLabel(content: String): ReactiveHtmlElement[HTMLParagraphElement] =
     L.p(L.cls(Styles.sectionLabel), content)
 
-  private def toScheduleRow(label: String, value: Signal[FiniteDuration]): L.Div =
+  private def toScheduleRow(label: String, value: Signal[Duration]): L.Div =
     L.div(
       L.cls(Styles.row),
       L.span(L.cls(Styles.label), label),
@@ -151,17 +152,22 @@ object TimeTracking {
     )
   }
 
-  private def format(duration: FiniteDuration): String =
-    List[(length: Long, token: Character)](
-      (duration.toDays, 'd'),
-      (duration.toHours % 24, 'h'),
-      (duration.toMinutes % 60, 'm'),
-      (duration.toSeconds % 60, 's')
-    ).dropWhile(_.length == 0) match {
-      case Nil => "00s"
-      case h :: t =>
-        t.foldLeft(s"${h.length}${h.token}") {
-          case (acc, (length, token)) => s"$acc ${String.format("%02d", length)}$token"
+  private def format(duration: Duration): String =
+    duration match {
+      case infinite: Duration.Infinite =>
+        if (infinite >= Duration.Zero) "∞" else "-∞"
+      case duration: FiniteDuration =>
+        List[(length: Long, token: Character)](
+          (duration.toDays, 'd'),
+          (duration.toHours % 24, 'h'),
+          (duration.toMinutes % 60, 'm'),
+          (duration.toSeconds % 60, 's')
+        ).dropWhile(_.length == 0) match {
+          case Nil => "00s"
+          case h :: t =>
+            t.foldLeft(s"${h.length}${h.token}") {
+              case (acc, (length, token)) => s"$acc ${String.format("%02d", length)}$token"
+            }
         }
     }
 

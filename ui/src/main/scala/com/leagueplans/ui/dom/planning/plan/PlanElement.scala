@@ -3,8 +3,7 @@ package com.leagueplans.ui.dom.planning.plan
 import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.model.resolution.FocusContext
-import com.leagueplans.ui.storage.client.PlanSubscription
+import com.leagueplans.ui.model.player.FocusContext
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 
@@ -18,12 +17,11 @@ object PlanElement {
     planName: String,
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
-    subscription: PlanSubscription,
+    focusController: FocusController,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
-    focusController: FocusController,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -38,7 +36,6 @@ object PlanElement {
       InteractiveForest(
         forester,
         focusContext,
-        subscription,
         editingEnabled,
         stepsWithErrorsSignal,
         tooltip,

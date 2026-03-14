@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.plan.{Effect, EffectList}
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.model.resolution.EffectResolver
+import com.leagueplans.ui.projection.calculation.EffectResolver
 
 sealed trait EffectValidator[E <: Effect] {
   def validate(effect: E)(
