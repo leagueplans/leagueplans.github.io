@@ -1,7 +1,7 @@
 package com.leagueplans.ui.wrappers.floatingui
 
 import com.leagueplans.ui.facades.floatingui.*
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, nodeOptionToModifier, seqToModifier}
 import org.scalajs.dom.Element
@@ -12,46 +12,96 @@ import scala.scalajs.js.annotation.JSImport
 
 object Floating {
   private type ArrowPositioningData = (placement: Placement, coords: MiddlewareData.Arrow)
+  private type State = (
+    left: Var[Double],
+    top: Var[Double],
+    position: Var[Strategy],
+    arrowData: Option[Observer[Option[ArrowPositioningData]]]
+  )
 
-  def anchorTo(target: Element, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
-    val left = Var(0.0)
-    val top = Var(0.0)
-    val position = Var(Strategy.absolute)
+  def anchorTo(targetX: Double, targetY: Double, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
+    val anchor = new VirtualElement {
+      def getBoundingClientRect(): ClientRectObject =
+        new ClientRectObject {
+          var x: Double = targetX
+          var y: Double = targetY
+          var width: Double = 0
+          var height: Double = 0
+          var top: Double = targetY
+          var right: Double = targetX
+          var bottom: Double = targetY
+          var left: Double = targetX
+        }
+    }
 
-    val (arrowData, arrow) = config.arrow.map { arrowConfig =>
-      val data = Var(Option.empty[ArrowPositioningData])
-      val element = toArrow(arrowConfig.size, arrowConfig.padding.isDefined, data.signal)
-      (data, element)
-    }.unzip
+    val (arrow, state) = initialiseState(config.arrow)
     val positionConfig = translateConfig(config, arrow)
+    val onMount = L.onMountCallback(ctx =>
+      computePosition(anchor, ctx.thisNode, state, positionConfig)
+    )
+    convertToModifiers(state, arrow, onMount)
+  }
 
+  def anchorTo(target: ReferenceElement, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
+    val (arrow, state) = initialiseState(config.arrow)
+    val positionConfig = translateConfig(config, arrow)
     val onMount =
       L.onMountUnmountCallbackWithState(
         mount = ctx => DOM.autoUpdate(
           target,
           ctx.thisNode.ref,
-          () => js.async[Any] {
-            val result = js.await(DOM.computePosition(target, ctx.thisNode.ref, positionConfig))
-
-            left.set(result.x)
-            top.set(result.y)
-            position.set(result.strategy)
-            arrowData.foreach(_.set(
-              result.middlewareData.arrow.toOption.map((result.placement, _))
-            ))
-          }: Unit
+          () => computePosition(target, ctx.thisNode, state, positionConfig)
         ),
         unmount = (_, state) => state.foreach(cleanUp => cleanUp())
       )
-
-    List(
-      L.position <-- position,
-      L.left <-- left.signal.map(px),
-      L.top <-- top.signal.map(px),
-      nodeOptionToModifier(arrow),
-      onMount
-    )
+    convertToModifiers(state, arrow, onMount)
   }
+
+  private def initialiseState(config: Option[FloatingConfig.Arrow]): (Option[L.Div], State) = {
+    val (arrow, arrowData) = config.map(toArrow).unzip
+    (arrow, (Var(0.0), Var(0.0), Var(Strategy.absolute), arrowData))
+  }
+
+  private def toArrow(config: FloatingConfig.Arrow): (L.Div, Observer[Option[ArrowPositioningData]]) = {
+    val data = Var(Option.empty[ArrowPositioningData])
+    val sideOffset = -config.size / 2
+    val arrow =
+      L.div(
+        L.cls(Styles.arrow),
+        L.display <-- data.signal.map {
+          case Some(data) if config.padding.isEmpty && data.coords.centerOffset != 0.0 => "none"
+          case _ => ""
+        },
+        L.left <-- data.signal.map(translateArrowPosition(_) {
+          case (_: Placement.AlongTheBottom, coords) => coords.x.toOption
+          case (_: Placement.AlongTheTop, coords) => coords.x.toOption
+          case (_: Placement.AlongTheRight, _) => Some(sideOffset)
+        }),
+        L.right <-- data.signal.map(translateArrowPosition(_) {
+          case (_: Placement.AlongTheLeft, _) => Some(sideOffset)
+        }),
+        L.top <-- data.signal.map(translateArrowPosition(_) {
+          case (_: Placement.AlongTheLeft, coords) => coords.y.toOption
+          case (_: Placement.AlongTheRight, coords) => coords.y.toOption
+          case (_: Placement.AlongTheBottom, _) => Some(sideOffset)
+        }),
+        L.bottom <-- data.signal.map(translateArrowPosition(_) {
+          case (_: Placement.AlongTheTop, _) => Some(sideOffset)
+        }),
+        L.width(px(config.size)),
+        L.height(px(config.size))
+      )
+
+    (arrow, data.writer)
+  }
+
+  private def translateArrowPosition(
+    positioningData: Option[ArrowPositioningData]
+  )(f: PartialFunction[ArrowPositioningData, Option[Double]]): String =
+    positioningData.collect(f).flatten.map(px).getOrElse("")
+
+  private def px(d: Double): String =
+    s"${d}px"
 
   private def translateConfig(config: FloatingConfig, maybeArrow: Option[L.HtmlElement]): ComputePositionConfig =
     new ComputePositionConfig {
@@ -69,50 +119,38 @@ object Floating {
       )
     }
 
-  private def toArrow(
-    size: Double,
-    hasPaddingDefined: Boolean,
-    dataSignal: Signal[Option[ArrowPositioningData]]
-  ): L.Div = {
-    val sideOffset = -size / 2
+  private def computePosition(
+    anchor: ReferenceElement,
+    floating: L.Element,
+    state: State,
+    positionConfig: ComputePositionConfig
+  ): Unit =
+    js.async[Any] {
+      val result = js.await(DOM.computePosition(anchor, floating.ref, positionConfig))
 
-    L.div(
-      L.cls(Styles.arrow),
-      L.display <-- dataSignal.map {
-        case Some(data) if !hasPaddingDefined && data.coords.centerOffset != 0.0 => "none"
-        case _ => ""
-      },
-      L.left <-- dataSignal.map(translateArrowPosition(_) {
-        case (_: Placement.AlongTheBottom, coords) => coords.x.toOption
-        case (_: Placement.AlongTheTop, coords) => coords.x.toOption
-        case (_: Placement.AlongTheRight, _) => Some(sideOffset)
-      }),
-      L.right <-- dataSignal.map(translateArrowPosition(_) {
-        case (_: Placement.AlongTheLeft, _) => Some(sideOffset)
-      }),
-      L.top <-- dataSignal.map(translateArrowPosition(_) {
-        case (_: Placement.AlongTheLeft, coords) => coords.y.toOption
-        case (_: Placement.AlongTheRight, coords) => coords.y.toOption
-        case (_: Placement.AlongTheBottom, _) => Some(sideOffset)
-      }),
-      L.bottom <-- dataSignal.map(translateArrowPosition(_) {
-        case (_: Placement.AlongTheTop, _) => Some(sideOffset)
-      }),
-      L.width(px(size)),
-      L.height(px(size))
+      state.left.set(result.x)
+      state.top.set(result.y)
+      state.position.set(result.strategy)
+      state.arrowData.foreach(_.onNext(
+        result.middlewareData.arrow.toOption.map((result.placement, _))
+      ))
+    }: Unit
+
+  private def convertToModifiers(
+    state: State,
+    arrow: Option[L.Div],
+    onMount: L.Modifier[L.HtmlElement]
+  ): L.Modifier[L.HtmlElement] =
+    List(
+      L.position <-- state.position,
+      L.left <-- state.left.signal.map(px),
+      L.top <-- state.top.signal.map(px),
+      nodeOptionToModifier(arrow),
+      onMount
     )
-  }
 
   @js.native @JSImport("/styles/floating/arrow.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val arrow: String = js.native
   }
-
-  private def translateArrowPosition(
-    positioningData: Option[ArrowPositioningData]
-  )(f: PartialFunction[ArrowPositioningData, Option[Double]]): String =
-    positioningData.collect(f).flatten.map(px).getOrElse("")
-
-  private def px(d: Double): String =
-    s"${d}px"
 }

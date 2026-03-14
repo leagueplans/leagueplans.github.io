@@ -9,7 +9,7 @@ object DOM {
   // https://github.com/floating-ui/floating-ui/blob/d729054f1ebcf1d7c3e85c0967d455f816985671/packages/dom/src/autoUpdate.ts#L148
   @js.native @JSImport("@floating-ui/dom", "autoUpdate")
   def autoUpdate(
-    reference: Element,
+    reference: ReferenceElement,
     floating: Element,
     update: js.Function0[Unit],
     options: AutoUpdateOptions = js.native
@@ -18,7 +18,7 @@ object DOM {
   // https://github.com/floating-ui/floating-ui/blob/d729054f1ebcf1d7c3e85c0967d455f816985671/packages/core/src/computePosition.ts#L12
   @js.native @JSImport("@floating-ui/dom", "computePosition")
   def computePosition(
-    reference: Element,
+    reference: ReferenceElement,
     floating: Element,
     config: ComputePositionConfig
   ): js.Promise[ComputePositionReturn] = js.native
