@@ -5,6 +5,7 @@ import com.leagueplans.ui.dom.landing.changelog.Changelog
 import com.leagueplans.ui.dom.landing.form.NewPlanForm
 import com.leagueplans.ui.dom.landing.menu.PlansMenu
 import com.leagueplans.ui.model.plan.Plan
+import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
@@ -17,6 +18,7 @@ import scala.scalajs.js.annotation.JSImport
 object LandingPage {
   def apply(
     planObserver: Observer[(Plan, PlanSubscription)],
+    statusTracker: StatusTracker,
     tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
@@ -24,7 +26,7 @@ object LandingPage {
     L.div(
       L.cls(Styles.page),
       changeLog(),
-      plansForm(planObserver, tooltip, toastPublisher, modal)
+      plansForm(planObserver, statusTracker, tooltip, toastPublisher, modal)
     )
 
   @js.native @JSImport("/styles/landing/landingPage.module.css", JSImport.Default)
@@ -47,6 +49,7 @@ object LandingPage {
   
   private def plansForm(
     planObserver: Observer[(Plan, PlanSubscription)],
+    statusTracker: StatusTracker,
     tooltip: Tooltip,
     toastPublisher: ToastHub.Publisher,
     modal: Modal
@@ -63,7 +66,8 @@ object LandingPage {
         L.cls(Styles.disclaimer),
         "Plans are saved against your browser's local storage. As a result, wiping your" +
           " browser's storage will delete your plans. No data is saved remotely."
-      )
+      ),
+      storage.status --> Observer(statusTracker.set(StorageClient.statusKey, _))
     )
   }
 

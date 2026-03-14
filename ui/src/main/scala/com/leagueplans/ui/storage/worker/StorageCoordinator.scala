@@ -102,14 +102,13 @@ object StorageCoordinator {
   private def onError(
     error: Outbound.ProtocolFailure,
     subscriptions: PlanSubscriptions[MsgOut, MsgIn]
-  ): Result = {
+  ): Result =
     subscriptions.all.flatMap { case (planID, (_, ports)) =>
-      ports.flatMap(port =>
+      ports.flatMap { port =>
         subscriptions.deregister(port, planID)
         List((port, error), (port, Outbound.SubscriptionTerminated(planID)))
-      )
+      }
     }
-  }
 }
 
 private final class StorageCoordinator(
@@ -118,7 +117,7 @@ private final class StorageCoordinator(
 ) {
   def handle(port: Port, message: Inbound.ToCoordinator): EventStream[Result] =
     message match {
-      case Inbound.ListPlans => handleListPlans(port)
+      case list: Inbound.ListPlans => handleListPlans(port, list)
       case create: Inbound.Create => handleCreate(port, create)
       case fetch: Inbound.Fetch => handleFetch(port, fetch)
       case subscribe: Inbound.Subscribe => handleSubscribe(port, subscribe)
@@ -127,8 +126,8 @@ private final class StorageCoordinator(
       case delete: Inbound.Delete => handleDelete(port, delete)
     }
 
-  private def handleListPlans(port: Port): EventStream[Result] =
-    deferToWorker[Outbound.ListPlansFailed | Outbound.Plans](port, Inbound.ListPlans)(resp =>
+  private def handleListPlans(port: Port, message: Inbound.ListPlans): EventStream[Result] =
+    deferToWorker[Outbound.ListPlansFailed | Outbound.Plans](port, message)(resp =>
       List((port, resp))
     )
 
@@ -145,10 +144,10 @@ private final class StorageCoordinator(
   private def handleSubscribe(port: Port, message: Inbound.Subscribe): EventStream[Result] =
     deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](port, Inbound.Read(message.planID)) {
       case Outbound.ReadFailed(_, reason) =>
-        List((port, Outbound.SubscriptionFailed(message.planID, reason)))
+        List((port, Outbound.SubscriptionFailed(message.requestID, message.planID, reason)))
       case Outbound.ReadSucceeded(_, plan) =>
         val lamportTimestamp = subscriptions.register(port, message.planID)
-        List((port, Outbound.Subscription(message.planID, lamportTimestamp, plan)))
+        List((port, Outbound.Subscription(message.requestID, message.planID, lamportTimestamp, plan)))
     }
 
   private def handleUnsubscribe(port: Port, message: Inbound.Unsubscribe): EventStream[Result] = {
@@ -211,7 +210,7 @@ private final class StorageCoordinator(
     if (subscriptions.get(message.planID).nonEmpty)
       lift((
         port,
-        Outbound.DeleteFailed(message.planID, DeletionError.PlanOpenInAnotherWindow)
+        Outbound.DeleteFailed(message.requestID, message.planID, DeletionError.PlanOpenInAnotherWindow)
       ))
     else
       deferToWorker[Outbound.DeleteFailed | Outbound.DeleteSucceeded](port, message)(resp =>
@@ -222,13 +221,13 @@ private final class StorageCoordinator(
     handleResponse: Response => Result
   )(using TypeTest[Outbound.ToCoordinator | ProtocolError, Response]): EventStream[Result] = {
     val eventBus = EventBus[Outbound.ToCoordinator | ProtocolError]()
-    
+
     val timeout = 30.seconds
     val timer = timers.setTimeout(timeout) {
       setMessageHandler(port)(_ => ())
       eventBus.writer.onNext(ProtocolError.Timeout(timeout))
     }
-    
+
     setMessageHandler(port) { response =>
       timers.clearTimeout(timer)
       eventBus.writer.onNext(response)
@@ -241,8 +240,8 @@ private final class StorageCoordinator(
 
       case response: Response =>
         handleResponse(response)
-        
-      case unexpectedMessage: Outbound.ToCoordinator => 
+
+      case unexpectedMessage: Outbound.ToCoordinator =>
         onError(Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage)), subscriptions)
     }
   }

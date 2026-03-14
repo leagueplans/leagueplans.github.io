@@ -8,11 +8,11 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Plan.Settings
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.model.validation.StepValidator
 import com.leagueplans.ui.projection.calculation.EffectResolver
 import com.leagueplans.ui.projection.client.ProjectionClient
-import com.leagueplans.ui.storage.client.PlanSubscription
-import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
+import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
@@ -26,6 +26,7 @@ object PlanningPageBootstrap {
   def apply(
     initialPlan: Plan,
     subscription: PlanSubscription,
+    statusTracker: StatusTracker,
     cache: Cache,
     tooltip: Tooltip,
     contextMenuController: ContextMenu.Controller,
@@ -79,13 +80,14 @@ object PlanningPageBootstrap {
       toastPublisher
     ).amend(
       // Subscription events
-      subscription.status.changes --> createStatusObserver(toastPublisher),
+      subscription.status --> createStatusObserver(statusTracker, toastPublisher),
       subscriptionForestUpdates --> Observer(forester.inject),
       subscription.updates.collect { case s: Plan.Settings => s } --> settings,
       // Projection notifications
       forester.updates --> Observer(projectionClient.applyForestUpdate),
       settings.signal.changes --> Observer(projectionClient.updateSettings),
       focusedStep.changes --> Observer(projectionClient.changeFocus),
+      projectionClient.status --> Observer(statusTracker.set(ProjectionClient.statusKey, _)),
       // Clean up
       L.onUnmountCallback { _ =>
         subscription.close()
@@ -113,24 +115,26 @@ object PlanningPageBootstrap {
     stepsWithErrors
   }
 
-  private def createStatusObserver(toastPublisher: ToastHub.Publisher): Observer[PlanSubscription.Status] =
-    Observer {
-      case PlanSubscription.Status.Busy =>
-        window.onbeforeunload = _.preventDefault()
-      case PlanSubscription.Status.Closed | PlanSubscription.Status.Idle =>
-        window.onbeforeunload = _ => ()
-      case PlanSubscription.Status.Failed(cause) =>
-        window.onbeforeunload = _ => ()
+  private def createStatusObserver(
+    tracker: StatusTracker,
+    toastPublisher: ToastHub.Publisher
+  ): Observer[StatusTracker.Status] =
+    Observer { status =>
+      tracker.set(StorageClient.statusKey, status)
+      status match {
+        case StatusTracker.Status.Busy =>
+          window.onbeforeunload = _.preventDefault()
 
-        val errorMessage = cause match {
-          case error: UpdateError => error.message
-          case error: ProtocolError => error.description
-        }
+        case StatusTracker.Status.Idle =>
+          window.onbeforeunload = _ => ()
 
-        toastPublisher.publish(
-          ToastHub.Type.Error,
-          1.minute,
-          s"Lost connection with the file system. Cannot save changes to the plan. Cause: [$errorMessage]"
-        )
+        case StatusTracker.Status.Failed(cause) =>
+          window.onbeforeunload = _ => ()
+          toastPublisher.publish(
+            ToastHub.Type.Error,
+            1.minute,
+            s"Lost connection with the file system. Cannot save changes to the plan. Cause: [$cause]"
+          )
+      }
     }
 }

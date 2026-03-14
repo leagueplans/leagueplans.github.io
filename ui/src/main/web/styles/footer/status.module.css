@@ -1,0 +1,45 @@
+.status {}
+
+.label {
+  margin: 0 0.3rem;
+  user-select: none;
+}
+
+.tooltip {
+  width: max-content;
+  max-width: 20rem;
+  text-align: center;
+}
+
+.indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 1000ms;
+}
+
+.idle {
+  composes: indicator;
+
+  background-color: #3ef73e;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.busy {
+  composes: indicator;
+
+  background-color: #12d1ef;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+
+.failed {
+  composes: indicator;
+
+  background-color: red;
+}

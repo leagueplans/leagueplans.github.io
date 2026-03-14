@@ -1,6 +1,10 @@
 package com.leagueplans.ui.dom.footer
 
+import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.facades.fontawesome.freebrands.FreeBrands
+import com.leagueplans.ui.model.status.StatusTracker
+import com.leagueplans.ui.projection.client.ProjectionClient
+import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
@@ -10,7 +14,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Footer {
-  def apply(): L.HtmlElement = 
+  def apply(statusTracker: StatusTracker, tooltip: Tooltip): L.HtmlElement = {
     L.footerTag(
       L.cls(Styles.footer),
       L.sectionTag(
@@ -18,8 +22,14 @@ object Footer {
         jagexAttribution,
         wikiAttribution
       ),
-      feedback
+      feedback,
+      L.sectionTag(
+        L.cls(Styles.statuses),
+        toStatus("Rendering", id = ProjectionClient.statusKey, statusTracker, tooltip),
+        toStatus("File system", id = StorageClient.statusKey, statusTracker, tooltip)
+      )
     )
+  }
 
   private val jagexAttribution: ReactiveHtmlElement[HTMLParagraphElement] =
     L.p(
@@ -53,6 +63,18 @@ object Footer {
       " for feedback"
     )
 
+  private def toStatus(
+    label: String,
+    id: String,
+    tracker: StatusTracker,
+    tooltip: Tooltip
+  ): L.Div =
+    Status(
+      label,
+      tracker.getWithDefault(id, default = StatusTracker.Status.Idle),
+      tooltip
+    ).amend(L.cls(Styles.status))
+
   @js.native @JSImport("/styles/footer/footer.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val footer: String = js.native
@@ -64,5 +86,8 @@ object Footer {
     val feedback: String = js.native
     val discordIcon: String = js.native
     val handle: String = js.native
+
+    val statuses: String = js.native
+    val status: String = js.native
   }
 }

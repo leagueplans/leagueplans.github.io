@@ -49,7 +49,7 @@ private final class IdealisedStorageCoordinator(
 ) {
   def handle(port: InboundPort, message: Inbound.ToCoordinator): EventStream[Result] =
     message match {
-      case Inbound.ListPlans => handleListPlans(port)
+      case list: Inbound.ListPlans => handleListPlans(port, list)
       case create: Inbound.Create => handleCreate(port, create)
       case fetch: Inbound.Fetch => handleFetch(port, fetch)
       case subscribe: Inbound.Subscribe => handleSubscribe(port, subscribe)
@@ -58,8 +58,8 @@ private final class IdealisedStorageCoordinator(
       case delete: Inbound.Delete => handleDelete(port, delete)
     }
 
-  private def handleListPlans(port: InboundPort): EventStream[Result] =
-    deferToWorker[Outbound.ListPlansFailed | Outbound.Plans](Inbound.ListPlans)(resp =>
+  private def handleListPlans(port: InboundPort, message: Inbound.ListPlans): EventStream[Result] =
+    deferToWorker[Outbound.ListPlansFailed | Outbound.Plans](message)(resp =>
       List((port, resp))
     )
 
@@ -76,10 +76,10 @@ private final class IdealisedStorageCoordinator(
   private def handleSubscribe(port: InboundPort, message: Inbound.Subscribe): EventStream[Result] =
     deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](Inbound.Read(message.planID)) {
       case Outbound.ReadFailed(_, reason) =>
-        List((port, Outbound.SubscriptionFailed(message.planID, reason)))
+        List((port, Outbound.SubscriptionFailed(message.requestID, message.planID, reason)))
       case Outbound.ReadSucceeded(_, plan) =>
         val lamportTimestamp = subscriptions.register(port, message.planID)
-        List((port, Outbound.Subscription(message.planID, lamportTimestamp, plan)))
+        List((port, Outbound.Subscription(message.requestID, message.planID, lamportTimestamp, plan)))
     }
 
   private def handleUnsubscribe(port: InboundPort, message: Inbound.Unsubscribe): EventStream[Result] = {
@@ -142,7 +142,7 @@ private final class IdealisedStorageCoordinator(
     if (subscriptions.get(message.planID).nonEmpty)
       lift((
         port,
-        Outbound.DeleteFailed(message.planID, DeletionError.PlanOpenInAnotherWindow)
+        Outbound.DeleteFailed(message.requestID, message.planID, DeletionError.PlanOpenInAnotherWindow)
       ))
     else
       deferToWorker[Outbound.DeleteFailed | Outbound.DeleteSucceeded](message)(resp =>

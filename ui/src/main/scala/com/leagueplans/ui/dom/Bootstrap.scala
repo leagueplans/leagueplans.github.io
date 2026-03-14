@@ -6,6 +6,7 @@ import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
@@ -17,6 +18,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object Bootstrap {
   def apply(): L.Div = {
+    val statusTracker = StatusTracker.empty
     val (tooltipContainer, tooltipController) = Tooltip()
     val (contextMenu, contextMenuController) = ContextMenu()
     val (toastHub, toastPublisher) = ToastHub(tooltipController)
@@ -37,9 +39,9 @@ object Bootstrap {
       L.div(
         L.cls(Styles.page),
         L.child <-- toPageSignal(
-          tooltipController, contextMenuController, modalController, toastPublisher
+          statusTracker, tooltipController, contextMenuController, modalController, toastPublisher
         ).map(_.amend(L.cls(Styles.pageContent))),
-        Footer().amend(L.cls(Styles.footer))
+        Footer(statusTracker, tooltipController).amend(L.cls(Styles.footer))
       )
     )
   }
@@ -60,6 +62,7 @@ object Bootstrap {
   }
 
   private def toPageSignal(
+    statusTracker: StatusTracker,
     tooltipController: Tooltip,
     contextMenuController: ContextMenu.Controller,
     modal: Modal,
@@ -72,13 +75,14 @@ object Bootstrap {
       PlanningPageBootstrap(
         plan,
         subscription,
+        statusTracker,
         cache,
         tooltipController,
         contextMenuController,
         modal,
         toastPublisher
       )
-    ).toSignal(initial = LandingPage(planBus.writer, tooltipController, toastPublisher, modal))
+    ).toSignal(initial = LandingPage(planBus.writer, statusTracker, tooltipController, toastPublisher, modal))
   }
 
   private def loadCache(toastPublisher: ToastHub.Publisher): js.Promise[Cache] =

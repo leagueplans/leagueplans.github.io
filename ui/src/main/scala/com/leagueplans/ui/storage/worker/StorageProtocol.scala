@@ -12,17 +12,17 @@ object StorageProtocol {
     sealed trait ToCoordinator
     sealed trait ToWorker
 
-    case object ListPlans extends ToCoordinator with ToWorker
+    final case class ListPlans(requestID: Long) extends ToCoordinator with ToWorker
 
     final case class Create(
-      requestID: String,
+      requestID: Long,
       metadata: PlanMetadata,
       plan: Plan
     ) extends ToCoordinator with ToWorker
-    
+
     final case class Read(planID: PlanID) extends ToWorker
-    
-    final case class Fetch(planID: PlanID) extends ToCoordinator with ToWorker
+
+    final case class Fetch(requestID: Long, planID: PlanID) extends ToCoordinator with ToWorker
 
     object Update {
       def apply(
@@ -46,11 +46,11 @@ object StorageProtocol {
       update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
     ) extends ToCoordinator with ToWorker
 
-    final case class Delete(planID: PlanID) extends ToCoordinator with ToWorker
+    final case class Delete(requestID: Long, planID: PlanID) extends ToCoordinator with ToWorker
 
-    final case class Subscribe(planID: PlanID) extends ToCoordinator
+    final case class Subscribe(requestID: Long, planID: PlanID) extends ToCoordinator
 
-    final case class Unsubscribe(planID: PlanID) extends ToCoordinator
+    final case class Unsubscribe(requestID: Long, planID: PlanID) extends ToCoordinator
 
     object ToCoordinator {
       given Encoder[ToCoordinator] = Encoder.derived
@@ -66,43 +66,43 @@ object StorageProtocol {
   object Outbound {
     sealed trait ToClient
     sealed trait ToCoordinator
-    
-    final case class Plans(data: Map[PlanID, PlanMetadata]) extends ToClient with ToCoordinator
-    final case class ListPlansFailed(reason: FileSystemError) extends ToClient with ToCoordinator
- 
-    final case class CreateSucceeded(requestID: String, planID: PlanID) extends ToClient with ToCoordinator
-    final case class CreateFailed(requestID: String, reason: FileSystemError) extends ToClient with ToCoordinator
 
-    final case class FetchSucceeded(planID: PlanID, plan: PlanExport) extends ToClient with ToCoordinator
-    final case class FetchFailed(planID: PlanID, reason: FileSystemError) extends ToClient with ToCoordinator
- 
-    final case class Subscription(planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
-    final case class SubscriptionFailed(planID: PlanID, reason: FileSystemError) extends ToClient
+    final case class Plans(requestID: Long, data: Map[PlanID, PlanMetadata]) extends ToClient with ToCoordinator
+    final case class ListPlansFailed(requestID: Long, reason: FileSystemError) extends ToClient with ToCoordinator
+
+    final case class CreateSucceeded(requestID: Long, planID: PlanID) extends ToClient with ToCoordinator
+    final case class CreateFailed(requestID: Long, reason: FileSystemError) extends ToClient with ToCoordinator
+
+    final case class FetchSucceeded(requestID: Long, planID: PlanID, plan: PlanExport) extends ToClient with ToCoordinator
+    final case class FetchFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient with ToCoordinator
+
+    final case class Subscription(requestID: Long, planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
+    final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient
     final case class SubscriptionTerminated(planID: PlanID) extends ToClient
-    
+
     final case class ReadSucceeded(planID: PlanID, plan: Plan) extends ToCoordinator
     final case class ReadFailed(planID: PlanID, reason: FileSystemError) extends ToCoordinator
- 
+
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
       update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
     ) extends ToClient
-    
+
     final case class UpdateSucceeded(
       planID: PlanID,
       lamport: LamportTimestamp
     ) extends ToClient with ToCoordinator
-    
+
     final case class UpdateFailed(
       planID: PlanID,
-      lamport: LamportTimestamp, 
+      lamport: LamportTimestamp,
       reason: UpdateError
     ) extends ToClient with ToCoordinator
- 
-    final case class DeleteSucceeded(planID: PlanID) extends ToClient with ToCoordinator
-    final case class DeleteFailed(planID: PlanID, reason: DeletionError) extends ToClient with ToCoordinator
- 
+
+    final case class DeleteSucceeded(requestID: Long, planID: PlanID) extends ToClient with ToCoordinator
+    final case class DeleteFailed(requestID: Long, planID: PlanID, reason: DeletionError) extends ToClient with ToCoordinator
+
     final case class WorkerFailedToStart(error: FileSystemError) extends ToCoordinator
     final case class ProtocolFailure(reason: ProtocolError) extends ToClient
 

@@ -2,21 +2,15 @@ package com.leagueplans.ui.storage.client
 
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.storage.client.PlanSubscription.{Message, Status}
+import com.leagueplans.ui.model.status.StatusTracker.Status
+import com.leagueplans.ui.storage.client.PlanSubscription.Message
 import com.leagueplans.ui.storage.model.LamportTimestamp
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
 import com.leagueplans.ui.utils.airstream.ObservableOps.withKillSwitch
-import com.raquo.airstream.core.EventStream
-import com.raquo.airstream.state.{StrictSignal, Var}
+import com.raquo.airstream.core.{EventStream, Signal}
+import com.raquo.airstream.state.Var
 
 object PlanSubscription {
-  enum Status {
-    case Idle
-    case Busy
-    case Closed
-    case Failed(cause: UpdateError | ProtocolError)
-  }
-  
   enum Message {
     case Done
     case Error(cause: ProtocolError)
@@ -33,22 +27,22 @@ final class PlanSubscription(
   unsubscribe: () => ?
 ) extends AutoCloseable {
   private var currentLamport = initialLamport
-  private val internalStatus = Var(PlanSubscription.Status.Idle)
+  private val internalStatus = Var(Status.Idle)
   private val upstream = messages.withKillSwitch(resetOnStop = false)
   private val upstreamKillSwitch = upstream.killSwitch
   
-  val status: StrictSignal[PlanSubscription.Status] = internalStatus.signal
+  val status: Signal[Status] = internalStatus.signal.distinct
   
   val updates: EventStream[Forest.Update[Step.ID, Step] | Plan.Settings] =
     upstream.collect(Function.unlift {
       case Message.Done =>
         upstreamKillSwitch.kill()
-        internalStatus.set(Status.Closed)
+        internalStatus.set(Status.Failed("Subscription closed"))
         None
 
       case Message.Error(cause) =>
         upstreamKillSwitch.kill()
-        internalStatus.set(Status.Failed(cause))
+        internalStatus.set(Status.Failed(cause.description))
         None
         
       case Message.Update(lamport, update) =>
@@ -81,19 +75,19 @@ final class PlanSubscription(
     ifRunning { _ =>
       unsubscribe()
       upstreamKillSwitch.kill()
-      Status.Closed 
+      Status.Failed("Subscription closed")
     }
   
   private def fail(cause: UpdateError): Unit =
     ifRunning { _ =>
       unsubscribe()
       upstreamKillSwitch.kill()
-      Status.Failed(cause)
+      Status.Failed(cause.message)
     }
 
   private def ifRunning(f: Status.Idle.type | Status.Busy.type => Status): Unit =
     internalStatus.update {
       case status @ (Status.Idle | Status.Busy) => f(status)
-      case terminated @ (_: Status.Failed | Status.Closed) => terminated
+      case terminated: Status.Failed => terminated
     }
 }

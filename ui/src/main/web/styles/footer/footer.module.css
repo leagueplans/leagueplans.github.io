@@ -35,3 +35,14 @@
 }
 
 .handle {}
+
+.statuses {
+  justify-self: end;
+  margin-right: 1.3rem;
+}
+
+.status {
+  margin: 0px 0.5rem;
+  display: inline-block;
+  font-size: 0.9rem;
+}

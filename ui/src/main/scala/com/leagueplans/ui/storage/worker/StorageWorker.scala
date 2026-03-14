@@ -73,7 +73,7 @@ private object StorageWorker {
 private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
   def handle(message: Inbound.ToWorker): EventStream[Outbound.ToCoordinator] =
     message match {
-      case Inbound.ListPlans => handleListPlans()
+      case list: Inbound.ListPlans => handleListPlans(list)
       case create: Inbound.Create => handleCreate(create)
       case fetch: Inbound.Fetch => handleFetch(fetch)
       case read: Inbound.Read => handleRead(read)
@@ -81,10 +81,10 @@ private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
       case delete: Inbound.Delete => handleDelete(delete)
     }
 
-  private def handleListPlans(): EventStream[Outbound.ToCoordinator] =
+  private def handleListPlans(message: Inbound.ListPlans): EventStream[Outbound.ToCoordinator] =
     directory.listPlans().map {
-      case Left(error) => Outbound.ListPlansFailed(convert(error))
-      case Right(plans) => Outbound.Plans(plans)
+      case Left(error) => Outbound.ListPlansFailed(message.requestID, convert(error))
+      case Right(plans) => Outbound.Plans(message.requestID, plans)
     }
 
   private def handleCreate(message: Inbound.Create): EventStream[Outbound.ToCoordinator] =
@@ -95,8 +95,8 @@ private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
 
   private def handleFetch(message: Inbound.Fetch): EventStream[Outbound.ToCoordinator] =
     directory.fetch(message.planID).map {
-      case Left(error) => Outbound.FetchFailed(message.planID, convert(error))
-      case Right(plan) => Outbound.FetchSucceeded(message.planID, plan)
+      case Left(error) => Outbound.FetchFailed(message.requestID, message.planID, convert(error))
+      case Right(plan) => Outbound.FetchSucceeded(message.requestID, message.planID, plan)
     }
 
   private def handleRead(message: Inbound.Read): EventStream[Outbound.ToCoordinator] =
@@ -121,10 +121,11 @@ private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
     directory.delete(message.planID).map {
       case Left(error) =>
         Outbound.DeleteFailed(
+          message.requestID,
           message.planID,
           DeletionError.FileSystem(convert(error))
         )
       case Right(_) =>
-        Outbound.DeleteSucceeded(message.planID)
+        Outbound.DeleteSucceeded(message.requestID, message.planID)
     }
 }
