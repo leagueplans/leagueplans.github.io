@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.ui.dom.common.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
@@ -10,7 +10,6 @@ import com.raquo.laminar.api.L
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-//TODO Cross plan copy/paste
 object PlanElement {
   def apply(
     planName: String,
@@ -21,8 +20,7 @@ object PlanElement {
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    modal: Modal,
-    toastPublisher: ToastHub.Publisher
+    modal: Modal
   ): L.Div = {
     val newStepForm = NewStepForm(forester, modal)
     val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
@@ -39,8 +37,7 @@ object PlanElement {
         stepsWithErrorsSignal,
         tooltip,
         contextMenu,
-        focusController,
-        toastPublisher
+        focusController
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(focusContext.focusID, focusController, newStepForm, deleteStepForm)
     )

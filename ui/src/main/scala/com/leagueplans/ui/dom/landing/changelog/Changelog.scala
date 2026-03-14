@@ -13,6 +13,15 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 2, 14),
+        "Full support for step copy & paste",
+        List(
+          "Cutting a step within a plan will move it to the target location",
+          "Copying a step within a plan will duplicate the step and its substeps at the target location",
+          "Steps will now bring their substeps with them when copied and pasted between separate plans"
+        )
+      ),
+      item(
         new Date(2026, 2, 9),
         "Step duration tracking",
         List(

@@ -6,6 +6,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController}
 import com.leagueplans.ui.facades.floatingui.Placement
+import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.leagueplans.ui.utils.laminar.HtmlElementOps.trackHeight
@@ -37,7 +38,7 @@ object StepElement {
     editingEnabledSignal: Signal[Boolean],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    clipboard: Clipboard[Step]
+    clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])]
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -85,7 +86,6 @@ object StepElement {
         ),
         StepContextMenu(
           stepID,
-          step,
           forester,
           contextMenu,
           clipboard,

@@ -43,8 +43,7 @@ object PlanningPage {
         stepsWithErrors.map(_.keySet),
         tooltip,
         contextMenu,
-        modal,
-        toastPublisher
+        modal
       )
 
     val visualiser =

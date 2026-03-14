@@ -19,17 +19,22 @@ object ContextMenuList {
   def apply(items: Item*): L.Div =
     from(items)
 
-  def from(items: Seq[Item]): L.Div =
+  def from(sections: Seq[Item]*): L.Div =
     L.div(
       L.cls(Styles.menu),
-      items.map(item =>
-        item.button.amend(
-          L.cls(Styles.button),
-          item.icon.map {
-            case svg: L.SvgElement => svg.amend(L.svg.cls(Styles.icon))
-            case html: L.HtmlElement => html.amend(L.cls(Styles.icon))
-          },
-          L.span(L.cls(Styles.label), item.label)
+      sections.map(section =>
+        L.sectionTag(
+          L.cls(Styles.section),
+          section.map(item =>
+            item.button.amend(
+              L.cls(Styles.button),
+              item.icon.map {
+                case svg: L.SvgElement => svg.amend(L.svg.cls(Styles.icon))
+                case html: L.HtmlElement => html.amend(L.cls(Styles.icon))
+              },
+              L.span(L.cls(Styles.label), item.label)
+            )
+          )
         )
       )
     )
@@ -37,6 +42,7 @@ object ContextMenuList {
   @js.native @JSImport("/styles/common/contextMenuList.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val menu: String = js.native
+    val section: String = js.native
     val button: String = js.native
     val icon: String = js.native
     val label: String = js.native
