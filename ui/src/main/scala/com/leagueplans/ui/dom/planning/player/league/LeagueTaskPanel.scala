@@ -18,7 +18,7 @@ object LeagueTaskPanel {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div = {
     val completeTasksSignal = playerSignal.map(_.leagueStatus.completedTasks)
     val leagueVar = Var(Option.empty[Mode.League])
@@ -40,7 +40,7 @@ object LeagueTaskPanel {
         completeTasksSignal,
         cache,
         effectObserverSignal,
-        contextMenuController,
+        contextMenu,
         leagueVar
       ),
       tooltip

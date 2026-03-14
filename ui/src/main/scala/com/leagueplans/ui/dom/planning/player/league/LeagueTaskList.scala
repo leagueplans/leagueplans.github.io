@@ -18,7 +18,7 @@ object LeagueTaskList {
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     leagueFilterSignal: Signal[Option[Mode.League]],
     tierFilterSignal: Signal[Option[LeagueTaskTier]],
     progressFilterSignal: Signal[Option[TaskDetailsTab.Progress]],
@@ -56,7 +56,7 @@ object LeagueTaskList {
         task,
         completedTasksSignal.map(_.contains(task.id)),
         effectObserverSignal,
-        contextMenuController
+        contextMenu
       )
     )
   }

@@ -19,7 +19,7 @@ object QuestList {
     playerSignal: Signal[Player],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div = {
     val completedQuestsSignal = playerSignal.map(_.completedQuests)
     val allQuests = cache.quests.values.toList
@@ -40,14 +40,14 @@ object QuestList {
           questsSignal.map(_.filter(_.points > 0)),
           completedQuestsSignal,
           effectObserverSignal,
-          contextMenuController
+          contextMenu
         ),
         category(
           "Miniquests",
           questsSignal.map(_.filter(_.points == 0)),
           completedQuestsSignal,
           effectObserverSignal,
-          contextMenuController
+          contextMenu
         )
       ),
       L.child <-- completedQuestsSignal.map { quests =>
@@ -106,18 +106,18 @@ object QuestList {
     questsSignal: Signal[List[Quest]],
     completedQuestsSignal: Signal[Set[Int]],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): List[L.Node] =
     List(
       L.h4(L.cls(Styles.categoryHeader, PanelStyles.header), name),
-      list(questsSignal, completedQuestsSignal, effectObserverSignal, contextMenuController)
+      list(questsSignal, completedQuestsSignal, effectObserverSignal, contextMenu)
     )
 
   private def list(
     questsSignal: Signal[List[Quest]],
     completedQuestsSignal: Signal[Set[Int]],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): ReactiveHtmlElement[OList] =
     L.ol(
       L.cls(Styles.category),
@@ -131,7 +131,7 @@ object QuestList {
                 quest,
                 completedQuestsSignal.map(_.contains(quest.id)),
                 effectObserverSignal,
-                contextMenuController
+                contextMenu
               )
             )
           )

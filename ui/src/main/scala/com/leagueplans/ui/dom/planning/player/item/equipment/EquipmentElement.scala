@@ -16,7 +16,7 @@ object EquipmentElement {
     cache: Cache,
     effectObserver: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.pane),
@@ -33,7 +33,7 @@ object EquipmentElement {
               effectObserver,
               panel,
               tooltip,
-              contextMenuController
+              contextMenu
             ).amend(L.cls(toStyle(slot)))
           )
         )

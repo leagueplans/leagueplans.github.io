@@ -19,7 +19,7 @@ object LeagueDetailsTab {
     completedTasksSignal: Signal[Set[Int]],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     leagueVar: Var[Option[Mode.League]]
   ): L.Div = {
     val tierVar = Var(Option.empty[LeagueTaskTier])
@@ -68,7 +68,7 @@ object LeagueDetailsTab {
         completedTasksSignal,
         cache,
         effectObserverSignal,
-        contextMenuController,
+        contextMenu,
         leagueVar.signal,
         tierVar.signal,
         _,

@@ -18,7 +18,7 @@ object DiaryPanel {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div = {
     val completeTasksSignal = playerSignal.map(_.completedDiaryTasks)
     val regionVar = Var(Option.empty[DiaryRegion])
@@ -51,7 +51,7 @@ object DiaryPanel {
         cache,
         effectObserverSignal,
         tooltip,
-        contextMenuController,
+        contextMenu,
         regionVar,
         tierVar
       ),

@@ -64,7 +64,7 @@ object Bootstrap {
   private def toPageSignal(
     statusTracker: StatusTracker,
     tooltipController: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): Signal[L.Div] = {
@@ -78,7 +78,7 @@ object Bootstrap {
         statusTracker,
         cache,
         tooltipController,
-        contextMenuController,
+        contextMenu,
         modal,
         toastPublisher
       )

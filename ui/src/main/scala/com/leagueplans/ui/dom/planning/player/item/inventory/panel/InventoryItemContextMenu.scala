@@ -2,50 +2,52 @@ package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
 import com.leagueplans.common.model.EquipmentType
 import com.leagueplans.common.model.Item.Bankable
-import com.leagueplans.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
+import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.dom.planning.player.item.inventory.forms.RemoveItemForm
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
-import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.raquo.airstream.core.Observer
+import com.raquo.laminar.api.L
 
 object InventoryItemContextMenu {
   private val inventory = Depository.Kind.Inventory
 
   def apply(
     stack: ItemStack,
+    player: Player,
     cache: Cache,
-    playerSignal: Signal[Player],
     effectObserver: Observer[Effect],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): L.Div = {
-    val allStacksSignal = playerSignal.map(player =>
-      stack.copy(quantity =
-        player.get(inventory).contents.getOrElse((stack.item.id, stack.noted), 0)
-      )
+    val allStacks = stack.copy(quantity =
+      player.get(inventory).contents.getOrElse((stack.item.id, stack.noted), 0)
     )
 
-    L.div(
-      L.child <-- allStacksSignal.map(bankButton(_, effectObserver, controller, modal)),
-      L.child <-- playerSignal.map(equipButton(stack, cache, _, effectObserver, controller)),
-      L.child <-- allStacksSignal.map(removeButton(_, effectObserver, controller, modal)),
+    ContextMenuList.from(
+      List(
+        bankButton(allStacks, effectObserver, contextMenu, modal),
+        equipButton(stack, cache, player, effectObserver, contextMenu),
+        Some(removeButton(allStacks, effectObserver, contextMenu, modal))
+      ).flatten
     )
   }
 
   private def bankButton(
     stack: ItemStack,
     effectObserver: Observer[MoveItem],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
-  ): L.Node =
+  ): Option[ContextMenuList.Item] =
     stack.item.bankable match {
-      case Bankable.No => L.emptyNode
+      case Bankable.No => None
       case _: Bankable.Yes =>
         val observer =
           if (stack.quantity > 1)
@@ -62,7 +64,11 @@ object InventoryItemContextMenu {
               )
             )
 
-        button("Bank", observer, controller)
+        Some(ContextMenuList.Item(
+          FontAwesome.icon(FreeSolid.faBuildingColumns),
+          "Bank",
+          button(observer, contextMenu)
+        ))
     }
 
   private def toBankItemFormOpener(
@@ -81,8 +87,8 @@ object InventoryItemContextMenu {
     cache: Cache,
     player: Player,
     effectObserver: Observer[MoveItem],
-    controller: ContextMenu.Controller,
-  ): L.Node =
+    contextMenu: ContextMenu,
+  ): Option[ContextMenuList.Item] =
     (stack.noted, stack.item.equipmentType) match {
       case (false, Some(tpe)) =>
         val equipEffect: MoveItem = MoveItem(
@@ -114,10 +120,15 @@ object InventoryItemContextMenu {
         val observer = Observer[Unit](_ =>
           (unequipEffects.toList :+ equipEffect).foreach(effectObserver.onNext)
         )
-        button("Equip", observer, controller)
+
+        Some(ContextMenuList.Item(
+          FontAwesome.icon(FreeSolid.faShirt),
+          "Equip",
+          button(observer, contextMenu)
+        ))
 
       case _ =>
-        L.emptyNode
+        None
     }
 
   private def toConflicts(equipmentType: EquipmentType): Set[(EquipmentSlot, Set[EquipmentType])] =
@@ -141,16 +152,16 @@ object InventoryItemContextMenu {
   private def removeButton(
     stack: ItemStack,
     effectObserver: Observer[AddItem],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
-  ): L.Button = {
+  ): ContextMenuList.Item = {
     val observer =
       if (stack.quantity > 1)
         toRemoveItemFormOpener(stack, effectObserver, modal).toObserver
       else
         effectObserver.contramap[Unit](_ => AddItem(stack.item.id, -stack.quantity, inventory, stack.noted))
 
-    button("Remove", observer, controller)
+    ContextMenuList.Item(FontAwesome.icon(FreeSolid.faTrash), "Remove", button(observer, contextMenu))
   }
 
   private def toRemoveItemFormOpener(
@@ -164,15 +175,11 @@ object InventoryItemContextMenu {
       effectObserver.contracollect[Option[AddItem]] { case Some(effect) => effect }
     )
 
-  private def button(
-    text: String,
-    clickObserver: Observer[Unit],
-    controller: ContextMenu.Controller
-  ): L.Button =
+  private def button(clickObserver: Observer[Unit], contextMenu: ContextMenu): L.Button =
     Button(
       _.handled --> Observer.combine(
         clickObserver,
-        Observer(_ => controller.close())
+        Observer(_ => contextMenu.close())
       )
-    ).amend(text)
+    )
 }

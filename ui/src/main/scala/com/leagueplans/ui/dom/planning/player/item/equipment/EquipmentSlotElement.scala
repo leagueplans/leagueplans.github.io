@@ -22,7 +22,7 @@ object EquipmentSlotElement {
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
     itemTooltipAnchor: L.HtmlElement,
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.slot),
@@ -37,7 +37,7 @@ object EquipmentSlotElement {
           stack,
           tooltip,
           tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2, fadeIn = false)
-        ).amend(bindContextMenu(stack, slot, effectObserverSignal, contextMenuController))
+        ).amend(bindContextMenu(stack, slot, effectObserverSignal, contextMenu))
       ).amend(L.cls(Styles.contents))
     )
 
@@ -97,11 +97,11 @@ object EquipmentSlotElement {
     stack: ItemStack,
     slot: EquipmentSlot,
     effectObserverSignal: Signal[Option[Observer[MoveItem]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): Binder.Base =
-    contextMenuController.register(
-      effectObserverSignal.map(_.map(effectObserver =>
-        EquippedItemContextMenu(stack, slot, effectObserver, contextMenuController)
+    contextMenu.registerConditionally(
+      effectObserverSignal.map(_.map(effectObserver => () =>
+        EquippedItemContextMenu(stack, slot, effectObserver, contextMenu)
       ))
-    )
+    )()
 }

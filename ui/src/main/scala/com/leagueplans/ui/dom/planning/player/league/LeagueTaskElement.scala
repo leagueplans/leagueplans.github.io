@@ -15,7 +15,7 @@ object LeagueTaskElement {
     task: LeagueTask,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.element),
@@ -28,7 +28,7 @@ object LeagueTaskElement {
         task.name
       ),
       L.p(L.cls(Styles.description), task.description),
-      bindContextMenu(task, completeSignal, effectObserverSignal, contextMenuController)
+      bindContextMenu(task, completeSignal, effectObserverSignal, contextMenu)
     )
 
   @js.native @JSImport("/styles/planning/shared/player/statusColours.module.css", JSImport.Default)
@@ -48,16 +48,16 @@ object LeagueTaskElement {
     task: LeagueTask,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteLeagueTask]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): Binder.Base =
-    contextMenuController.register(
+    contextMenu.registerConditionally(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(LeagueTaskContextMenu(task, effectObserver, contextMenuController))
+            Some(() => LeagueTaskContextMenu(task, effectObserver, contextMenu))
           case _ =>
             None
         }
-    )
+    )()
 }

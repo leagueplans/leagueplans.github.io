@@ -20,7 +20,7 @@ object InventoryElement {
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -29,7 +29,7 @@ object InventoryElement {
       cache,
       effectObserverSignal,
       tooltip,
-      contextMenuController,
+      contextMenu,
       modal
     )
     val sidebar = InventorySidebar(

@@ -18,7 +18,7 @@ object DiaryTaskElement {
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.element),
@@ -37,7 +37,7 @@ object DiaryTaskElement {
         L.cls(Styles.description),
         task.description,
       ),
-      bindContextMenu(task, completeSignal, effectObserverSignal, contextMenuController)
+      bindContextMenu(task, completeSignal, effectObserverSignal, contextMenu)
     )
 
   @js.native @JSImport("/styles/planning/shared/player/statusColours.module.css", JSImport.Default)
@@ -58,16 +58,16 @@ object DiaryTaskElement {
     task: DiaryTask,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): Binder.Base =
-    contextMenuController.register(
+    contextMenu.registerConditionally(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(DiaryTaskContextMenu(task, effectObserver, contextMenuController))
+            Some(() => DiaryTaskContextMenu(task, effectObserver, contextMenu))
           case _ =>
             None
         }
-    )
+    )()
 }

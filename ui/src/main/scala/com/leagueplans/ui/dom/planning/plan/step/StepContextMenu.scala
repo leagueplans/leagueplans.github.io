@@ -1,14 +1,16 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.common.{Button, ContextMenu}
+import com.leagueplans.ui.dom.common.{Button, ContextMenu, ContextMenuList}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.CompletedStep
+import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handledAs, handledWith}
+import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 
 object StepContextMenu {
@@ -16,40 +18,44 @@ object StepContextMenu {
     stepID: Step.ID,
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     clipboard: Clipboard[Step],
     completionController: CompletedStep.Controller,
     editingEnabledSignal: Signal[Boolean]
   ): Binder.Base =
-    controller.register(
+    contextMenu.registerConditionally(
       Signal
         .combine(editingEnabledSignal, completionController.signalFor(stepID))
         .map((editingEnabled, isComplete) =>
-          Some(
+          Some(() =>
             if (editingEnabled && clipboard.isSupported)
-              L.div(
-                cutButton(stepSignal, controller, clipboard),
-                pasteButton(stepID, controller, clipboard, forester),
-                changeStatusButton(stepID, isComplete, controller, completionController)
+              ContextMenuList(
+                cutButton(stepSignal, contextMenu, clipboard),
+                pasteButton(stepID, contextMenu, clipboard, forester),
+                changeStatusButton(stepID, isComplete, contextMenu, completionController)
               )
             else
-              L.div(changeStatusButton(stepID, isComplete, controller, completionController))
+              ContextMenuList(
+                changeStatusButton(stepID, isComplete, contextMenu, completionController)
+              )
           )
         )
-    )
+    )()
 
   private def cutButton(
     stepSignal: Signal[Step],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     clipboard: Clipboard[Step]
-  ): L.Button =
-    Button(
+  ): ContextMenuList.Item = {
+    val button = Button(
       _.handledWith(
         _.sample(stepSignal).flatMapSwitch(step =>
           clipboard.write(step).asObservable
         )
-      ) --> Observer(_ => controller.close())
-    ).amend("Cut")
+      ) --> Observer(_ => contextMenu.close())
+    )
+    ContextMenuList.Item(FontAwesome.icon(FreeSolid.faScissors), "Cut", button)
+  }
 
   // There's an edge case to be aware of here.
   // Suppose you copy a step X from plan A to plan B. Then you modify step X substantially, and
@@ -60,28 +66,35 @@ object StepContextMenu {
   // undo changes.
   private def pasteButton(
     stepID: Step.ID,
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     clipboard: Clipboard[Step],
     forester: Forester[Step.ID, Step]
-  ): L.Button = {
+  ): ContextMenuList.Item = {
     val stepMover = Observer[Step](step => forester.add(child = step, parent = stepID))
-    Button(
+    val button = Button(
       _.handledWith(_.flatMapSwitch(_ =>
         clipboard.read().asObservable.collectSome
-      )) --> Observer.combine(stepMover, Observer(_ => controller.close()))
-    ).amend("Paste")
+      )) --> Observer.combine(stepMover, Observer(_ => contextMenu.close()))
+    )
+    ContextMenuList.Item(FontAwesome.icon(FreeRegular.faPaste), "Paste", button)
   }
 
   private def changeStatusButton(
     stepID: Step.ID,
     isComplete: Boolean,
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     completionController: CompletedStep.Controller
-  ): L.Button =
-    Button(
+  ): ContextMenuList.Item = {
+    val button = Button(
       _.handledAs(!isComplete) --> (isComplete =>
         completionController.setStatus(stepID, isComplete)
-        controller.close()
+        contextMenu.close()
       )
-    ).amend(if (isComplete) "Mark incomplete" else "Mark complete")
+    )
+    ContextMenuList.Item(
+      FontAwesome.icon(FreeSolid.faCheck),
+      if (isComplete) "Mark incomplete" else "Mark complete",
+      button
+    )
+  }
 }

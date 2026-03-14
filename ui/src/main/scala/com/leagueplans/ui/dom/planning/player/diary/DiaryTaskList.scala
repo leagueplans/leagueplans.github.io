@@ -15,7 +15,7 @@ object DiaryTaskList {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     regionFilterSignal: Signal[Option[DiaryRegion]],
     tierFilterSignal: Signal[Option[DiaryTier]],
     progressFilterSignal: Signal[Option[TaskDetailsTab.Progress]],
@@ -35,7 +35,7 @@ object DiaryTaskList {
         completedTasksSignal.map(_.contains(task.id)),
         effectObserverSignal,
         tooltip,
-        contextMenuController
+        contextMenu
       )
     )
   }

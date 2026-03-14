@@ -18,7 +18,7 @@ object LeagueTab {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
@@ -28,7 +28,7 @@ object LeagueTab {
         cache,
         effectObserverSignal,
         tooltip,
-        contextMenuController
+        contextMenu
       ).amend(L.cls(Styles.tasksPanel))
     )
 

@@ -19,7 +19,7 @@ object DiaryDetailsTab {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[CompleteDiaryTask]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     regionVar: Var[Option[DiaryRegion]],
     tierVar: Var[Option[DiaryTier]]
   ): L.Div = {
@@ -54,7 +54,7 @@ object DiaryDetailsTab {
         cache,
         effectObserverSignal,
         tooltip,
-        contextMenuController,
+        contextMenu,
         regionVar.signal,
         tierVar.signal,
         _,

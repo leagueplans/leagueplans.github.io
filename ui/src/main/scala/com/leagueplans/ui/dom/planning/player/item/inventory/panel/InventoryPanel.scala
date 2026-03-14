@@ -20,7 +20,7 @@ object InventoryPanel {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): L.Div =
     L.div(
@@ -32,7 +32,7 @@ object InventoryPanel {
           columnCount = 4,
           rowCount = 7,
           overflowRowCount = 20,
-          toStackElement(playerSignal, cache, effectObserverSignal, panel, tooltip, contextMenuController, modal),
+          toStackElement(playerSignal, cache, effectObserverSignal, panel, tooltip, contextMenu, modal),
           tooltip
         ).amend(L.cls(Styles.contents))
       )
@@ -59,26 +59,31 @@ object InventoryPanel {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     panel: L.HtmlElement,
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
       tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2, fadeIn = false)
-    ).amend(bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenuController, modal))
+    ).amend(bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenu, modal))
 
   private def bindItemContextMenu(
     stack: ItemStack,
     cache: Cache,
     playerSignal: Signal[Player],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): Binder.Base =
-    contextMenuController.register(
-      effectObserverSignal.map(_.map(effectObserver =>
-        InventoryItemContextMenu(stack, cache, playerSignal, effectObserver, contextMenuController, modal)
-      ))
-    )
+    contextMenu.registerConditionally(
+      Signal
+        .combine(effectObserverSignal, playerSignal)
+        .map {
+          case (Some(effectObserver), player) =>
+            Some(() => InventoryItemContextMenu(stack, player, cache, effectObserver, contextMenu, modal))
+          case (None, _) =>
+            None
+        }
+    )()
 }

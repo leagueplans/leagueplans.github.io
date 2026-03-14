@@ -21,7 +21,7 @@ object BankElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): L.Div =
     L.div(
@@ -37,7 +37,7 @@ object BankElement {
           columnCount = 8,
           rowCount = 100,
           overflowRowCount = 10,
-          toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenuController, modal),
+          toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenu, modal),
           tooltip
         ).amend(L.cls(Styles.contents))
       )
@@ -70,30 +70,30 @@ object BankElement {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     panel: L.HtmlElement,
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
       tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2, fadeIn = false)
-    ).amend(bindContextMenu(stack.item, bankSignal, effectObserverSignal, contextMenuController, modal))
+    ).amend(bindContextMenu(stack.item, bankSignal, effectObserverSignal, contextMenu, modal))
 
   private def bindContextMenu(
     item: Item,
     bankSignal: Signal[Depository],
     effectObserverSignal: Signal[Option[Observer[Effect]]],
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): Binder.Base =
-    contextMenuController.register(
+    contextMenu.registerConditionally(
       Signal
         .combine(bankSignal, effectObserverSignal)
         .map((bank, maybeEffectObserver) =>
-          maybeEffectObserver.map { effectObserver =>
+          maybeEffectObserver.map(effectObserver => () => {
             val heldQuantity = bank.contents.getOrElse((item.id, false), 0)
-            BankItemContextMenu(item, heldQuantity, effectObserver, contextMenuController, modal)
-          }
+            BankItemContextMenu(item, heldQuantity, effectObserver, contextMenu, modal)
+          })
         )
-    )
+    )()
 }

@@ -19,6 +19,11 @@ object Floating {
     arrowData: Option[Observer[Option[ArrowPositioningData]]]
   )
 
+  /** You must not call this multiple times for the same element (e.g. in response to a
+    * mouse event). This registers a listener for mount events, and potentially adds a
+    * child (the arrow). A new listener and child may be added each time the target is
+    * mounted if this is triggered multiple times.
+    */
   def anchorTo(targetX: Double, targetY: Double, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
     val anchor = new VirtualElement {
       def getBoundingClientRect(): ClientRectObject =

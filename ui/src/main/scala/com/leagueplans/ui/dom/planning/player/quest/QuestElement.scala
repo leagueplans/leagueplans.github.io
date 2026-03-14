@@ -15,7 +15,7 @@ object QuestElement {
     quest: Quest,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls <-- completeSignal.map {
@@ -23,7 +23,7 @@ object QuestElement {
         case true => ColourStyles.completed
       },
       quest.name,
-      bindContextMenu(quest, completeSignal, effectObserverSignal, contextMenuController)
+      bindContextMenu(quest, completeSignal, effectObserverSignal, contextMenu)
     )
 
   @js.native @JSImport("/styles/planning/shared/player/statusColours.module.css", JSImport.Default)
@@ -36,16 +36,16 @@ object QuestElement {
     quest: Quest,
     completeSignal: Signal[Boolean],
     effectObserverSignal: Signal[Option[Observer[CompleteQuest]]],
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): Binder.Base =
-    contextMenuController.register(
+    contextMenu.registerConditionally(
       Signal
         .combine(completeSignal, effectObserverSignal)
         .map {
           case (false, Some(effectObserver)) =>
-            Some(QuestContextMenu(quest, effectObserver, contextMenuController))
+            Some(() => QuestContextMenu(quest, effectObserver, contextMenu))
           case _ =>
             None
         }
-    )
+    )()
 }

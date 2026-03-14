@@ -36,7 +36,7 @@ object StepElement {
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     clipboard: Clipboard[Step]
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
@@ -87,7 +87,7 @@ object StepElement {
           stepID,
           step,
           forester,
-          contextMenuController,
+          contextMenu,
           clipboard,
           completionController,
           editingEnabledSignal,

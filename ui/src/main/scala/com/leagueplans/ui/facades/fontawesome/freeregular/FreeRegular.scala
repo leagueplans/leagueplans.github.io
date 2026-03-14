@@ -12,6 +12,9 @@ object FreeRegular {
   @js.native @JSImport("@fortawesome/free-regular-svg-icons/faClipboard")
   object faClipboard extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faPaste")
+  object faPaste extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-regular-svg-icons/faPenToSquare")
   object faPenToSquare extends IconDefinition
 

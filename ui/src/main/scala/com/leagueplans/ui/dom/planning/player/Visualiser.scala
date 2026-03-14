@@ -19,18 +19,18 @@ object Visualiser {
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     expMultipliers: List[ExpMultiplier],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, expMultipliers, tooltip, contextMenuController, modal, toastPublisher))
-    val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenuController))
+    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, expMultipliers, tooltip, contextMenu, modal, toastPublisher))
+    val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenu))
 
     if (isLeague)
       View(
         characterTab,
         questTab,
-        View.Tab("League progress", LeagueTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenuController))
+        View.Tab("League progress", LeagueTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenu))
       )
     else if (isGridMaster)
       View(

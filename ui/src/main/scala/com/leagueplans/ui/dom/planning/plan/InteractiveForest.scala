@@ -24,7 +24,7 @@ object InteractiveForest {
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     focusController: FocusController,
     toastPublisher: ToastHub.Publisher
   ): ReactiveHtmlElement[OList] = {
@@ -54,7 +54,7 @@ object InteractiveForest {
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
             tooltip,
-            contextMenuController,
+            contextMenu,
             clipboard
           )
       )

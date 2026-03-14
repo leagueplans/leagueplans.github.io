@@ -1,28 +1,32 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{Button, ContextMenu, FormOpener, Modal}
+import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.raquo.airstream.core.Observer
-import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
+import com.raquo.laminar.api.L
 
 object BankItemContextMenu {
   def apply(
     item: Item,
     heldQuantity: Int,
     effectObserver: Observer[Effect],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
   ): L.Div =
-    L.div(
-      withdrawButton(item, heldQuantity, note = false, effectObserver, controller, modal),
-      Option.when(item.noteable)(
-        withdrawButton(item, heldQuantity, note = true, effectObserver, controller, modal)
-      )
+    ContextMenuList.from(
+      List(
+        Some(withdrawButton(item, heldQuantity, note = false, effectObserver, contextMenu, modal)),
+        Option.when(item.noteable)(
+          withdrawButton(item, heldQuantity, note = true, effectObserver, contextMenu, modal)
+        )
+      ).flatten
     )
 
   private def withdrawButton(
@@ -30,9 +34,9 @@ object BankItemContextMenu {
     heldQuantity: Int,
     note: Boolean,
     effectObserver: Observer[MoveItem],
-    controller: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal
-  ): L.Node = {
+  ): ContextMenuList.Item = {
     val observer =
       if (heldQuantity > 1)
         toWithdrawItemFormOpener(item, heldQuantity, note, effectObserver, modal)
@@ -48,9 +52,19 @@ object BankItemContextMenu {
           )
         )
 
-    Button(
-      _.handled --> Observer.combine(observer, Observer(_ => controller.close()))
-    ).amend(if (note) "Withdraw noted" else "Withdraw")
+    val icon =
+      if (note)
+        FontAwesome.icon(FreeSolid.faArrowRightToBracket).amend(L.svg.transform("rotate(180)"))
+      else
+        FontAwesome.icon(FreeSolid.faArrowLeft)
+
+    ContextMenuList.Item(
+      icon,
+      if (note) "Withdraw noted" else "Withdraw",
+      Button(
+        _.handled --> Observer.combine(observer, Observer(_ => contextMenu.close()))
+      )
+    )
   }
 
   private def toWithdrawItemFormOpener(

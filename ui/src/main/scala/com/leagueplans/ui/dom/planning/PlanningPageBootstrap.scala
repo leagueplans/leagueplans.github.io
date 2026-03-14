@@ -29,7 +29,7 @@ object PlanningPageBootstrap {
     statusTracker: StatusTracker,
     cache: Cache,
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -75,7 +75,7 @@ object PlanningPageBootstrap {
       cache,
       itemFuse,
       tooltip,
-      contextMenuController,
+      contextMenu,
       modal,
       toastPublisher
     ).amend(

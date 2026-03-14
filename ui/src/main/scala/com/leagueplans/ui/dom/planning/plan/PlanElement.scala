@@ -10,7 +10,6 @@ import com.raquo.laminar.api.L
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-//TODO Context menus
 //TODO Cross plan copy/paste
 object PlanElement {
   def apply(
@@ -21,7 +20,7 @@ object PlanElement {
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -39,7 +38,7 @@ object PlanElement {
         editingEnabled,
         stepsWithErrorsSignal,
         tooltip,
-        contextMenuController,
+        contextMenu,
         focusController,
         toastPublisher
       ).amend(L.cls(Styles.steps)),

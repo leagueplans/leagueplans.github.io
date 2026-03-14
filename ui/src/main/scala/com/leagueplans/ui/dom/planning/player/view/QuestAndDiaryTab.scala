@@ -17,12 +17,12 @@ object QuestAndDiaryTab {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller
+    contextMenu: ContextMenu
   ): L.Div =
     L.div(
       L.cls(Styles.tabContent),
-      QuestList(playerSignal, cache, effectObserverSignal, contextMenuController).amend(L.cls(Styles.questPanel)),
-      DiaryPanel(playerSignal, cache, effectObserverSignal, tooltip, contextMenuController).amend(L.cls(Styles.diaryPanel))
+      QuestList(playerSignal, cache, effectObserverSignal, contextMenu).amend(L.cls(Styles.questPanel)),
+      DiaryPanel(playerSignal, cache, effectObserverSignal, tooltip, contextMenu).amend(L.cls(Styles.diaryPanel))
     )
 
   @js.native @JSImport("/styles/planning/player/view/questAndDiaryTab.module.css", JSImport.Default)

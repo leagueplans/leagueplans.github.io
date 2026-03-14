@@ -29,7 +29,7 @@ object PlanningPage {
     cache: Cache,
     itemFuse: Fuse[Item],
     tooltip: Tooltip,
-    contextMenuController: ContextMenu.Controller,
+    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -42,7 +42,7 @@ object PlanningPage {
         editingEnabled = Val(true),
         stepsWithErrors.map(_.keySet),
         tooltip,
-        contextMenuController,
+        contextMenu,
         modal,
         toastPublisher
       )
@@ -59,7 +59,7 @@ object PlanningPage {
           createEffectObserver(focusContext.focus, forester),
           s.expMultipliers,
           tooltip,
-          contextMenuController,
+          contextMenu,
           modal,
           toastPublisher
         )

@@ -38,6 +38,14 @@ object FloatingConfig {
       ),
       fadeIn = fadeIn
     )
+
+  def basicContextMenu(
+    placement: Placement = Placement.bottomStart,
+  ): FloatingConfig =
+    FloatingConfig(
+      placement = Some(placement),
+      flip = Some(new FlipOptions {})
+    )
 }
 
 final case class FloatingConfig(
