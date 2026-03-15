@@ -28,11 +28,7 @@ object TimeKeeper {
       addDurations(start, stepDuration.map(_.asScala))
 
     val finish: Option[Duration] =
-      (start, durationPerParentRep) match {
-        case (Some(s), Some(t)) => Some(s.safeAdd(t))
-        case (Some(s), None)    => Some(s)
-        case (None,    _)       => None
-      }
+      addDurations(start, durationPerParentRep)
   }
 
   object State {
@@ -45,10 +41,10 @@ object TimeKeeper {
   }
 
   def apply(forest: Forest[Step.ID, Step]): TimeKeeper = {
-    val varForest = forest.map((_, step) =>
-      Var(State(start = None, step.duration.toOption, totalChildDuration = None, step.repetitions))
+    val stateForest = forest.map((_, step) =>
+      State(start = None, step.duration.toOption, totalChildDuration = None, step.repetitions)
     )
-    val keeper = new TimeKeeper(varForest)
+    val keeper = new TimeKeeper(stateForest)
     keeper.recomputeAll()
     keeper
   }
@@ -62,8 +58,11 @@ object TimeKeeper {
     }
 }
 
-final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
+final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
   private val _endTime: Var[Duration] = Var(Duration.Zero)
+
+  private val stateVars: mutable.Map[Step.ID, Var[State]] =
+    mutable.Map.from(forest.nodes.view.map((id, state) => id -> Var(state)))
 
   /** Holds Vars pre-created by [[get]] for steps not yet in the forest. When the corresponding
    *  [[Forest.Update.AddNode]] arrives, [[update]] retrieves the Var from here rather than
@@ -74,10 +73,15 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
     _endTime.signal
 
   def get(step: Step.ID): StrictSignal[State] =
-    forest.get(step) match {
+    stateVars.get(step) match {
       case Some(v) => v.signal
       case None    => pendingVars.getOrElseUpdate(step, Var(State.zero)).signal
     }
+
+  private def setState(id: Step.ID, state: State): Unit = {
+    forest = ForestResolver.resolve(forest, Update.UpdateData(id, state))
+    stateVars.get(id).foreach(_.set(state))
+  }
 
   def update(forestUpdate: Forest.Update[Step.ID, Step]): Unit =
     forestUpdate match {
@@ -86,20 +90,23 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
         val runningStart = for {
           root <- forest.roots.lastOption
           state <- forest.get(root)
-          finish <- state.now().finish
+          finish <- state.finish
         } yield finish
         val durationPerParentRep = data.duration.toOption.map(_.asScala.safeMul(data.repetitions))
         val effectiveStart = computeEffectiveStart(runningStart, durationPerParentRep)
-        val v = pendingVars.remove(id).getOrElse(forest.getOrElse(id, Var(State.zero)))
-        v.set(State(effectiveStart, data.duration.toOption, totalChildDuration = None, data.repetitions))
-        forest = ForestResolver.resolve(forest, Update.AddNode(id, v))
+        val initialState = State(effectiveStart, data.duration.toOption, totalChildDuration = None, data.repetitions)
+        val v = pendingVars.remove(id).getOrElse(stateVars.getOrElse(id, Var(initialState)))
+        stateVars.put(id, v)
+        v.set(initialState)
+        forest = ForestResolver.resolve(forest, Update.AddNode(id, initialState))
         updateEndTime()
 
       case Update.RemoveNode(id) =>
-        val idStart = forest.get(id).flatMap(_.now().start)
+        val idStart = forest.get(id).flatMap(_.start)
         val following = forest.siblings(id).dropWhile(_ != id).drop(1)
         val maybeParent = forest.toParent.get(id)
         forest = ForestResolver.resolve(forest, Update.RemoveNode(id))
+        stateVars.remove(id)
         recomputeSequence(following, idStart)
         maybeParent.foreach { p =>
           if (recomputeTotalChildDuration(p)) propagate(p)
@@ -107,7 +114,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
         updateEndTime()
 
       case Update.AddLink(child, parent) =>
-        val childOldStart = forest.get(child).flatMap(_.now().start)
+        val childOldStart = forest.get(child).flatMap(_.start)
         // AddLink only fires when child is a root (ChangeParent handles non-root moves via
         // RemoveLink + AddLink), so child's current siblings are the other roots.
         val oldFollowingRoots = forest.siblings(child).dropWhile(_ != child).drop(1)
@@ -121,7 +128,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
         updateEndTime()
 
       case Update.RemoveLink(child, parent) =>
-        val childOldStart = forest.get(child).flatMap(_.now().start)
+        val childOldStart = forest.get(child).flatMap(_.start)
         val oldFollowing = forest.siblings(child).dropWhile(_ != child).drop(1)
         forest = ForestResolver.resolve(forest, Update.RemoveLink(child, parent))
         // 1. Heal gap among former siblings
@@ -132,7 +139,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
           val newRootStart = for {
             root <- forest.roots.dropRight(1).lastOption
             state <- forest.get(root)
-            finish <- state.now().finish
+            finish <- state.finish
           } yield finish
           recomputeSubtreeStarts(child, newRootStart)
         }
@@ -143,11 +150,10 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
         update(Update.AddLink(child, newParent))
 
       case Update.UpdateData(id, data) =>
-        forest.get(id).foreach { v =>
-          val old = v.now()
+        forest.get(id).foreach { old =>
           val newDuration = data.duration.toOption
           if (old.stepDuration != newDuration || old.repetitions != data.repetitions) {
-            v.set(old.copy(stepDuration = newDuration, repetitions = data.repetitions))
+            setState(id, old.copy(stepDuration = newDuration, repetitions = data.repetitions))
             recomputeSubtreeStarts(id, runningStartFor(id))
             propagate(id)
           }
@@ -159,7 +165,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
         val firstStart = for {
           p <- maybeParent
           state <- forest.get(p)
-          childrenStart <- state.now().childrenStart
+          childrenStart <- state.childrenStart
         } yield childrenStart
         recomputeSequence(children, firstStart)
     }
@@ -175,22 +181,20 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
   private def recomputeTotalChildDuration(id: Step.ID): Boolean =
     forest.get(id) match {
       case None => false
-      case Some(v) =>
+      case Some(old) =>
         val children = forest.toChildren.getOrElse(id, Nil)
         val newTotal = children.foldLeft(Option.empty[Duration]) { (acc, child) =>
-          addDurations(acc, forest.get(child).flatMap(_.now().durationPerParentRep))
+          addDurations(acc, forest.get(child).flatMap(_.durationPerParentRep))
         }
-        val old = v.now()
         val totalChanged = newTotal != old.totalChildDuration
-        if (totalChanged) v.set(old.copy(totalChildDuration = newTotal))
+        if (totalChanged) setState(id, old.copy(totalChildDuration = newTotal))
         totalChanged
     }
 
   private def recomputeSubtreeStarts(id: Step.ID, runningStart: Option[Duration]): Unit =
-    forest.get(id).foreach { v =>
-      val current = v.now()
+    forest.get(id).foreach { current =>
       val effectiveStart = computeEffectiveStart(runningStart, current.durationPerParentRep)
-      if (effectiveStart != current.start) v.set(current.copy(start = effectiveStart))
+      if (effectiveStart != current.start) setState(id, current.copy(start = effectiveStart))
       recomputeSequence(
         forest.toChildren.getOrElse(id, Nil),
         addDurations(effectiveStart, current.stepDuration.map(_.asScala))
@@ -203,7 +207,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
       case Nil => ()
       case h :: t =>
         recomputeSubtreeStarts(h, start)
-        recomputeSequence(t, forest.get(h).flatMap(_.now().finish))
+        recomputeSequence(t, forest.get(h).flatMap(_.finish))
     }
 
   /** Returns the runningStart that should be passed to recomputeSubtreeStarts for `id`:
@@ -211,19 +215,19 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
    *  or None for the first root. */
   private def runningStartFor(id: Step.ID): Option[Duration] =
     forest.siblings(id).takeWhile(_ != id).lastOption match {
-      case Some(prevSib) => forest.get(prevSib).flatMap(_.now().finish)
+      case Some(prevSib) => forest.get(prevSib).flatMap(_.finish)
       case None =>
         for {
           p <- forest.toParent.get(id)
           state <- forest.get(p)
-          childrenStart <- state.now().childrenStart
+          childrenStart <- state.childrenStart
         } yield childrenStart
     }
 
   @tailrec
   private def propagate(id: Step.ID): Unit = {
     val following = forest.siblings(id).dropWhile(_ != id).drop(1)
-    recomputeSequence(following, forest.get(id).flatMap(_.now().finish))
+    recomputeSequence(following, forest.get(id).flatMap(_.finish))
     forest.toParent.get(id) match {
       case Some(parent) if recomputeTotalChildDuration(parent) => propagate(parent)
       case _ => ()
@@ -233,7 +237,7 @@ final class TimeKeeper(private var forest: Forest[Step.ID, Var[State]]) {
   private def updateEndTime(): Unit =
     _endTime.set(
       forest.roots.lastOption
-        .flatMap(r => forest.get(r).flatMap(_.now().finish))
+        .flatMap(r => forest.get(r).flatMap(_.finish))
         .getOrElse(Duration.Zero)
     )
 

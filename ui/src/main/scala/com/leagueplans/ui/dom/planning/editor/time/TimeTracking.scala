@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.planning.editor.SectionV2
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.model.player.FocusContext
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.ui.utils.scala.DurationOps.safeMul
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
@@ -22,15 +22,26 @@ object TimeTracking {
   def apply(
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
-    focusContext: FocusContext,
+    timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
+    val stateSignal = stepSignal.flatMapSwitch(step => timeKeeper.get(step.id))
+    val durationPerRep = stateSignal.map(_.durationPerRep.getOrElse(Duration.Zero))
+    val start = stateSignal.map(_.start.getOrElse(Duration.Zero))
+    val finish = stateSignal.map(_.finish.getOrElse(Duration.Zero))
+    val ancestorReps =
+      Signal
+        .combine(forester.signal, stepSignal.map(_.id))
+        .map((forest, id) =>
+          forest.ancestors(id).flatMap(forest.get).foldLeft(1)(_ * _.repetitions)
+        )
+
     val durationForm = EditDurationForm(forester, modal)
     SectionV2("Time tracking")(
       L.cls(Styles.content),
-      toScheduleSection(focusContext),
-      toDurationSection(stepSignal, focusContext, tooltip),
+      toScheduleSection(durationPerRep, start, finish, ancestorReps),
+      toDurationSection(stepSignal, ancestorReps, durationPerRep, tooltip),
       Button(_.handledWith(_.sample(stepSignal)) --> Observer(durationForm.open)).amend(
         L.cls(Styles.editButton),
         "Set duration"
@@ -38,7 +49,12 @@ object TimeTracking {
     )
   }
 
-  private def toScheduleSection(focusContext: FocusContext): L.HtmlElement = {
+  private def toScheduleSection(
+    durationPerRep: Signal[Duration],
+    start: Signal[Duration],
+    finish: Signal[Duration],
+    ancestorReps: Signal[Int]
+  ): L.HtmlElement = {
     val loopFallback =
       L.p(
         L.cls(Styles.note),
@@ -46,20 +62,13 @@ object TimeTracking {
       )
 
     val scheduleDetails =
-      focusContext.durationOfRep.map(_ == Duration.Zero).splitBoolean(
-        whenTrue = _ =>
-          List(
-            toScheduleRow("Scheduled at", focusContext.timeBeforeCurrentFocus)
-          ),
-        whenFalse = _ =>
-          List(
-            toScheduleRow("Start at", focusContext.timeBeforeCurrentFocus),
-            toScheduleRow("Finish at", focusContext.timeAfterCurrentFocus),
-          )
+      durationPerRep.map(_ == Duration.Zero).splitBoolean(
+        whenTrue = _ => List(toScheduleRow("Scheduled at", start)),
+        whenFalse = _ => List(toScheduleRow("Start at", start), toScheduleRow("Finish at", finish))
       )
 
     val scheduleContent =
-      focusContext.ancestorRepetitions.map(_ == 1).flatMapSwitch {
+      ancestorReps.map(_ == 1).flatMapSwitch {
         case false => Signal.fromValue(List(loopFallback))
         case true => scheduleDetails
       }
@@ -69,19 +78,20 @@ object TimeTracking {
 
   private def toDurationSection(
     stepSignal: Signal[Step],
-    focusContext: FocusContext,
+    ancestorReps: Signal[Int],
+    durationPerRep: Signal[Duration],
     tooltip: Tooltip
   ): L.HtmlElement = {
     val rows =
       Signal.combine(
         stepSignal,
-        focusContext.ancestorRepetitions,
-        focusContext.durationOfRep
-      ).map { (step, ancestorReps, perRepDuration) =>
-        val hasDuration = perRepDuration != Duration.Zero
+        ancestorReps,
+        durationPerRep
+      ).map { (step, ancestorReps, durationPerRep) =>
+        val hasDuration = durationPerRep != Duration.Zero
         val totalReps = step.repetitions * ancestorReps
         val stepDuration = step.duration.asScala
-        val substepsHaveDurations = perRepDuration != stepDuration
+        val substepsHaveDurations = durationPerRep != stepDuration
 
         val stepRow = Option.when(substepsHaveDurations) {
           val tooltipContents =
@@ -100,7 +110,7 @@ object TimeTracking {
             else
               "Time added per repetition"
 
-          toDurationRow("Per rep", format(perRepDuration), tooltipContents, tooltip)
+          toDurationRow("Per rep", format(durationPerRep), tooltipContents, tooltip)
         }
 
         val totalRow = {
@@ -110,7 +120,7 @@ object TimeTracking {
             case (true, 1) => "Time added to the plan, accounting for substeps"
             case (true, _) => "Time added to the plan, accounting for substeps and repetitions"
           }
-          val rowContent = if (perRepDuration == Duration.Zero) "—" else format(perRepDuration.safeMul(totalReps))
+          val rowContent = if (durationPerRep == Duration.Zero) "—" else format(durationPerRep.safeMul(totalReps))
           toDurationRow("Total", rowContent, tooltipContents, tooltip)
         }
 

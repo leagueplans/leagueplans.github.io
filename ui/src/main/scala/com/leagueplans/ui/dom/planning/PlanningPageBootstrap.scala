@@ -10,7 +10,7 @@ import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.model.validation.StepValidator
-import com.leagueplans.ui.projection.calculation.EffectResolver
+import com.leagueplans.ui.projection.calculation.{EffectResolver, TimeKeeper}
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.wrappers.fusejs.Fuse
@@ -34,6 +34,7 @@ object PlanningPageBootstrap {
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings)
+    val timeKeeper = TimeKeeper(initialPlan.steps)
 
     val itemFuse = Fuse(
       cache.items.values.toList,
@@ -70,6 +71,7 @@ object PlanningPageBootstrap {
       settings.signal,
       forester,
       focusContext,
+      timeKeeper,
       focusController,
       stepsWithErrors,
       cache,
@@ -88,6 +90,8 @@ object PlanningPageBootstrap {
       settings.signal.changes --> Observer(projectionClient.updateSettings),
       focusedStep.changes --> Observer(projectionClient.changeFocus),
       projectionClient.status --> Observer(statusTracker.set(ProjectionClient.statusKey, _)),
+      // Timekeeping
+      forester.updates --> Observer(timeKeeper.update),
       // Clean up
       L.onUnmountCallback { _ =>
         subscription.close()

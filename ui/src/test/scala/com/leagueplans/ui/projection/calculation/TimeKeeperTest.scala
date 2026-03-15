@@ -108,6 +108,28 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
       }
     }
 
+    "three sequential children" - {
+      val parent = step("p",  dur = StepDuration.ticks(1))
+      val c1     = step("c1", dur = StepDuration.ticks(2))
+      val c2     = step("c2", dur = StepDuration.ticks(3))
+      val c3     = step("c3", dur = StepDuration.ticks(4))
+      val k = keeper(forest(
+        Map(parent.id -> parent, c1.id -> c1, c2.id -> c2, c3.id -> c3),
+        parentsToChildren = Map(parent.id -> List(c1.id, c2.id, c3.id)),
+        roots = List(parent.id)
+      ))
+
+      // c3's start depends on c2's finish, which depends on c1's finish; exercises
+      // cascaded recomputeSequence reads against freshly-written state
+      "c1 starts at parent.stepDuration" in { k.get(c1.id).now().start shouldBe Some(ticks(1)) }
+      "c2 starts at c1's finish" in { k.get(c2.id).now().start shouldBe Some(ticks(3)) }
+      "c3 starts at c2's finish" in { k.get(c3.id).now().start shouldBe Some(ticks(6)) }
+      "parent totalChildDuration = c1 + c2 + c3" in {
+        k.get(parent.id).now().totalChildDuration shouldBe Some(ticks(9))
+      }
+      "endTime = parent.own + all children" in { k.endTime.now() shouldBe ticks(10) }
+    }
+
     "step with repetitions multiplies durationPerParentRep" - {
       val a = step("a", reps = 3, dur = StepDuration.ticks(4))
       val k = keeper(forest(Map(a.id -> a), roots = List(a.id)))
@@ -170,14 +192,19 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
   }
 
   "State.finish" - {
-    "None start always yields None finish regardless of durationPerParentRep" in {
+    "None start with no durationPerParentRep yields None finish" in {
+      val s = TimeKeeper.State(start = None, stepDuration = None, totalChildDuration = None, repetitions = 1)
+      s.finish shouldBe None
+    }
+
+    "None start with durationPerParentRep yields durationPerParentRep as finish" in {
       val s = TimeKeeper.State(
         start = None,
         stepDuration = Some(StepDuration.ticks(5)),
         totalChildDuration = None,
         repetitions = 1
       )
-      s.finish shouldBe None
+      s.finish shouldBe Some(ticks(5))
     }
 
     "Some start with no durationPerParentRep yields start as finish" in {
@@ -215,6 +242,36 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
       k.update(Update.AddNode(b.id, b))
       k.get(b.id).now().start shouldBe Some(ticks(3))
       k.endTime.now() shouldBe ticks(8)
+    }
+
+    "three timed roots added sequentially anchor at correct cumulative positions" in {
+      val k = keeper(Forest.empty)
+      val a = step("a", dur = StepDuration.ticks(2))
+      val b = step("b", dur = StepDuration.ticks(3))
+      val c = step("c", dur = StepDuration.ticks(4))
+      k.update(Update.AddNode(a.id, a))
+      k.update(Update.AddNode(b.id, b))
+      k.update(Update.AddNode(c.id, c))
+      k.get(a.id).now().start shouldBe Some(Duration.Zero)
+      k.get(b.id).now().start shouldBe Some(ticks(2))
+      k.get(c.id).now().start shouldBe Some(ticks(5))
+      k.endTime.now() shouldBe ticks(9)
+    }
+
+    "third root added after a root-with-child starts at parent's full finish" in {
+      // endTime must reflect the parent's totalChildDuration, not just its own stepDuration
+      val parent = step("p",  dur = StepDuration.ticks(2))
+      val child  = step("c",  dur = StepDuration.ticks(5))
+      val k = keeper(forest(
+        Map(parent.id -> parent, child.id -> child),
+        parentsToChildren = Map(parent.id -> List(child.id)),
+        roots = List(parent.id)
+      ))
+      // parent.finish = 0 + 2 + 5 = 7
+      val sibling = step("s", dur = StepDuration.ticks(3))
+      k.update(Update.AddNode(sibling.id, sibling))
+      k.get(sibling.id).now().start shouldBe Some(ticks(7))
+      k.endTime.now() shouldBe ticks(10)
     }
 
     "untimed step added after a timed root inherits the running start" in {
@@ -308,6 +365,26 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
       k.update(Update.AddLink(c2.id, parent.id))
       // c2 is appended as second child; starts at c1.finish = 0(parent) + 1(own) + 2(c1) = 3
       k.get(c2.id).now().start shouldBe Some(ticks(3))
+    }
+
+    "following sibling shifts to account for newly linked child's duration" in {
+      // Tests the main stale-read scenario: after AddLink, the sibling after the parent
+      // must start at the parent's full finish (own + child), not just own.
+      val child   = step("child",   dur = StepDuration.ticks(5))
+      val parent  = step("parent",  dur = StepDuration.ticks(2))
+      val sibling = step("sibling", dur = StepDuration.ticks(3))
+      // initial roots order: child, parent, sibling
+      // child.start=0, parent.start=5, sibling.start=7
+      val k = keeper(forest(
+        Map(child.id -> child, parent.id -> parent, sibling.id -> sibling),
+        roots = List(child.id, parent.id, sibling.id)
+      ))
+      k.update(Update.AddLink(child.id, parent.id))
+      // After: parent is first root at 0; child is parent's first child at 0+2=2;
+      // parent.totalChildDuration=5; parent.durationPerParentRep=7; parent.finish=7
+      k.get(parent.id).now().totalChildDuration shouldBe Some(ticks(5))
+      k.get(sibling.id).now().start shouldBe Some(ticks(7))
+      k.endTime.now() shouldBe ticks(10)
     }
 
     "child added to a loop parent starts at parent.start + parent.stepDuration" in {
@@ -456,6 +533,25 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
       k.get(child.id).now().start shouldBe Some(ticks(2))
       k.update(Update.UpdateData(parent.id, step("p", dur = StepDuration.ticks(5))))
       k.get(child.id).now().start shouldBe Some(ticks(5))
+    }
+
+    "increasing a child's duration propagates through parent finish to following sibling" in {
+      // Tests cascaded propagation: child → parent.totalChildDuration → parent.finish → sibling.start
+      val parent  = step("p",       dur = StepDuration.ticks(2))
+      val child   = step("c",       dur = StepDuration.ticks(3))
+      val sibling = step("sibling", dur = StepDuration.ticks(4))
+      val k = keeper(forest(
+        Map(parent.id -> parent, child.id -> child, sibling.id -> sibling),
+        parentsToChildren = Map(parent.id -> List(child.id)),
+        roots = List(parent.id, sibling.id)
+      ))
+      // initial: parent.finish = 0+2+3=5; sibling.start=5
+      k.get(sibling.id).now().start shouldBe Some(ticks(5))
+      k.update(Update.UpdateData(child.id, step("c", dur = StepDuration.ticks(7))))
+      k.get(parent.id).now().totalChildDuration shouldBe Some(ticks(7))
+      k.get(parent.id).now().durationPerParentRep shouldBe Some(ticks(9))
+      k.get(sibling.id).now().start shouldBe Some(ticks(9))
+      k.endTime.now() shouldBe ticks(13)
     }
 
     "no-op update (same duration) leaves state unchanged" in {

@@ -8,7 +8,8 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.utils.HasID
 import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
@@ -26,7 +27,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
-    focusContext: FocusContext,
+    timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
@@ -39,7 +40,7 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
       L.div(
         L.cls(Styles.sections),
-        TimeTracking(stepSignal, forester, focusContext, tooltip, modal).amend(L.cls(Styles.timeTracking)),
+        TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
       )

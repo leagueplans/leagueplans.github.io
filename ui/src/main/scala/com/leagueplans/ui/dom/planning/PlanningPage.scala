@@ -10,6 +10,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
 import com.leagueplans.ui.model.player.mode.GridMaster
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
@@ -24,6 +25,7 @@ object PlanningPage {
     settings: Signal[Plan.Settings],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
+    timeKeeper: TimeKeeper,
     focusController: FocusController,
     stepsWithErrors: Signal[Map[Step.ID, List[String]]],
     cache: Cache,
@@ -75,7 +77,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
-            focusContext,
+            timeKeeper,
             tooltip,
             modal
           ).amend(L.cls(Styles.editor)),
