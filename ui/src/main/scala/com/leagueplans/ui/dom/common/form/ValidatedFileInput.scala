@@ -29,7 +29,7 @@ object ValidatedFileInput {
     L.inContext(node =>
       dataSignal --> {
         case Some(Left(error)) =>
-          console.error(s"Failed to parse uploaded file: [${error.getMessage}]")
+          console.error(s"Failed to parse uploaded file", error)
           node.ref.setCustomValidity("Unable to parse the provided file")
         case _ =>
           node.ref.setCustomValidity("")
