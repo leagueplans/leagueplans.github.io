@@ -4,12 +4,10 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.model.Projection
-import com.leagueplans.ui.utils.scala.DurationOps.{safeAdd, safeMul}
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 object Projector {
   def apply(settings: Plan.Settings, cache: Cache): Projector =
@@ -70,11 +68,9 @@ final class Projector(effectResolver: EffectResolver) {
     * macrotask queue periodically. This keeps the worker responsive — if a newer message
     * arrives mid-computation, the signal is aborted and [[None]] is returned early.
     *
-    * The computation has four phases:
-    *   1. Fold all steps preceding the focused step's root tree → player state + elapsed time
-    *   2. Fold the focused step's root tree up to (not including) the focus → refine both
-    *   3. Fold the focused step's children → duration of one repetition
-    *   4. Derive remaining Projection fields from the results of phases 1–3
+    * The computation has two phases:
+    *   1. Fold all steps preceding the focused step's root tree → player state
+    *   2. Fold the focused step's root tree up to (not including) the focus → refine player state
     *
     * In phase 2, ancestor steps are capped at one repetition. When a user focuses a step
     * inside a repeated ancestor, they're typically building out a single iteration of that
@@ -103,13 +99,9 @@ final class Projector(effectResolver: EffectResolver) {
     }
 
     // Phase 1
-    foldLeftAsync(
-      precedingRootSteps,
-      (settings.initialPlayer, Duration.Zero),
-      signal
-    )(resolveCombined).flatMap {
+    foldLeftAsync(precedingRootSteps, settings.initialPlayer, signal)(resolvePlayer).flatMap {
       case None => Future.successful(None)
-      case Some((playerAfterPreceding, timeAfterPreceding)) =>
+      case Some(playerAfterPreceding) =>
         // Phase 2
         val transformedContainingTree = focusID match {
           case None => Forest.empty
@@ -123,61 +115,20 @@ final class Projector(effectResolver: EffectResolver) {
 
         foldLeftAsync(
           transformedContainingTree,
-          (playerAfterPreceding, timeAfterPreceding),
+          playerAfterPreceding,
           signal
-        )(resolveCombined).flatMap {
-          case None => Future.successful(None)
-          case Some((playerBeforeFocus, timeBeforeFocus)) =>
-            // Phases 3 & 4
-            buildProjection(forest, focusID, containingTree, playerBeforeFocus, timeBeforeFocus, signal)
-        }
+        )(resolvePlayer).map(_.map { playerBeforeFocus =>
+          val playerAfterFirstCompletion = focusID.flatMap(forest.get) match {
+            case Some(step) => effectResolver.resolve(playerBeforeFocus, step.directEffects.underlying*)
+            case None => playerBeforeFocus
+          }
+          Projection(playerAfterFirstCompletion)
+        })
     }
   }
 
-  private def resolveCombined(acc: (Player, Duration), step: Step, reps: Int): (Player, Duration) = {
-    val (player, time) = acc
-    val newPlayer = effectResolver.resolve(player, List.fill(reps)(step.directEffects.underlying).flatten*)
-    (newPlayer, time.safeAdd(step.duration.asScala.safeMul(reps)))
-  }
-
-  private def buildProjection(
-    forest: Forest[Step.ID, Step],
-    focusID: Option[Step.ID],
-    containingTree: Forest[Step.ID, Step],
-    playerBeforeFocus: Player,
-    timeBeforeFocus: Duration,
-    signal: dom.AbortSignal
-  ): Future[Option[Projection]] = {
-    val focus = focusID.flatMap(forest.get)
-
-    val playerAfterFirstCompletion = focus match {
-      case Some(step) => effectResolver.resolve(playerBeforeFocus, step.directEffects.underlying*)
-      case None => playerBeforeFocus
-    }
-
-    val ancestorRepetitions = focusID match {
-      case Some(id) => forest.ancestors(id).flatMap(forest.get).map(_.repetitions).product
-      case None => 1
-    }
-
-    // Phase 3: duration of one repetition of the focused step (including its children)
-    val durationOfRepFuture =
-      (for {
-        id <- focusID
-        step <- focus
-      } yield foldLeftAsync[Duration](containingTree.subforest(id), step.duration.asScala, signal)(
-        (acc, step, reps) => acc.safeAdd(step.duration.asScala.safeMul(reps))
-      )).getOrElse(Future.successful(Some(Duration.Zero)))
-
-    // Phase 4: assemble Projection from accumulated durations
-    durationOfRepFuture.map(_.map { durationOfRep =>
-      val timeAfterCurrentFocus = focus match {
-        case Some(step) => durationOfRep.safeMul(step.repetitions).safeAdd(timeBeforeFocus)
-        case None => timeBeforeFocus
-      }
-      Projection(playerAfterFirstCompletion, timeBeforeFocus, timeAfterCurrentFocus, durationOfRep, ancestorRepetitions)
-    })
-  }
+  private def resolvePlayer(player: Player, step: Step, reps: Int): Player =
+    effectResolver.resolve(player, List.fill(reps)(step.directEffects.underlying).flatten*)
 
   private def foldLeftAsync[Acc](
     forest: Forest[Step.ID, Step],

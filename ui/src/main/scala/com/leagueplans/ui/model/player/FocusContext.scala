@@ -8,8 +8,6 @@ import com.leagueplans.ui.projection.model.Projection
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.StrictSignal
 
-import scala.concurrent.duration.Duration
-
 /** Thin wrapper over worker-computed Projections, with cheap synchronous signals kept local. */
 final class FocusContext(
   val focusID: StrictSignal[Option[Step.ID]],
@@ -24,18 +22,6 @@ final class FocusContext(
   def signalFor(id: Step.ID): Signal[Boolean] =
     focus.map(_.exists(_.id == id)).distinct
 
-  val ancestorRepetitions: Signal[Int] =
-    projection.map(_.ancestorRepetitions)
-
   val playerAfterFirstCompletionOfCurrentFocus: Signal[Player] =
     projection.map(_.playerAfterFirstCompletion)
-
-  val timeBeforeCurrentFocus: Signal[Duration] =
-    projection.map(_.timeBeforeCurrentFocus)
-
-  val timeAfterCurrentFocus: Signal[Duration] =
-    projection.map(_.timeAfterCurrentFocus)
-
-  val durationOfRep: Signal[Duration] =
-    projection.map(_.durationOfRep)
 }

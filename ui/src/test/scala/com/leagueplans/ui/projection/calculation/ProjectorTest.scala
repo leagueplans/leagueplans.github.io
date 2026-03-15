@@ -1,7 +1,7 @@
 package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Duration as PlanDuration, *}
+import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.skill.Stats
 import com.leagueplans.ui.model.player.{GridStatus, Player}
@@ -22,18 +22,10 @@ final class ProjectorTest extends AsyncFreeSpec with Matchers {
     Forest.from(nodes, parentsToChildren, roots)
 
   // computeAsync test infrastructure
-  private val noOpResolver: EffectResolver = new EffectResolver {
-    def resolve(player: Player, effect: Effect): Player = player
-  }
+  private val noOpResolver: EffectResolver = (player, _) => player
   private val emptyPlayer = Player(Stats(), Map.empty, Set.empty, Set.empty, LeagueStatus(0, Set.empty, Set.empty), GridStatus(Set.empty))
   private val settings = Plan.Settings.Explicit(emptyPlayer, List.empty, None)
   private val projector = new Projector(noOpResolver)
-
-  private def step(id: String, reps: Int = 1, duration: PlanDuration = PlanDuration.ticks(0)): Step =
-    Step(Step.ID.fromString(id), StepDetails("", EffectList(List.empty), List.empty, reps, duration))
-
-  private def stepForest(nodes: Map[Step.ID, Step], parentsToChildren: Map[Step.ID, List[Step.ID]] = Map.empty, roots: List[Step.ID]): Forest[Step.ID, Step] =
-    Forest.from(nodes, parentsToChildren, roots)
 
   // Helper for foldLeftAsyncHelper tests. Uses a large yield interval by default so
   // reps are never split mid-batch, keeping traversal-correctness tests readable.
@@ -178,48 +170,5 @@ final class ProjectorTest extends AsyncFreeSpec with Matchers {
       }
     }
 
-    "preceding steps contribute to timeBeforeCurrentFocus" in {
-      val a = step("a", duration = PlanDuration.ticks(2))
-      val b = step("b")
-      val f = stepForest(Map(a.id -> a, b.id -> b), roots = List(a.id, b.id))
-      val controller = new AbortController()
-      projector.computeAsync(f, Some(b.id), settings, controller.signal).map {
-        case None    => fail("expected Some")
-        case Some(p) => p.timeBeforeCurrentFocus shouldBe PlanDuration.ticks(2).asScala
-      }
-    }
-
-    "ancestorRepetitions is the product of ancestor rep counts" in {
-      val root    = step("root",    reps = 3)
-      val child   = step("child",   reps = 2)
-      val focused = step("focused", reps = 1)
-      val f = stepForest(
-        Map(root.id -> root, child.id -> child, focused.id -> focused),
-        parentsToChildren = Map(root.id -> List(child.id), child.id -> List(focused.id)),
-        roots = List(root.id)
-      )
-      val controller = new AbortController()
-      projector.computeAsync(f, Some(focused.id), settings, controller.signal).map {
-        case None    => fail("expected Some")
-        case Some(p) => p.ancestorRepetitions shouldBe 6 // 3 * 2
-      }
-    }
-
-    "ancestor repetitions are capped at 1 in phase 2" in {
-      // Parent repeats 5 times; child is the focus. Phase 2 caps the parent at 1 rep,
-      // so timeBeforeCurrentFocus reflects one pass through the parent, not five.
-      val parent = step("parent", reps = 5, duration = PlanDuration.ticks(1))
-      val child  = step("child")
-      val f = stepForest(
-        Map(parent.id -> parent, child.id -> child),
-        parentsToChildren = Map(parent.id -> List(child.id)),
-        roots = List(parent.id)
-      )
-      val controller = new AbortController()
-      projector.computeAsync(f, Some(child.id), settings, controller.signal).map {
-        case None    => fail("expected Some")
-        case Some(p) => p.timeBeforeCurrentFocus shouldBe PlanDuration.ticks(1).asScala
-      }
-    }
   }
 }
