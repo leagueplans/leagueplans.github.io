@@ -56,7 +56,7 @@ final class Forest[ID, T] private[forest](
   val toChildren: Map[ID, List[ID]],
   val roots: List[ID]
 ) {
-  export nodes.isEmpty, nodes.nonEmpty, nodes.size, nodes.contains, nodes.get
+  export nodes.isEmpty, nodes.nonEmpty, nodes.size, nodes.contains, nodes.get, nodes.getOrElse
 
   override def equals(obj: Any): Boolean =
     obj match {
@@ -167,8 +167,8 @@ final class Forest[ID, T] private[forest](
     } else this
 
   /* Depth-first */
-  def toList: List[T] =
-    recurse()((id, _) => List(id)).flatMap(get)
+  def toList: List[ID] =
+    recurse()((id, _) => List(id))
 
   /* Depth-first */
   def foreachParent(f: (T, List[T]) => Unit): Unit =

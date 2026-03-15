@@ -24,7 +24,7 @@ object CompletedStep {
     
     def setStatus(step: Step.ID, isComplete: Boolean): Unit =
       updateObserver.onNext(forest =>
-        forest.toList.takeWhile(_.id != step).map(_.id).toSet ++
+        forest.toList.takeWhile(_ != step).toSet ++
           Option.when(isComplete)(step)
       )
   }

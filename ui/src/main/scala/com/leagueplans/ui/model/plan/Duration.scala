@@ -34,4 +34,7 @@ final case class Duration(length: Int, unit: Duration.Unit) {
       case Duration.Unit.Ticks => 600.milliseconds * length
       case Duration.Unit.Seconds => 1.second * length
     }
+    
+  def toOption: Option[Duration] =
+    Option.when(length != 0)(this)
 }

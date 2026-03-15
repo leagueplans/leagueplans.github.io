@@ -105,13 +105,16 @@ object PlanningPageBootstrap {
     val maybeLeague = settings.maybeLeaguePointScoring.map(_.league)
 
     val (stepsWithErrors, _) =
-      plan.toList.foldLeft((Map.empty[Step.ID, List[String]], settings.initialPlayer)) { case ((acc, player), step) =>
-        val (errors, updatedPlayer) = StepValidator.validate(step)(player, effectResolver, maybeLeague, cache)
-        if (errors.isEmpty)
-          (acc, updatedPlayer)
-        else
-          (acc + (step.id -> errors), updatedPlayer)
-      }
+      plan
+        .toList
+        .flatMap(plan.get)
+        .foldLeft((Map.empty[Step.ID, List[String]], settings.initialPlayer)) { case ((acc, player), step) =>
+          val (errors, updatedPlayer) = StepValidator.validate(step)(player, effectResolver, maybeLeague, cache)
+          if (errors.isEmpty)
+            (acc, updatedPlayer)
+          else
+            (acc + (step.id -> errors), updatedPlayer)
+        }
     stepsWithErrors
   }
 
