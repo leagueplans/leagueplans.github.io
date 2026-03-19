@@ -1,7 +1,7 @@
 package com.leagueplans.ui.utils.airstream
 
-import com.raquo.airstream.{BufferedStream, KillSwitchedStream}
 import com.raquo.airstream.core.{BaseObservable, EventStream, Observable}
+import com.raquo.airstream.{BufferedStream, DelayedToggleStream, KillSwitchedStream}
 
 object ObservableOps {
   extension [F[+_] <: Observable[?], S, T](self: BaseObservable[F, (S, T)]) {
@@ -18,5 +18,8 @@ object ObservableOps {
 
     def withKillSwitch(resetOnStop: Boolean): KillSwitchedStream[T] =
       new KillSwitchedStream[T](self, resetOnStop)
+
+    def withDelayedToggling[ID](getAction: T => DelayedToggleStream.Action[ID]): DelayedToggleStream[T, ID] =
+      DelayedToggleStream(self, getAction)
   }
 }

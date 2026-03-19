@@ -1,17 +1,20 @@
 package com.leagueplans.ui.dom.common
 
 import com.leagueplans.ui.facades.animation.KeyframeAnimationOptions
-import com.leagueplans.ui.utils.laminar.LaminarOps.onMountAnimate
+import com.leagueplans.ui.utils.airstream.ObservableOps.withDelayedToggling
+import com.leagueplans.ui.utils.laminar.LaminarOps.{onKey, onMountAnimate}
 import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
 import com.leagueplans.ui.wrappers.floatingui.{Floating, FloatingConfig}
+import com.raquo.airstream.DelayedToggleStream
 import com.raquo.airstream.core.Source.SignalSource
-import com.raquo.airstream.core.{Observer, Signal, Sink}
-import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
+import com.raquo.airstream.core.{EventStream, Observer, Signal, Sink}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ChildNode
 import org.scalajs.dom.{Element, KeyValue, MouseEvent}
 
+import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -24,7 +27,8 @@ object Tooltip {
     case ForceClose
   }
 
-  private val toggleTooltipDelayMs = 75
+  private val hideTooltipDelayMs = 75.milliseconds
+  private val showTooltipDelayMs = 400.milliseconds
 
   private val fadeInAnimation: Animation = Animation(
     new KeyframeAnimationOptions {
@@ -40,31 +44,33 @@ object Tooltip {
   def apply(): (L.Div, Tooltip) = {
     val keyedContents = Var(Option.empty[(key: Key, contents: ChildNode.Base)]).distinct
     val hoveringOver = Var(Option.empty[Key])
-
-    val tooltipContainer = L.div(
-      L.cls(Styles.tooltipContainer),
-      L.child.maybe <-- keyedContents.signal.map(_.map(_.contents)),
-      registerTooltipHoverListeners(keyedContents.signal.map(_.map(_.key)), hoveringOver)
-    )
+    val commandBus = EventBus[Command]()
 
     val contentsUpdater = keyedContents.updater[Command] {
       case (current @ Some((currentKey, _)), Command.Open(newKey, newContents)) =>
         if (newKey == currentKey) current else Some((newKey, newContents))
-
-      case (current @ Some((currentKey, _)), Command.Close(closeKey)) =>
-        if (closeKey == currentKey) None else current
-
       case (None, Command.Open(newKey, newContents)) =>
         Some((newKey, newContents))
-
-      case (None, _: Command.Close) =>
+      case (Some((key, _)), Command.Close(target)) if key == target =>
         None
-
+      case (current, _: Command.Close) =>
+        current
       case (_, Command.ForceClose) =>
         None
     }
 
-    (tooltipContainer, new Tooltip(contentsUpdater, hoveringOver.signal))
+    val tooltipContainer = L.div(
+      L.cls(Styles.tooltipContainer),
+      L.child.maybe <-- keyedContents.signal.map(_.map(_.contents)),
+      registerTooltipHoverListeners(keyedContents.signal.map(_.map(_.key)), hoveringOver),
+      commandBus.events.withDelayedToggling {
+        case Command.ForceClose => DelayedToggleStream.Action.AbortAll
+        case Command.Open(key, _) => DelayedToggleStream.Action.Open(key, showTooltipDelayMs)
+        case Command.Close(key) => DelayedToggleStream.Action.Close(key, hideTooltipDelayMs)
+      } --> contentsUpdater
+    )
+
+    (tooltipContainer, new Tooltip(commandBus.writer, hoveringOver.signal))
   }
 
   @js.native @JSImport("/styles/common/tooltip.module.css", JSImport.Default)
@@ -124,27 +130,21 @@ final class Tooltip private[Tooltip] (
 
   // Allow a brief delay before both showing the tooltip, and before hiding it after the cursor moves away
   private def configureTooltipVisibility(element: L.Element, tooltip: ChildNode.Base): L.Modifier[L.Element] = {
-    val shouldShowTooltip = Var(false).distinct
-    val showTooltipUpdater =
-      shouldShowTooltip.updater[(nowHovering: Boolean, wasHovering: Boolean)] {
-        case (_, (true, true)) => true
-        case (_, (false, false)) => false
-        case (true, (nowHovering, wasHovering)) => nowHovering || wasHovering
-        case (false, (nowHovering, wasHovering)) => nowHovering && wasHovering
-      }
-
-    val isHoveringOverElement = Var(false).distinct
-    val isHoveringOverTooltip = hoveringOverTooltipWithContents.map(_.contains(element)).distinct
-    val isHoveringOverEither = Signal.combine(isHoveringOverElement, isHoveringOverTooltip).map(_ || _)
-    val wasHoveringOverEither = isHoveringOverEither.changes.delay(Tooltip.toggleTooltipDelayMs).toSignal(initial = false)
+    val isHoveringOverElement = Var(false)
+    val isHoveringOverTooltip = hoveringOverTooltipWithContents.map(_.contains(element))
+    val toggleTooltipCommands =
+      Signal
+        .combine(isHoveringOverElement, isHoveringOverTooltip)
+        .map(_ || _)
+        .distinct
+        .map {
+          case false => Tooltip.Command.Close(key = element)
+          case true => Tooltip.Command.Open(key = element, tooltip)
+        }
 
     List(
       registerElementHoverListeners(element.ref, isHoveringOverElement),
-      Signal.combine(isHoveringOverEither, wasHoveringOverEither) --> showTooltipUpdater,
-      shouldShowTooltip.signal.map {
-        case true => Tooltip.Command.Open(key = element, tooltip)
-        case false => Tooltip.Command.Close(key = element)
-      } --> commandSink,
+      toggleTooltipCommands --> commandSink,
       // Blur events aren't reliably fired when an element unmounts, so we need a fallback
       L.onUnmountCallback(_ =>
         isHoveringOverElement.set(false)
