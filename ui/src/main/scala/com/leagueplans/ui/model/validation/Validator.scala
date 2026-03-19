@@ -106,6 +106,7 @@ object Validator {
           case Some(LeaguesIII) => task.leagues3Props.nonEmpty
           case Some(LeaguesIV) => task.leagues4Props.nonEmpty
           case Some(LeaguesV) => task.leagues5Props.nonEmpty
+          case Some(LeaguesVI) => true // task.leagues6Props.nonEmpty
           case _ => false
         }
         Either.cond(

@@ -31,6 +31,9 @@ object LeagueOption {
 
     @js.native @JSImport("/images/league-logos/raging-echoes.png", JSImport.Default)
     val ragingEchoes: String = js.native
+
+    @js.native @JSImport("/images/league-logos/demonic-pacts.png", JSImport.Default)
+    val demonicPacts: String = js.native
   }
 
   @js.native @JSImport("/styles/planning/player/league/leagueOption.module.css", JSImport.Default)
@@ -51,6 +54,7 @@ object LeagueOption {
       case LeaguesIII => Some(Logos.shatteredRelics)
       case LeaguesIV => Some(Logos.trailblazerReloaded)
       case LeaguesV => Some(Logos.ragingEchoes)
+      case LeaguesVI => Some(Logos.demonicPacts)
       case _ => None
     }).map(src =>
       L.img(L.cls(Styles.logo), L.src(src), L.alt(s"Logo for ${league.name}"))

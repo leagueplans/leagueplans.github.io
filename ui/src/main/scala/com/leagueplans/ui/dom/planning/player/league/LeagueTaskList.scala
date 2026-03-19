@@ -111,6 +111,11 @@ object LeagueTaskList {
           tierFilter.forall(_ == props.tier) && areaFilter.forall(_ == props.area)
         )
 
+      case Some(LeaguesVI) =>
+        task.leagues6Props.exists(props =>
+          tierFilter.forall(_ == props.tier) && areaFilter.forall(_ == props.area)
+        )
+
       case Some(_) =>
         false
 
@@ -120,11 +125,13 @@ object LeagueTaskList {
             task.leagues2Props.exists(_.tier == tier) ||
             task.leagues3Props.exists(_.tier == tier) ||
             task.leagues4Props.exists(_.tier == tier) ||
-            task.leagues5Props.exists(_.tier == tier)
+            task.leagues5Props.exists(_.tier == tier) ||
+            task.leagues6Props.exists(_.tier == tier)
         ) && areaFilter.forall(area =>
           task.leagues2Props.exists(_.area == area) ||
           task.leagues4Props.exists(_.area == area) ||
-          task.leagues5Props.exists(_.area == area)
+          task.leagues5Props.exists(_.area == area) ||
+          task.leagues6Props.exists(_.area == area)
         ) && leagues3CategoryFilter.forall(category =>
           task.leagues3Props.exists(_.category == category)
         )

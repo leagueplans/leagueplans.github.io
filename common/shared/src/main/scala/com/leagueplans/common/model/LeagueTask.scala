@@ -16,5 +16,6 @@ final case class LeagueTask(
   leagues2Props: Option[TrailblazerTaskProperties],
   leagues3Props: Option[ShatteredRelicsTaskProperties],
   leagues4Props: Option[TrailblazerTaskProperties],
-  leagues5Props: Option[TrailblazerTaskProperties]
+  leagues5Props: Option[TrailblazerTaskProperties],
+  leagues6Props: Option[TrailblazerTaskProperties]
 )

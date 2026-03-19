@@ -42,6 +42,11 @@ final class ModeTest extends CodecSpec {
         Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `5`)
       )
 
+      "LeaguesVI" in test(
+        LeaguesVI,
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `6`)
+      )
+
       "GridMaster" in test(
         GridMaster,
         Array(`g`, `r`, `i`, `d`, `-`, `m`, CE.`a`, `s`, `t`, `e`, `r`)
@@ -60,7 +65,7 @@ final class ModeTest extends CodecSpec {
 
     "decoding should fail for an unexpected encoding" in (
       Decoder.decodeLen[Mode](
-        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `6`)
+        Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `7`)
       ).left.value shouldBe a[DecodingFailure]
     )
     
@@ -92,6 +97,11 @@ final class ModeTest extends CodecSpec {
         "LeaguesV" in test(
           LeaguesV,
           Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `5`)
+        )
+
+        "LeaguesVI" in test(
+          LeaguesVI,
+          Array(`l`, `e`, CE.`a`, `g`, `u`, `e`, `s`, `-`, `6`)
         )
       }
 

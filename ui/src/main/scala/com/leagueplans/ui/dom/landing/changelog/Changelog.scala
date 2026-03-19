@@ -13,6 +13,16 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 2, 19),
+        "Leagues VI added as a game mode",
+        List(
+          "Raging echoes has been used as a template for the initial default settings. I'll update the defaults as we" +
+            " learn about them.",
+          "You can add any task from previous leagues to your plans. Once we have the full task list, I'll update the" +
+            " site to warn you if you have any tasks planned that didn't make it to the league."
+        )
+      ),
+      item(
         new Date(2026, 2, 14),
         "Full support for step copy & paste",
         List(
@@ -36,11 +46,6 @@ object Changelog {
           "I'm actively working on UX improvements and new features ahead of the upcoming league. If you'd like to help" +
             " out with importing quest data, do reach out!"
         )
-      ),
-      item(
-        new Date(2026, 0, 25),
-        "Deadman: Annihilation support",
-        List.empty
       )
     )
 
