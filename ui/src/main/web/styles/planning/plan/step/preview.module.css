@@ -3,13 +3,16 @@
 
   position: relative;
 
+  border-style: solid;
+  border-width: 1px 0 0 0;
+  border-top-color: rgb(77 77 77);
+
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto 1fr;
 
-  border-style: solid;
-  border-width: 1px 0 0 0;
-  border-top-color: rgba(255, 255, 255, 0.3);
+  font-family: var(--font-ui);
+  color: #dde4f4;
 }
 
 .header {
@@ -21,7 +24,7 @@
   display: grid;
   grid-template-columns: subgrid;
 
-  color: white;
+  font-size: 0.9rem;
   background-color: inherit;
 }
 
@@ -44,7 +47,7 @@
   height: calc(100% - 0.65rem);
   width: 1px;
   justify-self: center;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgb(77 77 77);
 }
 
 .substeps {

@@ -1,21 +1,41 @@
-.header {}
+.header {
+  display: grid;
+  grid-template-columns: subgrid;
+  font-size: 0.9rem;
+}
 
 .substepsToggleIcon {
   color: white;
 }
 
 .substepsToggle {
+  grid-column: 1;
+  align-self: center;
   border: none;
   background: none;
 }
 
 .title {
+  grid-column: 2;
   display: flex;
 }
 
 .dragIcon {
   align-self: center;
   padding: 0.3rem;
+}
+
+.repBadge {
+  align-self: center;
+
+  border-radius: 0.75rem;
+  padding: 0.1rem 0.45rem;
+
+  background-color: #2f4679;
+  color: #fff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  letter-spacing: 0.01rem;
 }
 
 .description {
@@ -26,6 +46,25 @@
 
 .dragIcon + .description {
   padding-left: 0;
+}
+
+.timing {
+  align-self: center;
+  flex-shrink: 0;
+  padding: 0.3rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  font-size: 0.8em;
+  letter-spacing: 0.01em;
+  color: rgba(180, 200, 230, 0.7);
+}
+
+.timingIcon {
+  width: 0.7rem;
+  height: 0.7rem;
 }
 
 .tooltip {

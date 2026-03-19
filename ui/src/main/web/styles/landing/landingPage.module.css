@@ -1,5 +1,5 @@
 .page {
-  background-color: #00172e;
+  background-color: var(--bg-base);
 
   display: flex;
   justify-content: space-evenly;

@@ -8,6 +8,7 @@ import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController}
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
 import com.leagueplans.ui.utils.laminar.HtmlElementOps.trackHeight
 import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
@@ -36,6 +37,7 @@ object StepElement {
     draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
+    timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])]
@@ -49,12 +51,14 @@ object StepElement {
       animationDuration = 200.millis
     )
     val header = toHeader(
+      stepID,
       step,
       substepsSignal,
       isDraggingSignal,
       isFocused,
       isDraggable,
       animationController,
+      timeKeeper,
       positionOffset,
       tooltip
     )
@@ -111,21 +115,25 @@ object StepElement {
   }
 
   private def toHeader(
+    stepID: Step.ID,
     step: Signal[Step],
     substepsSignal: Signal[List[L.HtmlElement]],
     isDragging: Signal[Boolean],
     isFocused: Signal[Boolean],
     isDraggable: Var[Boolean],
     animationController: InvertibleAnimationController,
+    timeKeeper: TimeKeeper,
     positionOffset: Signal[Int],
     tooltip: Tooltip
   ): L.Div =
     StepHeader(
+      stepID,
       step,
       substepsSignal.map(_.nonEmpty),
       isFocused,
       isDraggable.writer,
       animationController,
+      timeKeeper,
       tooltip
     ).amend(
       L.cls <-- isDragging.splitBoolean(

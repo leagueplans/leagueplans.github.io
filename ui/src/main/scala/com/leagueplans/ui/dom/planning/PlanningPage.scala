@@ -43,6 +43,7 @@ object PlanningPage {
         focusController,
         editingEnabled = Val(true),
         stepsWithErrors.map(_.keySet),
+        timeKeeper,
         tooltip,
         contextMenu,
         modal

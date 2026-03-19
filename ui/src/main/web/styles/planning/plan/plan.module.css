@@ -1,4 +1,5 @@
 .plan {
+  font-family: var(--font-ui);
   /* Theoretically we could use a flexbox here, since we only have a single column
    * However, for reasons unknown, using a flexbox kills the performance of the
    * plan section. Dragging steps and collapsing substeps are terribly laggy when
@@ -8,7 +9,7 @@
   grid-template-rows: auto 1fr;
   isolation: isolate;
 
-  background-color: #00172e;
+  background-color: var(--bg-base);
 }
 
 .header {
@@ -16,7 +17,7 @@
   grid-row: 1;
   z-index: 1;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgb(77 77 77);
 }
 
 .steps {
@@ -26,5 +27,5 @@
 
   overflow-y: auto;
   scroll-behavior: smooth;
-  scrollbar-color: #89a0b7 #1a1a1a;
+  scrollbar-color: #89a0b7 #111318;
 }

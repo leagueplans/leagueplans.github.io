@@ -22,7 +22,7 @@
 .idle {
   composes: indicator;
 
-  background-color: #3ef73e;
+  background-color: #5bbf7a;
 }
 
 @keyframes pulse {
@@ -33,7 +33,7 @@
 .busy {
   composes: indicator;
 
-  background-color: #12d1ef;
+  background-color: #5a80c8;
   animation: pulse 1.2s ease-in-out infinite;
 }
 

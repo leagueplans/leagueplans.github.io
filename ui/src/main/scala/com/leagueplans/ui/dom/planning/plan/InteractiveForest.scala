@@ -8,6 +8,7 @@ import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepD
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.wrappers.Clipboard
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -24,6 +25,7 @@ object InteractiveForest {
     focusContext: FocusContext,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
+    timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     focusController: FocusController
@@ -53,6 +55,7 @@ object InteractiveForest {
             draggingStatus,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
             editingEnabled,
+            timeKeeper,
             tooltip,
             contextMenu,
             clipboard
@@ -85,7 +88,7 @@ object InteractiveForest {
       .toSignal(initial = ())
       .sample(forester.signal)
       .map(_.roots.flatMap(dom.get))
-      .split(identity) { case ((element, _), _, _) => 
+      .split(identity) { case ((element, _), _, _) =>
         L.li(L.cls(Styles.rootStep), element)
       }
 }

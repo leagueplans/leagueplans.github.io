@@ -16,7 +16,8 @@ object TimeKeeper {
     start: Option[Duration],
     stepDuration: Option[StepDuration],
     totalChildDuration: Option[Duration],
-    repetitions: Int
+    repetitions: Int,
+    insideLoop: Boolean
   ) {
     val durationPerRep: Option[Duration] =
       addDurations(stepDuration.map(_.asScala), totalChildDuration)
@@ -36,13 +37,20 @@ object TimeKeeper {
       start = None,
       stepDuration = None,
       totalChildDuration = None,
-      repetitions = 1
+      repetitions = 1,
+      insideLoop = false
     )
   }
 
   def apply(forest: Forest[Step.ID, Step]): TimeKeeper = {
     val stateForest = forest.map((_, step) =>
-      State(start = None, step.duration.toOption, totalChildDuration = None, step.repetitions)
+      State(
+        start = None,
+        step.duration.toOption,
+        totalChildDuration = None,
+        step.repetitions,
+        insideLoop = false
+      )
     )
     val keeper = new TimeKeeper(stateForest)
     keeper.recomputeAll()
@@ -94,7 +102,13 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         } yield finish
         val durationPerParentRep = data.duration.toOption.map(_.asScala.safeMul(data.repetitions))
         val effectiveStart = computeEffectiveStart(runningStart, durationPerParentRep)
-        val initialState = State(effectiveStart, data.duration.toOption, totalChildDuration = None, data.repetitions)
+        val initialState = State(
+          effectiveStart,
+          data.duration.toOption,
+          totalChildDuration = None,
+          data.repetitions,
+          insideLoop = false
+        )
         val v = pendingVars.remove(id).getOrElse(stateVars.getOrElse(id, Var(initialState)))
         stateVars.put(id, v)
         v.set(initialState)
@@ -191,10 +205,17 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         totalChanged
     }
 
+  private def insideLoopFor(id: Step.ID): Boolean =
+    forest.toParent.get(id)
+      .flatMap(forest.get)
+      .exists(s => s.insideLoop || s.repetitions > 1)
+
   private def recomputeSubtreeStarts(id: Step.ID, runningStart: Option[Duration]): Unit =
     forest.get(id).foreach { current =>
       val effectiveStart = computeEffectiveStart(runningStart, current.durationPerParentRep)
-      if (effectiveStart != current.start) setState(id, current.copy(start = effectiveStart))
+      val newInsideLoop = insideLoopFor(id)
+      if (effectiveStart != current.start || newInsideLoop != current.insideLoop)
+        setState(id, current.copy(start = effectiveStart, insideLoop = newInsideLoop))
       recomputeSequence(
         forest.toChildren.getOrElse(id, Nil),
         addDurations(effectiveStart, current.stepDuration.map(_.asScala))

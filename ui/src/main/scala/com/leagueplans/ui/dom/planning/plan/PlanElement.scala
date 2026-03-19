@@ -4,6 +4,7 @@ import com.leagueplans.ui.dom.common.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 
@@ -18,6 +19,7 @@ object PlanElement {
     focusController: FocusController,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
+    timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal
@@ -35,6 +37,7 @@ object PlanElement {
         focusContext,
         editingEnabled,
         stepsWithErrorsSignal,
+        timeKeeper,
         tooltip,
         contextMenu,
         focusController

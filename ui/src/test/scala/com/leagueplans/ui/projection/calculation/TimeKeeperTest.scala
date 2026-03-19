@@ -28,7 +28,6 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
   private def ticks(n: Int): FiniteDuration = StepDuration.ticks(n).asScala
 
   "initial state" - {
-
     "empty forest has endTime zero" in {
       keeper(Forest.empty).endTime.now() shouldBe Duration.Zero
     }
@@ -193,7 +192,13 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
 
   "State.finish" - {
     "None start with no durationPerParentRep yields None finish" in {
-      val s = TimeKeeper.State(start = None, stepDuration = None, totalChildDuration = None, repetitions = 1)
+      val s = TimeKeeper.State(
+        start = None,
+        stepDuration = None,
+        totalChildDuration = None,
+        repetitions = 1,
+        insideLoop = false
+      )
       s.finish shouldBe None
     }
 
@@ -202,18 +207,31 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
         start = None,
         stepDuration = Some(StepDuration.ticks(5)),
         totalChildDuration = None,
-        repetitions = 1
+        repetitions = 1,
+        insideLoop = false
       )
       s.finish shouldBe Some(ticks(5))
     }
 
     "Some start with no durationPerParentRep yields start as finish" in {
-      val s = TimeKeeper.State(start = Some(ticks(3)), stepDuration = None, totalChildDuration = None, repetitions = 1)
+      val s = TimeKeeper.State(
+        start = Some(ticks(3)),
+        stepDuration = None,
+        totalChildDuration = None,
+        repetitions = 1,
+        insideLoop = false
+      )
       s.finish shouldBe Some(ticks(3))
     }
 
     "Some start with durationPerParentRep yields start + durationPerParentRep" in {
-      val s = TimeKeeper.State(start = Some(ticks(2)), stepDuration = Some(StepDuration.ticks(3)), totalChildDuration = None, repetitions = 1)
+      val s = TimeKeeper.State(
+        start = Some(ticks(2)),
+        stepDuration = Some(StepDuration.ticks(3)),
+        totalChildDuration = None,
+        repetitions = 1,
+        insideLoop = false
+      )
       s.finish shouldBe Some(ticks(5))
     }
   }
