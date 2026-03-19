@@ -18,7 +18,12 @@ object StepDropLocationIndicator {
     val maybeDimensionsStream =
       draggingStatusStream
         .throttle(ms = 30, leading = true)
-        .map(getBoundingRect(_, parentElement))
+        .flatMapSwitch {
+          case StepDraggingStatus.Dragging(Some(dropTarget)) =>
+            EventStream.fromValue(Some(getBoundingRect(dropTarget, parentElement)))
+          case _ =>
+            EventStream.delay(ms = 60, None)
+        }
 
     List(
       maybeDimensionsStream --> maybeDimensions,
@@ -27,8 +32,7 @@ object StepDropLocationIndicator {
           L.cls(Styles.indicator),
           L.width <-- dimensions.getPixels(_.width),
           L.height <-- dimensions.getPixels(_.height),
-          L.top <-- dimensions.getPixels(_.top),
-          L.left <-- dimensions.getPixels(_.left),
+          L.transform <-- dimensions.getTranslate
         )
       )
     )
@@ -45,18 +49,10 @@ object StepDropLocationIndicator {
         // Constructed manually to avoid loss of precision from casting to an int for L.style.px
         s"${f(boundingRect)}px"
       )
-  }
 
-  private def getBoundingRect(
-    dragStatus: StepDraggingStatus,
-    parentElement: L.HtmlElement
-  ): Option[BoundingRect] =
-    dragStatus match {
-      case StepDraggingStatus.Dragging(Some(dropTarget)) =>
-        Some(getBoundingRect(dropTarget, parentElement))
-      case _ =>
-        None
-    }
+    private def getTranslate: Signal[String] =
+      self.map(s => s"translate(${s.left}px, ${s.top}px)")
+  }
 
   private def getBoundingRect(
     dropTarget: StepDraggingStatus.DropTarget,

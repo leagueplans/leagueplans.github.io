@@ -1,15 +1,19 @@
 .indicator {
   position: absolute;
   z-index: 1;
+  top: 0;
+  left: 0;
 
   border-width: 2px 0px 2px 2px;
-  border-radius: 0.5rem 0 0 0.5rem;
+  border-radius: 0.3rem 0 0 0.3rem;
   border-style: solid;
-  border-color: yellow;
+  border-color: #7ab4f5;
 
   pointer-events: none;
+  will-change: width, height, transform;
 
   transition:
+    width 100ms ease-out,
     height 100ms ease-out,
-    top 100ms ease-out;
+    transform 100ms ease-out;
 }

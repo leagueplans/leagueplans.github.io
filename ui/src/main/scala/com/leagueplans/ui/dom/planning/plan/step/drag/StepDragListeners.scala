@@ -60,29 +60,50 @@ object StepDragListeners {
   private def onDragEnterOver(
     hasSubsteps: Signal[Boolean],
     draggingStatusObserver: Observer[StepDraggingStatus]
-  ): L.Modifier[L.Element] =
-    List(
-      onDragEnterOrOver(L.onDragEnter, hasSubsteps, draggingStatusObserver),
-      onDragEnterOrOver(L.onDragOver, hasSubsteps, draggingStatusObserver),
-    )
+  ): L.Modifier[L.Element] = {
+    // Cache bounds on dragenter (fires once per element) to avoid calling
+    // getBoundingClientRect() on every dragover (fires at mouse-move rate).
+    // The element's bounds don't change during a drag, so this is always correct.
+    var cachedBounds = Option.empty[DOMRect]
 
-  private def onDragEnterOrOver(
-    prop: EventProp[DragEvent],
-    hasSubsteps: Signal[Boolean],
-    draggingStatusObserver: Observer[StepDraggingStatus]
-  ): L.Modifier[L.Element] =
-    withEventHandling(prop)((ctx, events) =>
-      events.map((ctx, _)).withCurrentValueOf(hasSubsteps)
-    )(
-      draggingStatusObserver.contramap { (ctx, event, hasSubsteps) =>
-        event.dataTransfer.dropEffect = DataTransferDropEffectKind.move
-        val bounds = ctx.ref.getBoundingClientRect()
-        val relativeDropPosition = calcRelativeDropPosition(event, bounds, hasSubsteps)
-        StepDraggingStatus.Dragging(Some(
-          StepDraggingStatus.DropTarget(bounds, relativeDropPosition)
-        ))
-      }
+    List(
+      withEventHandling(L.onDragEnter)((ctx, events) =>
+        events
+          .withCurrentValueOf(hasSubsteps)
+          .map { (event, hasSubsteps) =>
+            val bounds = ctx.ref.getBoundingClientRect()
+            cachedBounds = Some(bounds)
+            event.dataTransfer.dropEffect = DataTransferDropEffectKind.move
+            toDraggingStatus(event, bounds, hasSubsteps)
+          }
+      )(draggingStatusObserver),
+      withEventHandling(L.onDragOver)((ctx, events) =>
+        events
+          .withCurrentValueOf(hasSubsteps)
+          .map { (event, hasSubsteps) =>
+            val bounds = cachedBounds.getOrElse {
+              val bounds = ctx.ref.getBoundingClientRect()
+              cachedBounds = Some(bounds)
+              bounds
+            }
+            event.dataTransfer.dropEffect = DataTransferDropEffectKind.move
+            toDraggingStatus(event, bounds, hasSubsteps)
+          }
+      )(draggingStatusObserver)
     )
+  }
+
+  private def toDraggingStatus(
+    event: DragEvent,
+    bounds: DOMRect,
+    hasSubsteps: Boolean
+  ): StepDraggingStatus =
+    StepDraggingStatus.Dragging(Some(
+      StepDraggingStatus.DropTarget(
+        bounds,
+        calcRelativeDropPosition(event, bounds, hasSubsteps)
+      )
+    ))
 
   private def onDragLeave(draggingStatusObserver: Observer[StepDraggingStatus]): L.Modifier[L.Element] =
     L.onDragLeave
