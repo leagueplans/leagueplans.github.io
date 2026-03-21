@@ -32,12 +32,17 @@ final class DelayedToggleStream[T, ID](
         Transaction(fireValue(nextValue, _))
 
       case DelayedToggleStream.Action.Open(id, delay) =>
-        cancel(id)
-        schedule(nextValue, id, delay, action)
+        outstanding.get(id) match {
+          case Some((_: DelayedToggleStream.Action.Close[ID], _)) =>
+            cancel(id)
+          case _ =>
+            cancel(id)
+            schedule(nextValue, id, delay, action)
+        }
 
       case DelayedToggleStream.Action.Close(id, delay) =>
         outstanding.get(id) match {
-          case Some((_: DelayedToggleStream.Action.Open[ID], timer)) => clearTimeout(timer)
+          case Some((_: DelayedToggleStream.Action.Open[ID], _)) => cancel(id)
           case Some(_) => /* Do nothing */
           case None => schedule(nextValue, id, delay, action)
         }
