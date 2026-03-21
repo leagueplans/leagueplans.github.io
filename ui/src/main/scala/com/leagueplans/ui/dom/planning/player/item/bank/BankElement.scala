@@ -76,7 +76,7 @@ object BankElement {
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2, fadeIn = false)
+      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2)
     ).amend(bindContextMenu(stack.item, bankSignal, effectObserverSignal, contextMenu, modal))
 
   private def bindContextMenu(

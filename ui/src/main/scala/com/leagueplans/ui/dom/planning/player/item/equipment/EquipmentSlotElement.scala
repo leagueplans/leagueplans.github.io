@@ -1,15 +1,16 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
 import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
-import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackList}
+import com.leagueplans.ui.dom.planning.player.item.StackElement
 import com.leagueplans.ui.facades.floatingui.Placement
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemStack
+import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Val
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, textToInserter}
 import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
@@ -31,14 +32,30 @@ object EquipmentSlotElement {
         L.src(toBackground(slot, stacks.isEmpty)),
         L.alt(slot.name)
       ),
-      StackList(
-        Val(stacks),
-        stack => StackElement(
-          stack,
-          tooltip,
-          tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2, fadeIn = false)
-        ).amend(bindContextMenu(stack, slot, effectObserverSignal, contextMenu))
-      ).amend(L.cls(Styles.contents))
+      stacks match {
+        case Nil => L.emptyNode
+        case stack :: Nil =>
+          StackElement(
+            stack,
+            tooltip,
+            tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2)
+          ).amend(
+            L.cls(Styles.contents),
+            bindContextMenu(stack, slot, effectObserverSignal, contextMenu)
+          )
+        case _ =>
+          L.div(
+            L.cls(Styles.contents),
+            FontAwesome.icon(FreeSolid.faTriangleExclamation).amend(L.svg.cls(Styles.warningIcon)),
+            tooltip.register(
+              L.p(
+                L.cls(Styles.warningTooltip),
+                "Multiple items are occupying this slot"
+              ),
+              FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2)
+            )
+          )
+      }
     )
 
   private object Backgrounds {
@@ -73,6 +90,8 @@ object EquipmentSlotElement {
     val slot: String = js.native
     val contents: String = js.native
     val background: String = js.native
+    val warningIcon: String = js.native
+    val warningTooltip: String = js.native
   }
 
   private def toBackground(slot: EquipmentSlot, isEmpty: Boolean): String =

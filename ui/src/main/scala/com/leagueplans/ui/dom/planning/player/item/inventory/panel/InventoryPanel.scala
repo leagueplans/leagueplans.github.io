@@ -65,7 +65,7 @@ object InventoryPanel {
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2, fadeIn = false)
+      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2)
     ).amend(bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenu, modal))
 
   private def bindItemContextMenu(

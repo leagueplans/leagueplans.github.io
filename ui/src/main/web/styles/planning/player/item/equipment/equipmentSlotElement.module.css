@@ -1,16 +1,30 @@
 .slot {
-  display: grid;
-}
-
-.contents {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  grid-row: 1;
-  grid-column: 1;
+  isolation: isolate;
+  width: 36px;
+  height: 36px;
 }
 
 .background {
-  grid-row: 1;
-  grid-column: 1;
+  z-index: 0;
+  position: absolute;
+  display: block;
+}
+
+.contents {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  justify-self: center;
+  align-content: center;
+}
+
+.warningIcon {
+  height: 20px;
+  color: orange;
+}
+
+.warningTooltip {
+  width: max-content;
+  max-width: 16rem;
+  text-align: center;
 }
