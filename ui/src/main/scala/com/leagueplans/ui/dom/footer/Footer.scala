@@ -25,8 +25,9 @@ object Footer {
       feedback,
       L.sectionTag(
         L.cls(Styles.statuses),
-        toStatus("Rendering", id = ProjectionClient.statusKey, statusTracker, tooltip),
-        toStatus("File system", id = StorageClient.statusKey, statusTracker, tooltip)
+        toStatus("Rendering", id = ProjectionClient.projectionStatusKey, statusTracker, tooltip),
+        toStatus("File system", id = StorageClient.statusKey, statusTracker, tooltip),
+        toStatus("Error detection", id = ProjectionClient.errorDetectionStatusKey, statusTracker, tooltip)
       )
     )
   }

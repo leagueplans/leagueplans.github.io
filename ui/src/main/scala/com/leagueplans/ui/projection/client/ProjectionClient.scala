@@ -11,8 +11,9 @@ import com.raquo.airstream.state.{StrictSignal, Var}
 import org.scalajs.dom.console
 
 object ProjectionClient {
-  val statusKey = "projection-client"
-  
+  val projectionStatusKey = "projection-client-projection"
+  val errorDetectionStatusKey = "projection-client-error-detection"
+
   def apply(
     initialPlan: Forest[Step.ID, Step],
     initialSettings: Plan.Settings
@@ -24,9 +25,13 @@ object ProjectionClient {
     new ProjectionClient(
       port,
       Var(Projection(initialSettings)).distinct,
+      _stepsWithErrors = Var(Map.empty).distinct,
+      Var(StatusTracker.Status.Busy).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       lastSentID = 0L,
-      lastReceivedID = None
+      lastReceivedProjectionID = None,
+      lastReceivedErrorID = None,
+      lastSettledErrorDetectionStatus = StatusTracker.Status.Idle
     )
   }
 }
@@ -34,36 +39,67 @@ object ProjectionClient {
 final class ProjectionClient(
   port: MessagePortClient[Inbound, Outbound],
   _projection: Var[Projection],
-  _status: Var[StatusTracker.Status],
+  _stepsWithErrors: Var[Map[Step.ID, List[String]]],
+  _projectionStatus: Var[StatusTracker.Status],
+  _errorDetectionStatus: Var[StatusTracker.Status],
   private var lastSentID: Long,
-  private var lastReceivedID: Option[Long]
+  private var lastReceivedProjectionID: Option[Long],
+  private var lastReceivedErrorID: Option[Long],
+  private var lastSettledErrorDetectionStatus: StatusTracker.Status
 ) {
   export port.close
 
   port.setMessageHandler {
     case Outbound.Computed(id, res) =>
-      if (lastReceivedID.forall(_ < id)) {
-        lastReceivedID = Some(id)
+      if (lastReceivedProjectionID.forall(_ < id)) {
+        lastReceivedProjectionID = Some(id)
         _projection.set(res)
       }
 
       if (lastSentID == id)
-        _status.set(StatusTracker.Status.Idle)
+        _projectionStatus.set(StatusTracker.Status.Idle)
 
     case Outbound.ComputeFailed(id, reason) =>
       console.error(s"Failed to compute projection. Reason: $reason")
-      if (lastReceivedID.forall(_ < id))
-        lastReceivedID = Some(id)
-
       if (lastSentID == id)
-        _status.set(StatusTracker.Status.Failed(reason))
+        _projectionStatus.set(StatusTracker.Status.Failed(reason))
+
+    case Outbound.ErrorsComputed(id, errors) =>
+      if (lastReceivedErrorID.forall(_ < id)) {
+        lastReceivedErrorID = Some(id)
+        _stepsWithErrors.set(errors)
+      }
+
+      if (lastSentID == id) {
+        val settled = if (errors.isEmpty) StatusTracker.Status.Idle else StatusTracker.Status.Failed("Problems found")
+        lastSettledErrorDetectionStatus = settled
+        _errorDetectionStatus.set(settled)
+      }
+
+    case Outbound.ErrorDetectionSkipped(id) =>
+      if (lastSentID == id)
+        _errorDetectionStatus.set(lastSettledErrorDetectionStatus)
+
+    case Outbound.ErrorDetectionFailed(id, reason) =>
+      console.error(s"Failed to detect step errors. Reason: $reason")
+      if (lastSentID == id) {
+        val settled = StatusTracker.Status.Failed(reason)
+        lastSettledErrorDetectionStatus = settled
+        _errorDetectionStatus.set(settled)
+      }
   }
 
   val projection: StrictSignal[Projection] =
     _projection.signal
 
-  val status: StrictSignal[StatusTracker.Status] =
-    _status.signal
+  val projectionsStatus: StrictSignal[StatusTracker.Status] =
+    _projectionStatus.signal
+
+  val errorDetectionStatus: StrictSignal[StatusTracker.Status] =
+    _errorDetectionStatus.signal
+
+  val stepsWithErrors: StrictSignal[Map[Step.ID, List[String]]] =
+    _stepsWithErrors.signal
 
   def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings): Unit =
     send(Inbound.Initialise(nextId(), forest, settings))
@@ -78,7 +114,11 @@ final class ProjectionClient(
     send(Inbound.FocusChanged(nextId(), focusID))
 
   private def send(msg: Inbound): Unit = {
-    _status.set(StatusTracker.Status.Busy)
+    _projectionStatus.set(StatusTracker.Status.Busy)
+    msg match {
+      case _: Inbound.FocusChanged => // error detection doesn't depend on focus
+      case _ => _errorDetectionStatus.set(StatusTracker.Status.Busy)
+    }
     port.send(msg)
   }
 

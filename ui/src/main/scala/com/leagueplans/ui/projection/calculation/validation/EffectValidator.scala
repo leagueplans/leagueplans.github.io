@@ -1,48 +1,35 @@
-package com.leagueplans.ui.model.validation
+package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.ui.model.plan.Effect.*
-import com.leagueplans.ui.model.plan.{Effect, EffectList}
+import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.projection.calculation.EffectResolver
 
 sealed trait EffectValidator[E <: Effect] {
   def validate(effect: E)(
-    player: Player,
-    resolver: EffectResolver,
+    preEffectPlayer: Player,
+    postEffectPlayer: Player,
     league: Option[Mode.League],
     cache: Cache
-  ): (List[String], Player)
+  ): List[String]
 }
 
 object EffectValidator extends EffectValidator[Effect] {
-  def validate(effectList: EffectList)(
-    player: Player,
-    resolver: EffectResolver,
-    league: Option[Mode.League],
-    cache: Cache
-  ): (List[String], Player) =
-    effectList.underlying.foldLeft((List.empty[String], player)) {
-      case ((errorAcc, preEffectPlayer), effect) =>
-        val (errors, postEffectPlayer) = EffectValidator.validate(effect)(preEffectPlayer, resolver, league, cache)
-        (errorAcc ++ errors, postEffectPlayer)
-    }
-
   def validate(effect: Effect)(
-    player: Player,
-    resolver: EffectResolver,
+    preEffectPlayer: Player,
+    postEffectPlayer: Player,
     league: Option[Mode.League],
     cache: Cache
-  ): (List[String], Player) =
+  ): List[String] =
     effect match {
-      case e: GainExp => gainExpValidator.validate(e)(player, resolver, league, cache)
-      case e: AddItem => addItemValidator.validate(e)(player, resolver, league, cache)
-      case e: MoveItem => moveItemValidator.validate(e)(player, resolver, league, cache)
-      case e: UnlockSkill => unlockSkillValidator.validate(e)(player, resolver, league, cache)
-      case e: CompleteQuest => completeQuestValidator.validate(e)(player, resolver, league, cache)
-      case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(player, resolver, league, cache)
-      case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(player, resolver, league, cache)
-      case e: CompleteGridTile => completeGridTileValidator.validate(e)(player, resolver, league, cache)
+      case e: GainExp => gainExpValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: AddItem => addItemValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: MoveItem => moveItemValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: UnlockSkill => unlockSkillValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: CompleteQuest => completeQuestValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: CompleteGridTile => completeGridTileValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
     }
 
   private val gainExpValidator: EffectValidator[GainExp] =
@@ -99,18 +86,13 @@ object EffectValidator extends EffectValidator[Effect] {
   ): EffectValidator[E] =
     new EffectValidator[E] {
       def validate(effect: E)(
-        player: Player,
-        resolver: EffectResolver,
+        preEffectPlayer: Player,
+        postEffectPlayer: Player,
         league: Option[Mode.League],
         cache: Cache
-      ): (List[String], Player) = {
-        val postEffectPlayer = resolver.resolve(player, effect)
-        val errors =
-          collectErrors(pre(effect))(player, league, cache) ++
-            collectErrors(post(effect))(postEffectPlayer, league, cache)
-
-        (errors, postEffectPlayer)
-      }
+      ): List[String] =
+        collectErrors(pre(effect))(preEffectPlayer, league, cache) ++
+          collectErrors(post(effect))(postEffectPlayer, league, cache)
 
       private def collectErrors(validators: List[Validator])(
         player: Player,

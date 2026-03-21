@@ -42,6 +42,9 @@ object ProjectionProtocol {
   object Outbound {
     final case class Computed(id: Long, result: Projection) extends Outbound
     final case class ComputeFailed(id: Long, message: String) extends Outbound
+    final case class ErrorsComputed(id: Long, errors: Map[Step.ID, List[String]]) extends Outbound
+    final case class ErrorDetectionSkipped(id: Long) extends Outbound
+    final case class ErrorDetectionFailed(id: Long, message: String) extends Outbound
 
     given Encoder[Outbound] = Encoder.derived
     given Decoder[Outbound] = Decoder.derived

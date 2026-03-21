@@ -1,4 +1,4 @@
-package com.leagueplans.ui.model.validation
+package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.plan.Requirement.*

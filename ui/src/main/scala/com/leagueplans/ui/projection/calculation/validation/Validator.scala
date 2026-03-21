@@ -1,4 +1,4 @@
-package com.leagueplans.ui.model.validation
+package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.player.item.Depository

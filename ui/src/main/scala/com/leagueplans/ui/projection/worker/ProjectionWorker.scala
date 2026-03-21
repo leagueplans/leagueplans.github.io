@@ -3,7 +3,7 @@ package com.leagueplans.ui.projection.worker
 import com.leagueplans.ui.model.common.forest.{Forest, ForestResolver}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.projection.calculation.Projector
+import com.leagueplans.ui.projection.calculation.{EffectResolver, Projector, StepErrorFinder}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.projection.worker.ProjectionWorker.State
 import com.leagueplans.ui.wrappers.workers.{DedicatedWorkerScope, MessagePortClient}
@@ -54,10 +54,12 @@ private object ProjectionWorker {
 
   private final case class State(
     forest: Forest[Step.ID, Step],
-    settings: Plan.Settings,
     focusID: Option[Step.ID],
     projector: Projector,
-    latestID: Long
+    errorFinder: StepErrorFinder,
+    latestID: Long,
+    latestNonFocusID: Long,
+    lastSuccessfulErrorID: Option[Long]
   )
 }
 
@@ -75,7 +77,16 @@ private final class ProjectionWorker(
 
     message match {
       case Inbound.Initialise(id, plan, settings) =>
-        state = Some(State(plan, settings, focusID = None, Projector(settings, cache), id))
+        val resolver = EffectResolver(settings, cache)
+        state = Some(State(
+          plan,
+          focusID = None,
+          projector = new Projector(settings, resolver),
+          errorFinder = new StepErrorFinder(settings, resolver, cache),
+          latestID = id,
+          latestNonFocusID = id,
+          lastSuccessfulErrorID = None
+        ))
 
       case other if state.isEmpty =>
         port.send(Outbound.ComputeFailed(other.id, "Worker not yet initialised"))
@@ -84,14 +95,17 @@ private final class ProjectionWorker(
       case Inbound.ForestUpdated(id, update) =>
         state = state.map(s => s.copy(
           forest = ForestResolver.resolve(s.forest, update),
-          latestID = id
+          latestID = id,
+          latestNonFocusID = id
         ))
 
       case Inbound.SettingsChanged(id, settings) =>
+        val resolver = EffectResolver(settings, cache)
         state = state.map(_.copy(
-          settings = settings,
-          projector = Projector(settings, cache),
-          latestID = id
+          projector = new Projector(settings, resolver),
+          errorFinder = new StepErrorFinder(settings, resolver, cache),
+          latestID = id,
+          latestNonFocusID = id
         ))
 
       case Inbound.FocusChanged(id, focusID) =>
@@ -104,24 +118,49 @@ private final class ProjectionWorker(
   private def scheduleComputation(): Unit =
     if (!computationPending) {
       computationPending = true
-      val signal = currentController.signal
       // MessageChannel macrotask — messages already in the queue still run first,
       // giving the same batching property as setTimeout(0) but with ~0ms overhead
-      Future.unit.foreach(_ => computeAndSend(signal))
+      Future.unit.foreach(_ => computeProjection(currentController.signal))
     }
 
-  private def computeAndSend(signal: dom.AbortSignal): Unit = {
+  private def computeProjection(signal: dom.AbortSignal): Unit = {
     computationPending = false
     state.foreach(s =>
       s.projector
-        .computeAsync(s.forest, s.focusID, s.settings, signal)
+        .computeAsync(s.forest, s.focusID, signal)
         .onComplete {
-          case Success(Some(projection)) => port.send(Outbound.Computed(s.latestID, projection))
+          case Success(Some(projection)) =>
+            port.send(Outbound.Computed(s.latestID, projection))
+            maybeComputeErrors()
           case Success(None) => // aborted; a newer computation is already scheduled
-          case Failure(e) => 
+          case Failure(e) =>
             console.error("Failed to compute an updated projection", e)
             port.send(Outbound.ComputeFailed(s.latestID, e.getMessage))
+            port.send(Outbound.ErrorDetectionFailed(s.latestID, "Unable to compute player state"))
         }
     )
   }
+
+  private def maybeComputeErrors(): Unit = {
+    val needsRecompute = state.exists(s => s.lastSuccessfulErrorID.forall(_ < s.latestNonFocusID))
+    if (needsRecompute)
+      Future.unit.foreach(_ => computeErrors(currentController.signal))
+    else
+      state.foreach(s => port.send(Outbound.ErrorDetectionSkipped(s.latestID)))
+  }
+
+  private def computeErrors(signal: dom.AbortSignal): Unit =
+    state.foreach(s =>
+      s.errorFinder
+        .findAsync(s.forest, signal)
+        .onComplete {
+          case Success(Some(errors)) =>
+            state = state.map(s => s.copy(lastSuccessfulErrorID = Some(s.latestNonFocusID)))
+            port.send(Outbound.ErrorsComputed(s.latestID, errors))
+          case Success(None) => // aborted; newer computation pending
+          case Failure(e) =>
+            console.error("Failed to compute step errors", e)
+            port.send(Outbound.ErrorDetectionFailed(s.latestID, e.getMessage))
+        }
+    )
 }

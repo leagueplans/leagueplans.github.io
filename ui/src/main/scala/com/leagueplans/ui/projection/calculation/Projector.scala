@@ -2,68 +2,14 @@ package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.projection.model.Projection
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
 
-object Projector {
-  def apply(settings: Plan.Settings, cache: Cache): Projector =
-    new Projector(EffectResolver(settings, cache))
-
-  private[calculation] type Iteration[ID, T] = (id: ID, value: T, reps: Int)
-
-  private[calculation] def foldLeftAsyncHelper[T, ID, Acc](
-    forest: Forest[ID, Iteration[ID, T]],
-    initialAcc: Acc,
-    initialRemaining: List[Iteration[ID, T]],
-    signal: dom.AbortSignal,
-    yieldInterval: Int
-  )(f: (Acc, T, Int) => Acc): Future[Option[Acc]] = {
-    var acc = initialAcc
-    var remaining = initialRemaining
-    var repsUntilYield = yieldInterval
-
-    while (remaining.nonEmpty && repsUntilYield > 0 && !signal.aborted) {
-      remaining match {
-        case Nil => // unreachable; while condition ensures nonEmpty
-        case h :: t =>
-          if (h.reps <= 0) {
-            remaining = t
-          } else {
-            val children = forest.children(h.id)
-            if (children.isEmpty) {
-              val excessReps = h.reps - repsUntilYield
-              if (excessReps > 0) {
-                acc = f(acc, h.value, repsUntilYield)
-                remaining = (h.id, h.value, excessReps) +: t
-                repsUntilYield = 0
-              } else {
-                acc = f(acc, h.value, h.reps)
-                remaining = t
-                repsUntilYield = -excessReps
-              }
-            } else {
-              acc = f(acc, h.value, 1)
-              remaining = (children :+ (h.id, h.value, h.reps - 1)) ++ t
-              repsUntilYield -= 1
-            }
-          }
-      }
-    }
-
-    if (signal.aborted) Future.successful(None)
-    else if (remaining.isEmpty) Future.successful(Some(acc))
-    else
-      Future.unit.flatMap(_ =>
-        foldLeftAsyncHelper(forest, acc, remaining, signal, yieldInterval)(f)
-      )
-  }
-}
-
-final class Projector(effectResolver: EffectResolver) {
+final class Projector(settings: Plan.Settings, effectResolver: EffectResolver) {
   /** Computes the [[Projection]] for the focused step asynchronously, yielding to the
     * macrotask queue periodically. This keeps the worker responsive — if a newer message
     * arrives mid-computation, the signal is aborted and [[None]] is returned early.
@@ -82,7 +28,6 @@ final class Projector(effectResolver: EffectResolver) {
   def computeAsync(
     forest: Forest[Step.ID, Step],
     focusID: Option[Step.ID],
-    settings: Plan.Settings,
     signal: dom.AbortSignal
   ): Future[Option[Projection]] = {
     val containingTree = focusID match {
@@ -133,11 +78,7 @@ final class Projector(effectResolver: EffectResolver) {
   private def foldLeftAsync[Acc](
     forest: Forest[Step.ID, Step],
     acc: Acc,
-    signal: dom.AbortSignal,
-    yieldInterval: Int = 500
-  )(f: (Acc, Step, Int) => Acc): Future[Option[Acc]] = {
-    val iterationForest = forest.map[Projector.Iteration[Step.ID, Step]]((id, step) => (id, step, step.repetitions))
-    val roots = iterationForest.roots.flatMap(iterationForest.get)
-    Projector.foldLeftAsyncHelper(iterationForest, acc, roots, signal, yieldInterval)(f)
-  }
+    signal: dom.AbortSignal
+  )(f: (Acc, Step, Int) => Acc): Future[Option[Acc]] =
+    ForestFolder.foldLeftAsync(forest, acc, signal, _.repetitions)(f)
 }

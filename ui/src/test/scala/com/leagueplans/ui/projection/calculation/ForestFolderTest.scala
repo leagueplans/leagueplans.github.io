@@ -1,10 +1,6 @@
 package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.model.player.league.LeagueStatus
-import com.leagueplans.ui.model.player.skill.Stats
-import com.leagueplans.ui.model.player.{GridStatus, Player}
 import org.scalajs.dom.AbortController
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor
 import org.scalatest.freespec.AsyncFreeSpec
@@ -12,37 +8,31 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-final class ProjectorTest extends AsyncFreeSpec with Matchers {
+final class ForestFolderTest extends AsyncFreeSpec with Matchers {
   override implicit val executionContext: ExecutionContext = MacrotaskExecutor.Implicits.global
-  // foldLeftAsyncHelper test infrastructure
-  private type Iter = Projector.Iteration[Int, String]
+
+  private type Iter = ForestFolder.Iteration[Int, String]
   private val collect: (List[(String, Int)], String, Int) => List[(String, Int)] = (acc, v, r) => acc :+ (v, r)
   private def iter(id: Int, value: String, reps: Int): Iter = (id = id, value = value, reps = reps)
   private def iterForest(nodes: Map[Int, Iter], parentsToChildren: Map[Int, List[Int]] = Map.empty, roots: List[Int]): Forest[Int, Iter] =
     Forest.from(nodes, parentsToChildren, roots)
 
-  // computeAsync test infrastructure
-  private val noOpResolver: EffectResolver = (player, _) => player
-  private val emptyPlayer = Player(Stats(), Map.empty, Set.empty, Set.empty, LeagueStatus(0, Set.empty, Set.empty), GridStatus(Set.empty))
-  private val settings = Plan.Settings.Explicit(emptyPlayer, List.empty, None)
-  private val projector = new Projector(noOpResolver)
-
-  // Helper for foldLeftAsyncHelper tests. Uses a large yield interval by default so
-  // reps are never split mid-batch, keeping traversal-correctness tests readable.
+  // Uses a large yield interval by default so reps are never split mid-batch,
+  // keeping traversal-correctness tests readable.
   private def runAsync(
     f: Forest[Int, Iter],
     remaining: List[Iter] = null,
     yieldInterval: Int = 1000
   ): Future[Option[List[(String, Int)]]] = {
     val rem = if (remaining == null) f.roots.flatMap(f.get) else remaining
-    Projector.foldLeftAsyncHelper(f, List.empty, rem, new AbortController().signal, yieldInterval)(collect)
+    ForestFolder.foldLeftAsync(f, List.empty, rem, new AbortController().signal, yieldInterval)(collect)
   }
-  
-  "foldLeftAsyncHelper" - {
+
+  "foldLeftAsync" - {
     "returns None if signal is already aborted" in {
       val controller = new AbortController()
       controller.abort()
-      Projector.foldLeftAsyncHelper(
+      ForestFolder.foldLeftAsync(
         iterForest(Map(1 -> iter(1, "a", 3)), roots = List(1)),
         List.empty,
         List(iter(1, "a", 3)),
@@ -56,7 +46,7 @@ final class ProjectorTest extends AsyncFreeSpec with Matchers {
       val controller = new AbortController()
       // yieldInterval=1 causes a yield after the first rep. Aborting synchronously
       // here (before the continuation fires) means the next iteration sees aborted=true.
-      val future = Projector.foldLeftAsyncHelper(f, List.empty, f.roots.flatMap(f.get), controller.signal, 1)(collect)
+      val future = ForestFolder.foldLeftAsync(f, List.empty, f.roots.flatMap(f.get), controller.signal, 1)(collect)
       controller.abort()
       future.map(_ shouldBe None)
     }
@@ -159,16 +149,5 @@ final class ProjectorTest extends AsyncFreeSpec with Matchers {
       val f = iterForest(Map(1 -> iter(1, "a", 5)), roots = List(1))
       runAsync(f, yieldInterval = 2).map(_ shouldBe Some(List(("a", 2), ("a", 2), ("a", 1))))
     }
-  }
-
-  "computeAsync" - {
-    "returns None if signal is already aborted" in {
-      val controller = new AbortController()
-      controller.abort()
-      projector.computeAsync(Forest.empty, focusID = None, settings, controller.signal).map {
-        _ shouldBe None
-      }
-    }
-
   }
 }
