@@ -39,7 +39,7 @@
 
 .donationLink {
   margin-left: 0.4rem;
-  vertical-align: middle;
+  vertical-align: baseline;
   color: #aaa;
 
   &:hover {
