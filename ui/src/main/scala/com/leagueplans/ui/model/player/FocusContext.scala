@@ -22,6 +22,12 @@ final class FocusContext(
   def signalFor(id: Step.ID): Signal[Boolean] =
     focus.map(_.exists(_.id == id)).distinct
 
-  val playerAfterFirstCompletionOfCurrentFocus: Signal[Player] =
-    projection.map(_.playerAfterFirstCompletion)
+  val playerBeforeCurrentFocus: Signal[Player] =
+    projection.map(_.playerBeforeStep)
+
+  val playerAfterEffectsOfCurrentFocus: Signal[Player] =
+    projection.map(_.playerAfterEffects)
+
+  val playerAfterAllRepsOfCurrentFocus: Signal[Player] =
+    projection.map(_.playerAfterAllReps)
 }

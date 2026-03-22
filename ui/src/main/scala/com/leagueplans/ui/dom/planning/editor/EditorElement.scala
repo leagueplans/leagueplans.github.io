@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
+import com.leagueplans.ui.dom.planning.ViewMode
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
 import com.leagueplans.ui.dom.planning.forest.Forester
@@ -15,6 +16,7 @@ import com.leagueplans.ui.utils.laminar.FontAwesome
 import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
@@ -27,13 +29,14 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
+    viewModeVar: Var[ViewMode],
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
     val effectRenderer = EffectRenderer(cache, tooltip)
     val requirementRenderer = RequirementRenderer(cache, tooltip)
-    
+
     L.div(
       L.cls(Styles.editor),
       StepDescription(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.description)),

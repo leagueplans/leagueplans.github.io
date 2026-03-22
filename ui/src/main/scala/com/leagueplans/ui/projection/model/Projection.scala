@@ -10,9 +10,15 @@ object Projection {
   given Decoder[Projection] = Decoder.derived
 
   def apply(settings: Plan.Settings): Projection =
-    Projection(playerAfterFirstCompletion = settings.initialPlayer)
+    Projection(
+      playerBeforeStep = settings.initialPlayer,
+      playerAfterEffects = settings.initialPlayer,
+      playerAfterAllReps = settings.initialPlayer
+    )
 }
 
 final case class Projection(
-  playerAfterFirstCompletion: Player
+  playerBeforeStep: Player,
+  playerAfterEffects: Player,
+  playerAfterAllReps: Player
 )

@@ -13,7 +13,7 @@ import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Val
+import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
@@ -35,6 +35,27 @@ object PlanningPage {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
+    val viewMode = Var(ViewMode.AfterEffects)
+
+    val totalRepsSignal =
+      Signal.combine(focusContext.focus, forester.signal).map {
+        case (Some(step), forest) =>
+          forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions).product * step.repetitions
+        case (None, _) => 1
+      }.distinct
+
+    val playerSignal =
+      totalRepsSignal.flatMapSwitch(n =>
+        if (n <= 1)
+          focusContext.playerAfterEffectsOfCurrentFocus
+        else
+          viewMode.signal.flatMapSwitch {
+            case ViewMode.Before        => focusContext.playerBeforeCurrentFocus
+            case ViewMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
+            case ViewMode.AfterAllReps  => focusContext.playerAfterAllRepsOfCurrentFocus
+          }
+      ).distinct
+
     val planElement =
       PlanElement(
         name,
@@ -52,7 +73,7 @@ object PlanningPage {
     val visualiser =
       settings.map(s =>
         Visualiser(
-          focusContext.playerAfterFirstCompletionOfCurrentFocus,
+          playerSignal,
           isLeague = s.maybeLeaguePointScoring.nonEmpty,
           // TODO - This will break if you support changing settings
           isGridMaster = s == Plan.Settings.Deferred(GridMaster),
@@ -78,6 +99,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
+            viewMode,
             timeKeeper,
             tooltip,
             modal

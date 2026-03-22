@@ -1,0 +1,44 @@
+.container {}
+
+.radio {
+  appearance: none;
+  position: fixed;
+}
+
+.label {
+  padding: 0.2rem 0.5rem;
+
+  display: block;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-wrap-mode: nowrap;
+
+  transition: background-color 175ms ease-out, color 175ms ease-out;
+}
+
+.radio:focus-visible + .label {
+  outline: 2px solid rgba(192, 240, 197, 0.8);
+  outline-offset: -2px;
+}
+
+.option {
+  composes: label;
+  background-color: inherit;
+  color: rgba(255, 253, 214, 0.6);
+}
+
+.option:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 253, 214, 0.9);
+}
+
+.selected {
+  composes: label;
+  background-color: var(--accent);
+  color: rgba(255, 253, 214, 1);
+}
+
+.tooltip {
+  min-width: 17rem;
+  text-align: center;
+}
