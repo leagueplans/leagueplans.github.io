@@ -1,4 +1,5 @@
 .content {
+  display: flex;
 }
 
 .font {
@@ -19,6 +20,7 @@
 
 .description {
   composes: font;
-  display: inline;
-  white-space-collapse: preserve-breaks;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
