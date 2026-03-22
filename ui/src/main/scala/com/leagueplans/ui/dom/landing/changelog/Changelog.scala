@@ -13,6 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 2, 22),
+        "Step repetitions",
+        List(
+          "You can now set steps to repeat. Repeating steps also repeat all of their substeps, so you can model loops" +
+            " by grouping steps under a parent."
+        )
+      ),
+      item(
         new Date(2026, 2, 19),
         "Leagues VI added as a game mode",
         List(

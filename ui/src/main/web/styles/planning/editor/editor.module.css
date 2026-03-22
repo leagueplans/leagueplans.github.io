@@ -34,29 +34,44 @@
 }
 
 .sections {
+  --separator: 0.5rem;
+
   grid-row: 2;
   grid-column: 1 / 3;
   overflow-y: hidden;
+  margin: 0 var(--separator);
 
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, min-content) repeat(2, auto);
+  grid-column-gap: var(--separator);
+
   background: inherit;
 }
 
+.repetitions {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.viewToggle {
+  grid-row: 2;
+  grid-column: 1;
+}
+
 .timeTracking {
-  margin: 0 0.5rem;
+  grid-row: 1 / 3;
+  grid-column: 2;
 }
 
 .section {
-  align-self: flex-start;
-  flex-grow: 1;
+  grid-row: 1 / 3;
+  align-self: start;
 
   max-height: 100%;
   max-height: -webkit-fill-available;
   /*max-height: -moz-available; Does not work for height */
   max-height: fill-available;
   box-sizing: border-box;
-
-  margin: 0.5rem;
 
   border: solid rgba(255, 253, 214, 0.5);
   border-width: 1px;

@@ -4,6 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.ViewMode
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
+import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
@@ -43,6 +44,10 @@ object EditorElement {
       L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
       L.div(
         L.cls(Styles.sections),
+        Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
+        L.child.maybe <-- ViewModeSection(stepSignal, forester, viewModeVar, tooltip).map(
+          _.map(_.amend(L.cls(Styles.viewToggle)))
+        ),
         TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
@@ -57,6 +62,8 @@ object EditorElement {
     val warningIcon: String = js.native
     val warningTooltip: String = js.native
     val sections: String = js.native
+    val repetitions: String = js.native
+    val viewToggle: String = js.native
     val timeTracking: String = js.native
     val section: String = js.native
   }
