@@ -36,25 +36,12 @@ object PlanningPage {
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val renderMode = Var(RenderMode.AfterEffects)
-
-    val totalRepsSignal =
-      Signal.combine(focusContext.focus, forester.signal).map {
-        case (Some(step), forest) =>
-          forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions).product * step.repetitions
-        case (None, _) => 1
-      }.distinct
-
     val playerSignal =
-      totalRepsSignal.flatMapSwitch(n =>
-        if (n <= 1)
-          focusContext.playerAfterEffectsOfCurrentFocus
-        else
-          renderMode.signal.flatMapSwitch {
-            case RenderMode.Before => focusContext.playerBeforeCurrentFocus
-            case RenderMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
-            case RenderMode.AfterAllReps => focusContext.playerAfterAllRepsOfCurrentFocus
-          }
-      ).distinct
+      renderMode.signal.flatMapSwitch {
+        case RenderMode.Before => focusContext.playerBeforeCurrentFocus
+        case RenderMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
+        case RenderMode.AfterAllReps => focusContext.playerAfterAllRepsOfCurrentFocus
+      }
 
     val planElement =
       PlanElement(

@@ -45,9 +45,7 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
-        L.child.maybe <-- RenderModeSection(stepSignal, forester, renderMode, tooltip).map(
-          _.map(_.amend(L.cls(Styles.viewToggle)))
-        ),
+        RenderModeSection(stepSignal, forester, renderMode, tooltip).amend(L.cls(Styles.viewToggle)),
         TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
