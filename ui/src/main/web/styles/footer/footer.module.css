@@ -32,9 +32,28 @@
 
 .discordIcon {
   margin-right: 0.1rem;
+  vertical-align: middle;
 }
 
 .handle {}
+
+.donationLink {
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  color: #aaa;
+
+  &:hover {
+    color: #d7e7f5;
+  }
+}
+
+.donationIcon {}
+
+.donationTooltip {
+  width: 7.9rem;
+  font-size: 0.8rem;
+  text-align: center;
+}
 
 .statuses {
   justify-self: end;

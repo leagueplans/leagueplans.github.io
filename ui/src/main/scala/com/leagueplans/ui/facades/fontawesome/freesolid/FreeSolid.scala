@@ -69,6 +69,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faGripVertical")
   object faGripVertical extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHandHoldingHeart")
+  object faHandHoldingHeart extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHourglass")
   object faHourglass extends IconDefinition
 

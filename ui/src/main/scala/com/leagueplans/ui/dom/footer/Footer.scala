@@ -1,11 +1,14 @@
 package com.leagueplans.ui.dom.footer
 
 import com.leagueplans.ui.dom.common.Tooltip
+import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.facades.fontawesome.freebrands.FreeBrands
+import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.HTMLParagraphElement
@@ -14,7 +17,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object Footer {
-  def apply(statusTracker: StatusTracker, tooltip: Tooltip): L.HtmlElement = {
+  def apply(statusTracker: StatusTracker, tooltip: Tooltip): L.HtmlElement =
     L.footerTag(
       L.cls(Styles.footer),
       L.sectionTag(
@@ -22,7 +25,7 @@ object Footer {
         jagexAttribution,
         wikiAttribution
       ),
-      feedback,
+      feedback(tooltip),
       L.sectionTag(
         L.cls(Styles.statuses),
         toStatus("Rendering", id = ProjectionClient.projectionStatusKey, statusTracker, tooltip),
@@ -30,7 +33,6 @@ object Footer {
         toStatus("Error detection", id = ProjectionClient.errorDetectionStatusKey, statusTracker, tooltip)
       )
     )
-  }
 
   private val jagexAttribution: ReactiveHtmlElement[HTMLParagraphElement] =
     L.p(
@@ -56,12 +58,22 @@ object Footer {
       display
     )
 
-  private val feedback: ReactiveHtmlElement[HTMLParagraphElement] =
+  private def feedback(tooltip: Tooltip): ReactiveHtmlElement[HTMLParagraphElement] =
     L.p(
       L.cls(Styles.feedback),
       FontAwesome.icon(FreeBrands.faDiscord).amend(L.svg.cls(Styles.discordIcon)),
       L.span(L.cls(Styles.handle), "@granarder"),
-      " for feedback"
+      " for feedback",
+      L.a(
+        L.cls(Styles.donationLink),
+        L.href("https://buymeacoffee.com/leagueplans"),
+        L.target("_blank"),
+        FontAwesome.icon(FreeSolid.faHandHoldingHeart).amend(L.svg.cls(Styles.donationIcon)),
+        tooltip.register(
+          L.span(L.cls(Styles.donationTooltip), "Support the developer"),
+          FloatingConfig.basicTooltip(Placement.top)
+        )
+      )
     )
 
   private def toStatus(
@@ -87,6 +99,10 @@ object Footer {
     val feedback: String = js.native
     val discordIcon: String = js.native
     val handle: String = js.native
+
+    val donationLink: String = js.native
+    val donationIcon: String = js.native
+    val donationTooltip: String = js.native
 
     val statuses: String = js.native
     val status: String = js.native
