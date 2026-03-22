@@ -35,7 +35,7 @@ object PlanningPage {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val viewMode = Var(ViewMode.AfterEffects)
+    val renderMode = Var(RenderMode.AfterEffects)
 
     val totalRepsSignal =
       Signal.combine(focusContext.focus, forester.signal).map {
@@ -49,10 +49,10 @@ object PlanningPage {
         if (n <= 1)
           focusContext.playerAfterEffectsOfCurrentFocus
         else
-          viewMode.signal.flatMapSwitch {
-            case ViewMode.Before        => focusContext.playerBeforeCurrentFocus
-            case ViewMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
-            case ViewMode.AfterAllReps  => focusContext.playerAfterAllRepsOfCurrentFocus
+          renderMode.signal.flatMapSwitch {
+            case RenderMode.Before => focusContext.playerBeforeCurrentFocus
+            case RenderMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
+            case RenderMode.AfterAllReps => focusContext.playerAfterAllRepsOfCurrentFocus
           }
       ).distinct
 
@@ -99,7 +99,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
-            viewMode,
+            renderMode,
             timeKeeper,
             tooltip,
             modal

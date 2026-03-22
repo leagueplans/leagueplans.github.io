@@ -1,5 +1,5 @@
 package com.leagueplans.ui.dom.planning
 
-enum ViewMode {
+enum RenderMode {
   case Before, AfterEffects, AfterAllReps
 }

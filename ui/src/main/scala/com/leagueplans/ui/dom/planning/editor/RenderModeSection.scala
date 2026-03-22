@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.common.form.RadioGroup
-import com.leagueplans.ui.dom.planning.ViewMode
+import com.leagueplans.ui.dom.planning.RenderMode
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Step
@@ -14,11 +14,11 @@ import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNod
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object ViewModeSection {
+object RenderModeSection {
   def apply(
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
-    viewModeVar: Var[ViewMode],
+    renderMode: Var[RenderMode],
     tooltip: Tooltip
   ): Signal[Option[L.Div]] = {
     val totalRepsSignal = Signal.combine(stepSignal, forester.signal).map((step, forest) =>
@@ -26,22 +26,22 @@ object ViewModeSection {
     )
 
     totalRepsSignal.map(total =>
-      Option.when(total > 1)(section(viewModeVar, tooltip))
+      Option.when(total > 1)(section(renderMode, tooltip))
     )
   }
 
-  private def section(viewModeVar: Var[ViewMode], tooltip: Tooltip): L.Div =
-    SectionV2("View")(
+  private def section(renderMode: Var[RenderMode], tooltip: Tooltip): L.Div =
+    SectionV2("Render mode")(
       L.cls(Styles.container),
       RadioGroup(
         groupName = "view-mode",
         options = List(
-          RadioGroup.Opt(ViewMode.Before, "before"),
-          RadioGroup.Opt(ViewMode.AfterEffects, "after-1st-rep"),
-          RadioGroup.Opt(ViewMode.AfterAllReps, "after-all-reps")
+          RadioGroup.Opt(RenderMode.Before, "before"),
+          RadioGroup.Opt(RenderMode.AfterEffects, "after-1st-rep"),
+          RadioGroup.Opt(RenderMode.AfterAllReps, "after-all-reps")
         ),
-        externalSignal = viewModeVar.signal,
-        externalConsumer = viewModeVar.writer,
+        externalSignal = renderMode.signal,
+        externalConsumer = renderMode.writer,
         render = (mode, checked, radio, label) =>
           List(
             radio.amend(L.cls(Styles.radio)),
@@ -57,24 +57,24 @@ object ViewModeSection {
       )
     )
 
-  private def modeLabel(mode: ViewMode): String =
+  private def modeLabel(mode: RenderMode): String =
     mode match {
-      case ViewMode.Before => "Before"
-      case ViewMode.AfterEffects => "After effects"
-      case ViewMode.AfterAllReps => "After all reps"
+      case RenderMode.Before => "Before"
+      case RenderMode.AfterEffects => "After effects"
+      case RenderMode.AfterAllReps => "After all reps"
     }
 
-  private def modeTooltip(mode: ViewMode): String =
+  private def modeTooltip(mode: RenderMode): String =
     mode match {
-      case ViewMode.Before =>
+      case RenderMode.Before =>
         "Character state before this step's effects"
-      case ViewMode.AfterEffects =>
+      case RenderMode.AfterEffects =>
         "Character state after this step's effects, ignoring substeps and repetitions"
-      case ViewMode.AfterAllReps =>
+      case RenderMode.AfterAllReps =>
         "Character state after this step's final repetition, including all enclosing loops and substeps"
     }
 
-  @js.native @JSImport("/styles/planning/editor/viewModeSection.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/editor/renderModeSection.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val container: String = js.native
     val radio: String = js.native

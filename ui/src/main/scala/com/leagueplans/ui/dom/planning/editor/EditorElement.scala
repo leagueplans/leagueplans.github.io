@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
-import com.leagueplans.ui.dom.planning.ViewMode
+import com.leagueplans.ui.dom.planning.RenderMode
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
@@ -30,7 +30,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
-    viewModeVar: Var[ViewMode],
+    renderMode: Var[RenderMode],
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
@@ -45,7 +45,7 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
-        L.child.maybe <-- ViewModeSection(stepSignal, forester, viewModeVar, tooltip).map(
+        L.child.maybe <-- RenderModeSection(stepSignal, forester, renderMode, tooltip).map(
           _.map(_.amend(L.cls(Styles.viewToggle)))
         ),
         TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
