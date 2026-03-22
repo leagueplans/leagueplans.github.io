@@ -12,7 +12,10 @@ object SectionV2 {
       L.cls(Styles.container),
       LabelledBox(
         L.span(L.cls(Styles.title), title)
-      ).amend(L.cls(Styles.contents), contents)
+      ).amend(
+        L.cls(Styles.contents),
+        L.div(L.cls(Styles.inner), contents)
+      )
     )
 
   @js.native @JSImport("/styles/planning/editor/sectionV2.module.css", JSImport.Default)
@@ -20,5 +23,6 @@ object SectionV2 {
     val container: String = js.native
     val title: String = js.native
     val contents: String = js.native
+    val inner: String = js.native
   }
 }

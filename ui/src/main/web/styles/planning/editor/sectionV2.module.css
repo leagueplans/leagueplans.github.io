@@ -43,3 +43,8 @@
   );
   background: #02051c;
 }
+
+/* This exists to ensure that child elements don't overflow the contents border */
+.inner {
+  overflow: hidden;
+}
