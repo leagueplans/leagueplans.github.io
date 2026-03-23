@@ -87,16 +87,26 @@ object LeaguesV extends Mode.League {
           skillsUnlocked = Skill.values.toSet
         )
       ),
-      expMultipliers = List(ExpMultiplier(
-        Skill.values.toSet,
-        ExpMultiplier.Kind.Multiplicative,
-        base = 5.0,
-        thresholds = List(
-          8.0 -> ExpMultiplier.Condition.LeaguePoints(750),
-          12.0 -> ExpMultiplier.Condition.LeaguePoints(5000),
-          16.0 -> ExpMultiplier.Condition.LeaguePoints(16000),
+      expMultipliers = List(
+        ExpMultiplier(
+          Skill.values.toSet,
+          ExpMultiplier.Kind.Multiplicative,
+          base = 5.0,
+          thresholds = List(
+            8.0 -> ExpMultiplier.Condition.LeaguePoints(750),
+            12.0 -> ExpMultiplier.Condition.LeaguePoints(5000),
+            16.0 -> ExpMultiplier.Condition.LeaguePoints(16000),
+          )
+        ),
+        ExpMultiplier(
+          Skill.combats,
+          ExpMultiplier.Kind.Multiplicative,
+          base = 1.0,
+          thresholds = List(
+            2.0 -> ExpMultiplier.Condition.LeaguePoints(1500)
+          )
         )
-      )),
+      ),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
         LeaguesV,
         Map(
