@@ -48,8 +48,8 @@ object ExpMultiplier {
   
   def calculateMultiplier(
     multipliers: List[ExpMultiplier]
-  )(skill: Skill, player: Player, cache: Cache): Int =
-    multipliers.foldLeft(1)((acc, multiplier) =>
+  )(skill: Skill, player: Player, cache: Cache): Double =
+    multipliers.foldLeft(1.0)((acc, multiplier) =>
       multiplier.kind match {
         case Kind.Additive =>
           acc + multiplier.multiplierFor(skill, player, cache)
@@ -62,10 +62,10 @@ object ExpMultiplier {
 final case class ExpMultiplier(
   skills: Set[Skill],
   kind: ExpMultiplier.Kind,
-  base: Int,
-  thresholds: List[(Int, ExpMultiplier.Condition)]
+  base: Double,
+  thresholds: List[(Double, ExpMultiplier.Condition)]
 ) {
-  def multiplierFor(skill: Skill, player: Player, cache: Cache): Int =
+  def multiplierFor(skill: Skill, player: Player, cache: Cache): Double =
     if (!skills.contains(skill))
       kind match {
         case ExpMultiplier.Kind.Additive => 0

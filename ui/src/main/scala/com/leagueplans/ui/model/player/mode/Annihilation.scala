@@ -68,16 +68,16 @@ object Annihilation extends Mode.Deadman {
         ExpMultiplier(
           Skill.combats,
           ExpMultiplier.Kind.Multiplicative,
-          base = 10,
+          base = 10.0,
           thresholds = List(
-            15 -> ExpMultiplier.Condition.CombatLevel(61),
-            20 -> ExpMultiplier.Condition.CombatLevel(96)
+            15.0 -> ExpMultiplier.Condition.CombatLevel(61),
+            20.0 -> ExpMultiplier.Condition.CombatLevel(96)
           )
         ),
         ExpMultiplier(
           Skill.nonCombats,
           ExpMultiplier.Kind.Multiplicative,
-          base = 10,
+          base = 10.0,
           thresholds = List.empty
         )
       )

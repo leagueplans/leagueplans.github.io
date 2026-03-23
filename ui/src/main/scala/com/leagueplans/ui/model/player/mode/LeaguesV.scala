@@ -40,7 +40,7 @@ object LeaguesV extends Mode.League {
           56, // Priest in Peril
           57, // Nature Spirit
           81, // Tears of Guthix
-          83, // The lost Tribe
+          83, // The Lost Tribe
           105, // Fairytale I
           121, // Death to the Dorgeshuun
           122, // Fairytale II
@@ -90,11 +90,11 @@ object LeaguesV extends Mode.League {
       expMultipliers = List(ExpMultiplier(
         Skill.values.toSet,
         ExpMultiplier.Kind.Multiplicative,
-        base = 5,
+        base = 5.0,
         thresholds = List(
-          8 -> ExpMultiplier.Condition.LeaguePoints(750),
-          12 -> ExpMultiplier.Condition.LeaguePoints(5000),
-          16 -> ExpMultiplier.Condition.LeaguePoints(16000),
+          8.0 -> ExpMultiplier.Condition.LeaguePoints(750),
+          12.0 -> ExpMultiplier.Condition.LeaguePoints(5000),
+          16.0 -> ExpMultiplier.Condition.LeaguePoints(16000),
         )
       )),
       maybeLeaguePointScoring = Some(LeaguePointScoring(

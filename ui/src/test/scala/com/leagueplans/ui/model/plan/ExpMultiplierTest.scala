@@ -81,22 +81,22 @@ final class ExpMultiplierTest extends CodecSpec {
     }
     
     "encoding values to and decoding values from an expected encoding" in {
-      val firstThreshold = 5 -> ExpMultiplier.Condition.LeaguePoints(350)
-      val secondThreshold = 10 -> ExpMultiplier.Condition.LeagueTasks(90)
-      
+      val firstThreshold = 5.0 -> ExpMultiplier.Condition.LeaguePoints(350)
+      val secondThreshold = 10.0 -> ExpMultiplier.Condition.LeagueTasks(90)
+
       testRoundTripSerialisation(
         ExpMultiplier(
           Set(Skill.Magic),
           ExpMultiplier.Kind.Multiplicative,
-          base = 2,
+          base = 2.0,
           thresholds = List(firstThreshold, secondThreshold)
         ),
         Decoder.decodeMessage,
         Array[Byte](0b100, 0b100) ++ Encoder.encode(Skill.Magic).getBytes ++
           Array[Byte](0b1100, 0b100) ++ Encoder.encode(ExpMultiplier.Kind.Multiplicative).getBytes ++
-          Array[Byte](0b10000) ++ Encoder.encode(2).getBytes ++
-          Array[Byte](0b11100, 0b1011) ++ Encoder.encode(firstThreshold).getBytes ++
-          Array[Byte](0b11100, 0b1011) ++ Encoder.encode(secondThreshold).getBytes
+          Array[Byte](0b10001) ++ Encoder.encode(2.0).getBytes ++
+          Array[Byte](0b11100, 0b10010) ++ Encoder.encode(firstThreshold).getBytes ++
+          Array[Byte](0b11100, 0b10010) ++ Encoder.encode(secondThreshold).getBytes
       )
     }
   }

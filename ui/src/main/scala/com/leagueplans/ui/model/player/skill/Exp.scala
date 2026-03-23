@@ -26,6 +26,9 @@ sealed abstract case class Exp(raw: Int) {
   def *(multiplier: Int): Exp =
     new Exp(raw * multiplier) {}
 
+  def *(multiplier: Double): Exp =
+    new Exp((raw * multiplier).toInt) {}
+
   override def toString: String = {
     val unit = raw / 10
     val tenth = raw % 10
