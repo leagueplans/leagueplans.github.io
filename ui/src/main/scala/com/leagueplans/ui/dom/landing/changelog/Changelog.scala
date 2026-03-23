@@ -13,6 +13,14 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 2, 23),
+        "Leagues VI config updated",
+        List(
+          "The config for Leagues VI has been updated to reflect the most recent blog post. Exp multiplier" +
+            " thresholds currently use the point values from Leagues V."
+        )
+      ),
+      item(
         new Date(2026, 2, 22),
         "Step repetitions",
         List(
