@@ -1,8 +1,6 @@
 package com.leagueplans.scraper.dumper
 
 import com.leagueplans.scraper.telemetry.Metric
-import com.sksamuel.scrimage.ImmutableImage
-import com.sksamuel.scrimage.nio.{ImmutableImageLoader, PngWriter}
 import zio.{Task, Trace, ZIO}
 
 import java.nio.file.{Files, Path}
@@ -13,11 +11,10 @@ object ImageDumper {
       _ <- ZIO.attempt(Files.createDirectories(targetDirectory))
       imageCounter <- Metric.makeCounter(s"$name.image-dumper.images")
       byteCounter <- Metric.makeCounter(s"$name.image-dumper.bytes")
-    } yield ImageDumper(ImmutableImage.loader(), targetDirectory, imageCounter, byteCounter)
+    } yield ImageDumper(targetDirectory, imageCounter, byteCounter)
 }
 
 final class ImageDumper(
-  imageLoader: ImmutableImageLoader,
   directory: Path,
   imageCounter: Metric.Counter[Long],
   byteCounter: Metric.Counter[Long]
@@ -30,12 +27,12 @@ final class ImageDumper(
         _ <- byteCounter.incrementBy(data.length)
       } yield ()
     )
-    
+
   private def writeToFile(subPath: Path, data: Array[Byte])(using Trace): Task[Unit] =
     ZIO.attempt {
       val path = directory.resolve(subPath)
       Files.createDirectories(path.getParent)
-      imageLoader.fromBytes(data).output(PngWriter.MaxCompression, path)
+      Files.write(path, data)
       ()
     }
 }

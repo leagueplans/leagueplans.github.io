@@ -39,7 +39,6 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
-val scrimageVersion = "4.3.5"
 val zioVersion = "2.1.24"
 val zioLoggingVersion = "2.5.3"
 
@@ -53,9 +52,7 @@ lazy val wikiScraper =
         "dev.zio" %% "zio-http" % "3.8.0",
         "dev.zio" %% "zio-logging" % zioLoggingVersion,
         "dev.zio" %% "zio-logging-slf4j2" % zioLoggingVersion,
-        "org.parboiled" %% "parboiled" % "2.5.1",
-        "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion,
-        ("com.sksamuel.scrimage" %% "scrimage-scala" % scrimageVersion).cross(CrossVersion.for3Use2_13)
+        "org.parboiled" %% "parboiled" % "2.5.1"
       )
     )
     .dependsOn(common.jvm)
