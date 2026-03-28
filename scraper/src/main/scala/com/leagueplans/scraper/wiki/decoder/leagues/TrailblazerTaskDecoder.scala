@@ -20,7 +20,8 @@ object TrailblazerTaskDecoder {
           leagues2Props = Some(TrailblazerTaskProperties(tier, area)),
           leagues3Props = None,
           leagues4Props = None,
-          leagues5Props = None
+          leagues5Props = None,
+          leagues6Props = None
         )
 
       case _ =>

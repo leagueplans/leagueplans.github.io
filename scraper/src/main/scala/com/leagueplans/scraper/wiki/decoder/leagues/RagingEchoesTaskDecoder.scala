@@ -22,7 +22,8 @@ object RagingEchoesTaskDecoder {
           leagues2Props = None,
           leagues3Props = None,
           leagues4Props = None,
-          leagues5Props = Some(TrailblazerTaskProperties(tier, area))
+          leagues5Props = Some(TrailblazerTaskProperties(tier, area)),
+          leagues6Props = None
         )
 
       case _ =>
