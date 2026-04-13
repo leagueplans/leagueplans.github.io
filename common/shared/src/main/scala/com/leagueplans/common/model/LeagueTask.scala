@@ -12,10 +12,10 @@ final case class LeagueTask(
   id: Int,
   name: String,
   description: String,
-  leagues1Props: Option[LeagueTaskTier],
-  leagues2Props: Option[TrailblazerTaskProperties],
-  leagues3Props: Option[ShatteredRelicsTaskProperties],
-  leagues4Props: Option[TrailblazerTaskProperties],
-  leagues5Props: Option[TrailblazerTaskProperties],
-  leagues6Props: Option[TrailblazerTaskProperties]
+  leagues1Props: Option[LeagueTaskTier] = None,
+  leagues2Props: Option[TrailblazerTaskProperties] = None,
+  leagues3Props: Option[ShatteredRelicsTaskProperties] = None,
+  leagues4Props: Option[TrailblazerTaskProperties] = None,
+  leagues5Props: Option[TrailblazerTaskProperties] = None,
+  leagues6Props: Option[TrailblazerTaskProperties] = None
 )

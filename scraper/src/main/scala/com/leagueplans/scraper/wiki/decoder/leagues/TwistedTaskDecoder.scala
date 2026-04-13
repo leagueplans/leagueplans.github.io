@@ -12,17 +12,7 @@ object TwistedTaskDecoder {
         for {
           name <- encodedName.collapse(_.simplifiedText).as[Term.Unstructured]
           description <- encodedDescription.collapse(_.simplifiedText).as[Term.Unstructured]
-        } yield LeagueTask(
-          id = index,
-          name.raw,
-          description.raw,
-          leagues1Props = Some(tier),
-          leagues2Props = None,
-          leagues3Props = None,
-          leagues4Props = None,
-          leagues5Props = None,
-          leagues6Props = None
-        )
+        } yield LeagueTask(id = index, name.raw, description.raw, leagues1Props = Some(tier))
 
       case _ =>
         Left(DecoderException("Failed to find both a name and description from anonymous terms"))

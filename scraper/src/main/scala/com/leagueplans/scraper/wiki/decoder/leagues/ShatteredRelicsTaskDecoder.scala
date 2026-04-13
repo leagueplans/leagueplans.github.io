@@ -21,12 +21,7 @@ object ShatteredRelicsTaskDecoder {
           id = index,
           name.raw,
           description.raw,
-          leagues1Props = None,
-          leagues2Props = None,
-          leagues3Props = Some(ShatteredRelicsTaskProperties(tier, category)),
-          leagues4Props = None,
-          leagues5Props = None,
-          leagues6Props = None
+          leagues3Props = Some(ShatteredRelicsTaskProperties(tier, category))
         )
 
       case _ =>
