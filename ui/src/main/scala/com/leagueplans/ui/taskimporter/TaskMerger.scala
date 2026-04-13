@@ -30,7 +30,8 @@ object TaskMerger {
       leagues2Props = existingTask.leagues2Props.orElse(newTask.leagues2Props),
       leagues3Props = existingTask.leagues3Props.orElse(newTask.leagues3Props),
       leagues4Props = existingTask.leagues4Props.orElse(newTask.leagues4Props),
-      leagues5Props = existingTask.leagues5Props.orElse(newTask.leagues5Props)
+      leagues5Props = existingTask.leagues5Props.orElse(newTask.leagues5Props),
+      leagues6Props = existingTask.leagues6Props.orElse(newTask.leagues6Props),
     )
 
   def mergePrioNew(existingTask: LeagueTask, newTask: LeagueTask): LeagueTask =
@@ -41,6 +42,7 @@ object TaskMerger {
       leagues2Props = existingTask.leagues2Props.orElse(newTask.leagues2Props),
       leagues3Props = existingTask.leagues3Props.orElse(newTask.leagues3Props),
       leagues4Props = existingTask.leagues4Props.orElse(newTask.leagues4Props),
-      leagues5Props = existingTask.leagues5Props.orElse(newTask.leagues5Props)
+      leagues5Props = existingTask.leagues5Props.orElse(newTask.leagues5Props),
+      leagues6Props = existingTask.leagues6Props.orElse(newTask.leagues6Props),
     )
 }

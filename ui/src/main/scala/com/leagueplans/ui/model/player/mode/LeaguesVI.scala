@@ -10,7 +10,6 @@ import com.leagueplans.ui.model.player.skill.{Level, Stats}
 object LeaguesVI extends Mode.League {
   val name: String = "Leagues VI: Demonic Pacts"
 
-  // TODO Change task validation to check that a task is part of this league
   val settings: Plan.Settings.Explicit =
     Plan.Settings.Explicit(
       initialPlayer = MainGame.initialPlayer.copy(
@@ -70,7 +69,7 @@ object LeaguesVI extends Mode.League {
         )
       ),
       maybeLeaguePointScoring = Some(LeaguePointScoring(
-        LeaguesV, //TODO
+        LeaguesVI,
         Map(
           LeagueTaskTier.Easy -> 10,
           LeagueTaskTier.Medium -> 30,

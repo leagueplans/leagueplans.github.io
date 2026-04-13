@@ -13,6 +13,18 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 3, 13),
+        "Initial tasks for Leagues VI",
+        List(
+          "The newly revealed tasks for Leagues VI have been implemented.",
+          "With this change, you'll now receive warnings for League VI plans which include" +
+            " tasks that we don't currently have confirmed to be part of the league.",
+          "The exp multiplier thresholds have been left as they were for Leagues V for now." +
+            " Multiple screenshots suggest that we'll hit tiers 2 and 3 earlier than we did" +
+            " in Leagues V, but the screenshots do not agree on the point thresholds.",
+        )
+      ),
+      item(
         new Date(2026, 2, 23),
         "Leagues VI config updated",
         List(
