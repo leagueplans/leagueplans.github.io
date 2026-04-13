@@ -29,6 +29,7 @@ object ScrapeLeagueTasksRunner {
       case "3" => Success(ShatteredRelicsTasksScraper.make(client))
       case "4" => Success(TrailblazerReloadedTasksScraper.make(client))
       case "5" => Success(RagingEchoesTasksScraper.make(client))
+      case "6" => Success(DemonicPactsTasksScraper.make(client))
       case s => Failure(IllegalArgumentException(s"Unexpected league number [$s]"))
     }).flatten
 
