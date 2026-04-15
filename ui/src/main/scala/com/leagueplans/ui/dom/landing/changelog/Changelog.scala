@@ -14,6 +14,14 @@ object Changelog {
       L.cls(Styles.changelog),
       item(
         new Date(2026, 3, 13),
+        "Leagues VI today!",
+        List(
+          "All tasks for Leagues VI have been implemented.",
+          "The exp multiplier thresholds have been updated to reflect today's blog post.",
+        )
+      ),
+      item(
+        new Date(2026, 3, 13),
         "Initial tasks for Leagues VI",
         List(
           "The newly revealed tasks for Leagues VI have been implemented.",
@@ -65,14 +73,6 @@ object Changelog {
         List(
           "You can now set how long each step takes. The tool will use these to show you when" +
             " you're expected to start and finish each step."
-        )
-      ),
-      item(
-        new Date(2026, 2, 1),
-        "Preparing for Leagues VI",
-        List(
-          "I'm actively working on UX improvements and new features ahead of the upcoming league. If you'd like to help" +
-            " out with importing quest data, do reach out!"
         )
       )
     )

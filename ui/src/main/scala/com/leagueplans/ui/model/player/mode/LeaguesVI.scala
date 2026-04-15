@@ -54,9 +54,9 @@ object LeaguesVI extends Mode.League {
           ExpMultiplier.Kind.Multiplicative,
           base = 5.0,
           thresholds = List(
-            8.0 -> ExpMultiplier.Condition.LeaguePoints(750),
-            12.0 -> ExpMultiplier.Condition.LeaguePoints(5000),
-            16.0 -> ExpMultiplier.Condition.LeaguePoints(16000),
+            8.0 -> ExpMultiplier.Condition.LeaguePoints(600),
+            12.0 -> ExpMultiplier.Condition.LeaguePoints(5200),
+            16.0 -> ExpMultiplier.Condition.LeaguePoints(16500),
           )
         ),
         ExpMultiplier(
@@ -64,7 +64,7 @@ object LeaguesVI extends Mode.League {
           ExpMultiplier.Kind.Multiplicative,
           base = 1.0,
           thresholds = List(
-            1.5 -> ExpMultiplier.Condition.LeaguePoints(1500)
+            1.5 -> ExpMultiplier.Condition.LeaguePoints(1200)
           )
         )
       ),
