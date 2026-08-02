@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.PlanID
-import com.leagueplans.ui.utils.airstream.PromiseLikeOps.onComplete
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.airstream.PromiseLikeOps.onComplete
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 

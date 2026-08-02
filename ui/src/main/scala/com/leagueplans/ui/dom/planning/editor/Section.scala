@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.editor
 
-import com.leagueplans.ui.dom.common.{Button, DragSortableList}
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
-import com.leagueplans.ui.utils.HasID
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.dom.{Button, DragSortableList}
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.HasID
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
 

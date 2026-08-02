@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.common.forest
 
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.Forest.Update.*
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.utils.HasID
 
 import scala.annotation.tailrec
 

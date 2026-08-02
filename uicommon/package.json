@@ -1,0 +1,15 @@
+{
+  "name": "@leagueplans/uicommon",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "comment": "Declares the npm packages the shared façades bind to, so that both projects building on uicommon inherit them rather than each listing them again.",
+  "dependencies": {
+    "@floating-ui/dom": "1.7.5",
+    "@fortawesome/fontawesome-svg-core": "7.1.0",
+    "@fortawesome/free-brands-svg-icons": "7.1.0",
+    "@fortawesome/free-regular-svg-icons": "7.1.0",
+    "@fortawesome/free-solid-svg-icons": "7.1.0",
+    "fuse.js": "7.1.0"
+  }
+}

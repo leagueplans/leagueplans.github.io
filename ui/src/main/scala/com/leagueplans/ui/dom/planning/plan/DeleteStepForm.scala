@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.form.Form
-import com.leagueplans.ui.dom.common.{CancelModalButton, FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.DeleteStepForm.Styles
 import com.leagueplans.ui.dom.planning.plan.step.StepPreview
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.uicommon.dom.form.Form
+import com.leagueplans.uicommon.dom.{CancelModalButton, FormOpener, Modal, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier, textToTextNode}
 

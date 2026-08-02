@@ -2,10 +2,10 @@ package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
 import com.leagueplans.common.model.Skill.*
-import com.leagueplans.ui.dom.common.Tooltip
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement

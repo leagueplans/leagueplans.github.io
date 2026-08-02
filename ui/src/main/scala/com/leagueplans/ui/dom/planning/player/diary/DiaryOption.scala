@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Tooltip}
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.dom.{Button, IconButtonModifiers, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 

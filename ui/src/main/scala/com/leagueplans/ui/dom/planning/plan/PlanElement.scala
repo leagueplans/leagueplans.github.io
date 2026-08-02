@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 

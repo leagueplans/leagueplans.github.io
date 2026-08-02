@@ -1,6 +1,5 @@
 package com.leagueplans.ui.dom
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
@@ -8,6 +7,7 @@ import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.PlanSubscription
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}

@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.plan
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.utils.HasID
 
 import java.util.UUID
 

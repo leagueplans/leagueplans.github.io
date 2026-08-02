@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.common.Tooltip
-import com.leagueplans.ui.dom.common.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.HtmlElementOps.trackHeight
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.dom.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
+import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
 

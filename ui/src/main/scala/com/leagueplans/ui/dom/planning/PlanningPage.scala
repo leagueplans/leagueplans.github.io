@@ -1,7 +1,6 @@
 package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{FocusController, PlanElement}
@@ -11,7 +10,8 @@ import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
 import com.leagueplans.ui.model.player.mode.GridMaster
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, textToTextNode}

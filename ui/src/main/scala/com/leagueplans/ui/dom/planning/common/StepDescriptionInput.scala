@@ -1,8 +1,8 @@
 package com.leagueplans.ui.dom.planning.common
 
-import com.leagueplans.ui.dom.common.form.TextArea
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
-import com.leagueplans.ui.utils.laminar.LaminarOps.{onKey, selectOnFocus}
+import com.leagueplans.uicommon.dom.form.TextArea
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.{onKey, selectOnFocus}
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.StrictSignal
 import com.raquo.laminar.api.L

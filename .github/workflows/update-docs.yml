@@ -1,6 +1,7 @@
 name: Update docs
 on: push
 
+# Builds the deployed site and publishes it to docs/.
 jobs:
   update-docs:
     # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
@@ -19,14 +20,19 @@ jobs:
           - 'codec/shared/src/main/**'
           - 'common/js/src/main/**'
           - 'common/shared/src/main/**'
+          - 'uicommon/src/main/**'
+          - 'uicommon/package.json'
           - 'ui/src/main/**'
           - 'ui/package.json'
-          - 'ui/package-lock.json'
           - 'ui/vite.config.js'
+          - 'package.json'
+          - 'package-lock.json'
+          - 'vite.shared.js'
           - 'project/**'
           - 'build.sbt'
 
     - uses: actions/setup-node@v3
+      if: steps.identify-changes.outputs.sources == 'true'
       with:
         node-version: 22
 
@@ -44,16 +50,22 @@ jobs:
       with:
         sbt-runner-version: 1.10.7
 
-    - name: Run tests
+    # Publishing to docs/ is a deployment, so it has to be gated on the tests for the code
+    # being deployed. Running them here rather than depending on the Test workflow keeps
+    # that guarantee in one job: if this step fails, the bundle is never built and docs/ is
+    # never touched.
+    #
+    # Only the modules that reach the bundle. The scraper and the dev tools are covered by
+    # the Test workflow, and a regression in one of those should not hold up a release.
+    - name: Test deployed modules
       if: steps.identify-changes.outputs.sources == 'true'
-      run: sbt codecJS/test commonJS/test ui/test
+      run: sbt codecJS/test commonJS/test uicommon/test ui/test
 
     - name: Bundle javascript
       id: bundle-js
       if: steps.identify-changes.outputs.sources == 'true'
       run: |
-        cd ui
-        npm install
+        npm ci
         npm run build
 
     - name: Sync docs

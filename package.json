@@ -1,0 +1,22 @@
+{
+  "name": "leagueplans",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "uicommon",
+    "ui",
+    "taskimporter"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace ui",
+    "build": "npm run build --workspace ui",
+    "preview": "npm run preview --workspace ui",
+    "taskimporter": "npm run dev --workspace taskimporter"
+  },
+  "devDependencies": {
+    "vite": "7.3.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Modal, Tooltip}
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handled, handledWith}
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.{Button, IconButtonModifiers, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handled, handledWith}
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 

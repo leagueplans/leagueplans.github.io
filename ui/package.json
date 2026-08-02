@@ -8,18 +8,8 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "comment": "The packages the Scala façades bind to are declared by @leagueplans/uicommon, which owns the façades themselves.",
   "dependencies": {
-    "@floating-ui/dom": "1.7.5",
-    "@fortawesome/fontawesome-svg-core": "7.1.0",
-    "@fortawesome/free-brands-svg-icons": "7.1.0",
-    "@fortawesome/free-regular-svg-icons": "7.1.0",
-    "@fortawesome/free-solid-svg-icons": "7.1.0",
-    "fuse.js": "7.1.0"
-  },
-  "devDependencies": {
-    "vite": "7.3.1"
-  },
-  "engines": {
-    "node": ">=22.0.0"
+    "@leagueplans/uicommon": "*"
   }
 }

@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
+import com.leagueplans.uicommon.dom.{Modal, Tooltip}
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement

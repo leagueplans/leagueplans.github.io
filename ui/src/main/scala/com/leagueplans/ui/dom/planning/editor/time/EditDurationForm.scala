@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.editor.time
 
-import com.leagueplans.ui.dom.common.form.{Form, NumberInput, Select}
-import com.leagueplans.ui.dom.common.{CancelModalButton, FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.{Duration, Step}
-import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
+import com.leagueplans.uicommon.dom.form.{Form, NumberInput, Select}
+import com.leagueplans.uicommon.dom.{CancelModalButton, FormOpener, Modal}
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextNode}

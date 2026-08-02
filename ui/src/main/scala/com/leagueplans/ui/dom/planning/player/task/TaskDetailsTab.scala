@@ -1,8 +1,8 @@
 package com.leagueplans.ui.dom.planning.player.task
 
-import com.leagueplans.ui.dom.common.form.FuseSearch
 import com.leagueplans.ui.dom.planning.player.task.TaskFilters.Filter
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.form.FuseSearch
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L

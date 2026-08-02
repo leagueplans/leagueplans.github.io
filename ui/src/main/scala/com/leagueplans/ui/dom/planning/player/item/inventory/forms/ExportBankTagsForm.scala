@@ -1,11 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 
-import com.leagueplans.ui.dom.common.form.TextInput
-import com.leagueplans.ui.dom.common.{Button, Modal, ToastHub}
 import com.leagueplans.ui.model.player.item.ItemStack
-import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
+import com.leagueplans.uicommon.dom.form.TextInput
+import com.leagueplans.uicommon.dom.{Button, Modal, ToastHub}
+import com.leagueplans.uicommon.utils.airstream.JsPromiseOps.asObservable
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import org.scalajs.dom.window

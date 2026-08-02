@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.player.league
 
 import com.leagueplans.common.model.{LeagueTaskArea, LeagueTaskTier, ShatteredRelicsTaskProperties}
-import com.leagueplans.ui.dom.common.ContextMenu
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskFilters}
-import com.leagueplans.ui.facades.fusejs.FuseOptions
 import com.leagueplans.ui.model.plan.Effect.CompleteLeagueTask
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.mode.Mode
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.ContextMenu
+import com.leagueplans.uicommon.facades.fusejs.FuseOptions
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.L

@@ -1,8 +1,8 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier}
 
 import scala.scalajs.js

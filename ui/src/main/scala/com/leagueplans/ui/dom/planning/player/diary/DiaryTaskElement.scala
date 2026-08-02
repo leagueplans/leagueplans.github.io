@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.diary.DiaryTask
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder

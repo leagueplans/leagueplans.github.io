@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.task
 
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.utils.HasID
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 import com.raquo.laminar.nodes.ReactiveHtmlElement

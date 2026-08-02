@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.planning.player.task.TaskSummaryTab
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTask, DiaryTier}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 

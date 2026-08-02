@@ -1,16 +1,16 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.common.{Button, ContextMenu, ContextMenuList}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.CompletedStep
-import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.{handledAs, handledWith}
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.wrappers.Clipboard
+import com.leagueplans.uicommon.dom.{Button, ContextMenu, ContextMenuList}
+import com.leagueplans.uicommon.facades.fontawesome.freeregular.FreeRegular
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.airstream.JsPromiseOps.asObservable
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handledAs, handledWith}
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 import com.raquo.laminar.modifiers.Binder

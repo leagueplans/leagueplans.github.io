@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.footer
 
-import com.leagueplans.ui.dom.common.Tooltip
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Observable
 import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 

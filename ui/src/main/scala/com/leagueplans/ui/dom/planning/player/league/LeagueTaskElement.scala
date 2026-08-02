@@ -1,8 +1,8 @@
 package com.leagueplans.ui.dom.planning.player.league
 
 import com.leagueplans.common.model.LeagueTask
-import com.leagueplans.ui.dom.common.ContextMenu
 import com.leagueplans.ui.model.plan.Effect.CompleteLeagueTask
+import com.leagueplans.uicommon.dom.ContextMenu
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder

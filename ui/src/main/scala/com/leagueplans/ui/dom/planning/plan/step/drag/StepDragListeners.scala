@@ -1,11 +1,11 @@
 package com.leagueplans.ui.dom.planning.plan.step.drag
 
-import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.StepDraggingStatus.DropTarget.RelativePosition
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.EventPropOps.ifUnhandled
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.utils.laminar.EventPropOps.ifUnhandled
 import com.raquo.airstream.core.{EventStream, Observable, Observer, Signal}
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.keys.EventProp

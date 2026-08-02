@@ -3,8 +3,8 @@ package com.leagueplans.ui.storage.migrations
 import com.leagueplans.codec.Encoding
 import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.ui.storage.model.{PlanExport, SchemaVersion}
-import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
-import com.leagueplans.ui.utils.airstream.JsPromiseOps.asObservable
+import com.leagueplans.uicommon.utils.airstream.EventStreamOps.andThen
+import com.leagueplans.uicommon.utils.airstream.JsPromiseOps.asObservable
 import com.raquo.airstream.core.EventStream
 
 import scala.scalajs.js.{Promise, dynamicImport}

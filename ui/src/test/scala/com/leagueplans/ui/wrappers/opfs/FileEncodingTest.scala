@@ -1,4 +1,4 @@
-package com.leagueplans.ui.wrappers.opfs
+package com.leagueplans.uicommon.wrappers.opfs
 
 import com.leagueplans.codec.codecs.CodecSpec
 import com.leagueplans.codec.decoding.Decoder

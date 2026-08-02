@@ -4,8 +4,8 @@ import com.leagueplans.ui.storage.model.LamportTimestamp
 import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
 import com.leagueplans.ui.storage.worker.StorageCoordinator.*
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
-import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
-import com.leagueplans.ui.wrappers.workers.{MessagePortClient, SharedWorkerScope}
+import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
+import com.leagueplans.uicommon.wrappers.workers.{MessagePortClient, SharedWorkerScope}
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner

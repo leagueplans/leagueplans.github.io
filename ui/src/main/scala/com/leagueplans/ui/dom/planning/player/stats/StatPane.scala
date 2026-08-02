@@ -1,8 +1,8 @@
 package com.leagueplans.ui.dom.planning.player.stats
 
-import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.model.player.skill.Stat
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringBooleanSeqValueMapper, textToTextNode}
 

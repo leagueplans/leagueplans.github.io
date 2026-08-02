@@ -1,21 +1,21 @@
 package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.RenderMode
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.ui.utils.HasID
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.{FormOpener, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.HasID
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}

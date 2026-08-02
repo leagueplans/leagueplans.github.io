@@ -1,9 +1,9 @@
-package com.leagueplans.ui.wrappers.opfs
+package com.leagueplans.uicommon.wrappers.opfs
 
 import com.leagueplans.codec.Encoding
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.wrappers.opfs.FileSystemError.{DecodingError, FileDoesNotExist, UnexpectedFileSystemError}
+import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.{DecodingError, FileDoesNotExist, UnexpectedFileSystemError}
 import com.raquo.airstream.core.EventStream
 
 import scala.collection.mutable

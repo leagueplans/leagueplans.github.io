@@ -6,7 +6,8 @@ import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.storage.worker.StorageCoordinator
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
-import com.leagueplans.ui.wrappers.workers.{MessagePortClient, WorkerFactory}
+import com.leagueplans.ui.wrappers.workers.WorkerFactory
+import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}

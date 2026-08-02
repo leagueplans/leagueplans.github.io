@@ -2,17 +2,17 @@ package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
 import com.leagueplans.common.model.EquipmentType
 import com.leagueplans.common.model.Item.Bankable
-import com.leagueplans.ui.dom.common.*
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.dom.planning.player.item.inventory.forms.RemoveItemForm
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
-import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.L
 

@@ -6,7 +6,7 @@ import com.leagueplans.ui.model.status.StatusTracker.Status
 import com.leagueplans.ui.storage.client.PlanSubscription.Message
 import com.leagueplans.ui.storage.model.LamportTimestamp
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
-import com.leagueplans.ui.utils.airstream.ObservableOps.withKillSwitch
+import com.leagueplans.uicommon.utils.airstream.ObservableOps.withKillSwitch
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 

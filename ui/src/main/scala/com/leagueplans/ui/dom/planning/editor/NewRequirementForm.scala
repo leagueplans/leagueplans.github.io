@@ -2,13 +2,13 @@ package com.leagueplans.ui.dom.planning.editor
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{Item, Skill}
-import com.leagueplans.ui.dom.common.form.{Form, NumberInput, Select}
 import com.leagueplans.ui.dom.planning.player.item.ItemSearch
 import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.plan.Requirement.*
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.Level
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.form.{Form, NumberInput, Select}
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, textToTextNode}

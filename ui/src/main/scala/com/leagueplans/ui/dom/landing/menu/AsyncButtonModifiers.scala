@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.common.LoadingIcon
+import com.leagueplans.uicommon.dom.LoadingIcon
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.status.Status
 import com.raquo.laminar.api.{L, seqToModifier}

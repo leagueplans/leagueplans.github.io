@@ -1,16 +1,16 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.common.Tooltip
-import com.leagueplans.ui.dom.common.collapse.{CollapseButton, InvertibleAnimationController}
-import com.leagueplans.ui.facades.animation.KeyframeAnimationOptions
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.utils.laminar.LaminarOps.onMountAnimate
-import com.leagueplans.ui.wrappers.animation.{Animation, KeyframeProperty}
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.dom.collapse.{CollapseButton, InvertibleAnimationController}
+import com.leagueplans.uicommon.facades.animation.KeyframeAnimationOptions
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.onMountAnimate
+import com.leagueplans.uicommon.wrappers.animation.{Animation, KeyframeProperty}
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
 

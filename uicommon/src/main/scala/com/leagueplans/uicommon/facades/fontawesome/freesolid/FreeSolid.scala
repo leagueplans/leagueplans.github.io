@@ -1,0 +1,107 @@
+package com.leagueplans.uicommon.facades.fontawesome.freesolid
+
+import com.leagueplans.uicommon.facades.fontawesome.commontypes.IconDefinition
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
+object FreeSolid {
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowDownLong")
+  object faArrowDownLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowLeft")
+  object faArrowLeft extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowRightLong")
+  object faArrowRightLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowRightToBracket")
+  object faArrowRightToBracket extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faArrowUpLong")
+  object faArrowUpLong extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faBars")
+  object faBars extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faBriefcase")
+  object faBriefcase extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faBuildingColumns")
+  object faBuildingColumns extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faBullseye")
+  object faBullseye extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCaretDown")
+  object faCaretDown extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCaretRight")
+  object faCaretRight extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCheck")
+  object faCheck extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleExclamation")
+  object faCircleExclamation extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleInfo")
+  object faCircleInfo extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleNotch")
+  object faCircleNotch extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faClipboard")
+  object faClipboard extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCrosshairs")
+  object faCrosshairs extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faDownload")
+  object faDownload extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faEye")
+  object faEye extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faEyeSlash")
+  object faEyeSlash extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faGripVertical")
+  object faGripVertical extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHandHoldingHeart")
+  object faHandHoldingHeart extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHourglass")
+  object faHourglass extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faHouse")
+  object faHouse extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faKeyboard")
+  object faKeyboard extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faPlus")
+  object faPlus extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faScissors")
+  object faScissors extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faShield")
+  object faShield extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faShirt")
+  object faShirt extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTrash")
+  object faTrash extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTrashCan")
+  object faTrashCan extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTriangleExclamation")
+  object faTriangleExclamation extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faXmark")
+  object faXmark extends IconDefinition
+}

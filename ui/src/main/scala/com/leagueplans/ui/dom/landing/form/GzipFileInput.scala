@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.landing.form
 
 import com.leagueplans.codec.decoding.Decoder
-import com.leagueplans.ui.dom.common.form.ValidatedFileInput
+import com.leagueplans.uicommon.dom.form.ValidatedFileInput
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.L
 import org.scalajs.dom.{CompressionFormat, DecompressionStream, File, Response}

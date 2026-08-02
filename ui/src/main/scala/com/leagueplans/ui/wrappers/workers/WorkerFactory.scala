@@ -1,6 +1,6 @@
 package com.leagueplans.ui.wrappers.workers
 
-import com.leagueplans.ui.facades.workers.{SharedWorker, SharedWorkerOptions, Worker}
+import com.leagueplans.uicommon.facades.workers.{SharedWorker, SharedWorkerOptions, Worker}
 import org.scalajs.dom.{URL, WorkerOptions, WorkerType}
 
 import scala.scalajs.js

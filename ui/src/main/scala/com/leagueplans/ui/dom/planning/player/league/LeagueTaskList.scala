@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.player.league
 
 import com.leagueplans.common.model.{LeagueTask, LeagueTaskArea, LeagueTaskTier, ShatteredRelicsTaskProperties}
-import com.leagueplans.ui.dom.common.ContextMenu
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskList}
 import com.leagueplans.ui.model.plan.Effect.CompleteLeagueTask
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.mode.*
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.dom.ContextMenu
+import com.leagueplans.uicommon.utils.HasID
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList

@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.common.{Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata, SchemaVersion}
+import com.leagueplans.uicommon.dom.{Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
 import com.raquo.laminar.nodes.ReactiveHtmlElement

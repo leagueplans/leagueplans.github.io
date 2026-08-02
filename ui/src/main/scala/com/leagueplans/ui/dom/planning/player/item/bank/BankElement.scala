@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import com.raquo.laminar.modifiers.Binder

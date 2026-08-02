@@ -6,7 +6,7 @@ import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.projection.calculation.{EffectResolver, Projector, StepErrorFinder}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.projection.worker.ProjectionWorker.State
-import com.leagueplans.ui.wrappers.workers.{DedicatedWorkerScope, MessagePortClient}
+import com.leagueplans.uicommon.wrappers.workers.{DedicatedWorkerScope, MessagePortClient}
 import org.scalajs.dom
 import org.scalajs.dom.{AbortController, console}
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global

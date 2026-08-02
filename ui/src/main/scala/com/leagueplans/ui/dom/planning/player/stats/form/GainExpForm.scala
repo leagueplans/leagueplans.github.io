@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.{Modal, Tooltip}
-import com.leagueplans.ui.dom.common.form.{Form, NumberInput}
 import com.leagueplans.ui.model.plan.Effect.GainExp
 import com.leagueplans.ui.model.plan.ExpMultiplier
-import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.skill.Exp
-import com.leagueplans.ui.utils.laminar.LaminarOps.selectOnFocus
+import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.form.{Form, NumberInput}
+import com.leagueplans.uicommon.dom.{Modal, Tooltip}
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.selectOnFocus
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, optionToModifier, textToTextNode}
 import com.raquo.laminar.modifiers.Binder

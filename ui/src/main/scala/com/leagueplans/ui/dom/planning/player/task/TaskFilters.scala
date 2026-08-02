@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.task
 
-import com.leagueplans.ui.dom.common.form.Select
+import com.leagueplans.uicommon.dom.form.Select
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}

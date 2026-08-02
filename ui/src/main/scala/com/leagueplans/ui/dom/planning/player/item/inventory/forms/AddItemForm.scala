@@ -1,14 +1,14 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.form.{CheckboxInput, Form, NumberInput}
-import com.leagueplans.ui.dom.common.{CancelModalButton, InfoIcon, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.ItemSearch
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.plan.Effect.AddItem
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.form.{CheckboxInput, Form, NumberInput}
+import com.leagueplans.uicommon.dom.{CancelModalButton, InfoIcon, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextNode}
 

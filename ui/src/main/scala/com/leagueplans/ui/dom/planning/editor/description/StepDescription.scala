@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.editor.description
 
-import com.leagueplans.ui.dom.common.{Button, IconButtonModifiers, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.editor.description.EditStepDescriptionForm
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freeregular.FreeRegular
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.ui.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.dom.{Button, IconButtonModifiers, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freeregular.FreeRegular
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 

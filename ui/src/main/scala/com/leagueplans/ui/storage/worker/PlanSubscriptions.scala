@@ -3,7 +3,7 @@ package com.leagueplans.ui.storage.worker
 import com.leagueplans.ui.storage.model.LamportTimestamp.increment
 import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID}
 import com.leagueplans.ui.storage.worker.PlanSubscriptions.{Port, Subscriptions}
-import com.leagueplans.ui.wrappers.workers.MessagePortClient
+import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 
 import scala.collection.mutable
 

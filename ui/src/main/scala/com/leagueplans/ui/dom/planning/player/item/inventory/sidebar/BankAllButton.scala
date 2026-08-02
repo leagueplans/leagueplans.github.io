@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.sidebar
 
-import com.leagueplans.ui.dom.common.Button
 import com.leagueplans.ui.model.plan.Effect.MoveItem
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.dom.Button
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 

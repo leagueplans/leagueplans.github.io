@@ -1,16 +1,16 @@
 package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.Tooltip
 import com.leagueplans.ui.dom.planning.player.item.StackElement
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
-import com.leagueplans.ui.facades.floatingui.Placement
-import com.leagueplans.ui.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.item.ItemStack
-import com.leagueplans.ui.utils.laminar.FontAwesome
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js

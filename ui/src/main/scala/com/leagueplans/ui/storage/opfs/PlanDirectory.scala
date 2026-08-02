@@ -6,9 +6,9 @@ import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings}
 import com.leagueplans.ui.storage.opfs.PlanDirectory.*
-import com.leagueplans.ui.utils.airstream.EventStreamOps.andThen
-import com.leagueplans.ui.wrappers.opfs.FileSystemError.*
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
+import com.leagueplans.uicommon.utils.airstream.EventStreamOps.andThen
+import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
+import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
 import com.raquo.airstream.core.EventStream
 
 object PlanDirectory {

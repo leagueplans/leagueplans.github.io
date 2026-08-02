@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskFilters}
-import com.leagueplans.ui.facades.fusejs.FuseOptions
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTier}
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.facades.fusejs.FuseOptions
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.L

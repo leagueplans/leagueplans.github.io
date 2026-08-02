@@ -1,11 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.quest
 
-import com.leagueplans.ui.dom.common.ContextMenu
-import com.leagueplans.ui.dom.common.form.FuseSearch
-import com.leagueplans.ui.facades.fusejs.FuseOptions
 import com.leagueplans.ui.model.plan.Effect.CompleteQuest
 import com.leagueplans.ui.model.player.{Cache, Player, Quest}
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.ContextMenu
+import com.leagueplans.uicommon.dom.form.FuseSearch
+import com.leagueplans.uicommon.facades.fusejs.FuseOptions
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement

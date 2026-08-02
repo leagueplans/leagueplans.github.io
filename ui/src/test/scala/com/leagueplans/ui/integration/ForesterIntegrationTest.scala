@@ -6,8 +6,8 @@ import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.mode.Armageddon
 import com.leagueplans.ui.storage.model.PlanMetadata
 import com.leagueplans.ui.storage.opfs.PlanDirectory
-import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
-import com.leagueplans.ui.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
+import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
+import com.leagueplans.uicommon.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.ownership.{ManualOwner, Owner}
 import org.scalatest.freespec.AnyFreeSpec

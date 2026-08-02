@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.Modal
+import com.leagueplans.uicommon.dom.Modal
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js

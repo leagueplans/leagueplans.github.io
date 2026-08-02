@@ -1,11 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.sidebar
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{Modal, ToastHub, Tooltip}
 import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.{Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 

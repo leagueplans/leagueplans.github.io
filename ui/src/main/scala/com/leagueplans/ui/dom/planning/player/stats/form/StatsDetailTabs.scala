@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.form.RadioGroup
+import com.leagueplans.uicommon.dom.form.RadioGroup
 import com.raquo.airstream.state.Var
 
 import scala.scalajs.js

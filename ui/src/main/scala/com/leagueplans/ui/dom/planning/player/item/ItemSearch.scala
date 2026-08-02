@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.form.{FuseSearch, RadioGroup, StylisedRadio}
 import com.leagueplans.ui.model.player.item.ItemStack
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.form.{FuseSearch, RadioGroup, StylisedRadio}
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 

@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.{Button, Modal}
 import com.leagueplans.ui.model.plan.Effect.UnlockSkill
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.dom.{Button, Modal}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 

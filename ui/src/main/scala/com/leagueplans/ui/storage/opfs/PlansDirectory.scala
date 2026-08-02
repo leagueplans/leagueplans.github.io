@@ -3,9 +3,9 @@ package com.leagueplans.ui.storage.opfs
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
-import com.leagueplans.ui.utils.airstream.EventStreamOps.{andThen, safeSequence}
-import com.leagueplans.ui.wrappers.opfs.FileSystemError.*
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
+import com.leagueplans.uicommon.utils.airstream.EventStreamOps.{andThen, safeSequence}
+import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
+import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
 import com.raquo.airstream.core.EventStream
 
 import scala.util.chaining.scalaUtilChainingOps

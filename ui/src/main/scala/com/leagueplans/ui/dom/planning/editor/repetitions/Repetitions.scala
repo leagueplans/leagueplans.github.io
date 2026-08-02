@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.editor.repetitions
 
-import com.leagueplans.ui.dom.common.{Button, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.editor.SectionV2
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.{Button, Modal, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 

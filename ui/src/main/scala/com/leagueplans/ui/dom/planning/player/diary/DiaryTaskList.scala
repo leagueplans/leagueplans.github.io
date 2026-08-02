@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.diary
 
-import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.player.task.{TaskDetailsTab, TaskList}
 import com.leagueplans.ui.model.plan.Effect.CompleteDiaryTask
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.diary.{DiaryRegion, DiaryTask, DiaryTier}
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList

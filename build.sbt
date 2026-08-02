@@ -15,7 +15,14 @@ ThisBuild / scalacOptions ++= List(
 
 lazy val root =
   (project in file("."))
-    .aggregate(codec.jvm, codec.js, common.jvm, common.js, wikiScraper, ui)
+    .aggregate(
+      codec.jvm, codec.js,
+      common.jvm, common.js,
+      wikiScraper,
+      uicommon,
+      ui,
+      taskimporter
+    )
 
 lazy val codec =
   crossProject(JVMPlatform, JSPlatform).in(file("codec"))
@@ -60,6 +67,49 @@ lazy val wikiScraper =
 val fastLinkOutputDir = taskKey[String]("output directory for `npm run dev`")
 val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 
+lazy val scalaJSSettings = List(
+  scalaJSLinkerConfig ~= (
+    _.withModuleKind(ModuleKind.ESModule)
+      .withESFeatures(_.withESVersion(ESVersion.ES2017))
+  )
+)
+
+lazy val viteSettings = List(
+  scalaJSUseMainModuleInitializer := true,
+  fastLinkOutputDir := {
+    // Ensure that fastLinkJS has run, then return its output directory
+    (Compile / fastLinkJS).value
+    (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
+  },
+  fullLinkOutputDir := {
+    // Ensure that fullLinkJS has run, then return its output directory
+    (Compile / fullLinkJS).value
+    (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
+  }
+)
+
+/** Browser façades, their wrappers, and the Laminar components built on top of them.
+  *
+  * Holds nothing that knows about plans, players or scrapes, so both the app and the tools
+  * that maintain its data can build on it.
+  */
+lazy val uicommon =
+  project.in(file("uicommon"))
+    .enablePlugins(ScalaJSPlugin)
+    .settings(
+      scalaJSSettings,
+      libraryDependencies ++= List(
+        "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+        ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
+        "com.raquo" %%% "laminar" % "17.2.1",
+        "io.circe" %%% "circe-core" % circeVersion,
+        "io.circe" %%% "circe-parser" % circeVersion,
+        "io.circe" %%% "circe-scalajs" % circeVersion
+      )
+    )
+    .dependsOn(codec.js)
+
 // Vite outputs a warning about sourcemaps. I don't know why, since the browser can
 // find and use the sourcemaps correctly. I did an investigation and wrote up a
 // summary here:
@@ -67,31 +117,12 @@ val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 lazy val ui =
   project.in(file("ui"))
     .enablePlugins(ScalaJSPlugin)
-    .settings(
-      libraryDependencies ++= List(
-        "org.scala-js" %%% "scalajs-dom" % "2.8.0",
-        ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
-        "com.raquo" %%% "laminar" % "17.2.1",
-        "io.circe" %%% "circe-scalajs" % circeVersion
-      ),
-      scalaJSUseMainModuleInitializer := true,
-      scalaJSLinkerConfig ~= (
-        _.withModuleKind(ModuleKind.ESModule)
-          .withESFeatures(_.withESVersion(ESVersion.ES2017))
-      ),
-      fastLinkOutputDir := {
-        // Ensure that fastLinkJS has run, then return its output directory
-        (Compile / fastLinkJS).value
-        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
-      },
-      fullLinkOutputDir := {
-        // Ensure that fullLinkJS has run, then return its output directory
-        (Compile / fullLinkJS).value
-        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
-      }
-    )
-    .dependsOn(
-      common.js,
-      codec.js % "test->test"
-    )
+    .settings(scalaJSSettings, viteSettings)
+    .dependsOn(codec.js % "test->test", common.js, uicommon)
+
+/** A tool for reconciling a new league's task list against the one already published. */
+lazy val taskimporter =
+  project.in(file("taskimporter"))
+    .enablePlugins(ScalaJSPlugin)
+    .settings(scalaJSSettings, viteSettings)
+    .dependsOn(common.js, uicommon)

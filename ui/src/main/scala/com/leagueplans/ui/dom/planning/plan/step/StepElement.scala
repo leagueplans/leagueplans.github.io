@@ -1,19 +1,19 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.common.collapse.{HeightMask, InvertibleAnimationController}
-import com.leagueplans.ui.dom.common.{ContextMenu, Tooltip}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController}
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledAs
-import com.leagueplans.ui.utils.laminar.HtmlElementOps.trackHeight
-import com.leagueplans.ui.utils.laminar.LaminarOps.onKey
-import com.leagueplans.ui.wrappers.Clipboard
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledAs
+import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
+import com.leagueplans.uicommon.utils.laminar.LaminarOps.onKey
+import com.leagueplans.uicommon.wrappers.Clipboard
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}

@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.view
 
-import com.leagueplans.ui.dom.common.{ContextMenu, KeyValuePairs, Tooltip}
 import com.leagueplans.ui.dom.planning.player.league.LeagueTaskPanel
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.{ContextMenu, KeyValuePairs, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement

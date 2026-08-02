@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.editor
 
-import com.leagueplans.ui.dom.common.LabelledBox
+import com.leagueplans.uicommon.dom.LabelledBox
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js

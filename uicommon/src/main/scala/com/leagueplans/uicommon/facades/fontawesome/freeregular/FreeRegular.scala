@@ -1,0 +1,29 @@
+package com.leagueplans.uicommon.facades.fontawesome.freeregular
+
+import com.leagueplans.uicommon.facades.fontawesome.commontypes.IconDefinition
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
+object FreeRegular {
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faCircleQuestion")
+  object faCircleQuestion extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faClipboard")
+  object faClipboard extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faCopy")
+  object faCopy extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faPaste")
+  object faPaste extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faPenToSquare")
+  object faPenToSquare extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faSquareCheck")
+  object faSquareCheck extends IconDefinition
+
+  @js.native @JSImport("@fortawesome/free-regular-svg-icons/faTrashCan")
+  object faTrashCan extends IconDefinition
+}

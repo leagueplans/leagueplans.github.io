@@ -1,6 +1,6 @@
 package com.leagueplans.ui.model.player.diary
 
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.utils.HasID
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 

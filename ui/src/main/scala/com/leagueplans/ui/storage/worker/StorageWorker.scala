@@ -4,9 +4,9 @@ import com.leagueplans.ui.storage.model.errors.{DeletionError, UpdateError, File
 import com.leagueplans.ui.storage.opfs.{PlansDirectory, RootDirectory}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.storage.worker.StorageWorker.convert
-import com.leagueplans.ui.utils.airstream.ObservableOps.flatMapConcat
-import com.leagueplans.ui.wrappers.opfs.{DirectoryHandle, FileSystemError as OPFSError}
-import com.leagueplans.ui.wrappers.workers.DedicatedWorkerScope
+import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
+import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandle, FileSystemError as OPFSError}
+import com.leagueplans.uicommon.wrappers.workers.DedicatedWorkerScope
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner

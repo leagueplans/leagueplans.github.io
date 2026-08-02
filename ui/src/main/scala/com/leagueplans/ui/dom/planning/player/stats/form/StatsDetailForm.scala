@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.stats.form
 
 import com.leagueplans.common.model.Skill
-import com.leagueplans.ui.dom.common.{Modal, Tooltip}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.{Modal, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier}

@@ -6,7 +6,8 @@ import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.model.Projection
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
-import com.leagueplans.ui.wrappers.workers.{MessagePortClient, WorkerFactory}
+import com.leagueplans.ui.wrappers.workers.WorkerFactory
+import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 import com.raquo.airstream.state.{StrictSignal, Var}
 import org.scalajs.dom.console
 

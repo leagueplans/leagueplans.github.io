@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.common.form.Form
-import com.leagueplans.ui.dom.common.{FormOpener, Modal}
 import com.leagueplans.ui.dom.planning.common.StepDescriptionInput
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.uicommon.dom.form.Form
+import com.leagueplans.uicommon.dom.{FormOpener, Modal}
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, textToTextNode}

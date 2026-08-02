@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.sidebar
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.{Button, FormOpener, Modal, Tooltip}
 import com.leagueplans.ui.dom.planning.player.item.inventory.forms.AddItemForm
 import com.leagueplans.ui.model.plan.Effect.AddItem
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.{Button, FormOpener, Modal, Tooltip}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
 

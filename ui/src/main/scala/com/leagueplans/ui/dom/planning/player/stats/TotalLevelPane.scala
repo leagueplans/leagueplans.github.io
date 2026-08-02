@@ -1,9 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.stats
 
-import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.facades.floatingui.Placement
 import com.leagueplans.ui.model.player.skill.Stats
-import com.leagueplans.ui.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
 

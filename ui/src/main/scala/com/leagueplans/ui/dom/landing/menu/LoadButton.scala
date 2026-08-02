@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.common.{Button, ToastHub}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.model.PlanID
-import com.leagueplans.ui.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.dom.{Button, ToastHub}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}

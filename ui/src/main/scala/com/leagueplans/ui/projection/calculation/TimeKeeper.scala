@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.{Forest, ForestResolver}
 import com.leagueplans.ui.model.plan.{Step, Duration as StepDuration}
 import com.leagueplans.ui.projection.calculation.TimeKeeper.{State, addDurations}
-import com.leagueplans.ui.utils.scala.DurationOps.{safeAdd, safeMul}
+import com.leagueplans.uicommon.utils.scala.DurationOps.{safeAdd, safeMul}
 import com.raquo.airstream.state.{StrictSignal, Var}
 
 import scala.annotation.tailrec

@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.forest
 
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.{Forest, ForestInterpreter, ForestResolver}
-import com.leagueplans.ui.utils.HasID
+import com.leagueplans.uicommon.utils.HasID
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}

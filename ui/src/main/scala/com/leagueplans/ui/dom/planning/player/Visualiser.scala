@@ -1,11 +1,11 @@
 package com.leagueplans.ui.dom.planning.player
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.common.*
-import com.leagueplans.ui.dom.planning.player.view.{CharacterTab, GridTab, LeagueTab, QuestAndDiaryTab, View}
+import com.leagueplans.ui.dom.planning.player.view.*
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 
