@@ -37,10 +37,6 @@ function printSbtTask(task) {
     encoding: "utf-8"
   };
 
-  // Apparently sbt can output ANSI escape codes. I've only seen one so far,
-  // and it has only ever been printed when running sbt from this bit of Javascript
-  // when running on any GitHub runner. I spent seven hours trying to debug this.
-  // I decided to just look for the problematic character and filter it out.
   const result =
     process.platform === 'win32' ?
       spawnSync("sbt.bat", args.map(x => `"${x}"`), { shell: true, ...options }) :
@@ -51,5 +47,22 @@ function printSbtTask(task) {
   else if (result.status !== 0)
     throw new Error(`sbt process failed with exit code ${result.status}`);
   else
-    return result.stdout.toString().replace('[0J', '').trim();
+    return stripEscapeSequences(result.stdout.toString()).trim();
+}
+
+/** Removes the ANSI escape sequences sbt mixes into its output.
+ *
+ * sbt only does this when it is invoked from here, and only on a GitHub runner. They have
+ * to go, because the value becomes a Vite alias, and an alias with one embedded in it
+ * resolves to a filename that cannot be opened.
+ *
+ * An escape sequence is a terminal instruction - "erase the screen", "go bold" - sent as
+ * ordinary bytes in amongst the text. They all have the same shape: the ESC character
+ * (0x1b), a `[`, digits saying how much to do, then a final letter saying what to do. The
+ * pattern below spells that out one byte range at a time: ESC, `[`, parameter bytes
+ * (0x30-0x3f, the digits and `;`), intermediate bytes (0x20-0x2f), then the final byte
+ * (0x40-0x7e). sbt sends `ESC[0J` - "erase to the end of the screen".
+ */
+function stripEscapeSequences(output) {
+  return output.replace(/\u001b\[[0-?]*[ -\/]*[@-~]/g, "");
 }
