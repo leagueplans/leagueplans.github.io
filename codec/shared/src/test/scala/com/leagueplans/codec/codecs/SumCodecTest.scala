@@ -82,6 +82,18 @@ final class SumCodecTest extends CodecSpec {
       }
     }
 
+    "decoding an ordinal that doesn't correspond to a subtype should fail" in {
+      sealed trait A
+      final case class B(i: Int) extends A
+
+      given aDecoder: Decoder[A] = Decoder.derived
+
+      Decoder.decode[A](Encoding.Message(Map(
+        FieldNumber(0) -> List(Encoding.Varint(BinaryString.unsafe("1"))),
+        FieldNumber(1) -> List(Encoder.encode(B(4))(using Encoder.derived[B]))
+      ))) shouldBe a[Left[?, ?]]
+    }
+
     // The test below this one is pretty fragile, as we can't check
     // the reason for the compilation failure. We have this test to
     // make sure that a test written in the same way that we expect
