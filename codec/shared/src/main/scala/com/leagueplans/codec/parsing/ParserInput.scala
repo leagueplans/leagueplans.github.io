@@ -1,10 +1,9 @@
 package com.leagueplans.codec.parsing
 
 final class ParserInput(allBytes: Array[Byte]) {
-  private var remainingBytes: Array[Byte] = allBytes
   private var position: Int = 0
 
-  def fullyParsed: Boolean = remainingBytes.isEmpty
+  def fullyParsed: Boolean = position >= allBytes.length
 
   final class Scope private[ParserInput]()
 
@@ -17,17 +16,18 @@ final class ParserInput(allBytes: Array[Byte]) {
       .map(ParsingFailure(pos, _, allBytes))
   }
 
-  def take(n: Int)(using Scope): Array[Byte] = {
-    val (result, remainder) = remainingBytes.splitAt(n)
-    remainingBytes = remainder
-    position += result.length
-    result
-  }
+  def take(n: Int)(using Scope): Array[Byte] =
+    advanceTo(position + n.max(0).min(allBytes.length - position))
 
   def takeWhile(f: Byte => Boolean)(using Scope): Array[Byte] = {
-    val (result, remainder) = remainingBytes.span(f)
-    remainingBytes = remainder
-    position += result.length
+    var end = position
+    while (end < allBytes.length && f(allBytes(end))) end += 1
+    advanceTo(end)
+  }
+
+  private def advanceTo(end: Int): Array[Byte] = {
+    val result = allBytes.slice(position, end)
+    position = end
     result
   }
 }

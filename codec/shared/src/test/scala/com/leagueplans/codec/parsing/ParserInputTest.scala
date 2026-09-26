@@ -28,8 +28,18 @@ final class ParserInputTest extends AnyFreeSpec with Matchers with EitherValues 
           allBytes
         )
       }
+
+      "should return fewer bytes than requested if not enough remain" in {
+        val input = ParserInput(Array[Byte](1, 2, 3))
+
+        input.scoped {
+          input.take(1)
+          Right(input.take(5))
+        }.value shouldEqual Array[Byte](2, 3)
+        input.fullyParsed shouldBe true
+      }
     }
-    
+
     "takeWhile" - {
       "should convert causes to failures with appropriate position info" in {
         val allBytes = (0 to 10).map(_.toByte).toArray

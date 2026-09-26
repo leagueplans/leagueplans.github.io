@@ -38,7 +38,7 @@ object Parser {
     Right(Encoding.Len(bytes))
     
   def parseMessage(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Message] =
-    parseMessageHelper(ParserInput(bytes), acc = Map.empty)
+    parseMessageHelper(ParserInput(bytes))
 
   private def parseVarint(input: ParserInput): Either[ParsingFailure, Encoding.Varint] =
     input.scoped(parseVarintScoped(input))
@@ -84,23 +84,27 @@ object Parser {
         ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getFloat
       ))
 
+  private def parseMessageHelper(input: ParserInput): Either[ParsingFailure, Encoding.Message] =
+    parseFieldsReversed(input, acc = Map.empty).map(reversed =>
+      Encoding.Message(reversed.view.mapValues(_.reverse).toMap)
+    )
+
   @tailrec
-  private def parseMessageHelper(
+  private def parseFieldsReversed(
     input: ParserInput,
     acc: Map[FieldNumber, List[Encoding]]
-  ): Either[ParsingFailure, Encoding.Message] =
+  ): Either[ParsingFailure, Map[FieldNumber, List[Encoding]]] =
     if (input.fullyParsed)
-      Right(Encoding.Message(acc))
+      Right(acc)
     else
       parseField(input) match {
         case Left(failure) =>
           Left(failure)
         case Right((fieldNumber, newFieldValue)) =>
-          val updatedFieldValue = acc.get(fieldNumber) match {
-            case Some(encodings) => encodings :+ newFieldValue
-            case None => List(newFieldValue)
-          }
-          parseMessageHelper(input, acc + (fieldNumber -> updatedFieldValue))
+          // Prepending and reversing at the end avoids the quadratic cost of appending
+          // to lists when a message has many values for a single field
+          val updatedFieldValue = newFieldValue +: acc.getOrElse(fieldNumber, List.empty)
+          parseFieldsReversed(input, acc + (fieldNumber -> updatedFieldValue))
       }
 
   private def parseField(input: ParserInput): Either[ParsingFailure, (FieldNumber, Encoding)] =
@@ -156,9 +160,7 @@ object Parser {
     parseLength(input, Discriminant.Message).flatMap(length =>
       input
         .scoped(takeOrFail(input, length, Discriminant.Message))
-        .flatMap(bytes =>
-          parseMessageHelper(ParserInput(bytes), acc = Map.empty)
-        )
+        .flatMap(bytes => parseMessageHelper(ParserInput(bytes)))
     )
 
   private def takeOrFail(input: ParserInput, n: Int, discriminant: Discriminant)(
