@@ -11,6 +11,7 @@ node_modules
 # Claude
 .claude
 CLAUDE.md
+.mcp.json
 
 # Created when running a scraper
 /logs
