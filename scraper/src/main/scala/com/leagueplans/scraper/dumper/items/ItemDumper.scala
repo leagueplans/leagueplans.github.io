@@ -3,18 +3,16 @@ package com.leagueplans.scraper.dumper.items
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{InfoboxKey, ItemChangeset, ItemData}
 import com.leagueplans.scraper.dumper.{ImageDumper, JsonDumper}
-import com.leagueplans.scraper.main.CommandLineArgs
 import com.leagueplans.scraper.telemetry.Metric
 import com.leagueplans.scraper.wiki.model.WikiItem.GameID
 import com.leagueplans.scraper.wiki.model.{Page, PageDescriptor, WikiItem}
 import com.leagueplans.scraper.wiki.streaming.PageStream
-import io.circe.parser.decode
 import zio.http.Request
 import zio.stream.{ZPipeline, ZSink}
 import zio.{Chunk, Task, Trace, ZIO}
 
 import java.nio.file.{Files, Path}
-import scala.util.{Success, Try}
+import scala.util.Try
 
 object ItemDumper {
   private type PipelineOutput = (key: InfoboxKey, item: ItemData, images: Chunk[(Path, Array[Byte])])
@@ -31,22 +29,6 @@ object ItemDumper {
       iconDumper <- makeIconDumper(dumpDirectory)
       itemCounter <- Metric.makeCounter("items.item-dumper.items")
     } yield ItemDumper(originalItems, changesetDumper, iconDumper, itemCounter)
-
-  /** The accepted item data named by the `original-items` argument, in the order it is
-    * stored. None has been accepted yet if the file doesn't exist.
-    */
-  def loadOriginalData(args: CommandLineArgs): Try[Vector[(InfoboxKey, ItemData)]] =
-    args.get("original-items")(path => Try(Path.of(path))).flatMap(path =>
-      Try(Files.exists(path)).flatMap {
-        case true =>
-          for {
-            contents <- Try(Files.readString(path))
-            data <- decode[Vector[(InfoboxKey, ItemData)]](contents).toTry
-          } yield data
-
-        case false => Success(Vector.empty)
-      }
-    )
 
   private def makeDirectories(targetDirectory: Path, relativePath: String): Try[Path] =
     for {
