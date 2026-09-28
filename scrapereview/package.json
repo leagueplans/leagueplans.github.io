@@ -1,0 +1,13 @@
+{
+  "name": "scrapereview",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "comment": "No build or preview script. This tool is never deployed.",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@leagueplans/uicommon": "*"
+  }
+}

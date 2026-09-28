@@ -20,6 +20,12 @@ final class Fuse[T : {Encoder, Decoder}](val elements: List[T], options: FuseOpt
   def search(pattern: String, limit: Int): List[T] =
     decodeResults(facade.search(pattern, SearchOptions(limit)))
 
+  /** Positions in [[elements]] of the matches, best first. For telling apart elements that
+    * look the same to the search, and skips decoding the matches back.
+    */
+  def searchIndices(pattern: String): List[Int] =
+    facade.search(pattern).map(_.refIndex).toList
+
   private def decodeResults(search: => js.Array[Result]): List[T] =
     (for {
       result <- search
