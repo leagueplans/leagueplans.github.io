@@ -14,7 +14,7 @@ import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.leagueplans.uicommon.utils.laminar.LaminarOps.onKey
 import com.leagueplans.uicommon.wrappers.Clipboard
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
 import org.scalajs.dom.{KeyValue, document}
@@ -31,6 +31,7 @@ object StepElement {
     substepsSignal: Signal[List[L.HtmlElement]],
     forester: Forester[Step.ID, Step],
     isFocused: Signal[Boolean],
+    substepFocused: EventStream[Unit],
     focusController: FocusController,
     completionController: CompletedStep.Controller,
     draggingStatus: Var[StepDraggingStatus],
@@ -77,6 +78,7 @@ object StepElement {
           FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
         ),
         toFocusListeners(stepID, isFocused, focusController),
+        substepFocused --> (_ => animationController.open()),
         toHoverListeners(isHovering),
         StepDragListeners(
           stepID,

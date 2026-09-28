@@ -35,6 +35,11 @@ object InteractiveForest {
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
     // sticky-step CSS when dragging
     val draggingStatus = Var(StepDraggingStatus.NotDragging).distinct
+    // Steps collapsed around a newly focused step are opened, so the focus is never hidden
+    val newFocusAncestors =
+      focusContext.focusID.changes
+        .withCurrentValueOf(forester.signal)
+        .map((maybeFocus, forest) => maybeFocus.toList.flatMap(forest.ancestors).toSet)
 
     val dom =
       ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])](
@@ -50,6 +55,7 @@ object InteractiveForest {
             substepsSignal.map(_.map((substep, _) => substep)),
             forester,
             focusContext.signalFor(stepID),
+            substepFocused = newFocusAncestors.filter(_.contains(stepID)).mapToUnit,
             focusController,
             completionController,
             draggingStatus,
