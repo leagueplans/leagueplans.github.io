@@ -97,7 +97,7 @@ object StepElement {
         )
       )
 
-    (element, toChildOffset(animationController, headerHeight, positionOffset))
+    (element, toChildOffset(animationController, positionOffset, headerHeight))
   }
 
   @js.native @JSImport("/styles/planning/plan/step/step.module.css", JSImport.Default)
