@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 
@@ -22,7 +22,8 @@ object PlanElement {
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    modal: Modal
+    modal: Modal,
+    toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val newStepForm = NewStepForm(forester, modal)
     val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
@@ -40,7 +41,8 @@ object PlanElement {
         timeKeeper,
         tooltip,
         contextMenu,
-        focusController
+        focusController,
+        toastPublisher
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(focusContext.focusID, focusController, newStepForm, deleteStepForm)
     )

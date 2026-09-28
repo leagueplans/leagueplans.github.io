@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.CompletedStep
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.uicommon.dom.{Button, ContextMenu, ContextMenuList}
+import com.leagueplans.uicommon.dom.{Button, ContextMenu, ContextMenuList, ToastHub}
 import com.leagueplans.uicommon.facades.fontawesome.freeregular.FreeRegular
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.airstream.JsPromiseOps.asObservable
@@ -12,8 +12,10 @@ import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handledAs, hand
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.Clipboard
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
+
+import scala.concurrent.duration.DurationInt
 
 object StepContextMenu {
   def apply(
@@ -22,7 +24,8 @@ object StepContextMenu {
     contextMenu: ContextMenu,
     clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])],
     completionController: CompletedStep.Controller,
-    editingEnabledSignal: Signal[Boolean]
+    editingEnabledSignal: Signal[Boolean],
+    toastPublisher: ToastHub.Publisher
   ): Binder.Base =
     contextMenu.registerConditionally(
       Signal
@@ -34,7 +37,7 @@ object StepContextMenu {
                 List(
                   copyButton(stepID, forester, contextMenu, clipboard),
                   cutButton(stepID, forester, contextMenu, clipboard),
-                  pasteButton(stepID, contextMenu, clipboard, forester)
+                  pasteButton(stepID, contextMenu, clipboard, forester, toastPublisher)
                 ),
                 List(
                   changeStatusButton(stepID, isComplete, contextMenu, completionController)
@@ -91,7 +94,8 @@ object StepContextMenu {
     parent: Step.ID,
     contextMenu: ContextMenu,
     clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])],
-    forester: Forester[Step.ID, Step]
+    forester: Forester[Step.ID, Step],
+    toastPublisher: ToastHub.Publisher
   ): ContextMenuList.Item =
     ContextMenuList.Item(
       FontAwesome.icon(FreeRegular.faPaste),
@@ -100,7 +104,7 @@ object StepContextMenu {
         _.handledWith(_.flatMapSwitch(_ =>
           clipboard.read().asObservable.collectSome
         )) --> Observer[(Clipboard.Operation, Forest[Step.ID, Step])] { (operation, forest) =>
-          handlePaste(parent, forest, operation, forester)
+          handlePaste(parent, forest, operation, forester, toastPublisher)
           contextMenu.close()
         }
       )
@@ -110,11 +114,19 @@ object StepContextMenu {
     parent: Step.ID,
     forest: Forest[Step.ID, Step],
     operation: Clipboard.Operation,
-    forester: Forester[Step.ID, Step]
+    forester: Forester[Step.ID, Step],
+    toastPublisher: ToastHub.Publisher
   ): Unit =
     (operation, forest.roots) match {
       case (Clipboard.Operation.Cut, List(step)) if forester.signal.now().contains(step) =>
-        forester.move(step, parent)
+        if (step == parent || forester.signal.now().ancestors(parent).contains(step))
+          toastPublisher.publish(
+            ToastHub.Type.Warning,
+            5.seconds,
+            "A step can't be pasted inside itself or one of its substeps"
+          )
+        else
+          forester.move(step, parent)
 
       case _ =>
         val regeneratedForest = forest.map((_, step) => step.copy(id = Step.ID.generate()))

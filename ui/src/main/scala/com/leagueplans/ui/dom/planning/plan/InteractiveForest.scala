@@ -8,7 +8,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, ToastHub, Tooltip}
 import com.leagueplans.uicommon.wrappers.Clipboard
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -28,7 +28,8 @@ object InteractiveForest {
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    focusController: FocusController
+    focusController: FocusController,
+    toastPublisher: ToastHub.Publisher
   ): ReactiveHtmlElement[OList] = {
     val clipboard = Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])]("step", Decoder.decodeMessage)
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
@@ -64,7 +65,8 @@ object InteractiveForest {
             timeKeeper,
             tooltip,
             contextMenu,
-            clipboard
+            clipboard,
+            toastPublisher
           )
       )
 

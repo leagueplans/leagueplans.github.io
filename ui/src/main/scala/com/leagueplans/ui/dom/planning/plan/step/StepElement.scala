@@ -7,7 +7,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
-import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, ToastHub, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledAs
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
@@ -40,7 +40,8 @@ object StepElement {
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])]
+    clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])],
+    toastPublisher: ToastHub.Publisher
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -96,6 +97,7 @@ object StepElement {
           clipboard,
           completionController,
           editingEnabledSignal,
+          toastPublisher
         )
       )
 

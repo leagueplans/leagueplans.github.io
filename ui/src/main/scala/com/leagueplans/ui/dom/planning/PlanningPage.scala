@@ -54,7 +54,8 @@ object PlanningPage {
         timeKeeper,
         tooltip,
         contextMenu,
-        modal
+        modal,
+        toastPublisher
       )
 
     val visualiser =
