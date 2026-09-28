@@ -23,7 +23,7 @@ object WikiItem {
   final case class Image(
     bin: Item.Image.Bin,
     fileName: PageDescriptor.Name.File,
-    wikiSHA1: Option[String],
+    wikiSHA1: String,
     content: Image.Content
   )
 

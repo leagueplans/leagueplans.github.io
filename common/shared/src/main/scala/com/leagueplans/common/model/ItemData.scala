@@ -19,21 +19,20 @@ object ItemData {
     *
     * [[wikiSHA1]] is the wiki's own digest of the file as uploaded, which changes only when
     * the file is re-uploaded. The wiki reports it without the file being downloaded, so a
-    * scrape can skip downloading any icon whose digest still matches. It is absent where it
-    * has never been recorded, and the icon is then downloaded as before.
+    * scrape can skip downloading any icon whose digest still matches.
     */
   final case class Image(
     bin: Item.Image.Bin,
     extension: String,
     hash: String,
-    wikiSHA1: Option[String]
+    wikiSHA1: String
   ) {
     def fileName: String = s"${bin.floor}.$extension"
 
-    /** The image with only what can be seen: two images that differ in nothing else show
-      * the same picture, even if the wiki holds different uploads of it.
+    /** What can be seen of the image. Two images that agree on it show the same picture,
+      * even if the wiki holds different uploads of it.
       */
-    def picture: Image = copy(wikiSHA1 = None)
+    def picture: (bin: Item.Image.Bin, extension: String, hash: String) = (bin, extension, hash)
   }
 
   given Ordering[ItemData] = Ordering.by(item => (item.name, item.examine, item.gameID))

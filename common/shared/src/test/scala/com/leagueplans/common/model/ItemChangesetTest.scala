@@ -13,7 +13,7 @@ final class ItemChangesetTest extends JsonSpec {
         gameID = Some(2365),
         name = "'perfect' gold bar",
         examine = "It's a bar of 'perfect' gold.",
-        images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", Some("24cc5ba0"))),
+        images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", "24cc5ba0")),
         bankable = Item.Bankable.Yes(stacks = true),
         stackable = false,
         noteable = false,
@@ -172,12 +172,7 @@ final class ItemChangesetTest extends JsonSpec {
       }
 
       "leaves out an icon that was only re-uploaded" in {
-        redrawn(acceptedImage.copy(wikiSHA1 = Some("9a8b7c6d"))) shouldBe empty
-      }
-
-      "leaves out an icon whose wiki SHA-1 was recorded for the first time" in {
-        val unrecorded = ItemChangeset.empty.copy(reimaged = List(key -> item.images))
-        unrecorded.redrawn(Map(key -> item.copy(images = item.images.map(_.picture)))) shouldBe empty
+        redrawn(acceptedImage.copy(wikiSHA1 = "9a8b7c6d")) shouldBe empty
       }
 
       "includes an item missing from the baseline" in {

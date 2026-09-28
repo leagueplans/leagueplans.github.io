@@ -8,7 +8,7 @@ import org.scalatest.Assertion
 final class ItemDataTest extends JsonSpec {
   "ItemData" - {
     val sha1 = "24cc5ba0367a04f9dc1de17a0d8167e8c0fe81ff"
-    val image = ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", Some(sha1))
+    val image = ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", sha1)
 
     val imageJson =
       Json.obj(
@@ -31,20 +31,11 @@ final class ItemDataTest extends JsonSpec {
       )
 
     "Image" - {
-      "encoding values to and decoding values from an expected encoding" - {
-        "with a recorded wiki SHA-1" in
-          testRoundTripSerialisation(image, imageJson)
+      "encoding values to and decoding values from an expected encoding" in
+        testRoundTripSerialisation(image, imageJson)
 
-        "without one" in
-          testRoundTripSerialisation(
-            image.copy(wikiSHA1 = None),
-            imageJson.mapObject(_.add("wikiSHA1", Json.Null))
-          )
-      }
-
-      "decoding images written before wiki SHA-1s were recorded" in {
-        imageJson.mapObject(_.remove("wikiSHA1")).as[ItemData.Image].value shouldBe
-          image.copy(wikiSHA1 = None)
+      "refuses an image without a wiki SHA-1" in {
+        imageJson.mapObject(_.remove("wikiSHA1")).as[ItemData.Image].isLeft shouldBe true
       }
 
       "fileName" - {
@@ -52,16 +43,16 @@ final class ItemDataTest extends JsonSpec {
           image.fileName shouldBe expectedFileName
 
         "combines the bin with the extension" in
-          test(ItemData.Image(Item.Image.Bin(1), "png", "abc", None), "1.png")
+          test(ItemData.Image(Item.Image.Bin(1), "png", "abc", sha1), "1.png")
         "uses the bin's floor, not its position" in
-          test(ItemData.Image(Item.Image.Bin(100), "gif", "abc", None), "100.gif")
+          test(ItemData.Image(Item.Image.Bin(100), "gif", "abc", sha1), "100.gif")
       }
 
       "picture" - {
-        "forgets the wiki SHA-1" in {
-          image.picture shouldBe image.copy(wikiSHA1 = None)
+        "is the same for two uploads of one picture" in {
+          image.picture shouldBe image.copy(wikiSHA1 = "9a8b7c6d").picture
         }
-        "keeps everything that can be seen" in {
+        "tells different pictures apart" in {
           image.picture should not be image.copy(hash = "fedcba9876543210").picture
         }
       }

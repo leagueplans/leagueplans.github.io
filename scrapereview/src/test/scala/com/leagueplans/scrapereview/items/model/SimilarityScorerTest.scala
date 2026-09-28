@@ -11,7 +11,7 @@ final class SimilarityScorerTest extends AnyFreeSpec with Matchers {
       gameID = None,
       name = name,
       examine = examine,
-      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "abc", None)),
+      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "abc", "0123abcd")),
       bankable = Item.Bankable.No,
       stackable = false,
       noteable = false,

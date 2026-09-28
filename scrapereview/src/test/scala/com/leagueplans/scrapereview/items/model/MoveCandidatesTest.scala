@@ -13,7 +13,7 @@ final class MoveCandidatesTest extends AnyFreeSpec with Matchers {
       gameID = gameID,
       name = name,
       examine = examine,
-      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "abc", None)),
+      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "abc", "0123abcd")),
       bankable = Item.Bankable.No,
       stackable = false,
       noteable = false,
