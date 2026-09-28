@@ -2,17 +2,15 @@ package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
-import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController}
-import com.leagueplans.ui.model.common.forest.Forest
+import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
-import com.leagueplans.uicommon.dom.{ContextMenu, ToastHub, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledAs
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.leagueplans.uicommon.utils.laminar.LaminarOps.onKey
-import com.leagueplans.uicommon.wrappers.Clipboard
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -40,8 +38,7 @@ object StepElement {
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    clipboard: Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])],
-    toastPublisher: ToastHub.Publisher
+    stepClipboard: StepClipboard
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -92,12 +89,10 @@ object StepElement {
         ),
         StepContextMenu(
           stepID,
-          forester,
           contextMenu,
-          clipboard,
+          stepClipboard,
           completionController,
-          editingEnabledSignal,
-          toastPublisher
+          editingEnabledSignal
         )
       )
 

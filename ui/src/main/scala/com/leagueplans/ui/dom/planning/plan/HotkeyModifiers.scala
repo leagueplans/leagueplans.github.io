@@ -4,14 +4,14 @@ import com.leagueplans.ui.model.plan.Step
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
-import org.scalajs.dom.{Element, KeyValue, KeyboardEvent, document}
+import org.scalajs.dom.{Element, KeyValue, KeyboardEvent, document, window}
 
-//TODO Copy/paste
 object HotkeyModifiers {
   def apply(
     focus: Signal[Option[Step.ID]],
     focusController: FocusController,
     stepMover: StepMover,
+    stepClipboard: StepClipboard,
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm,
     editDescription: Step.ID => Unit
@@ -19,8 +19,38 @@ object HotkeyModifiers {
     List(
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
+      toClipboardListener(focus, stepClipboard),
       toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription)
     )
+
+  // Listens on keydown, because writing to the clipboard requires a user activation,
+  // which keyup doesn't grant
+  private def toClipboardListener(
+    focusSignal: Signal[Option[Step.ID]],
+    stepClipboard: StepClipboard
+  ): Binder.Base =
+    L.documentEvents(_.onKeyDown)
+      .filterNot(shouldIgnore)
+      .filter(event => (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey)
+      .filter(_ => stepClipboard.isSupported)
+      .compose(_.withCurrentValueOf(focusSignal)) --> {
+        case (event, Some(step)) =>
+          val maybeAction = event.key.toLowerCase match {
+            // Leave copying and cutting to the browser if the user has selected some text
+            case "c" if !hasTextSelection => Some(stepClipboard.copy)
+            case "x" if !hasTextSelection => Some(stepClipboard.cut)
+            case "v" => Some(stepClipboard.paste)
+            case _ => None
+          }
+          maybeAction.foreach { action =>
+            event.preventDefault()
+            action(step): Unit
+          }
+        case (_, None) => /* Do nothing */
+      }
+
+  private def hasTextSelection: Boolean =
+    Option(window.getSelection()).exists(!_.isCollapsed)
 
   private def toFocusChangeListener(controller: FocusController): Binder.Base =
     L.documentEvents(_.onKeyDown).filterNot(shouldIgnore).filter(_.ctrlKey) --> (event =>

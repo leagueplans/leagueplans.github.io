@@ -16,7 +16,10 @@ object KeyboardShortcutsModal {
           "Step modification",
           List("N") -> "Add a new step",
           List("E") -> "Edit the focused step's description",
-          List("Delete") -> "Delete the focused step"
+          List("Delete") -> "Delete the focused step",
+          List("Ctrl", "C") -> "Copy the focused step",
+          List("Ctrl", "X") -> "Cut the focused step",
+          List("Ctrl", "V") -> "Paste as the last substep of the focused step"
         ),
         toSection(
           "Step movement",

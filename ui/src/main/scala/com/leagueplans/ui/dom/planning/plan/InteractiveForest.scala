@@ -1,15 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
-import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.{ContextMenu, ToastHub, Tooltip}
-import com.leagueplans.uicommon.wrappers.Clipboard
+import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
@@ -30,9 +27,8 @@ object InteractiveForest {
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     focusController: FocusController,
-    toastPublisher: ToastHub.Publisher
+    stepClipboard: StepClipboard
   ): ReactiveHtmlElement[OList] = {
-    val clipboard = Clipboard[(Clipboard.Operation, Forest[Step.ID, Step])]("step", Decoder.decodeMessage)
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
     // sticky-step CSS when dragging
@@ -70,8 +66,7 @@ object InteractiveForest {
             timeKeeper,
             tooltip,
             contextMenu,
-            clipboard,
-            toastPublisher
+            stepClipboard
           )
       )
 
