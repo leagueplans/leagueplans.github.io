@@ -26,7 +26,8 @@ final class ScrapeItemsRunner(scraper: ItemsScraper, dumper: ItemDumper) extends
     for {
       (errorStream, itemStream) <- scraper.scrape.partitionEither(ZIO.succeed(_))
       fork <- errorStream.runCollect.forkScoped
-      _ <- itemStream.run(dumper.sink)
+      items <- itemStream.run(dumper.sink)
       errors <- fork.join
+      _ <- dumper.dumpChangeset(items, errors)
     } yield errors
 }

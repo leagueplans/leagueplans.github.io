@@ -88,7 +88,12 @@ final class WikiClient(
         json <- parser.decode[JsonObject](String(metadata, StandardCharsets.UTF_8))
         rawActualURL <- json.decodeNestedField[String]("preferred", "url")(List.empty)
         actualURL <- URL.decode(rawActualURL)
-      } yield actualURL
+        // The wiki appends a cache-busting query (`?fa8bd`), which has to go. When a URL
+        // has a query, zio-http (3.8.0) percent-encodes its path again as it sends it, so
+        // `%28` goes out as `%2528` and the wiki 404s; without one, the path is sent as
+        // given. Our paths arrive already encoded, so they only survive without a query.
+        // The file is served the same either way.
+      } yield actualURL.copy(queryParams = QueryParams.empty)
     ))
 
   def fetchAllMembers(category: PageDescriptor.Name.Category)(using Trace): PageStream[PageDescriptor] =

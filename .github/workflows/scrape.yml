@@ -11,7 +11,7 @@ on:
 
 jobs:
   scrape:
-    # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
+    # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
@@ -31,12 +31,29 @@ jobs:
       run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
 
     - name: Archive run logs
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: run-logs
         path: logs/run.log
+        if-no-files-found: warn
+
+    # The items scraper deliberately changes nothing in the repository. Its output is a
+    # changeset to be reviewed locally, so it is published as an artefact and the report
+    # goes to the run summary rather than a pull request body.
+    - name: Publish report
+      if: github.event.inputs.resource == 'items'
+      run: cat tmp/report.md >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Archive changeset
+      if: github.event.inputs.resource == 'items'
+      uses: actions/upload-artifact@v4
+      with:
+        name: items-changeset
+        path: tmp/dump
 
     - name: Read report
+      if: github.event.inputs.resource != 'items'
       id: read-report
       run: |
         delimiter="$(openssl rand -hex 8)"
@@ -46,6 +63,7 @@ jobs:
         echo "$delimiter" >> $GITHUB_OUTPUT
 
     - name: Raise PR for any changes
+      if: github.event.inputs.resource != 'items'
       uses: peter-evans/create-pull-request@v7
       with:
         commit-message: Update ${{ github.event.inputs.resource }}

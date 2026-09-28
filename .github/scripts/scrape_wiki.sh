@@ -2,7 +2,9 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-# Takes a name for a scraper, runs it, and then syncs the the UI resources with the produced files
+# Takes a name for a scraper and runs it. Whether the output is synced into the UI depends
+# on the scraper: some produce files that can be taken as they are, while item data is
+# reviewed first and promoted by the review tool.
 
 readonly SCRAPER=$1
 readonly TMP='tmp'
@@ -25,10 +27,10 @@ sync () {
 }
 
 case "${SCRAPER}" in
+  # Nothing is synced into the UI here. The dump is reviewed first, and the review tool
+  # promotes whatever is accepted.
   "items")
-    run "id-map=scraper/src/main/resources/id-map.json"
-    sync --include="/data/" --include="/data/items.json" \
-         --include="/dynamic/" --include="/dynamic/assets/" --include="/dynamic/assets/images/" --include="/dynamic/assets/images/items/***"
+    run "original-items=data/items.json"
     ;;
 
   "skill-icons")

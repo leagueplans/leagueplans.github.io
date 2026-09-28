@@ -19,11 +19,13 @@ object PageDescriptor {
   }
 
   object Name {
+    // MediaWiki matches namespaces without regard to case, so the wiki happily renders a
+    // link written as [[FIle:…]].
     def from(wikiName: String): Name =
-      wikiName match {
-        case s"Category:$raw" => Category(raw)
-        case s"Template:$raw" => Template(raw)
-        case s"File:$full" =>
+      wikiName.split(":", /* limit = */ 2) match {
+        case Array(namespace, raw) if namespace.equalsIgnoreCase("Category") => Category(raw)
+        case Array(namespace, raw) if namespace.equalsIgnoreCase("Template") => Template(raw)
+        case Array(namespace, full) if namespace.equalsIgnoreCase("File") =>
           val Array(name, extension) = full.split("(\\.)(?!.*\\.)", /* limit = */ 2)
           File(name, extension)
         case _ => Other(wikiName)

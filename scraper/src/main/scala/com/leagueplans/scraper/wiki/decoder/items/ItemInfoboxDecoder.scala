@@ -10,8 +10,7 @@ import com.leagueplans.scraper.wiki.parser.Term
 object ItemInfoboxDecoder {
   def decode(obj: Term.Template.Object): DecoderResult[ItemInfobox] =
     for {
-      id <- obj.decode("id")(asID)
-      name <- obj.decode("name")(_.collapse(_.simplifiedText).as[Term.Unstructured])
+      id <- obj.decodeOpt("id")(asID).map(_.flatten)
       imageBins <- obj.decode("image")(asImageBins)
       examine <- obj.decode("examine")(_.collapse(_.simplifiedText).as[Term.Unstructured])
       maybeBankable <- obj.decodeOpt("bankable")(_.asBoolean)
@@ -20,7 +19,6 @@ object ItemInfoboxDecoder {
       maybeNoteable <- obj.decodeOpt("noteable")(asNoteable)
     } yield ItemInfobox(
       id,
-      name.raw,
       imageBins,
       examine.raw,
       asBankable(maybeBankable, maybeStacksInBank),
@@ -28,25 +26,35 @@ object ItemInfoboxDecoder {
       maybeNoteable.getOrElse(true)
     )
 
-  private def asID(raw: List[Term]): DecoderResult[WikiItem.GameID] =
-    raw.as[Term.Unstructured].flatMap(blob =>
-      blob
-        .raw
-        .split(',')
-        .map(raw => parseID(raw.trim))
-        .collect { case Right(id) => id }
-        .sortWith {
-          case (WikiItem.GameID.Live(id1), WikiItem.GameID.Live(id2)) => id1 < id2
-          case (WikiItem.GameID.Beta(id1), WikiItem.GameID.Beta(id2)) => id1 < id2
-          case (WikiItem.GameID.Historic(id1), WikiItem.GameID.Historic(id2)) => id1 < id2
-          case (_: WikiItem.GameID.Live, _) => true
-          case (_, _: WikiItem.GameID.Live) => false
-          case (_: WikiItem.GameID.Beta, _: WikiItem.GameID.Historic) => true
-          case (_: WikiItem.GameID.Historic, _: WikiItem.GameID.Beta) => false
-        }
-        .headOption
-        .toRight(left = DecoderException(s"Unexpected format - [$raw]"))
-    )
+  /** Placeholders editors write in place of an ID the wiki does not know. A blank or missing
+    * `id` means the same, and never reaches here. Anything else unreadable still fails, so a
+    * new way of writing IDs is noticed rather than read as having none.
+    */
+  private val unknownIDs = Set("n/a", "undefined")
+
+  private def asID(raw: List[Term]): DecoderResult[Option[WikiItem.GameID]] =
+    raw.as[Term.Unstructured].flatMap {
+      case blob if unknownIDs.contains(blob.raw.toLowerCase) => Right(None)
+      case blob => asKnownID(blob).map(Some(_))
+    }
+
+  private def asKnownID(blob: Term.Unstructured): DecoderResult[WikiItem.GameID] =
+    blob
+      .raw
+      .split(',')
+      .map(raw => parseID(raw.trim))
+      .collect { case Right(id) => id }
+      .sortWith {
+        case (WikiItem.GameID.Live(id1), WikiItem.GameID.Live(id2)) => id1 < id2
+        case (WikiItem.GameID.Beta(id1), WikiItem.GameID.Beta(id2)) => id1 < id2
+        case (WikiItem.GameID.Historic(id1), WikiItem.GameID.Historic(id2)) => id1 < id2
+        case (_: WikiItem.GameID.Live, _) => true
+        case (_, _: WikiItem.GameID.Live) => false
+        case (_: WikiItem.GameID.Beta, _: WikiItem.GameID.Historic) => true
+        case (_: WikiItem.GameID.Historic, _: WikiItem.GameID.Beta) => false
+      }
+      .headOption
+      .toRight(left = DecoderException(s"Unexpected format - [${blob.raw}]"))
 
   private def parseID(raw: String): DecoderResult[WikiItem.GameID] = {
     val (constructor, intPartOfID) =

@@ -5,13 +5,15 @@
   "workspaces": [
     "uicommon",
     "ui",
-    "taskimporter"
+    "taskimporter",
+    "scrapereview"
   ],
   "scripts": {
     "dev": "npm run dev --workspace ui",
     "build": "npm run build --workspace ui",
     "preview": "npm run preview --workspace ui",
-    "taskimporter": "npm run dev --workspace taskimporter"
+    "taskimporter": "npm run dev --workspace taskimporter",
+    "scrapereview": "npm run dev --workspace scrapereview"
   },
   "devDependencies": {
     "vite": "7.3.1"

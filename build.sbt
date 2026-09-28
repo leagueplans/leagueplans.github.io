@@ -21,7 +21,8 @@ lazy val root =
       wikiScraper,
       uicommon,
       ui,
-      taskimporter
+      taskimporter,
+      scrapereview
     )
 
 lazy val codec =
@@ -126,3 +127,10 @@ lazy val taskimporter =
     .enablePlugins(ScalaJSPlugin)
     .settings(scalaJSSettings, viteSettings)
     .dependsOn(common.js, uicommon)
+
+/** A tool for reviewing what a scrape changed before any of it reaches the app. */
+lazy val scrapereview =
+  project.in(file("scrapereview"))
+    .enablePlugins(ScalaJSPlugin)
+    .settings(scalaJSSettings, viteSettings)
+    .dependsOn(codec.js % "test->test", common.js, uicommon)

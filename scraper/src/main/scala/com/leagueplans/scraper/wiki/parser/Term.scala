@@ -37,6 +37,12 @@ object Term {
     def from(name: String, params: List[Parameter]): Template =
       params
         .foldLeft((Map.empty[Parameter.Version, Map[String, List[Term]]], List.empty[List[Term]])) {
+          // A named parameter left blank is treated as never having been given, as the wiki's
+          // infoboxes treat it. So `|bankable1 = ` means the item's bankability is unspecified
+          // rather than an unreadable value, and a version left blank falls back to the default.
+          case (acc, p: Parameter.Named) if isBlank(p.value) =>
+            acc
+
           case ((namedParams, anonParams), p: Parameter.Named) =>
             val currentParams = namedParams.getOrElse(p.version, Map.empty)
             val updatedParams = currentParams + (p.name -> p.value)
@@ -46,6 +52,12 @@ object Term {
             (namedParams, anonParams :+ p.value)
         }
         .pipe((namedParams, anonParams) => Template(name, namedParams, anonParams))
+
+    private def isBlank(value: List[Term]): Boolean =
+      value.forall {
+        case Unstructured(raw) => raw.isBlank
+        case _ => false
+      }
   }
 
   final class Template private (

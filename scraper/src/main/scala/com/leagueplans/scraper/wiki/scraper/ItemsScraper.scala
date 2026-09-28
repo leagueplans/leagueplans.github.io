@@ -27,6 +27,7 @@ object ItemsScraper {
   private val ignoredCategories: Set[PageDescriptor.Name.Category] =
     Set(
       "Inaccessible items",
+      "Interface items",
       "Needs examine added"
     ).map(PageDescriptor.Name.Category.apply)
 
