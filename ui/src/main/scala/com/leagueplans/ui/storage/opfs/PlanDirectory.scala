@@ -1,6 +1,7 @@
 package com.leagueplans.ui.storage.opfs
 
 import com.leagueplans.codec.Encoding
+import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.plan.{Plan, Step}
@@ -62,11 +63,11 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
         readMappings().andThen(mappings =>
           acquireStepsDirectory()
             .andThen(_.read(mappings.toChildren.keySet ++ mappings.toChildren.values.flatten))
-            .map(_.map(steps => Plan(
-              metadata.name,
-              Forest.from(steps, mappings.toChildren, mappings.roots),
-              settings
-            )))
+            .map(_.flatMap(steps =>
+              Forest.acyclic(steps, mappings.toChildren, mappings.roots)
+                .left.map(reason => DecodingError(parentChildMappingsFileName, DecodingFailure(reason)))
+                .map(Plan(metadata.name, _, settings))
+            ))
         )
       )
     )

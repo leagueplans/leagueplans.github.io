@@ -178,7 +178,7 @@ object NewPlanForm {
 
       case Some(planImport) =>
         ExportedPlanDecoder
-          .decode(planImport)
+          .decodeImport(planImport)
           .map(_.map((metadata, plan) =>
             (metadata.copy(name = name), plan.copy(name = name, settings = Plan.Settings.Deferred(mode)))
           ))

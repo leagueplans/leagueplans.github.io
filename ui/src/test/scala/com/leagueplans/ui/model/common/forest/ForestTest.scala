@@ -95,6 +95,83 @@ final class ForestTest extends CodecSpec {
       )
     }
 
+    "validated" - {
+      val nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child", 4 -> "grandchild")
+
+      "accepts a well-formed forest" in {
+        Forest.validated(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2)) shouldEqual
+          Right(Forest.from(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2)))
+      }
+
+      "accepts an empty forest" in {
+        Forest.validated(Map.empty[Int, String], Map.empty, List.empty) shouldEqual Right(Forest.empty)
+      }
+
+      "rejects a parent that does not exist" in {
+        Forest.validated(nodes, Map(1 -> List(3), 3 -> List(4), 5 -> List(2)), List(1)).isLeft shouldBe true
+      }
+
+      "rejects a child that does not exist" in {
+        Forest.validated(nodes, Map(1 -> List(3, 5), 3 -> List(4)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a root that does not exist" in {
+        Forest.validated(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2, 5)).isLeft shouldBe true
+      }
+
+      "rejects a step with two parents" in {
+        Forest.validated(nodes, Map(1 -> List(3), 2 -> List(4), 3 -> List(4)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a step that is both a root and a child" in {
+        Forest.validated(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2, 3)).isLeft shouldBe true
+      }
+
+      "rejects a duplicated root" in {
+        Forest.validated(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2, 1)).isLeft shouldBe true
+      }
+
+      "rejects a step that is neither a root nor a child" in {
+        Forest.validated(nodes, Map(1 -> List(3)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a cycle" in {
+        Forest.validated(nodes, Map(3 -> List(4), 4 -> List(3)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a step that is its own parent" in {
+        Forest.validated(nodes, Map(1 -> List(3), 4 -> List(4)), List(1, 2)).isLeft shouldBe true
+      }
+    }
+
+    "acyclic" - {
+      val nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child", 4 -> "grandchild")
+
+      "accepts a well-formed forest" in {
+        Forest.acyclic(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2)) shouldEqual
+          Right(Forest.from(nodes, Map(1 -> List(3), 3 -> List(4)), List(1, 2)))
+      }
+
+      "tolerates faults other than cycles" in {
+        // 4 has two parents, 2 is neither a root nor a child, and 5 does not exist
+        val parentsToChildren = Map(1 -> List(3, 4, 5), 3 -> List(4))
+        Forest.acyclic(nodes, parentsToChildren, List(1)) shouldEqual
+          Right(Forest.from(nodes, parentsToChildren, List(1)))
+      }
+
+      "rejects a cycle reachable from the roots" in {
+        Forest.acyclic(nodes, Map(1 -> List(3), 3 -> List(4), 4 -> List(3)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a cycle that is not reachable from the roots" in {
+        Forest.acyclic(nodes, Map(3 -> List(4), 4 -> List(3)), List(1, 2)).isLeft shouldBe true
+      }
+
+      "rejects a step that is its own parent" in {
+        Forest.acyclic(nodes, Map(4 -> List(4)), List(1, 2, 3)).isLeft shouldBe true
+      }
+    }
+
     "siblings" - {
       val forest = Forest.from(
         nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child1", 4 -> "child2", 5 -> "grandchild"),

@@ -5,6 +5,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 object Forest {
   def empty[ID, T]: Forest[ID, T] =
@@ -20,6 +21,83 @@ object Forest {
     )
     val toChildren = nodes.map((id, _) => id -> parentsToChildren.getOrElse(id, List.empty))
     new Forest(nodes, toParent, toChildren, roots)
+  }
+
+  /** Like [[from]], but first checks that the inputs describe a forest. Every node must appear
+    * exactly once, either as a root or as a child, and must be reachable from the roots. */
+  def validated[ID, T](
+    nodes: Map[ID, T],
+    parentsToChildren: Map[ID, List[ID]],
+    roots: List[ID]
+  ): Either[String, Forest[ID, T]] = {
+    val placed = mutable.Set.empty[ID]
+    val placements = roots.iterator ++ parentsToChildren.valuesIterator.flatten
+
+    for {
+      _ <- parentsToChildren.keysIterator.find(!nodes.contains(_))
+        .toLeft(()).left.map(id => s"Step $id has substeps but does not exist")
+      _ <- placements.find(!placed.add(_))
+        .toLeft(()).left.map(id => s"Step $id appears in more than one place")
+      _ <- placed.find(!nodes.contains(_))
+        .toLeft(()).left.map(id => s"Step $id is referenced but does not exist")
+      _ <- nodes.keysIterator.find(!placed.contains(_))
+        .toLeft(()).left.map(id => s"Step $id is not a root or a substep")
+      // Each node has exactly one placement, so any unreachable node must be part of a cycle
+      _ <- Either.cond(countReachable(parentsToChildren, roots) == nodes.size, (), "The steps contain a cycle")
+    } yield from(nodes, parentsToChildren, roots)
+  }
+
+  /** Like [[from]], but first checks that the inputs contain no cycles, which would make
+    * traversals loop forever. Unlike [[validated]], other faults are tolerated. */
+  def acyclic[ID, T](
+    nodes: Map[ID, T],
+    parentsToChildren: Map[ID, List[ID]],
+    roots: List[ID]
+  ): Either[String, Forest[ID, T]] =
+    findCycle(parentsToChildren)
+      .toLeft(from(nodes, parentsToChildren, roots))
+      .left.map(id => s"Step $id is its own ancestor")
+
+  private def findCycle[ID](parentsToChildren: Map[ID, List[ID]]): Option[ID] = {
+    val finished = mutable.Set.empty[ID]
+    val onPath = mutable.Set.empty[ID]
+    val path = mutable.Stack.empty[(ID, Iterator[ID])]
+    var cycle = Option.empty[ID]
+
+    def enter(id: ID): Unit = {
+      onPath += id
+      path.push((id, parentsToChildren.getOrElse(id, List.empty).iterator))
+    }
+
+    val starts = parentsToChildren.keysIterator
+    while (cycle.isEmpty && (path.nonEmpty || starts.hasNext)) {
+      if (path.isEmpty) {
+        val start = starts.next()
+        if (!finished.contains(start)) enter(start)
+      } else {
+        val (id, children) = path.top
+        if (children.hasNext) {
+          val child = children.next()
+          if (onPath.contains(child)) cycle = Some(child)
+          else if (!finished.contains(child)) enter(child)
+        } else {
+          path.pop()
+          onPath -= id
+          finished += id
+        }
+      }
+    }
+    cycle
+  }
+
+  private def countReachable[ID](parentsToChildren: Map[ID, List[ID]], roots: List[ID]): Int = {
+    var count = 0
+    val remaining = mutable.Stack.from(roots)
+    while (remaining.nonEmpty) {
+      count += 1
+      remaining.pushAll(parentsToChildren.getOrElse(remaining.pop(), List.empty))
+    }
+    count
   }
 
   enum Update[+ID, +T] {

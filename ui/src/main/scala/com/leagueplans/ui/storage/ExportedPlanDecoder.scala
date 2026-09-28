@@ -9,7 +9,22 @@ import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings}
 import com.raquo.airstream.core.EventStream
 
 object ExportedPlanDecoder {
+  private type ForestBuilder =
+    (Map[Step.ID, Step], Map[Step.ID, List[Step.ID]], List[Step.ID]) => Either[String, Forest[Step.ID, Step]]
+
+  /** For plans we've stored ourselves. Only faults that would hang the app are rejected, so
+    * that users aren't locked out of plans that open today. */
   def decode(input: PlanExport): EventStream[Either[DecodingFailure | MigrationError, (PlanMetadata, Plan)]] =
+    decode(input, Forest.acyclic)
+
+  /** For plan files provided by users, which must describe a well-formed forest */
+  def decodeImport(input: PlanExport): EventStream[Either[DecodingFailure | MigrationError, (PlanMetadata, Plan)]] =
+    decode(input, Forest.validated)
+
+  private def decode(
+    input: PlanExport,
+    toForest: ForestBuilder
+  ): EventStream[Either[DecodingFailure | MigrationError, (PlanMetadata, Plan)]] =
     Migrator.run(input).map(maybeData =>
       for {
         data <- maybeData
@@ -17,12 +32,12 @@ object ExportedPlanDecoder {
         steps <- decodeSteps(data.steps)
         mappings <- Decoder.decode[StepMappings](data.mappings)
         settings <- Decoder.decode[Plan.Settings](data.settings)
-      } yield (
-        metadata,
-        Plan(metadata.name, Forest.from(steps, mappings.toChildren, mappings.roots), settings)
-      )
+        forest <- toForest(steps, mappings.toChildren, mappings.roots).left.map(reason =>
+          DecodingFailure(s"Invalid plan structure: $reason")
+        )
+      } yield (metadata, Plan(metadata.name, forest, settings))
     )
-  
+
   private def decodeSteps(
     encodedSteps: Map[Step.ID, Encoding]
   ): Either[DecodingFailure, Map[Step.ID, Step]] = {
