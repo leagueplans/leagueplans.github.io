@@ -116,7 +116,7 @@ final class Forest[ID, T] private[forest](
       )
     }
 
-  /* Returns the subforest produced by promoting children of the provided node to root */
+  /** Returns the subforest produced by promoting children of the provided node to root */
   def subforest(id: ID): Forest[ID, T] = {
     val newRoots = toChildren.get(id).toList.flatten
     val (subToChildren, subToParent) =
@@ -133,8 +133,8 @@ final class Forest[ID, T] private[forest](
     Forest(newNodes, subToParent, subToChildren, newRoots)
   }
 
-  /* Performs a depth-first exploration until it finds the ID. Returns a copy
-   * of the nodes discovered, excluding the provided node. */
+  /** Performs a depth-first exploration until it finds the ID. Returns a copy
+    * of the nodes discovered, excluding the provided node. */
   def takeUntil(id: ID): Forest[ID, T] =
     if (contains(id)) {
       val remaining = toLazyList.takeWhile(_ != id).toSet
@@ -166,11 +166,11 @@ final class Forest[ID, T] private[forest](
       )
     } else this
 
-  /* Depth-first */
+  /** Depth-first */
   def toList: List[ID] =
     recurse()((id, _) => List(id))
 
-  /* Depth-first */
+  /** Depth-first */
   def foreachParent(f: (T, List[T]) => Unit): Unit =
     recurse()((id, children) =>
       get(id).foreach(parent =>
@@ -178,7 +178,7 @@ final class Forest[ID, T] private[forest](
       )
     )
 
-  /* Depth-first */
+  /** Depth-first */
   def recurse[Acc : Monoid](initial: List[ID] = roots)(f: (ID, List[ID]) => Acc): Acc =
     recursionHelper(acc = Monoid[Acc].empty, initial)(f)
 
@@ -197,7 +197,7 @@ final class Forest[ID, T] private[forest](
         )(f)
     }
 
-  /* Depth-first */
+  /** Depth-first */
   def toLazyList: LazyList[ID] =
     lazyListBuilder(remaining = roots)
 
