@@ -17,7 +17,6 @@ import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.{KeyValue, document}
 
 import scala.concurrent.duration.DurationInt

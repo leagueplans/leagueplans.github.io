@@ -2,7 +2,7 @@ import org.scalajs.linker.interface.ESVersion
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.8.2"
+ThisBuild / scalaVersion := "3.8.4"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
@@ -29,12 +29,12 @@ lazy val codec =
   crossProject(JVMPlatform, JSPlatform).in(file("codec"))
     .settings(
       libraryDependencies ++= List(
-        "org.scalatest" %%% "scalatest" % "3.2.19" % "test",
-        "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % "test"
+        "org.scalatest" %%% "scalatest" % "3.2.20" % "test",
+        "org.scalatestplus" %%% "scalacheck-1-19" % "3.2.20.0" % "test"
       )
     )
 
-val circeVersion = "0.14.15"
+val circeVersion = "0.14.16"
 
 lazy val common =
   crossProject(JVMPlatform, JSPlatform).in(file("common"))
@@ -47,17 +47,17 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
-val zioVersion = "2.1.24"
+val zioVersion = "2.1.26"
 val zioLoggingVersion = "2.5.3"
 
 lazy val wikiScraper =
   project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
-        "ch.qos.logback" % "logback-classic" % "1.5.26",
+        "ch.qos.logback" % "logback-classic" % "1.6.4",
         "dev.zio" %% "zio" % zioVersion,
         "dev.zio" %% "zio-streams" % zioVersion,
-        "dev.zio" %% "zio-http" % "3.8.0",
+        "dev.zio" %% "zio-http" % "3.11.6",
         "dev.zio" %% "zio-logging" % zioLoggingVersion,
         "dev.zio" %% "zio-logging-slf4j2" % zioLoggingVersion,
         "org.parboiled" %% "parboiled" % "2.5.1"
@@ -100,7 +100,7 @@ lazy val uicommon =
     .settings(
       scalaJSSettings,
       libraryDependencies ++= List(
-        "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+        "org.scala-js" %%% "scalajs-dom" % "2.8.1",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
         "com.raquo" %%% "laminar" % "17.2.1",
