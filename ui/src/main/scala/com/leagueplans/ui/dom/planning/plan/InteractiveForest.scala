@@ -53,7 +53,7 @@ object InteractiveForest {
             focusController,
             completionController,
             draggingStatus,
-            hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)),
+            hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)).distinct,
             editingEnabled,
             timeKeeper,
             tooltip,

@@ -50,7 +50,7 @@ object PlanningPage {
         focusContext,
         focusController,
         editingEnabled = Val(true),
-        stepsWithErrors.map(_.keySet),
+        stepsWithErrors.map(_.keySet).distinct,
         timeKeeper,
         tooltip,
         contextMenu,
