@@ -13,12 +13,13 @@ object HotkeyModifiers {
     focusController: FocusController,
     stepMover: StepMover,
     newStepForm: NewStepForm,
-    deleteStepForm: DeleteStepForm
+    deleteStepForm: DeleteStepForm,
+    editDescription: Step.ID => Unit
   ): L.Modifier[L.Element] =
     List(
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
-      toStepModifierListeners(focus, newStepForm, deleteStepForm)
+      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription)
     )
 
   private def toFocusChangeListener(controller: FocusController): Binder.Base =
@@ -59,13 +60,15 @@ object HotkeyModifiers {
   private def toStepModifierListeners(
     focusSignal: Signal[Option[Step.ID]],
     newStepForm: NewStepForm,
-    deleteStepForm: DeleteStepForm
+    deleteStepForm: DeleteStepForm,
+    editDescription: Step.ID => Unit
   ): Binder.Base =
     L.documentEvents(_.onKeyUp)
       .filterNot(shouldIgnore)
       .map(_.key)
       .compose(_.withCurrentValueOf(focusSignal)) --> {
         case ("n" | "N", focus) => newStepForm.open(focus)
+        case ("e" | "E", Some(step)) => editDescription(step)
         case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => deleteStepForm.open(step)
         case _ => /* Do nothing */
       }

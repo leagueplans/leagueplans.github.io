@@ -15,6 +15,7 @@ object KeyboardShortcutsModal {
         toSection(
           "Step modification",
           List("N") -> "Add a new step",
+          List("E") -> "Edit the focused step's description",
           List("Delete") -> "Delete the focused step"
         ),
         toSection(

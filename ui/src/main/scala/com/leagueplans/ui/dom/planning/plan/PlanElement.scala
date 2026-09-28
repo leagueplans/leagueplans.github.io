@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.editor.description.EditStepDescriptionForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
@@ -44,7 +45,15 @@ object PlanElement {
         focusController,
         toastPublisher
       ).amend(L.cls(Styles.steps)),
-      HotkeyModifiers(focusContext.focusID, focusController, StepMover(forester), newStepForm, deleteStepForm)
+      HotkeyModifiers(
+        focusContext.focusID,
+        focusController,
+        StepMover(forester),
+        newStepForm,
+        deleteStepForm,
+        editDescription = step =>
+          forester.signal.now().get(step).foreach(EditStepDescriptionForm.open(_, forester, modal))
+      )
     )
   }
 
