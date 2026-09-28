@@ -15,7 +15,6 @@ import zio.stream.ZStream
 import zio.{Chunk, Schedule, Task, Trace, ZIO}
 
 import java.nio.charset.StandardCharsets
-import java.time.Instant
 
 private object WikiClient {
   private val retryableStatuses: Set[Status] = Set(
@@ -36,7 +35,7 @@ private object WikiClient {
   // The shape of an imageinfo query's response, which unlike the other queries can
   // describe pages that don't exist and so carry no page ID.
   private final case class TitleMapping(from: String, to: String)
-  private final case class ImageInfo(sha1: String, timestamp: Instant)
+  private final case class ImageInfo(sha1: String)
   private final case class FilePage(title: String, imageinfo: Option[List[ImageInfo]])
   private final case class FileQuery(
     normalized: Option[List[TitleMapping]],
@@ -135,7 +134,7 @@ final class WikiClient(
               pages
                 .get(target)
                 .flatMap(_.imageinfo.flatMap(_.headOption))
-                .map(info => file -> FileInfo(info.sha1, info.timestamp, viaRedirect = target != title))
+                .map(info => file -> FileInfo(info.sha1))
             }
           }
     }
@@ -243,7 +242,5 @@ final class WikiClient(
     contentType match {
       case WikiContentType.Revisions =>
         json.decodeNestedField[String]("slots", "main", "content")(List(cursorOp))
-      case WikiContentType.LastEdited =>
-        json.decodeNestedField[String]("timestamp")(List(cursorOp))
     }
 }

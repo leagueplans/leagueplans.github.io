@@ -27,7 +27,7 @@ object ItemsScraper {
       Success(ItemsScraper.Mode.Pages(pages.toVector))
     }.map(_.getOrElse(ItemsScraper.Mode.All))
 
-  val infoboxSelector: WikiSelector =
+  private val infoboxSelector: WikiSelector =
     WikiSelector.PagesThatTransclude(PageDescriptor.Name.Template("Infobox Item"))
 
   private val ignoredCategories: Set[PageDescriptor.Name.Category] =
@@ -48,7 +48,7 @@ object ItemsScraper {
   }
 
   /** An item version, along with what the wiki reports about the files of its icons. */
-  type WithFiles = (PageDescriptor, WikiItem.Infoboxes, Map[PageDescriptor.Name.File, FileInfo])
+  private type WithFiles = (PageDescriptor, WikiItem.Infoboxes, Map[PageDescriptor.Name.File, FileInfo])
 }
 
 /** @param accepted the item data already accepted, whose icons need not be downloaded again
@@ -66,7 +66,7 @@ final class ItemsScraper(
     )
 
   /** Every item version, along with what the wiki reports about the files of its icons. */
-  def scrapeFiles(using Trace): PageStream[ItemsScraper.WithFiles] = {
+  private def scrapeFiles(using Trace): PageStream[ItemsScraper.WithFiles] = {
     val source = mode match {
       case ItemsScraper.Mode.Pages(pages) => fetch(pages)
       case ItemsScraper.Mode.All => fetchAll

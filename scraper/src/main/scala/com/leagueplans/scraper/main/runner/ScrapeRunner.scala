@@ -18,7 +18,6 @@ object ScrapeRunner {
       case "items" => Success(ScrapeItemsRunner.make(args, targetDirectory, client))
       case "league-tasks" => Success(ScrapeLeagueTasksRunner.make(args, targetDirectory, client))
       case "skill-icons" => Success(ScrapeSkillIconsRunner.make(targetDirectory, client))
-      case "record-icon-sha1s" => Success(RecordIconSHA1sRunner.make(args, targetDirectory, client))
       case other => Failure(IllegalArgumentException(s"Unexpected scraper key [$other]"))
     }).flatten
 }

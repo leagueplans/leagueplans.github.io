@@ -55,9 +55,6 @@ private[http] object QueryParamsGenerator {
           "rvprop" -> "content",
           "rvslots" -> "main"
         )
-
-      case WikiContentType.LastEdited =>
-        QueryParams("rvprop" -> "timestamp")
     }).addQueryParam("prop", contentType.prop)
 
   // https://oldschool.runescape.wiki/api.php?action=help&modules=query%2Bimageinfo
@@ -65,7 +62,7 @@ private[http] object QueryParamsGenerator {
     QueryParams(
       "titles" -> files.map(_.wikiName).mkString("|"),
       "prop" -> "imageinfo",
-      "iiprop" -> "sha1|timestamp",
+      "iiprop" -> "sha1",
       "redirects" -> "1"
     )
 }
