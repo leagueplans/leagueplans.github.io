@@ -14,25 +14,25 @@ jobs:
     # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
-    - uses: coursier/cache-action@v6
+    - uses: coursier/cache-action@v8
 
-    - uses: actions/setup-java@v4
+    - uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: 17
 
     - uses: sbt/setup-sbt@v1
       with:
-        sbt-runner-version: 1.10.7
+        sbt-runner-version: 1.13.0
 
     - name: Run scraper
       run: ./.github/scripts/scrape_wiki.sh ${{ github.event.inputs.resource }}
 
     - name: Archive run logs
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: run-logs
         path: logs/run.log
@@ -47,7 +47,7 @@ jobs:
 
     - name: Archive changeset
       if: github.event.inputs.resource == 'items'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: items-changeset
         path: tmp/dump
@@ -64,7 +64,7 @@ jobs:
 
     - name: Raise PR for any changes
       if: github.event.inputs.resource != 'items'
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@v8
       with:
         commit-message: Update ${{ github.event.inputs.resource }}
         branch: scraper/${{ github.event.inputs.resource }}
