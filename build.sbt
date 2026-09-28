@@ -2,7 +2,7 @@ import org.scalajs.linker.interface.ESVersion
 
 name := "league-plans"
 
-ThisBuild / scalaVersion := "3.8.4"
+ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / scalacOptions ++= List(
   "-deprecation",
   "-encoding", "utf-8",
