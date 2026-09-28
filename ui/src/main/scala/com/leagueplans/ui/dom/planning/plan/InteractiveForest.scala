@@ -14,6 +14,7 @@ import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import org.scalajs.dom.document
 import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
@@ -79,9 +80,29 @@ object InteractiveForest {
       L.children <-- toSteps(forester, dom),
       L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
       completedStepBinder,
-      forester.updates --> (update => dom.eval(update))
+      forester.updates --> (update => dom.eval(update)),
+      restoreBrowserFocus(forester, focusContext, dom)
     )
   }
+
+  /** The browser drops focus from a step's element when the element moves, and can't give focus
+    * to a step inside a superstep that hasn't started opening. Once the DOM has settled, this
+    * returns focus to the focused step, unless something outside the plan has taken it. */
+  private def restoreBrowserFocus(
+    forester: Forester[Step.ID, Step],
+    focusContext: FocusContext,
+    dom: ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])]
+  ): L.Modifier[L.HtmlElement] =
+    L.inContext(tree =>
+      EventStream
+        .merge(focusContext.focusID.changes.mapToUnit, forester.signal.changes.mapToUnit)
+        .delay(ms = 0)
+        .sample(focusContext.focusID) --> { maybeFocus =>
+          val active = document.activeElement
+          if (active == null || active == document.body || tree.ref.contains(active))
+            maybeFocus.flatMap(dom.get).foreach((element, _) => element.ref.focus())
+        }
+    )
 
   @js.native @JSImport("/styles/planning/plan/interactiveForest.module.css", JSImport.Default)
   private object Styles extends js.Object {
