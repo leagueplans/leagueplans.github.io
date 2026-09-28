@@ -44,7 +44,7 @@ object PlanElement {
         focusController,
         toastPublisher
       ).amend(L.cls(Styles.steps)),
-      HotkeyModifiers(focusContext.focusID, focusController, newStepForm, deleteStepForm)
+      HotkeyModifiers(focusContext.focusID, focusController, StepMover(forester), newStepForm, deleteStepForm)
     )
   }
 

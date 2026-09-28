@@ -18,6 +18,13 @@ object KeyboardShortcutsModal {
           List("Delete") -> "Delete the focused step"
         ),
         toSection(
+          "Step movement",
+          List("Alt", "↑") -> "Move the focused step up",
+          List("Alt", "↓") -> "Move the focused step down",
+          List("Alt", "→") -> "Make the focused step a substep of the step above",
+          List("Alt", "←") -> "Move the focused step out of its superstep"
+        ),
+        toSection(
           "Step navigation",
           List("Ctrl", "↓") -> "Focus the next step",
           List("Ctrl", "↑") -> "Focus the previous step",

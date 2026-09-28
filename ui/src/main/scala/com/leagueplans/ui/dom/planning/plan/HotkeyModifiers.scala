@@ -11,11 +11,13 @@ object HotkeyModifiers {
   def apply(
     focus: Signal[Option[Step.ID]],
     focusController: FocusController,
+    stepMover: StepMover,
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm
   ): L.Modifier[L.Element] =
     List(
       toFocusChangeListener(focusController),
+      toStepMovementListener(focus, stepMover),
       toStepModifierListeners(focus, newStepForm, deleteStepForm)
     )
 
@@ -29,6 +31,30 @@ object HotkeyModifiers {
         case _ => /* Do nothing */
       }
     )
+
+  private def toStepMovementListener(
+    focusSignal: Signal[Option[Step.ID]],
+    mover: StepMover
+  ): Binder.Base =
+    L.documentEvents(_.onKeyDown)
+      .filterNot(shouldIgnore)
+      .filter(event => event.altKey && !event.ctrlKey)
+      .compose(_.withCurrentValueOf(focusSignal)) --> {
+        case (event, Some(step)) =>
+          val maybeMove = event.key match {
+            case KeyValue.ArrowUp => Some(mover.moveUp)
+            case KeyValue.ArrowDown => Some(mover.moveDown)
+            case KeyValue.ArrowRight => Some(mover.indent)
+            case KeyValue.ArrowLeft => Some(mover.outdent)
+            case _ => None
+          }
+          maybeMove.foreach { move =>
+            // Alt + left/right would otherwise navigate the browser's history
+            event.preventDefault()
+            move(step)
+          }
+        case (_, None) => /* Do nothing */
+      }
 
   private def toStepModifierListeners(
     focusSignal: Signal[Option[Step.ID]],
