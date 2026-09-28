@@ -78,6 +78,21 @@ final class FocusController private[FocusController](updater: Observer[FocusCont
         }
     }
 
+  /** If the focus is on the step or one of its descendants, moves it to the next step outside
+    * of the step's subtree. Falls back to the previous step, rather than wrapping around to
+    * the start of the plan. */
+  def moveOutOf(step: Step.ID): Unit =
+    updater.onNext {
+      case (Some(current), forest) if current == step || forest.ancestors(current).contains(step) =>
+        nextNonChild(step, forest).orElse(
+          forest.siblings(step).takeWhile(_ != step).lastOption match {
+            case Some(prior) => Some(lowestDescendant(prior, forest))
+            case None => forest.toParent.get(step)
+          }
+        )
+      case (current, _) => current
+    }
+
   @tailrec
   private def lowestDescendant(step: Step.ID, forest: Forest[Step.ID, Step]): Step.ID =
     forest.toChildren.get(step).flatMap(_.lastOption) match {

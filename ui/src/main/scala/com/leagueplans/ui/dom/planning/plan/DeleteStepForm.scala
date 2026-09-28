@@ -36,7 +36,7 @@ final class DeleteStepForm(
       modal,
       toForm(forester.signal.now().subtree(step)),
       _ => {
-        focusController.next(ignoreChildren = true)
+        focusController.moveOutOf(step)
         forester.remove(step)
       }
     ).open()
