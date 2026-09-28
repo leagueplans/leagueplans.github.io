@@ -5,7 +5,7 @@ import com.leagueplans.common.model.{InfoboxKey, ItemData}
 import com.leagueplans.scrapereview.dom.{PagedList, Styles}
 import com.leagueplans.scrapereview.filesystem.PickedDirectory
 import com.leagueplans.scrapereview.items.ReviewInputs
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
 
 private[dom] object ReimagedSection {
 
@@ -16,16 +16,24 @@ private[dom] object ReimagedSection {
     */
   def apply(inputs: ReviewInputs, root: PickedDirectory): L.Div = {
     val accepted = inputs.baseline.toMap
+    val reuploaded = inputs.changeset.reimaged.size - inputs.redrawn.size
 
     L.div(
       L.cls(Styles.list),
       L.p(
         L.cls(Styles.note),
-        s"${inputs.changeset.reimaged.size} items whose icons changed but whose data did " +
-          "not. Nothing to decide — applying copies in the new icons and records them against " +
-          "each item."
+        s"${inputs.redrawn.size} items whose icons changed but whose data did not. Nothing " +
+          "to decide — applying copies in the new icons and records them against each item."
       ),
-      PagedList(inputs.changeset.reimaged)((key, images) =>
+      Option.when(reuploaded > 0)(
+        L.p(
+          L.cls(Styles.note),
+          s"$reuploaded more had icons re-uploaded to the wiki without changing. They aren't " +
+            "shown, but applying records the wiki's new SHA-1s, so later scrapes can skip " +
+            "downloading them."
+        )
+      ),
+      PagedList(inputs.redrawn)((key, images) =>
         card(key, images, accepted.get(key), inputs, root)
       )
     )

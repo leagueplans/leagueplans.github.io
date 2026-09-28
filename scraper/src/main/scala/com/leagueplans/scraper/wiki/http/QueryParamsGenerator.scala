@@ -1,5 +1,6 @@
 package com.leagueplans.scraper.wiki.http
 
+import com.leagueplans.scraper.wiki.model.PageDescriptor
 import zio.http.QueryParams
 
 private[http] object QueryParamsGenerator {
@@ -54,5 +55,17 @@ private[http] object QueryParamsGenerator {
           "rvprop" -> "content",
           "rvslots" -> "main"
         )
+
+      case WikiContentType.LastEdited =>
+        QueryParams("rvprop" -> "timestamp")
     }).addQueryParam("prop", contentType.prop)
+
+  // https://oldschool.runescape.wiki/api.php?action=help&modules=query%2Bimageinfo
+  def fileInfo(files: Iterable[PageDescriptor.Name.File]): QueryParams =
+    QueryParams(
+      "titles" -> files.map(_.wikiName).mkString("|"),
+      "prop" -> "imageinfo",
+      "iiprop" -> "sha1|timestamp",
+      "redirects" -> "1"
+    )
 }

@@ -15,7 +15,7 @@ final class ApplyPreviewTest extends AnyFreeSpec with Matchers {
       gameID = None,
       name = name,
       examine = s"It's a $name.",
-      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", hash)),
+      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", hash, None)),
       bankable = Item.Bankable.No,
       stackable = false,
       noteable = false,
@@ -40,7 +40,7 @@ final class ApplyPreviewTest extends AnyFreeSpec with Matchers {
       added = List(key(20) -> item("Bucket"), key(21) -> item("Chisel")),
       removed = List(key(1) -> item("Bucket"), key(3) -> item("Shears"), key(4) -> item("Anvil")),
       modified = List(ItemChangeset.Modified(key(5), item("Rake"), item("Rake", hash = "new"))),
-      reimaged = List(key(6) -> NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "redrawn"))),
+      reimaged = List(key(6) -> NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "redrawn", None))),
       withheld = List.empty,
       failedRequests = List.empty
     )
@@ -93,6 +93,14 @@ final class ApplyPreviewTest extends AnyFreeSpec with Matchers {
         (summary.acceptedModifications, summary.rejectedModifications, summary.reimaged) shouldBe (1, 0, 1)
         (summary.itemsBefore, summary.itemsAfter) shouldBe (6, 5)
         (summary.nextIDBefore, summary.nextIDAfter) shouldBe (16, 17)
+      }
+
+      "doesn't count an icon that was only re-uploaded to the wiki as changed" in {
+        val reuploaded = key(2) -> item("Spade").images.map(_.copy(wikiSHA1 = Some("9a8b7c6d")))
+        val withReupload = changeset.copy(reimaged = reuploaded :: changeset.reimaged)
+        val resolved = OutputResolver.resolve(withReupload, idMap, baseline, decisions)
+
+        ApplyPreview.from(withReupload, idMap, baseline, decisions, resolved).reimaged shouldBe 1
       }
     }
 

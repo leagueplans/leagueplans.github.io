@@ -1,21 +1,25 @@
 package com.leagueplans.scraper.wiki.scraper
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.Item
+import com.leagueplans.common.model.{InfoboxKey, Item, ItemData}
 import com.leagueplans.scraper.main.CommandLineArgs
 import com.leagueplans.scraper.wiki.decoder.items.{ItemPageDecoder, ItemPageObjectExtractor}
 import com.leagueplans.scraper.wiki.http.{WikiClient, WikiContentType, WikiSelector}
-import com.leagueplans.scraper.wiki.model.{Page, PageDescriptor, WikiItem}
+import com.leagueplans.scraper.wiki.model.{FileInfo, Page, PageDescriptor, WikiItem}
 import com.leagueplans.scraper.wiki.parser.TermParser
 import com.leagueplans.scraper.wiki.streaming.*
 import zio.stream.ZStream
-import zio.{Chunk, Task, Trace, UIO, ZIO}
+import zio.{Cause, Chunk, Task, Trace, UIO, ZIO}
 
 import scala.util.{Success, Try}
 
 object ItemsScraper {
-  def make(args: CommandLineArgs, client: WikiClient): Try[ItemsScraper] =
-    parseMode(args).map(ItemsScraper(client, _))
+  def make(
+    args: CommandLineArgs,
+    client: WikiClient,
+    accepted: Map[InfoboxKey, ItemData]
+  ): Try[ItemsScraper] =
+    parseMode(args).map(ItemsScraper(client, _, accepted))
 
   private def parseMode(args: CommandLineArgs): Try[ItemsScraper.Mode] =
     args.getOpt("pages") { input =>
@@ -23,7 +27,9 @@ object ItemsScraper {
       Success(ItemsScraper.Mode.Pages(pages.toVector))
     }.map(_.getOrElse(ItemsScraper.Mode.All))
 
-  private val infoboxSelector = WikiSelector.PagesThatTransclude(PageDescriptor.Name.Template("Infobox Item"))
+  val infoboxSelector: WikiSelector =
+    WikiSelector.PagesThatTransclude(PageDescriptor.Name.Template("Infobox Item"))
+
   private val ignoredCategories: Set[PageDescriptor.Name.Category] =
     Set(
       "Inaccessible items",
@@ -31,14 +37,36 @@ object ItemsScraper {
       "Needs examine added"
     ).map(PageDescriptor.Name.Category.apply)
 
+  /** How many item versions have their icons' files looked up together. Most have one icon,
+    * so a group this size usually fits in the wiki's limit of 50 names a request.
+    */
+  private val fileInfoGroupSize = 45
+
   enum Mode {
     case Pages(raw: Vector[PageDescriptor.Name.Other])
     case All
   }
+
+  /** An item version, along with what the wiki reports about the files of its icons. */
+  type WithFiles = (PageDescriptor, WikiItem.Infoboxes, Map[PageDescriptor.Name.File, FileInfo])
 }
 
-final class ItemsScraper(client: WikiClient, mode: ItemsScraper.Mode) {
-  def scrape(using Trace): PageStream[WikiItem] = {
+/** @param accepted the item data already accepted, whose icons need not be downloaded again
+  *                 while the wiki still holds the same files for them
+  */
+final class ItemsScraper(
+  client: WikiClient,
+  mode: ItemsScraper.Mode,
+  accepted: Map[InfoboxKey, ItemData]
+) {
+  def scrape(using Trace): PageStream[WikiItem] =
+    scrapeFiles.pageMapZIOPar(n = 8)((page, infoboxes, files) =>
+      fetchImages(InfoboxKey(page.id, infoboxes.version.raw), infoboxes.item.imageBins, files)
+        .map(WikiItem(infoboxes, _))
+    )
+
+  /** Every item version, along with what the wiki reports about the files of its icons. */
+  def scrapeFiles(using Trace): PageStream[ItemsScraper.WithFiles] = {
     val source = mode match {
       case ItemsScraper.Mode.Pages(pages) => fetch(pages)
       case ItemsScraper.Mode.All => fetchAll
@@ -51,9 +79,10 @@ final class ItemsScraper(client: WikiClient, mode: ItemsScraper.Mode) {
       .pageMapEither(identity)
       .pageExtend
       .pageMapEither((page, objects) => ItemPageDecoder.decode(page.name, objects))
-      .pageMapZIOPar(n = 8)(infoboxes =>
-        fetchImages(infoboxes.item.imageBins).map(WikiItem(infoboxes, _))
-      )
+      .pageExtend
+      .grouped(ItemsScraper.fileInfoGroupSize)
+      .mapZIO(withFileInfo)
+      .flattenChunks
   }
 
   private def fetch(pages: Vector[PageDescriptor.Name.Other]): PageStream[String] =
@@ -83,12 +112,54 @@ final class ItemsScraper(client: WikiClient, mode: ItemsScraper.Mode) {
         case Left(_) => true
       }
 
+  /** Looks up the files of a group of items' icons in as few requests as the wiki allows.
+    *
+    * A lookup that fails costs nothing but time: without the wiki's digests, every icon in
+    * the group is simply downloaded, as it would have been before digests were recorded.
+    */
+  private def withFileInfo(
+    group: Chunk[Either[PageStream.Error, Page[(PageDescriptor, WikiItem.Infoboxes)]]]
+  )(using Trace): UIO[Chunk[Either[PageStream.Error, Page[ItemsScraper.WithFiles]]]] = {
+    val files =
+      group.collect { case Right((_, (_, infoboxes))) => infoboxes.item.imageBins.toList.map(_._2) }.flatten
+
+    client
+      .fetchFileInfo(files)
+      .catchAll(error =>
+        ZIO.logWarningCause("Failed to look up icon files; downloading them instead", Cause.fail(error))
+          .as(Map.empty)
+      )
+      .map(infos =>
+        group.map(_.map { case (page, (descriptor, infoboxes)) => (page, (descriptor, infoboxes, infos)) })
+      )
+  }
+
   private def fetchImages(
-    wikiBins: NonEmptyList[(Item.Image.Bin, PageDescriptor.Name.File)]
-  )(using Trace): Task[NonEmptyList[WikiItem.Image]] =
-    ZIO.foreachPar(wikiBins.toList)((bin, fileName) =>
-      client
-        .fetchImage(fileName)
-        .map(data => WikiItem.Image(bin, fileName, data))
-    ).map(NonEmptyList.fromListUnsafe)
+    key: InfoboxKey,
+    wikiBins: NonEmptyList[(Item.Image.Bin, PageDescriptor.Name.File)],
+    files: Map[PageDescriptor.Name.File, FileInfo]
+  )(using Trace): Task[NonEmptyList[WikiItem.Image]] = {
+    val acceptedImages =
+      accepted
+        .get(key)
+        .fold(Map.empty[Int, ItemData.Image])(_.images.toList.map(i => i.bin.floor -> i).toMap)
+
+    ZIO.foreachPar(wikiBins.toList) { (bin, fileName) =>
+      val wikiSHA1 = files.get(fileName).map(_.sha1)
+
+      acceptedImages.get(bin.floor) match {
+        // The wiki's digest changes whenever a file is re-uploaded, so a match means the
+        // accepted icon is still the one on the wiki.
+        case Some(image)
+          if wikiSHA1.nonEmpty && image.wikiSHA1 == wikiSHA1 && image.extension == fileName.extension =>
+          ZIO.logDebug("Skipping icon download: file unchanged since accepted")
+            .as(WikiItem.Image(bin, fileName, wikiSHA1, WikiItem.Image.Content.Accepted(image.hash)))
+
+        case _ =>
+          client
+            .fetchImage(fileName)
+            .map(data => WikiItem.Image(bin, fileName, wikiSHA1, WikiItem.Image.Content.Downloaded(data)))
+      }
+    }.map(NonEmptyList.fromListUnsafe)
+  }
 }

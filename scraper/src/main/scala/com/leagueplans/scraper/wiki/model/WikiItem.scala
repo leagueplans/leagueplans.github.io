@@ -10,10 +10,21 @@ object WikiItem {
     case Live(raw: Int)
   }
 
+  object Image {
+    enum Content {
+      /** Downloaded, because its file was new to us or had changed. */
+      case Downloaded(data: Array[Byte])
+
+      /** Not downloaded: its file is the one already accepted, whose hash is carried over. */
+      case Accepted(hash: String)
+    }
+  }
+
   final case class Image(
     bin: Item.Image.Bin,
     fileName: PageDescriptor.Name.File,
-    data: Array[Byte]
+    wikiSHA1: Option[String],
+    content: Image.Content
   )
 
   final case class Infoboxes(

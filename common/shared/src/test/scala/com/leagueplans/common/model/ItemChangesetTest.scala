@@ -13,7 +13,7 @@ final class ItemChangesetTest extends JsonSpec {
         gameID = Some(2365),
         name = "'perfect' gold bar",
         examine = "It's a bar of 'perfect' gold.",
-        images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978")),
+        images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", Some("24cc5ba0"))),
         bankable = Item.Bankable.Yes(stacks = true),
         stackable = false,
         noteable = false,
@@ -149,6 +149,39 @@ final class ItemChangesetTest extends JsonSpec {
       "orders reimaged items by key" in {
         val entries = List(InfoboxKey(5, List.empty) -> item.images, InfoboxKey(4, List.empty) -> item.images)
         ItemChangeset.empty.copy(reimaged = entries).sorted.reimaged shouldBe entries.reverse
+      }
+    }
+
+    "redrawn" - {
+      val key = InfoboxKey(6, List.empty)
+      val baseline = Map(key -> item)
+      val acceptedImage = item.images.head
+
+      def redrawn(images: ItemData.Image*): List[(InfoboxKey, NonEmptyList[ItemData.Image])] =
+        ItemChangeset
+          .empty
+          .copy(reimaged = List(key -> NonEmptyList.fromListUnsafe(images.toList)))
+          .redrawn(baseline)
+
+      "includes an icon showing a different picture" in {
+        redrawn(acceptedImage.copy(hash = "fedcba9876543210")) should have size 1
+      }
+
+      "includes an icon gaining a bin" in {
+        redrawn(acceptedImage, acceptedImage.copy(bin = Item.Image.Bin(5))) should have size 1
+      }
+
+      "leaves out an icon that was only re-uploaded" in {
+        redrawn(acceptedImage.copy(wikiSHA1 = Some("9a8b7c6d"))) shouldBe empty
+      }
+
+      "leaves out an icon whose wiki SHA-1 was recorded for the first time" in {
+        val unrecorded = ItemChangeset.empty.copy(reimaged = List(key -> item.images))
+        unrecorded.redrawn(Map(key -> item.copy(images = item.images.map(_.picture)))) shouldBe empty
+      }
+
+      "includes an item missing from the baseline" in {
+        ItemChangeset.empty.copy(reimaged = List(key -> item.images)).redrawn(Map.empty) should have size 1
       }
     }
   }

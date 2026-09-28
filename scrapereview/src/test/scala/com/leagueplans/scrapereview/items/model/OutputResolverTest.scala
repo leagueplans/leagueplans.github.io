@@ -10,7 +10,7 @@ final class OutputResolverTest extends AnyFreeSpec with Matchers {
   private def key(pageID: Int): InfoboxKey = InfoboxKey(pageID, List.empty)
 
   private def image(bin: Int, hash: String): ItemData.Image =
-    ItemData.Image(Item.Image.Bin(bin), "png", hash)
+    ItemData.Image(Item.Image.Bin(bin), "png", hash, None)
 
   private def item(name: String, hash: String = "aaa"): ItemData =
     ItemData(
@@ -285,6 +285,17 @@ final class OutputResolverTest extends AnyFreeSpec with Matchers {
       "promotes its images to the item's existing ID" in {
         resolve(changeset).imagesToCopy shouldBe
           List(OutputResolver.ImageCopy(key(1), Item.ID(10), newImages))
+      }
+    }
+
+    "when an item's icon was only re-uploaded to the wiki" - {
+      val reuploaded = bucket.images.map(_.copy(wikiSHA1 = Some("9a8b7c6d")))
+      val changeset = ItemChangeset.empty.copy(reimaged = List(key(1) -> reuploaded))
+
+      // Without this every later scrape would download the icon again, since the SHA-1 it
+      // compares against would never match.
+      "records the wiki's new SHA-1 against the accepted data" in {
+        resolve(changeset).baseline should contain(key(1) -> bucket.copy(images = reuploaded))
       }
     }
 

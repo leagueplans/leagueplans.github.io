@@ -53,7 +53,7 @@ object ApplyPreview {
       retained = decisions.removals.values.count(_.contains(Removal.Retained)),
       acceptedModifications = acceptedModifications.size,
       rejectedModifications = rejected.size,
-      reimaged = changeset.reimaged.size,
+      reimaged = changeset.redrawn(accepted).size,
       iconFoldersWritten = resolution.imagesToCopy.size,
       iconFoldersDeleted = resolution.imagesToDelete.size,
       itemsBefore = baseline.size,

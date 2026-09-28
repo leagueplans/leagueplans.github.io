@@ -7,13 +7,15 @@ import org.scalatest.Assertion
 
 final class ItemDataTest extends JsonSpec {
   "ItemData" - {
-    val image = ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978")
+    val sha1 = "24cc5ba0367a04f9dc1de17a0d8167e8c0fe81ff"
+    val image = ItemData.Image(Item.Image.Bin(1), "png", "0f1e2d3c4b5a6978", Some(sha1))
 
     val imageJson =
       Json.obj(
         "bin" -> Json.fromInt(1),
         "extension" -> Json.fromString("png"),
-        "hash" -> Json.fromString("0f1e2d3c4b5a6978")
+        "hash" -> Json.fromString("0f1e2d3c4b5a6978"),
+        "wikiSHA1" -> Json.fromString(sha1)
       )
 
     val item =
@@ -29,17 +31,39 @@ final class ItemDataTest extends JsonSpec {
       )
 
     "Image" - {
-      "encoding values to and decoding values from an expected encoding" in
-        testRoundTripSerialisation(image, imageJson)
+      "encoding values to and decoding values from an expected encoding" - {
+        "with a recorded wiki SHA-1" in
+          testRoundTripSerialisation(image, imageJson)
+
+        "without one" in
+          testRoundTripSerialisation(
+            image.copy(wikiSHA1 = None),
+            imageJson.mapObject(_.add("wikiSHA1", Json.Null))
+          )
+      }
+
+      "decoding images written before wiki SHA-1s were recorded" in {
+        imageJson.mapObject(_.remove("wikiSHA1")).as[ItemData.Image].value shouldBe
+          image.copy(wikiSHA1 = None)
+      }
 
       "fileName" - {
         def test(image: ItemData.Image, expectedFileName: String): Assertion =
           image.fileName shouldBe expectedFileName
 
         "combines the bin with the extension" in
-          test(ItemData.Image(Item.Image.Bin(1), "png", "abc"), "1.png")
+          test(ItemData.Image(Item.Image.Bin(1), "png", "abc", None), "1.png")
         "uses the bin's floor, not its position" in
-          test(ItemData.Image(Item.Image.Bin(100), "gif", "abc"), "100.gif")
+          test(ItemData.Image(Item.Image.Bin(100), "gif", "abc", None), "100.gif")
+      }
+
+      "picture" - {
+        "forgets the wiki SHA-1" in {
+          image.picture shouldBe image.copy(wikiSHA1 = None)
+        }
+        "keeps everything that can be seen" in {
+          image.picture should not be image.copy(hash = "fedcba9876543210").picture
+        }
       }
     }
 

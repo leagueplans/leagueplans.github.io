@@ -62,6 +62,20 @@ final case class ItemChangeset(
   withheld: List[(InfoboxKey, ItemData)],
   failedRequests: List[String]
 ) {
+  /** The reimaged items whose icons now show a different picture.
+    *
+    * The rest were re-uploaded to the wiki unchanged, which alters only the wiki's digest of
+    * the file. They still have to be applied, so that the accepted data records the new
+    * digest and later scrapes can skip downloading those icons, but there is nothing in
+    * them to look at.
+    */
+  def redrawn(baseline: Map[InfoboxKey, ItemData]): List[(InfoboxKey, NonEmptyList[ItemData.Image])] =
+    reimaged.filterNot((key, images) =>
+      baseline.get(key).exists(accepted =>
+        accepted.images.toList.map(_.picture).toSet == images.toList.map(_.picture).toSet
+      )
+    )
+
   /** Whether there is anything to review. Withheld items and failed requests are not
     * changes, only reasons the changes may be incomplete.
     */

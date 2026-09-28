@@ -5,8 +5,9 @@ import com.leagueplans.common.utils.circe.JsonObjectOps.{decodeNestedField, deco
 import com.leagueplans.scraper.http.HTTPClient
 import com.leagueplans.scraper.telemetry.{WithAnnotation, WithStreamAnnotation}
 import com.leagueplans.scraper.wiki.http.response.WikiResponse
-import com.leagueplans.scraper.wiki.model.PageDescriptor
+import com.leagueplans.scraper.wiki.model.{FileInfo, PageDescriptor}
 import com.leagueplans.scraper.wiki.streaming.*
+import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import zio.http.*
 import zio.http.Header.UserAgent
@@ -14,6 +15,7 @@ import zio.stream.ZStream
 import zio.{Chunk, Schedule, Task, Trace, ZIO}
 
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 
 private object WikiClient {
   private val retryableStatuses: Set[Status] = Set(
@@ -30,6 +32,22 @@ private object WikiClient {
     )
     
   private val streamFanOut = 4
+
+  // The shape of an imageinfo query's response, which unlike the other queries can
+  // describe pages that don't exist and so carry no page ID.
+  private final case class TitleMapping(from: String, to: String)
+  private final case class ImageInfo(sha1: String, timestamp: Instant)
+  private final case class FilePage(title: String, imageinfo: Option[List[ImageInfo]])
+  private final case class FileQuery(
+    normalized: Option[List[TitleMapping]],
+    redirects: Option[List[TitleMapping]],
+    pages: List[FilePage]
+  )
+
+  private given Decoder[TitleMapping] = deriveDecoder
+  private given Decoder[ImageInfo] = deriveDecoder
+  private given Decoder[FilePage] = deriveDecoder
+  private given Decoder[FileQuery] = deriveDecoder
 }
 
 final class WikiClient(
@@ -76,6 +94,52 @@ final class WikiClient(
           )
         }
     }
+
+  /** What the wiki reports about each file, without downloading any of them. A file the
+    * wiki reports nothing for is left out, so its caller can fall back on downloading it.
+    */
+  def fetchFileInfo(
+    files: Iterable[PageDescriptor.Name.File]
+  )(using Trace): Task[Map[PageDescriptor.Name.File, FileInfo]] =
+    ZIO
+      .foreach(files.toVector.distinct.grouped(pageLimit).toVector)(batch =>
+        execute(buildQuery(QueryParamsGenerator.fileInfo(batch)), kindLabel = "file-info")
+          .flatMap(response => ZIO.fromEither(decodeFileInfo(batch, response)))
+      )
+      .map(_.flatten.toMap)
+
+  private def decodeFileInfo(
+    files: Vector[PageDescriptor.Name.File],
+    response: Array[Byte]
+  ): Either[Exception, Vector[(PageDescriptor.Name.File, FileInfo)]] = {
+    val text = String(response, StandardCharsets.UTF_8)
+
+    parser.decode[WikiResponse.Failure](text) match {
+      case Right(failure) =>
+        Left(WikiFetchException.ErrorResponse(failure))
+
+      case Left(_) =>
+        parser
+          .decode[JsonObject](text)
+          .flatMap(_.decodeNestedField[WikiClient.FileQuery]("query")(List.empty))
+          .map { query =>
+            // The wiki answers under its own spelling of each name, and under the name of
+            // the file a redirect points to, so both have to be followed back.
+            val normalised = query.normalized.toList.flatten.map(m => m.from -> m.to).toMap
+            val redirects = query.redirects.toList.flatten.map(m => m.from -> m.to).toMap
+            val pages = query.pages.map(page => page.title -> page).toMap
+
+            files.flatMap { file =>
+              val title = normalised.getOrElse(file.wikiName, file.wikiName)
+              val target = redirects.getOrElse(title, title)
+              pages
+                .get(target)
+                .flatMap(_.imageinfo.flatMap(_.headOption))
+                .map(info => file -> FileInfo(info.sha1, info.timestamp, viaRedirect = target != title))
+            }
+          }
+    }
+  }
 
   private def lookupImageURL(pathFileName: String)(using Trace): Task[URL] =
     execute(
@@ -179,5 +243,7 @@ final class WikiClient(
     contentType match {
       case WikiContentType.Revisions =>
         json.decodeNestedField[String]("slots", "main", "content")(List(cursorOp))
+      case WikiContentType.LastEdited =>
+        json.decodeNestedField[String]("timestamp")(List(cursorOp))
     }
 }

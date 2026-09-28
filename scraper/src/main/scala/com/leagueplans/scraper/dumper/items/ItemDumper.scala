@@ -19,33 +19,40 @@ import scala.util.{Success, Try}
 object ItemDumper {
   private type PipelineOutput = (key: InfoboxKey, item: ItemData, images: Chunk[(Path, Array[Byte])])
 
-  def make(args: CommandLineArgs, targetDirectory: Path)(using Trace): Task[ItemDumper] = {
+  private type DescribedImage = (image: ItemData.Image, maybeData: Option[Array[Byte]])
+
+  def make(
+    originalItems: Map[InfoboxKey, ItemData],
+    targetDirectory: Path
+  )(using Trace): Task[ItemDumper] =
     for {
-      dataPath <- ZIO.fromTry(args.get("original-items")(path => Try(Path.of(path))))
-      originalItems <- ZIO.fromTry(loadOriginalData(dataPath))
       dumpDirectory <- ZIO.fromTry(makeDirectories(targetDirectory, "dump"))
       changesetDumper <- ZIO.fromTry(makeChangesetDumper(dumpDirectory))
       iconDumper <- makeIconDumper(dumpDirectory)
       itemCounter <- Metric.makeCounter("items.item-dumper.items")
     } yield ItemDumper(originalItems, changesetDumper, iconDumper, itemCounter)
-  }
+
+  /** The accepted item data named by the `original-items` argument, in the order it is
+    * stored. None has been accepted yet if the file doesn't exist.
+    */
+  def loadOriginalData(args: CommandLineArgs): Try[Vector[(InfoboxKey, ItemData)]] =
+    args.get("original-items")(path => Try(Path.of(path))).flatMap(path =>
+      Try(Files.exists(path)).flatMap {
+        case true =>
+          for {
+            contents <- Try(Files.readString(path))
+            data <- decode[Vector[(InfoboxKey, ItemData)]](contents).toTry
+          } yield data
+
+        case false => Success(Vector.empty)
+      }
+    )
 
   private def makeDirectories(targetDirectory: Path, relativePath: String): Try[Path] =
     for {
       directory <- Try(targetDirectory.resolve(relativePath))
       _ <- Try(Files.createDirectories(directory))
     } yield directory
-
-  private def loadOriginalData(path: Path): Try[Map[InfoboxKey, ItemData]] =
-    Try(Files.exists(path)).flatMap {
-      case true =>
-        for {
-          contents <- Try(Files.readString(path))
-          data <- decode[Vector[(InfoboxKey, ItemData)]](contents).toTry
-        } yield data.toMap
-
-      case false => Success(Map.empty)
-    }
 
   private def makeChangesetDumper(directory: Path): Try[JsonDumper[ItemChangeset]] =
     for {
@@ -94,13 +101,19 @@ final class ItemDumper(
     ZPipeline.map((page, wikiItem) =>
       val infoboxKey = InfoboxKey(page.id, wikiItem.infoboxes.version.raw)
       // Hashed once and kept alongside its bytes, so that the description of an image and
-      // the decision to write it out cannot fall out of step.
-      val images =
+      // the decision to write it out cannot fall out of step. An icon that wasn't downloaded
+      // is the accepted one, and has no bytes to write.
+      val images: NonEmptyList[ItemDumper.DescribedImage] =
         wikiItem.images.map(image =>
-          (ItemData.Image(image.bin, image.fileName.extension, ImageHash.of(image.data)), image.data)
+          image.content match {
+            case WikiItem.Image.Content.Downloaded(data) =>
+              (ItemData.Image(image.bin, image.fileName.extension, ImageHash.of(data), image.wikiSHA1), Some(data))
+            case WikiItem.Image.Content.Accepted(hash) =>
+              (ItemData.Image(image.bin, image.fileName.extension, hash, image.wikiSHA1), None)
+          }
         )
 
-      (infoboxKey, toItemData(wikiItem, images.map(_._1)), toImages(infoboxKey, images))
+      (infoboxKey, toItemData(wikiItem, images.map(_.image)), toImages(infoboxKey, images))
     )
 
   private def itemSink(using Trace): ZSink[Any, Nothing, ItemDumper.PipelineOutput, Nothing, Map[InfoboxKey, ItemData]] =
@@ -148,7 +161,7 @@ final class ItemDumper(
     */
   private def toImages(
     key: InfoboxKey,
-    images: NonEmptyList[(ItemData.Image, Array[Byte])]
+    images: NonEmptyList[ItemDumper.DescribedImage]
   ): Chunk[(Path, Array[Byte])] = {
     val acceptedHashes =
       originalItems
@@ -160,7 +173,7 @@ final class ItemDumper(
         .toList
         .iterator
         .collect {
-          case (image, data) if !acceptedHashes.get(image.bin.floor).contains(image.hash) =>
+          case (image, Some(data)) if !acceptedHashes.get(image.bin.floor).contains(image.hash) =>
             Path.of(s"${ItemChangeset.imageDirectory(key)}/${image.fileName}") -> data
         }
     )

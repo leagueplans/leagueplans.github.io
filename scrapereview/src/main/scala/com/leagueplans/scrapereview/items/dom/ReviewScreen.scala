@@ -71,7 +71,7 @@ private[dom] object ReviewScreen {
       count("added", inputs.changeset.added.size),
       count("removed", inputs.changeset.removed.size),
       count("modified", inputs.changeset.modified.size),
-      count("reimaged", inputs.changeset.reimaged.size),
+      count("reimaged", inputs.redrawn.size),
       count("withheld", inputs.changeset.withheld.size),
       count("accepted already", inputs.baseline.size)
     )
@@ -118,7 +118,7 @@ private[dom] object ReviewScreen {
       case Tab.Removed => inputs.changeset.removed.size
       case Tab.Modified => inputs.changeset.modified.size
       case Tab.Added => inputs.changeset.added.size
-      case Tab.Reimaged => inputs.changeset.reimaged.size
+      case Tab.Reimaged => inputs.redrawn.size
     }
 
   /** A resolution alongside its summary, so that what gets applied is exactly what was

@@ -16,8 +16,9 @@ object ScrapeItemsRunner {
     client: WikiClient
   )(using Trace): Task[ScrapeItemsRunner] =
     for {
-      scraper <- ZIO.fromTry(ItemsScraper.make(args, client))
-      dumper <- ItemDumper.make(args, targetDirectory)
+      originalItems <- ZIO.fromTry(ItemDumper.loadOriginalData(args)).map(_.toMap)
+      scraper <- ZIO.fromTry(ItemsScraper.make(args, client, originalItems))
+      dumper <- ItemDumper.make(originalItems, targetDirectory)
     } yield ScrapeItemsRunner(scraper, dumper)
 }
 

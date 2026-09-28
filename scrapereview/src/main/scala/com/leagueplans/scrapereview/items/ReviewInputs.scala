@@ -1,5 +1,6 @@
 package com.leagueplans.scrapereview.items
 
+import cats.data.NonEmptyList
 import com.leagueplans.common.model.{InfoboxKey, ItemChangeset, ItemData}
 import com.leagueplans.scrapereview.filesystem.PickedDirectory
 import com.leagueplans.scrapereview.items.model.IDMap
@@ -80,4 +81,10 @@ final case class ReviewInputs(
   changeset: ItemChangeset,
   idMap: IDMap,
   baseline: Vector[(InfoboxKey, ItemData)]
-)
+) {
+  /** The reimaged items worth looking at: those whose icons show a different picture, rather
+    * than ones merely re-uploaded to the wiki. The rest are still applied.
+    */
+  lazy val redrawn: List[(InfoboxKey, NonEmptyList[ItemData.Image])] =
+    changeset.redrawn(baseline.toMap)
+}
