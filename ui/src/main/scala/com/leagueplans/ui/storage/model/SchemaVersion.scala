@@ -23,6 +23,8 @@ enum SchemaVersion(val date: Date) {
   case V5 extends SchemaVersion(new Date(2026, 2, 1))
   /** Fixes repetitions default from 0 to 1 */
   case V6 extends SchemaVersion(new Date(2026, 2, 6))
+  /** An item ID migration. Most changes are due to the removal of the sailing alpha */
+  case V7 extends SchemaVersion(new Date(2026, 8, 27))
 
   def number: Int = ordinal + 1
 }

@@ -27,13 +27,24 @@ object V4PlanMigration extends PlanMigration {
       14044 -> 14045, // Stone tablet (The Final Dawn)
     )
 
+  private val migrator = ItemIDMigrator(itemIDMigrations, removedIDs = Set.empty)
+
   def apply(plan: PlanExport): MigrationResult[PlanExport] =
     for {
       (name, timestamp, schemaVersion) <- plan.metadata.as[(Encoding, Encoding, SchemaVersion)]
       _ <- validateInputVersion(schemaVersion)
-      updatedSteps <- ItemIDMigrator(itemIDMigrations, plan.steps)
+      updatedSteps <- migrateList(plan.steps.toList)((id, details) =>
+        migrateDetails(details).map((id, _))
+      )
     } yield plan.copy(
       metadata = Encoder.encode((name, timestamp, toVersion)),
-      steps = updatedSteps
+      steps = updatedSteps.toMap
     )
+
+  private def migrateDetails(details: Encoding): MigrationResult[Encoding] =
+    for {
+      (description, effects, requirements) <- details.as[(Encoding, List[Encoding], List[Encoding])]
+      updatedEffects <- migrator.effects(effects)
+      updatedRequirements <- migrator.requirements(requirements)
+    } yield Encoder.encode((description, updatedEffects, updatedRequirements))
 }
