@@ -168,7 +168,7 @@ final class Forest[ID, T] private[forest](
 
   /** Depth-first */
   def toList: List[ID] =
-    recurse()((id, _) => List(id))
+    toLazyList.toList
 
   /** Depth-first */
   def foreachParent(f: (T, List[T]) => Unit): Unit =
