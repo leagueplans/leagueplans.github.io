@@ -4,10 +4,9 @@ import cats.data.NonEmptyList
 import com.leagueplans.common.utils.circe.JsonObjectOps.{decodeNestedField, decodeOptField}
 import com.leagueplans.scraper.http.HTTPClient
 import com.leagueplans.scraper.telemetry.{WithAnnotation, WithStreamAnnotation}
-import com.leagueplans.scraper.wiki.http.response.WikiResponse
+import com.leagueplans.scraper.wiki.http.response.{FilePage, WikiResponse}
 import com.leagueplans.scraper.wiki.model.{FileInfo, PageDescriptor}
 import com.leagueplans.scraper.wiki.streaming.*
-import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{CursorOp, Decoder, JsonObject, parser}
 import zio.http.*
 import zio.http.Header.UserAgent
@@ -31,22 +30,6 @@ private object WikiClient {
     )
     
   private val streamFanOut = 4
-
-  // The shape of an imageinfo query's response, which unlike the other queries can
-  // describe pages that don't exist and so carry no page ID.
-  private final case class TitleMapping(from: String, to: String)
-  private final case class ImageInfo(sha1: String)
-  private final case class FilePage(title: String, imageinfo: Option[List[ImageInfo]])
-  private final case class FileQuery(
-    normalized: Option[List[TitleMapping]],
-    redirects: Option[List[TitleMapping]],
-    pages: List[FilePage]
-  )
-
-  private given Decoder[TitleMapping] = deriveDecoder
-  private given Decoder[ImageInfo] = deriveDecoder
-  private given Decoder[FilePage] = deriveDecoder
-  private given Decoder[FileQuery] = deriveDecoder
 }
 
 final class WikiClient(
@@ -61,7 +44,7 @@ final class WikiClient(
   def fetch(selector: WikiSelector)(using Trace): PageStream[PageDescriptor] =
     ZStream
       .fromIterable(QueryParamsGenerator(selector, pageLimit))
-      .flatMapPar(WikiClient.streamFanOut)(fetchPages(_, continueParams = QueryParams.empty))
+      .flatMapPar(WikiClient.streamFanOut)(fetchPages)
       .pageExtend
       .pageMap((page, _) => page)
 
@@ -70,7 +53,7 @@ final class WikiClient(
     ZStream
       .fromIterable(QueryParamsGenerator(selector, pageLimit))
       .map(_ ++ contentTypeParams)
-      .flatMapPar(WikiClient.streamFanOut)(fetchPages(_, continueParams = QueryParams.empty))
+      .flatMapPar(WikiClient.streamFanOut)(fetchPages)
       .pageMapZIO(json => decodeContent(json, contentType) match {
         case Some(Right(content)) => ZIO.succeed(Chunk(content))
         case Some(Left(error)) => ZIO.fail(error)
@@ -102,43 +85,36 @@ final class WikiClient(
   )(using Trace): Task[Map[PageDescriptor.Name.File, FileInfo]] =
     ZIO
       .foreach(files.toVector.distinct.grouped(pageLimit).toVector)(batch =>
-        execute(buildQuery(QueryParamsGenerator.fileInfo(batch)), kindLabel = "file-info")
-          .flatMap(response => ZIO.fromEither(decodeFileInfo(batch, response)))
+        fetchResponses(QueryParamsGenerator.fileInfo(batch), Decoder[FilePage], kindLabel = "file-info")
+          .runCollect
+          .flatMap(results => ZIO.fromEither(toFileInfo(batch, results)))
       )
       .map(_.flatten.toMap)
 
-  private def decodeFileInfo(
+  /** Matches each file asked about with the page the wiki answered under, which is its own
+    * spelling of the name, or the file a redirect points to. A continued query can spread a
+    * file's details over several responses, so they are read together.
+    */
+  private def toFileInfo(
     files: Vector[PageDescriptor.Name.File],
-    response: Array[Byte]
-  ): Either[Exception, Vector[(PageDescriptor.Name.File, FileInfo)]] = {
-    val text = String(response, StandardCharsets.UTF_8)
+    results: Chunk[Either[PageStream.Error, WikiResponse.Success[FilePage]]]
+  ): Either[Throwable, Vector[(PageDescriptor.Name.File, FileInfo)]] =
+    results.collectFirst { case Left((_, error)) => error } match {
+      case Some(error) =>
+        Left(error)
 
-    parser.decode[WikiResponse.Failure](text) match {
-      case Right(failure) =>
-        Left(WikiFetchException.ErrorResponse(failure))
+      case None =>
+        val responses = results.collect { case Right(response) => response }
+        val sha1s = responses.flatMap(_.pages).collect { case FilePage(title, Some(sha1)) => title -> sha1 }.toMap
 
-      case Left(_) =>
-        parser
-          .decode[JsonObject](text)
-          .flatMap(_.decodeNestedField[WikiClient.FileQuery]("query")(List.empty))
-          .map { query =>
-            // The wiki answers under its own spelling of each name, and under the name of
-            // the file a redirect points to, so both have to be followed back.
-            val normalised = query.normalized.toList.flatten.map(m => m.from -> m.to).toMap
-            val redirects = query.redirects.toList.flatten.map(m => m.from -> m.to).toMap
-            val pages = query.pages.map(page => page.title -> page).toMap
-
-            files.flatMap { file =>
-              val title = normalised.getOrElse(file.wikiName, file.wikiName)
-              val target = redirects.getOrElse(title, title)
-              pages
-                .get(target)
-                .flatMap(_.imageinfo.flatMap(_.headOption))
-                .map(info => file -> FileInfo(info.sha1))
-            }
-          }
+        Right(files.flatMap(file =>
+          responses
+            .iterator
+            .flatMap(response => sha1s.get(response.resolve(file.wikiName)))
+            .nextOption()
+            .map(sha1 => file -> FileInfo(sha1))
+        ))
     }
-  }
 
   private def lookupImageURL(pathFileName: String)(using Trace): Task[URL] =
     execute(
@@ -167,12 +143,21 @@ final class WikiClient(
       }
     )
 
-  private def fetchPages(
-    baseParams: QueryParams, 
-    continueParams: QueryParams
-  )(using Trace): PageStream[JsonObject] = {
+  private def fetchPages(baseParams: QueryParams)(using Trace): PageStream[JsonObject] =
+    fetchResponses(baseParams, WikiResponse.existingPage, kindLabel = "query").flatMap {
+      case Left(error) => ZStream.succeed(Left(error))
+      case Right(response) => ZStream.fromIterable(response.pages).map(page => Right(page))
+    }
+
+  /** Every response to a query, following its continuations until the wiki has no more. */
+  private def fetchResponses[P](
+    baseParams: QueryParams,
+    page: Decoder[P],
+    kindLabel: String,
+    continueParams: QueryParams = QueryParams.empty
+  )(using Trace): ZStream[Any, Nothing, Either[PageStream.Error, WikiResponse.Success[P]]] = {
     val request = buildQuery(baseParams ++ continueParams)
-    val response = execute(request, kindLabel = "query").either.map(_.flatMap(decodeQueryResponse))
+    val response = execute(request, kindLabel).either.map(_.flatMap(decodeQueryResponse(_, page)))
 
     ZStream
       .fromZIO(response)
@@ -182,14 +167,11 @@ final class WikiClient(
 
         case Right(response) =>
           val continue = response.continueParams match {
-            case Some(nextContinueParams) => fetchPages(baseParams, nextContinueParams)
+            case Some(nextContinueParams) => fetchResponses(baseParams, page, kindLabel, nextContinueParams)
             case None => ZStream.empty
           }
 
-          ZStream
-            .fromIterable(response.pages)
-            .map(page => Right(page))
-            .concat(continue)
+          ZStream.succeed(Right(response)).concat(continue)
       }
   }
 
@@ -215,12 +197,15 @@ final class WikiClient(
   private def buildRequest(url: URL): Request =
     Request.get(url).addHeader(userAgent)
 
-  private def decodeQueryResponse(response: Array[Byte]): Either[Exception, WikiResponse.Success] =
+  private def decodeQueryResponse[P](
+    response: Array[Byte],
+    page: Decoder[P]
+  ): Either[Exception, WikiResponse.Success[P]] =
     parser
-      .decode[WikiResponse](String(response, StandardCharsets.UTF_8))
+      .decode[WikiResponse[P]](String(response, StandardCharsets.UTF_8))(using WikiResponse.decoder(using page))
       .flatMap {
         case f: WikiResponse.Failure => Left(WikiFetchException.ErrorResponse(f))
-        case s: WikiResponse.Success => Right(s)
+        case s: WikiResponse.Success[P] => Right(s)
       }
 
   private def decodeContent(

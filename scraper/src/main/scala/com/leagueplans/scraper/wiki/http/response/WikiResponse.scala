@@ -7,38 +7,64 @@ import io.circe.{CursorOp, Decoder, HCursor, JsonObject}
 import zio.Chunk
 import zio.http.QueryParams
 
-private[http] enum WikiResponse {
-  case Failure(error: Error)
+/** A response to a query, with its pages of type `P`.
+  *
+  * Every query shares the same envelope - errors, continuation, warnings, and how the wiki
+  * resolved the titles it was asked about - but what each page holds depends on what was
+  * asked for, so the pages are decoded by whichever decoder suits the query.
+  */
+private[http] enum WikiResponse[+P] {
+  case Failure(error: Error) extends WikiResponse[Nothing]
 
+  /** @param normalised the titles the wiki respelled, from the spelling asked for to its own
+    * @param redirects the titles that redirect elsewhere, to the title they redirect to
+    */
   case Success(
     continueParams: Option[QueryParams],
     warnings: Map[String, List[String]],
-    pages: List[Page[JsonObject]]
+    normalised: Map[String, String],
+    redirects: Map[String, String],
+    pages: List[P]
   )
 }
 
 private[http] object WikiResponse {
-  given Decoder[WikiResponse] =
-    Decoder[Failure].map(f => f: WikiResponse)
-      .or(Decoder[Success].map(s => s: WikiResponse))
+  def decoder[P : Decoder]: Decoder[WikiResponse[P]] =
+    Decoder[Failure].map(f => f: WikiResponse[P])
+      .or(Success.decoder[P].map(s => s: WikiResponse[P]))
+
+  /** A page that exists, with its content left to be interpreted by whoever asked for it. The
+    * queries that use it only ever describe pages that exist, so a page without an ID is an
+    * error.
+    */
+  val existingPage: Decoder[Page[JsonObject]] =
+    (c: HCursor) =>
+      Decoder[JsonObject]
+        .apply(c)
+        .flatMap(json =>
+          for {
+            id <- json.decodeField[PageDescriptor.ID]("pageid", c.history)
+            title <- json.decodeField[PageDescriptor.Name]("title", c.history)
+          } yield (PageDescriptor(id, title), json.remove("pageid").remove("title"))
+        )
 
   object Failure {
     given Decoder[Failure] = deriveDecoder[Failure]
   }
 
   object Success {
-    given Decoder[Success] = {
-      given Decoder[Page[JsonObject]] =
-        (c: HCursor) =>
-          Decoder[JsonObject]
-            .apply(c)
-            .flatMap(json =>
-              for {
-                id <- json.decodeField[PageDescriptor.ID]("pageid", c.history)
-                title <- json.decodeField[PageDescriptor.Name]("title", c.history)
-              } yield (PageDescriptor(id, title), json.remove("pageid").remove("title"))
-            )
+    extension (self: Success[?]) {
+      /** The title the wiki answered under, for a title that was asked about. */
+      def resolve(title: String): String = {
+        val normalised = self.normalised.getOrElse(title, title)
+        self.redirects.getOrElse(normalised, normalised)
+      }
+    }
 
+    private final case class TitleMapping(from: String, to: String)
+    private given Decoder[TitleMapping] = deriveDecoder
+
+    def decoder[P : Decoder]: Decoder[Success[P]] =
       (c: HCursor) =>
         Decoder[JsonObject]
           .apply(c)
@@ -46,10 +72,17 @@ private[http] object WikiResponse {
             for {
               continueParams <- decodeContinueParams(json)
               warnings <- decodeWarnings(json, c.history)
-              pages <- json.decodeNestedField[List[Page[JsonObject]]]("query", "pages")(c.history)
-            } yield Success(continueParams, warnings, pages)
+              query <- json.decodeField[JsonObject]("query", c.history)
+              normalised <- decodeTitleMappings(query, "normalized")
+              redirects <- decodeTitleMappings(query, "redirects")
+              pages <- query.decodeField[List[P]]("pages", c.history :+ CursorOp.Field("query"))
+            } yield Success(continueParams, warnings, normalised, redirects, pages)
           )
-    }
+
+    private def decodeTitleMappings(query: JsonObject, key: String): Decoder.Result[Map[String, String]] =
+      query
+        .decodeOptField[List[TitleMapping]](key)
+        .map(_.toList.flatten.map(mapping => mapping.from -> mapping.to).toMap)
 
     private def decodeContinueParams(json: JsonObject): Decoder.Result[Option[QueryParams]] =
       json
