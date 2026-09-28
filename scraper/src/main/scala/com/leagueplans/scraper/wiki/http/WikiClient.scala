@@ -13,7 +13,6 @@ import zio.http.Header.UserAgent
 import zio.stream.ZStream
 import zio.{Chunk, Schedule, Task, Trace, ZIO}
 
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 private object WikiClient {
@@ -65,23 +64,22 @@ final class WikiClient(
 
   def fetchImage(fileName: PageDescriptor.Name.File)(using Trace): Task[Array[Byte]] =
     WithAnnotation.forLogs("wiki-image-name" -> s"${fileName.raw}.${fileName.extension}") {
-      val encodedFileName = URLEncoder.encode(
-        s"${fileName.raw}.${fileName.extension}".replace(' ', '_'),
-        StandardCharsets.UTF_8
-      )
-      val request = buildRequest(baseURL.addPath(s"/images/$encodedFileName"))
+      // Left unencoded: zio-http (3.11) encodes a path as it sends it, so a name encoded
+      // here goes out encoded twice (`(` as `%2528`) and the wiki 404s.
+      val pathFileName = s"${fileName.raw}.${fileName.extension}".replace(' ', '_')
+      val request = buildRequest(baseURL.addPath(s"/images/$pathFileName"))
 
       execute(request, kindLabel = "image-download")
         .catchSome { case WikiFetchException.HTTPError(Status.NotFound, _) =>
-          lookupImageURL(encodedFileName).flatMap(actualURL =>
+          lookupImageURL(pathFileName).flatMap(actualURL =>
             execute(buildRequest(actualURL), kindLabel = "redirected-image-download")
           )
         }
     }
 
-  private def lookupImageURL(encodedFileName: String)(using Trace): Task[URL] =
+  private def lookupImageURL(pathFileName: String)(using Trace): Task[URL] =
     execute(
-      buildRequest(baseURL.addPath(s"/rest.php/v1/file/$encodedFileName")),
+      buildRequest(baseURL.addPath(s"/rest.php/v1/file/$pathFileName")),
       kindLabel = "lookup-image-url"
     ).flatMap(metadata => ZIO.fromEither(
       for {
