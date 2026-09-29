@@ -1,14 +1,16 @@
 package com.leagueplans.ui.model.common.forest
 
+import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.ForestPropertyTest.*
-import com.leagueplans.ui.model.plan.{Plan, Step, StepDetails}
+import com.leagueplans.ui.model.plan.{Duration, Plan, Step, StepDetails}
 import com.leagueplans.ui.model.player.mode.Armageddon
+import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.storage.model.{PlanMetadata, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
 import com.leagueplans.uicommon.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
-import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.ownership.ManualOwner
 import org.scalacheck.Gen
 import org.scalatest.Assertion
@@ -41,6 +43,39 @@ final class ForestPropertyTest
     succeed
   }
 
+  private def resolveAll(ops: List[Op]): Forest[Step.ID, Step] =
+    ops.foldLeft(Forest.empty[Step.ID, Step])((forest, op) => ForestResolver.resolve(forest, toUpdates(forest, op)))
+
+  /** Every step in the forest has a node in the tree, whose data, parent and children match */
+  private def treeMatches(
+    tree: ForestUpdateConsumer[Step.ID, Step, TreeNode],
+    forest: Forest[Step.ID, Step]
+  ): Assertion =
+    Using(new ManualOwner) { owner =>
+      allIDs.filterNot(forest.contains).flatMap(tree.get) shouldBe empty
+      forest.nodes.foreach { (id, step) =>
+        val node = tree.get(id).getOrElse(fail(s"No node for $id"))
+        withClue(s"Node $id:") {
+          node.data.observe(using owner).now() shouldEqual step
+          node.parent.observe(using owner).now().map(_.id) shouldEqual forest.toParent.get(id)
+          node.children.observe(using owner).now().map(_.id) shouldEqual forest.toChildren(id)
+        }
+      }
+      succeed
+    }(using _.killSubscriptions()).get
+
+  private def timingsMatch(
+    incremental: TimeKeeper,
+    fromScratch: TimeKeeper,
+    forest: Forest[Step.ID, Step]
+  ): Assertion = {
+    def timings(timeKeeper: TimeKeeper) =
+      forest.nodes.keys.map(id => id -> timeKeeper.get(id).now()).toMap
+
+    timings(incremental) shouldEqual timings(fromScratch)
+    incremental.endTime.now() shouldEqual fromScratch.endTime.now()
+  }
+
   "Forest operations" - {
     "leave the forest well-formed" in forAll(opsGen)(checkEachOp(_) { (_, _, _, updated) =>
       Forest.validated(updated.nodes, updated.toChildren, updated.roots) shouldEqual Right(updated)
@@ -53,6 +88,27 @@ final class ForestPropertyTest
     "only produce updates when the forest changes" in forAll(opsGen)(checkEachOp(_) { (forest, _, updates, updated) =>
       updates.isEmpty shouldEqual (updated == forest)
     })
+
+    "are mirrored by the step tree" in forAll(opsGen) { ops =>
+      val tree = ForestUpdateConsumer[Step.ID, Step, TreeNode](Forest.empty, TreeNode(_, _, _, _))
+      checkEachOp(ops) { (_, _, updates, updated) =>
+        tree.eval(updates)
+        treeMatches(tree, updated)
+      }
+    }
+
+    "are mirrored by a step tree built from their result" in forAll(opsGen) { ops =>
+      val forest = resolveAll(ops)
+      treeMatches(ForestUpdateConsumer[Step.ID, Step, TreeNode](forest, TreeNode(_, _, _, _)), forest)
+    }
+
+    "keep step timings the same as working them out from scratch" in forAll(opsGen) { ops =>
+      val timeKeeper = TimeKeeper(Forest.empty)
+      checkEachOp(ops) { (_, _, updates, updated) =>
+        updates.foreach(timeKeeper.update)
+        timingsMatch(timeKeeper, TimeKeeper(updated), updated)
+      }
+    }
 
     "are persisted faithfully" in forAll(opsGen) { ops =>
       // Like the Forester, each operation's updates are persisted as one batch
@@ -80,32 +136,52 @@ final class ForestPropertyTest
 }
 
 private object ForestPropertyTest {
+  /** What the step tree gives each node it creates */
+  final case class TreeNode(
+    id: Step.ID,
+    data: Signal[Step],
+    parent: Signal[Option[TreeNode]],
+    children: Signal[List[TreeNode]]
+  )
+
   enum Corruption {
     case Valid, Missing, Duplicated
   }
 
   enum Op {
-    case Add(id: Step.ID, parent: Option[Step.ID], description: String)
+    case Add(id: Step.ID, parent: Option[Step.ID], variant: Variant)
     case Move(id: Step.ID, parent: Option[Step.ID])
     case Remove(id: Step.ID)
-    case UpdateDescription(id: Step.ID, description: String)
+    case Edit(id: Step.ID, variant: Variant)
     case Reorder(anchor: Step.ID, seed: Long, corruption: Corruption)
   }
 
   // A small pool, so that operations regularly target steps that exist, steps that
   // don't, and steps that have been removed and re-added
-  private val idGen: Gen[Step.ID] =
-    Gen.choose(0, 11).map(i => Step.ID.fromString(s"step-$i"))
+  val allIDs: List[Step.ID] =
+    List.tabulate(12)(i => Step.ID.fromString(s"step-$i"))
 
-  private val descriptionGen: Gen[String] =
-    Gen.oneOf("a", "b", "c")
+  private val idGen: Gen[Step.ID] =
+    Gen.oneOf(allIDs)
+
+  /** Kinds of step, so that timings vary. A step with no duration takes the time of its
+    * substeps, and a step with no repetitions takes no time at all. */
+  enum Variant(val repetitions: Int, val duration: Duration) {
+    case Untimed extends Variant(repetitions = 1, Duration.ticks(0))
+    case Timed extends Variant(repetitions = 1, Duration.ticks(5))
+    case Looped extends Variant(repetitions = 2, Duration.ticks(3))
+    case Skipped extends Variant(repetitions = 0, Duration.ticks(4))
+  }
+
+  private val variantGen: Gen[Variant] =
+    Gen.oneOf(Variant.values.toSeq)
 
   private val opGen: Gen[Op] =
     Gen.frequency(
-      4 -> Gen.zip(idGen, Gen.option(idGen), descriptionGen).map(Op.Add(_, _, _)),
+      4 -> Gen.zip(idGen, Gen.option(idGen), variantGen).map(Op.Add(_, _, _)),
       3 -> Gen.zip(idGen, Gen.option(idGen)).map(Op.Move(_, _)),
       2 -> idGen.map(Op.Remove(_)),
-      2 -> Gen.zip(idGen, descriptionGen).map(Op.UpdateDescription(_, _)),
+      2 -> Gen.zip(idGen, variantGen).map(Op.Edit(_, _)),
       3 -> Gen.zip(
         idGen,
         Gen.long,
@@ -116,16 +192,16 @@ private object ForestPropertyTest {
   val opsGen: Gen[List[Op]] =
     Gen.choose(0, 40).flatMap(Gen.listOfN(_, opGen))
 
-  private def step(id: Step.ID, description: String): Step =
-    Step(id, StepDetails(description))
+  private def step(id: Step.ID, variant: Variant): Step =
+    Step(id, StepDetails(variant.toString).copy(repetitions = variant.repetitions, duration = variant.duration))
 
   def toUpdates(forest: Forest[Step.ID, Step], op: Op): List[Update[Step.ID, Step]] = {
     val interpreter = ForestInterpreter(forest)
     op match {
-      case Op.Add(id, parent, description) => interpreter.addOption(step(id, description), parent)
+      case Op.Add(id, parent, variant) => interpreter.addOption(step(id, variant), parent)
       case Op.Move(id, parent) => interpreter.move(id, parent)
       case Op.Remove(id) => interpreter.remove(id)
-      case Op.UpdateDescription(id, description) => interpreter.update(id, _.deepCopy(description = description))
+      case Op.Edit(id, variant) => interpreter.update(id, _ => step(id, variant))
       case op: Op.Reorder => interpreter.reorder(reordering(forest, op))
     }
   }
@@ -165,8 +241,8 @@ private object ForestPropertyTest {
   def expected(forest: Forest[Step.ID, Step], op: Op): Forest[Step.ID, Step] = {
     val shape = Shape(forest.nodes, forest.toChildren, forest.roots)
     op match {
-      case Op.Add(id, target, description) =>
-        place(forest, shape, step(id, description), target).toForest
+      case Op.Add(id, target, variant) =>
+        place(forest, shape, step(id, variant), target).toForest
 
       case Op.Move(id, target) =>
         forest.get(id).fold(forest)(place(forest, shape, _, target).toForest)
@@ -179,10 +255,11 @@ private object ForestPropertyTest {
           forest.roots.filterNot(removed.contains)
         )
 
-      case Op.UpdateDescription(id, description) =>
-        forest.get(id).fold(forest)(existing =>
-          shape.copy(nodes = shape.nodes.updated(id, existing.deepCopy(description = description))).toForest
-        )
+      case Op.Edit(id, variant) =>
+        if (forest.contains(id))
+          shape.copy(nodes = shape.nodes.updated(id, step(id, variant))).toForest
+        else
+          forest
 
       case op: Op.Reorder =>
         if (op.corruption != Corruption.Valid || !forest.contains(op.anchor))
