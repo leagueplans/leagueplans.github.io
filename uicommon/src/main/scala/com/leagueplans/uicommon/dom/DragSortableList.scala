@@ -16,6 +16,10 @@ import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKin
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
+/** A list that can be reordered by dragging its items.
+  *
+  * While an item is being dragged, the list shows a preview of the new order. The new order is
+  * only reported once the item is dropped, and not at all if the drag is cancelled. */
 object DragSortableList {
   def apply[T : HasID as hasID](
     id: String,
@@ -24,10 +28,15 @@ object DragSortableList {
     toElement: (hasID.ID, T, Signal[T], L.SvgElement) => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
-    val dragTracker = Var[Option[Dragging[hasID.ID, T]]](None)
+    val dragTracker = Var[Option[Dragging[hasID.ID, T]]](None).distinct
+    val displayedOrder =
+      Signal.combine(orderSignal, dragTracker.signal).map {
+        case (_, Some(dragging)) => dragging.previewOrder
+        case (order, None) => order
+      }
 
     val children =
-      orderSignal
+      displayedOrder
         .map(_.zipWithIndex)
         .split((data, _) => data.id) { case (itemID, (data, _), zippedSignal) =>
           val (dataSignal, indexSignal) = zippedSignal.unzip
@@ -36,8 +45,8 @@ object DragSortableList {
           L.li(
             toElement(itemID, data, dataSignal, icon),
             L.draggable <-- draggableSignal,
-            onDragStart(eventFormat, itemID, indexSignal, orderSignal, dragTracker.writer),
-            onDragInto(itemID, dragTracker.signal, indexSignal, orderObserver),
+            onDragStart(eventFormat, itemID, indexSignal, displayedOrder, dragTracker.writer),
+            onDragInto(itemID, dragTracker, indexSignal),
             onDragEnd(dragTracker, orderObserver)
           )
         }
@@ -54,7 +63,12 @@ object DragSortableList {
     val icon: String = js.native
   }
 
-  private final case class Dragging[ID, T](id: ID, originalIndex: Int, originalOrder: List[T])
+  private final case class Dragging[ID, T](
+    id: ID,
+    originalIndex: Int,
+    originalOrder: List[T],
+    previewOrder: List[T]
+  )
 
   private def dragIcon: (L.SvgElement, Signal[Boolean]) = {
     val mouseOver = Var(false)
@@ -84,19 +98,18 @@ object DragSortableList {
           // We don't use this, but it informs other apps not to receive the drop
           event.dataTransfer.setData(eventFormat, "placeholder")
           event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
-          Some(Dragging(itemID, originalIndex, originalOrder))
+          Some(Dragging(itemID, originalIndex, originalOrder, previewOrder = originalOrder))
         }
     )
 
-  /** Update the order */
+  /** Update the previewed order */
   private def onDragInto[ID, T](
     itemID: ID,
-    dragTracker: Signal[Option[Dragging[ID, T]]],
-    indexSignal: Signal[Int],
-    orderObserver: Observer[List[T]]
+    dragTracker: Var[Option[Dragging[ID, T]]],
+    indexSignal: Signal[Int]
   ): L.Modifier[L.HtmlElement] = {
     val streamMutator: EventStream[DragEvent] => EventStream[(Dragging[ID, T], Int)] =
-      _.withCurrentValueOf(dragTracker, indexSignal)
+      _.withCurrentValueOf(dragTracker.signal, indexSignal)
         .collect(Function.unlift {
           case (event, Some(dragging), index) =>
             event.preventDefault()
@@ -105,38 +118,44 @@ object DragSortableList {
             None
         })
 
-    val orderMutator =
-      orderObserver.contramap[(Dragging[ID, T], Int)]((dragging, index) =>
-        move(
-          dragging.originalOrder,
-          from = dragging.originalIndex,
-          to = index
-        )
+    val previewMutator =
+      dragTracker.writer.contramap[(Dragging[ID, T], Int)]((dragging, index) =>
+        Some(dragging.copy(previewOrder =
+          move(
+            dragging.originalOrder,
+            from = dragging.originalIndex,
+            to = index
+          )
+        ))
       )
 
     List(
-      L.onDragEnter.ifUnhandled.compose(streamMutator) --> orderMutator,
-      L.onDragOver.ifUnhandled.compose(streamMutator) --> orderMutator
+      L.onDragEnter.ifUnhandled.compose(streamMutator) --> previewMutator,
+      L.onDragOver.ifUnhandled.compose(streamMutator) --> previewMutator
     )
   }
 
-  /** Reset the order to the original order if not dropped successfully */
+  /** Report the previewed order if the item was dropped, then stop previewing */
   private def onDragEnd[ID, T](
     dragTracker: Var[Option[Dragging[ID, T]]],
     orderObserver: Observer[List[T]]
   ): L.Modifier[L.HtmlElement] = {
+    // The new order is reported before the preview is cleared, so that the list doesn't
+    // briefly show the original order
     val observer = Observer.combine(
-      dragTracker.writer.contramap[Any](_ => None),
       orderObserver.contracollect[(DragEvent, Option[Dragging[ID, T]])] {
-        case (event, Some(dragging)) if event.dataTransfer.dropEffect == DataTransferDropEffectKind.none =>
-          dragging.originalOrder
-      }
+        case (event, Some(dragging))
+          if event.dataTransfer.dropEffect != DataTransferDropEffectKind.none &&
+            dragging.previewOrder != dragging.originalOrder =>
+          dragging.previewOrder
+      },
+      dragTracker.writer.contramap[Any](_ => None)
     )
 
     L.inContext(ctx =>
       L.onDragEnd
         .filterByTarget(_ == ctx.ref)
-        .handledWith(_.withCurrentValueOf(dragTracker)) --> observer
+        .handledWith(_.withCurrentValueOf(dragTracker.signal)) --> observer
     )
   }
 
