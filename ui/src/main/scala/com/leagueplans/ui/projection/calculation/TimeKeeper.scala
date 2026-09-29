@@ -116,25 +116,27 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         updateEndTime()
 
       case Update.RemoveNode(id) =>
-        val idStart = forest.get(id).flatMap(_.start)
+        // The following siblings now start where the removed step did, before its own duration
+        // could have given it a start
+        val gapStart = runningStartFor(id)
         val following = forest.siblings(id).dropWhile(_ != id).drop(1)
         val maybeParent = forest.toParent.get(id)
         forest = ForestResolver.resolve(forest, Update.RemoveNode(id))
         stateVars.remove(id)
-        recomputeSequence(following, idStart)
+        recomputeSequence(following, gapStart)
         maybeParent.foreach { p =>
           if (recomputeTotalChildDuration(p)) propagate(p)
         }
         updateEndTime()
 
       case Update.AddLink(child, parent) =>
-        val childOldStart = forest.get(child).flatMap(_.start)
+        val gapStart = runningStartFor(child)
         // AddLink only fires when child is a root (ChangeParent handles non-root moves via
         // RemoveLink + AddLink), so child's current siblings are the other roots.
         val oldFollowingRoots = forest.siblings(child).dropWhile(_ != child).drop(1)
         forest = ForestResolver.resolve(forest, Update.AddLink(child, parent))
         // 1. Heal the gap left in roots
-        recomputeSequence(oldFollowingRoots, childOldStart)
+        recomputeSequence(oldFollowingRoots, gapStart)
         // 2. Recompute child's start at its new position (last child of parent)
         recomputeSubtreeStarts(child, runningStartFor(child))
         // 3. Update parent's timing
@@ -142,21 +144,16 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         updateEndTime()
 
       case Update.RemoveLink(child, parent) =>
-        val childOldStart = forest.get(child).flatMap(_.start)
+        val gapStart = runningStartFor(child)
         val oldFollowing = forest.siblings(child).dropWhile(_ != child).drop(1)
         forest = ForestResolver.resolve(forest, Update.RemoveLink(child, parent))
         // 1. Heal gap among former siblings
-        recomputeSequence(oldFollowing, childOldStart)
+        recomputeSequence(oldFollowing, gapStart)
         // 2. Recompute timings from the parent onwards
         if (recomputeTotalChildDuration(parent)) propagate(parent)
-        else {
-          val newRootStart = for {
-            root <- forest.roots.dropRight(1).lastOption
-            state <- forest.get(root)
-            finish <- state.finish
-          } yield finish
-          recomputeSubtreeStarts(child, newRootStart)
-        }
+        // 3. Recompute child's start at its new position (last root). Propagating from the
+        // parent doesn't always reach it.
+        recomputeSubtreeStarts(child, runningStartFor(child))
         updateEndTime()
 
       case Update.ChangeParent(child, oldParent, newParent) =>
@@ -245,8 +242,11 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         } yield childrenStart
     }
 
+  /** Called after a step's duration has changed. Whether a step has a duration can decide
+    * whether it has a start, so the step's own start is refreshed first. */
   @tailrec
   private def propagate(id: Step.ID): Unit = {
+    refreshStart(id)
     val following = forest.siblings(id).dropWhile(_ != id).drop(1)
     recomputeSequence(following, forest.get(id).flatMap(_.finish))
     forest.toParent.get(id) match {
@@ -254,6 +254,13 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
       case _ => ()
     }
   }
+
+  private def refreshStart(id: Step.ID): Unit =
+    forest.get(id).foreach { current =>
+      val runningStart = runningStartFor(id)
+      if (computeEffectiveStart(runningStart, current.durationPerParentRep) != current.start)
+        recomputeSubtreeStarts(id, runningStart)
+    }
 
   private def updateEndTime(): Unit =
     _endTime.set(
