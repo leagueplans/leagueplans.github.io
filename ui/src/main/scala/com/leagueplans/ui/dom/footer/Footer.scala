@@ -47,6 +47,8 @@ object Footer {
       L.cls(Styles.attribution),
       "All game data sourced from the ",
       attributionLink("https://oldschool.runescape.wiki/", "OSRS Wiki"),
+      ", licensed under ",
+      attributionLink("https://creativecommons.org/licenses/by-nc-sa/3.0/", "CC BY-NC-SA 3.0"),
       "."
     )
 
