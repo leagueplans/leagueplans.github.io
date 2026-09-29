@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.mode.Armageddon
-import com.leagueplans.ui.storage.model.PlanMetadata
+import com.leagueplans.ui.storage.model.{PlanMetadata, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
 import com.leagueplans.uicommon.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
@@ -71,6 +71,7 @@ final class ForesterIntegrationTest
       .foreach(_ => ())
     forester
       .updates
+      .map(StepUpdates(_))
       .flatMapConcat(directory.applyUpdate)
       .foreach(_ => ()): @nowarn("msg=discarded non-Unit value")
   }

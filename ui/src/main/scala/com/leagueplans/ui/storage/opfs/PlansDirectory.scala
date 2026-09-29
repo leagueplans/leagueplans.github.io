@@ -1,8 +1,7 @@
 package com.leagueplans.ui.storage.opfs
 
-import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
+import com.leagueplans.ui.model.plan.Plan
+import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata, StepUpdates}
 import com.leagueplans.uicommon.utils.airstream.EventStreamOps.{andThen, safeSequence}
 import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
 import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
@@ -55,7 +54,7 @@ final class PlansDirectory[T : DirectoryHandleLike](underlying: T) {
   
   def applyUpdate(
     planID: PlanID,
-    update: Forest.Update[Step.ID, Step] | Plan.Settings
+    update: StepUpdates | Plan.Settings
   ): EventStream[Either[FileSystemError, ?]] =
     getPlanDirectory(planID).andThen {
       case None => EventStream.fromValue(Left(FileDoesNotExist(planID)), emitOnce = true)

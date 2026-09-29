@@ -105,8 +105,8 @@ final class ProjectionClient(
   def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings): Unit =
     send(Inbound.Initialise(nextId(), forest, settings))
 
-  def applyForestUpdate(update: Forest.Update[Step.ID, Step]): Unit =
-    send(Inbound.ForestUpdated(nextId(), update))
+  def applyForestUpdates(updates: List[Forest.Update[Step.ID, Step]]): Unit =
+    send(Inbound.ForestUpdated(nextId(), updates))
 
   def updateSettings(settings: Plan.Settings): Unit =
     send(Inbound.SettingsChanged(nextId(), settings))

@@ -92,9 +92,9 @@ private final class ProjectionWorker(
         port.send(Outbound.ComputeFailed(other.id, "Worker not yet initialised"))
         return
 
-      case Inbound.ForestUpdated(id, update) =>
+      case Inbound.ForestUpdated(id, updates) =>
         state = state.map(s => s.copy(
-          forest = ForestResolver.resolve(s.forest, update),
+          forest = ForestResolver.resolve(s.forest, updates),
           latestID = id,
           latestNonFocusID = id
         ))

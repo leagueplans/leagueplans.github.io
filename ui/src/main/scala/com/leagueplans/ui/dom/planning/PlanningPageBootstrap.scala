@@ -2,13 +2,13 @@ package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
-import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
+import com.leagueplans.ui.storage.model.StepUpdates
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.uicommon.facades.fusejs.FuseOptions
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
@@ -36,7 +36,7 @@ object PlanningPageBootstrap {
 
     val itemFuse = Fuse(cache.items.values.toList, new FuseOptions { keys = js.defined(js.Array("name")) })
 
-    val forester = Forester(initialPlan.steps, Observer(subscription.save))
+    val forester = Forester(initialPlan.steps, Observer(updates => subscription.save(StepUpdates(updates))))
     val (focusedStep, focusController) = FocusController(forester)
     val settings = Var(initialPlan.settings)
 
@@ -57,18 +57,16 @@ object PlanningPageBootstrap {
     ).amend(
       // Subscription events
       subscription.status --> createStatusObserver(statusTracker, toastPublisher),
-      subscription.updates.collect {
-        case u: Forest.Update[Step.ID @unchecked, Step @unchecked] => u
-      } --> Observer(forester.inject),
+      subscription.updates.collect { case StepUpdates(updates) => updates } --> Observer(forester.inject),
       subscription.updates.collect { case s: Plan.Settings => s } --> settings,
       // Projection notifications
-      forester.updates --> Observer(projectionClient.applyForestUpdate),
+      forester.updates --> Observer(projectionClient.applyForestUpdates),
       settings.signal.changes --> Observer(projectionClient.updateSettings),
       focusedStep.changes --> Observer(projectionClient.changeFocus),
       projectionClient.projectionsStatus --> Observer(statusTracker.set(ProjectionClient.projectionStatusKey, _)),
       projectionClient.errorDetectionStatus --> Observer(statusTracker.set(ProjectionClient.errorDetectionStatusKey, _)),
       // Timekeeping
-      forester.updates --> Observer(timeKeeper.update),
+      forester.updates --> (_.foreach(timeKeeper.update)),
       // Clean up
       L.onUnmountCallback { _ =>
         subscription.close()

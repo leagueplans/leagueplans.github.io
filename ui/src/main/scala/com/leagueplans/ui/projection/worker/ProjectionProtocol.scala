@@ -20,7 +20,7 @@ object ProjectionProtocol {
 
     final case class ForestUpdated(
       id: Long,
-      update: Forest.Update[Step.ID, Step]
+      updates: List[Forest.Update[Step.ID, Step]]
     ) extends Inbound
 
     final case class SettingsChanged(

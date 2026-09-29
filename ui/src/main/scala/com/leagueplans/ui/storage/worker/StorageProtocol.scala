@@ -2,10 +2,9 @@ package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, UpdateError}
-import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, StepUpdates}
 
 object StorageProtocol {
   object Inbound {
@@ -28,14 +27,14 @@ object StorageProtocol {
       def apply(
         planID: PlanID,
         lamport: LamportTimestamp,
-        update: Plan.Settings | Forest.Update[Step.ID, Step]
+        update: Plan.Settings | StepUpdates
       ): Update =
         Update(
           planID,
           lamport,
           update match {
             case settings: Plan.Settings => Left(settings)
-            case fu: Forest.Update[Step.ID, Step] => Right(fu)
+            case updates: StepUpdates => Right(updates)
           }
         )
     }
@@ -43,7 +42,7 @@ object StorageProtocol {
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
+      update: Either[Plan.Settings, StepUpdates]
     ) extends ToCoordinator with ToWorker
 
     final case class Delete(requestID: Long, planID: PlanID) extends ToCoordinator with ToWorker
@@ -86,7 +85,7 @@ object StorageProtocol {
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Either[Plan.Settings, Forest.Update[Step.ID, Step]]
+      update: Either[Plan.Settings, StepUpdates]
     ) extends ToClient
 
     final case class UpdateSucceeded(

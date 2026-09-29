@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.ForestPropertyTest.*
 import com.leagueplans.ui.model.plan.{Plan, Step, StepDetails}
 import com.leagueplans.ui.model.player.mode.Armageddon
-import com.leagueplans.ui.storage.model.PlanMetadata
+import com.leagueplans.ui.storage.model.{PlanMetadata, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
 import com.leagueplans.uicommon.wrappers.opfs.{FileSystemError, MockDirectoryHandle}
@@ -55,14 +55,15 @@ final class ForestPropertyTest
     })
 
     "are persisted faithfully" in forAll(opsGen) { ops =>
-      val (forest, updates) =
-        ops.foldLeft((Forest.empty[Step.ID, Step], Vector.empty[Update[Step.ID, Step]])) {
-          case ((forest, allUpdates), op) =>
+      // Like the Forester, each operation's updates are persisted as one batch
+      val (forest, batches) =
+        ops.foldLeft((Forest.empty[Step.ID, Step], Vector.empty[List[Update[Step.ID, Step]]])) {
+          case ((forest, batches), op) =>
             val updates = toUpdates(forest, op)
-            (ForestResolver.resolve(forest, updates), allUpdates ++ updates)
+            (ForestResolver.resolve(forest, updates), if (updates.isEmpty) batches else batches :+ updates)
         }
 
-      persist(updates) shouldEqual forest
+      persist(batches) shouldEqual forest
     }
   }
 }
@@ -204,8 +205,8 @@ private object ForestPropertyTest {
     }
   }
 
-  /** Applies the updates to a mock plan directory, then reads the plan back */
-  def persist(updates: Seq[Update[Step.ID, Step]]): Forest[Step.ID, Step] = {
+  /** Applies the batches of updates to a mock plan directory, then reads the plan back */
+  def persist(batches: Seq[List[Update[Step.ID, Step]]]): Forest[Step.ID, Step] = {
     val directory = PlanDirectory(new MockDirectoryHandle)
     var result = Option.empty[Either[FileSystemError, Plan]]
 
@@ -215,7 +216,7 @@ private object ForestPropertyTest {
         .create(PlanMetadata("test"), Plan("test", Forest.empty, Armageddon.settings))
         .foreach(_ => ())
       EventStream
-        .fromSeq(updates)
+        .fromSeq(batches.map(StepUpdates(_)))
         .flatMapConcat(directory.applyUpdate)
         .foreach(_ => ())
       directory.readPlan().foreach(plan => result = Some(plan))

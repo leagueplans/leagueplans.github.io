@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings}
+import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory.*
 import com.leagueplans.uicommon.utils.airstream.EventStreamOps.andThen
 import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
@@ -72,8 +72,24 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
       )
     )
   
-  def applyUpdate(update: Forest.Update[Step.ID, Step] | Plan.Settings): EventStream[Either[FileSystemError, ?]] = {
+  def applyUpdate(update: StepUpdates | Plan.Settings): EventStream[Either[FileSystemError, ?]] = {
     val changes = update match {
+      case StepUpdates(updates) =>
+        updates.foldLeft(EventStream.fromValue[Either[FileSystemError, Any]](Right(()), emitOnce = true))(
+          (previous, update) => previous.andThen(_ => applyStepUpdate(update))
+        )
+
+      case settings: Plan.Settings =>
+        writeSettings(settings)
+    }
+
+    changes
+      .andThen(_ => readMetadata())
+      .andThen(old => writeMetadata(PlanMetadata(old.name)))
+  }
+
+  private def applyStepUpdate(update: Forest.Update[Step.ID, Step]): EventStream[Either[FileSystemError, ?]] =
+    update match {
       case Update.AddNode(id, data) =>
         acquireStepsDirectory()
           .andThen(_.write(data))
@@ -128,16 +144,8 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
 
       case Update.Reorder(roots, None) =>
         updateMappings(_.copy(roots = roots))
-
-      case settings: Plan.Settings =>
-        writeSettings(settings)
     }
-    
-    changes
-      .andThen(_ => readMetadata())
-      .andThen(old => writeMetadata(PlanMetadata(old.name)))
-  }
-  
+
   private def updateMappings(f: StepMappings => StepMappings): EventStream[Either[FileSystemError, ?]] =
     readMappings().andThen(mappings => writeMappings(f(mappings)))
 

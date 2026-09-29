@@ -57,43 +57,52 @@ final class ForestUpdateConsumer[ID, Data, Node] private(
   val nodeChanges: EventStream[Unit] =
     nodeChangesBus.events
 
-  def eval(updates: Iterable[Update[ID, Data]]): Unit =
-    updates.foreach(eval)
-  
-  def eval(update: Update[ID, Data]): Unit =
+  /** Nodes added or removed by the updates are announced once, after all of them are applied */
+  def eval(updates: Iterable[Update[ID, Data]]): Unit = {
+    val nodesChanged = updates.foldLeft(false)((changed, update) => evalOne(update) || changed)
+    if (nodesChanged) nodeChangesBus.emit(())
+  }
+
+  /** Returns whether a node was added or removed */
+  private def evalOne(update: Update[ID, Data]): Boolean =
     update match {
       case AddNode(id, data) =>
         state += id -> initialise(id, data, createNode)
-        nodeChangesBus.emit(())
-        
+        true
+
       case RemoveNode(id) =>
         state -= id
-        nodeChangesBus.emit(())
-        
+        true
+
       case AddLink(child, parent) =>
         state.get(child).zip(state.get(parent)).foreach { (childState, parentState) =>
           parentState.childrenUpdater.update(_ :+ childState.node)
           childState.parentUpdater.onNext(Some(parentState.node))
         }
-        
+        false
+
       case RemoveLink(child, parent) =>
         state.get(child).zip(state.get(parent)).foreach { (childState, parentState) =>
           parentState.childrenUpdater.update(_.filterNot(_ == childState.node))
           childState.parentUpdater.onNext(None)
         }
+        false
 
       case ChangeParent(child, oldParent, newParent) =>
-        eval(RemoveLink(child, oldParent))
-        eval(AddLink(child, newParent))
-        
+        evalOne(RemoveLink(child, oldParent))
+        evalOne(AddLink(child, newParent))
+
       case UpdateData(id, data) =>
         state.get(id).foreach(_.dataUpdater.onNext(data))
-        
+        false
+
       case Reorder(children, Some(parent)) =>
         val childNodes = children.flatMap(state.get).map(_.node)
         state.get(parent).foreach(_.childrenUpdater.set(childNodes))
+        false
 
       case Reorder(_, None) =>
         /* Nothing to do - we don't need to track root node ordering here */
+        false
     }
 }

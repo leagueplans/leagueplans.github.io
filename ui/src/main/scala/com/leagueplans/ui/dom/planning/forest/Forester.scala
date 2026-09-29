@@ -10,22 +10,24 @@ import com.raquo.airstream.state.{StrictSignal, Var}
 object Forester {
   def apply[ID, T](
     forest: Forest[ID, T],
-    externalObserver: Observer[Forest.Update[ID, T]]
+    externalObserver: Observer[List[Forest.Update[ID, T]]]
   )(using HasID.Aux[T, ID]): Forester[ID, T] =
     new Forester(Var(forest).distinct, externalObserver)
 }
 
-/** Optimises updates to the forest */
+/** Optimises updates to the forest.
+  *
+  * The updates produced by each operation are emitted together, as a single non-empty batch. */
 final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
-  externalObserver: Observer[Forest.Update[ID, T]]
+  externalObserver: Observer[List[Forest.Update[ID, T]]]
 )(using HasID.Aux[T, ID]) {
   val signal: StrictSignal[Forest[ID, T]] =
     forestState.signal
 
-  private val updateBus = EventBus[Update[ID, T]]()
-  /** A stream of _all_ events handled by this forester, including those that were injected */
-  val updates: EventStream[Update[ID, T]] = updateBus.events
+  private val updateBus = EventBus[List[Update[ID, T]]]()
+  /** A stream of _all_ batches handled by this forester, including those that were injected */
+  val updates: EventStream[List[Update[ID, T]]] = updateBus.events
 
   def add(data: T): Unit =
     run(_.add(data))
@@ -54,20 +56,26 @@ final class Forester[ID, T](
   def reorder(newOrder: List[ID]): Unit =
     run(_.reorder(newOrder))
 
+  // Everything happens inside the update function. When called from within an Airstream
+  // transaction, the function is deferred until the transaction ends, and runs against the
+  // result of any earlier operations - this is what lets callers chain operations.
   private def run(f: ForestInterpreter[ID, T] => List[Update[ID, T]]): Unit =
     forestState.update { forest =>
       val updates = f(ForestInterpreter(forest))
-      updates.foreach { update =>
-        externalObserver.onNext(update)
-        updateBus.emit(update)
+      val updated = ForestResolver.resolve(forest, updates)
+      if (updates.nonEmpty) {
+        externalObserver.onNext(updates)
+        updateBus.emit(updates)
       }
-      ForestResolver.resolve(forest, updates)
+      updated
     }
-  
-  /** Intended for events that should not be propagated to an external observer */
-  def inject(update: Update[ID, T]): Unit =
+
+  /** Intended for batches that should not be propagated to an external observer */
+  def inject(updates: List[Update[ID, T]]): Unit =
     forestState.update { forest =>
-      updateBus.emit(update)
-      ForestResolver.resolve(forest, update)
+      val updated = ForestResolver.resolve(forest, updates)
+      if (updates.nonEmpty)
+        updateBus.emit(updates)
+      updated
     }
 }

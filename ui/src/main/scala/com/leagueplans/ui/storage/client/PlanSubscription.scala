@@ -1,10 +1,9 @@
 package com.leagueplans.ui.storage.client
 
-import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker.Status
 import com.leagueplans.ui.storage.client.PlanSubscription.Message
-import com.leagueplans.ui.storage.model.LamportTimestamp
+import com.leagueplans.ui.storage.model.{LamportTimestamp, StepUpdates}
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.withKillSwitch
 import com.raquo.airstream.core.{EventStream, Signal}
@@ -14,7 +13,7 @@ object PlanSubscription {
   enum Message {
     case Done
     case Error(cause: ProtocolError)
-    case Update(lamport: LamportTimestamp, data: Forest.Update[Step.ID, Step] | Plan.Settings)
+    case Update(lamport: LamportTimestamp, data: StepUpdates | Plan.Settings)
     case UpdateSuccessful(lamport: LamportTimestamp)
     case UpdateFailed(lamport: LamportTimestamp, reason: UpdateError)
   }
@@ -23,7 +22,7 @@ object PlanSubscription {
 final class PlanSubscription(
   initialLamport: LamportTimestamp,
   messages: EventStream[Message],
-  save: (LamportTimestamp, Forest.Update[Step.ID, Step] | Plan.Settings) => ?,
+  save: (LamportTimestamp, StepUpdates | Plan.Settings) => ?,
   unsubscribe: () => ?
 ) extends AutoCloseable {
   private var currentLamport = initialLamport
@@ -33,7 +32,7 @@ final class PlanSubscription(
   
   val status: Signal[Status] = internalStatus.signal.distinct
   
-  val updates: EventStream[Forest.Update[Step.ID, Step] | Plan.Settings] =
+  val updates: EventStream[StepUpdates | Plan.Settings] =
     upstream.collect(Function.unlift {
       case Message.Done =>
         upstreamKillSwitch.kill()
@@ -64,7 +63,7 @@ final class PlanSubscription(
         None
     })
 
-  def save(update: Forest.Update[Step.ID, Step] | Plan.Settings): Unit =
+  def save(update: StepUpdates | Plan.Settings): Unit =
     ifRunning { _ =>
       currentLamport = currentLamport.increment
       save(currentLamport, update)
