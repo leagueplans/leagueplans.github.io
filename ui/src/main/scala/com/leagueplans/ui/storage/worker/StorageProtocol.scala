@@ -78,6 +78,8 @@ object StorageProtocol {
     final case class Subscription(requestID: Long, planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
     final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient
     final case class SubscriptionTerminated(planID: PlanID) extends ToClient
+    /** The plan was opened by another version of the app, which now owns it */
+    final case class SubscriptionTakenOver(planID: PlanID) extends ToClient
 
     final case class ReadSucceeded(planID: PlanID, plan: Plan) extends ToCoordinator
     final case class ReadFailed(planID: PlanID, reason: FileSystemError) extends ToCoordinator

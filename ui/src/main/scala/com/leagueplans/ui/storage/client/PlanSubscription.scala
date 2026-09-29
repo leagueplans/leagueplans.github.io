@@ -12,6 +12,8 @@ import com.raquo.airstream.state.Var
 object PlanSubscription {
   enum Message {
     case Done
+    /** The plan was opened by another version of the app, which now owns it */
+    case TakenOver
     case Error(cause: ProtocolError)
     case Update(lamport: LamportTimestamp, data: StepUpdates | Plan.Settings)
     case UpdateSuccessful(lamport: LamportTimestamp)
@@ -37,6 +39,14 @@ final class PlanSubscription(
       case Message.Done =>
         upstreamKillSwitch.kill()
         internalStatus.set(Status.Failed("Subscription closed"))
+        None
+
+      case Message.TakenOver =>
+        upstreamKillSwitch.kill()
+        internalStatus.set(Status.Failed(
+          "This plan has been opened in a tab running a different version of the site. " +
+            "Reload this page to continue editing it."
+        ))
         None
 
       case Message.Error(cause) =>

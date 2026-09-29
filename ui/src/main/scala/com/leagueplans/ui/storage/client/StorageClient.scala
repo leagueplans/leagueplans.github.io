@@ -216,6 +216,11 @@ final class StorageClient(
         (planID, PlanSubscription.Message.Done)
       )
 
+    case Outbound.SubscriptionTakenOver(planID) =>
+      subscriptionBus.writer.onNext(
+        (planID, PlanSubscription.Message.TakenOver)
+      )
+
     case Outbound.Update(planID, lamport, update) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.Update(lamport, update.merge))
