@@ -13,7 +13,7 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2026, 3, 13),
+        new Date(2026, 3, 15),
         "Leagues VI today!",
         List(
           "All tasks for Leagues VI have been implemented.",
