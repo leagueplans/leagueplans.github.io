@@ -18,6 +18,7 @@ object PlanElement {
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     focusController: FocusController,
+    collapsedSteps: CollapsedSteps,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     timeKeeper: TimeKeeper,
@@ -45,6 +46,7 @@ object PlanElement {
         tooltip,
         contextMenu,
         focusController,
+        collapsedSteps,
         stepMover,
         stepClipboard
       ).amend(L.cls(Styles.steps)),

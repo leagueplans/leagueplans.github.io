@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.FocusController
+import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -47,6 +47,7 @@ object PlanningPageBootstrap {
       FocusContext(focusedStep, forester.signal, projectionClient.projection),
       timeKeeper,
       focusController,
+      CollapsedSteps(subscription.planID, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,
       cache,
       itemFuse,

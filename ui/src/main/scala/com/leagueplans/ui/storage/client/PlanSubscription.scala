@@ -3,7 +3,7 @@ package com.leagueplans.ui.storage.client
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker.Status
 import com.leagueplans.ui.storage.client.PlanSubscription.Message
-import com.leagueplans.ui.storage.model.{LamportTimestamp, StepUpdates}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, StepUpdates}
 import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.withKillSwitch
 import com.raquo.airstream.core.{EventStream, Signal}
@@ -22,6 +22,7 @@ object PlanSubscription {
 }
 
 final class PlanSubscription(
+  val planID: PlanID,
   initialLamport: LamportTimestamp,
   messages: EventStream[Message],
   save: (LamportTimestamp, StepUpdates | Plan.Settings) => ?,

@@ -27,6 +27,7 @@ object InteractiveForest {
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     focusController: FocusController,
+    collapsedSteps: CollapsedSteps,
     stepMover: StepMover,
     stepClipboard: StepClipboard
   ): ReactiveHtmlElement[OList] = {
@@ -60,6 +61,7 @@ object InteractiveForest {
             focusContext.signalFor(stepID),
             substepFocused = newFocusAncestors.filter(_.contains(stepID)).mapToUnit,
             focusController,
+            collapsedSteps,
             completionController,
             draggingStatus,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)).distinct,

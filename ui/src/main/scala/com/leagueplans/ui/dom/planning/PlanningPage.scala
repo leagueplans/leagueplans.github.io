@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.{FocusController, PlanElement}
+import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
@@ -27,6 +27,7 @@ object PlanningPage {
     focusContext: FocusContext,
     timeKeeper: TimeKeeper,
     focusController: FocusController,
+    collapsedSteps: CollapsedSteps,
     stepsWithErrors: Signal[Map[Step.ID, List[String]]],
     cache: Cache,
     itemFuse: Fuse[Item],
@@ -49,6 +50,7 @@ object PlanningPage {
         forester,
         focusContext,
         focusController,
+        collapsedSteps,
         editingEnabled = Val(true),
         stepsWithErrors.map(_.keySet).distinct,
         timeKeeper,

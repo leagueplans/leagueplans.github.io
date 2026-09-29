@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
-import com.leagueplans.ui.dom.planning.plan.{CompletedStep, FocusController, StepClipboard}
+import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
@@ -31,6 +31,7 @@ object StepElement {
     isFocused: Signal[Boolean],
     substepFocused: EventStream[Unit],
     focusController: FocusController,
+    collapsedSteps: CollapsedSteps,
     completionController: CompletedStep.Controller,
     draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
@@ -45,7 +46,7 @@ object StepElement {
     val isDraggable = Var(false)
     val isDraggingSignal = draggingStatus.signal.map(_ != StepDraggingStatus.NotDragging).distinct
     val animationController = InvertibleAnimationController(
-      startOpen = true,
+      startOpen = !collapsedSteps.isCollapsed(stepID),
       animationDuration = 200.millis
     )
     val header = toHeader(
@@ -77,6 +78,10 @@ object StepElement {
         ),
         toFocusListeners(stepID, isFocused, focusController),
         substepFocused --> (_ => animationController.open()),
+        animationController.statusSignal.changes.collect {
+          case InvertibleAnimationController.Status.Open => false
+          case InvertibleAnimationController.Status.Closed => true
+        } --> (collapsed => collapsedSteps.set(stepID, collapsed)),
         toHoverListeners(isHovering),
         StepDragListeners(
           stepID,

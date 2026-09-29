@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.landing.menu
 
+import com.leagueplans.ui.dom.planning.plan.CollapsedSteps
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.PlanID
 import com.leagueplans.uicommon.dom.*
@@ -51,6 +52,6 @@ object DeleteButton {
         15.seconds,
         s"Failed to delete plan. Cause: [${error.message}]"
       ),
-      onSuccess = _ => ()
+      onSuccess = _ => CollapsedSteps.forget(id)
     )
 }

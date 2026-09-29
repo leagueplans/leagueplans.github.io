@@ -193,6 +193,7 @@ final class StorageClient(
     case Outbound.Subscription(requestID, planID, lamport, plan) =>
       requests.subscriptions.remove(requestID).foreach { observer =>
         val subscription = new PlanSubscription(
+          planID,
           lamport,
           subscriptionBus.events.collect {
             case (`planID`, message) => message
