@@ -65,6 +65,17 @@ final class ForestPropertyTest
 
       persist(batches) shouldEqual forest
     }
+
+    "are persisted faithfully when combined into a single batch" in forAll(opsGen) { ops =>
+      val (forest, updates) =
+        ops.foldLeft((Forest.empty[Step.ID, Step], List.empty[Update[Step.ID, Step]])) {
+          case ((forest, allUpdates), op) =>
+            val updates = toUpdates(forest, op)
+            (ForestResolver.resolve(forest, updates), allUpdates ++ updates)
+        }
+
+      persist(List(updates)) shouldEqual forest
+    }
   }
 }
 

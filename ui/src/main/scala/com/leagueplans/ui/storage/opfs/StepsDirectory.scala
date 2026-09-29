@@ -32,7 +32,16 @@ final class StepsDirectory[T : DirectoryHandleLike](underlying: T) {
   
   def remove(id: Step.ID): EventStream[Either[FileSystemError.UnexpectedFileSystemError, ?]] =
     underlying.removeFile(toFileName(id))
-  
+
+  def remove(ids: Iterable[Step.ID]): EventStream[Either[FileSystemError.UnexpectedFileSystemError, ?]] =
+    EventStream
+      .safeSequence(ids.map(remove).toSeq)
+      .map(results =>
+        results
+          .collectFirst { case l @ Left(_) => l }
+          .getOrElse(Right(()))
+      )
+
   def read(id: Step.ID): EventStream[Either[FileSystemError, Step]] =
     underlying
       .read[StepDetails](toFileName(id))

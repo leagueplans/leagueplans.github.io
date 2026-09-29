@@ -74,13 +74,8 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
   
   def applyUpdate(update: StepUpdates | Plan.Settings): EventStream[Either[FileSystemError, ?]] = {
     val changes = update match {
-      case StepUpdates(updates) =>
-        updates.foldLeft(EventStream.fromValue[Either[FileSystemError, Any]](Right(()), emitOnce = true))(
-          (previous, update) => previous.andThen(_ => applyStepUpdate(update))
-        )
-
-      case settings: Plan.Settings =>
-        writeSettings(settings)
+      case StepUpdates(updates) => applyStepUpdates(updates)
+      case settings: Plan.Settings => writeSettings(settings)
     }
 
     changes
@@ -88,62 +83,74 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
       .andThen(old => writeMetadata(PlanMetadata(old.name)))
   }
 
-  private def applyStepUpdate(update: Forest.Update[Step.ID, Step]): EventStream[Either[FileSystemError, ?]] =
+  /** Applies the updates with at most one read and write of the step mappings. So that an
+    * interrupted batch never leaves the mappings referring to a missing step, step files are
+    * written before the mappings and only removed after them. */
+  private def applyStepUpdates(updates: List[Forest.Update[Step.ID, Step]]): EventStream[Either[FileSystemError, ?]] = {
+    // Only the last version of each step needs writing, and a step that's removed doesn't
+    val (written, removed) = updates.foldLeft((Map.empty[Step.ID, Step], Set.empty[Step.ID])) {
+      case ((written, removed), Update.AddNode(id, data)) => (written + (id -> data), removed - id)
+      case ((written, removed), Update.UpdateData(id, data)) => (written + (id -> data), removed - id)
+      case ((written, removed), Update.RemoveNode(id)) => (written - id, removed + id)
+      case (acc, _) => acc
+    }
+    val changesStructure = updates.exists {
+      case _: Update.UpdateData[?, ?] => false
+      case _ => true
+    }
+
+    acquireStepsDirectory().andThen(steps =>
+      steps
+        .write(written.values)
+        .andThen(_ =>
+          if (changesStructure) updateMappings(updates.foldLeft(_)(applyToMappings))
+          else EventStream.fromValue(Right(()), emitOnce = true)
+        )
+        .andThen(_ => steps.remove(removed))
+    )
+  }
+
+  private def applyToMappings(mappings: StepMappings, update: Forest.Update[Step.ID, Step]): StepMappings =
     update match {
-      case Update.AddNode(id, data) =>
-        acquireStepsDirectory()
-          .andThen(_.write(data))
-          .andThen(_ => updateMappings(original =>
-            original.copy(
-              toChildren = original.toChildren + (id -> List.empty),
-              roots = original.roots :+ id
-            )
-          ))
-        
-      case Update.RemoveNode(id) =>
-        updateMappings(original =>
-          original.copy(
-            toChildren = original.toChildren - id,
-            roots = original.roots.filterNot(_ == id)
-          )
-        ).andThen(_ => acquireStepsDirectory())
-          .andThen(_.remove(id))
-        
-      case Update.AddLink(child, parent) =>
-        updateMappings(original =>
-          original.copy(
-            toChildren = original.toChildren + (parent -> (original.toChildren(parent) :+ child)),
-            roots = original.roots.filterNot(_ == child)
-          )
-        )
-        
-      case Update.RemoveLink(child, parent) =>
-        updateMappings(original =>
-          original.copy(
-            toChildren = original.toChildren + (parent -> original.toChildren(parent).filterNot(_ == child)),
-            roots = original.roots :+ child
-          )
-        )
-        
-      case Update.ChangeParent(child, oldParent, newParent) =>
-        updateMappings(original =>
-          original.copy(toChildren =
-            original.toChildren +
-              (oldParent -> original.toChildren(oldParent).filterNot(_ == child)) +
-              (newParent -> (original.toChildren(newParent) :+ child))
-          )
-        )
-        
-      case Update.UpdateData(id, data) =>
-        acquireStepsDirectory().andThen(_.write(data))
-        
-      case Update.Reorder(children, Some(parent)) =>
-        updateMappings(original =>
-          original.copy(toChildren = original.toChildren + (parent -> children))
+      case Update.AddNode(id, _) =>
+        mappings.copy(
+          toChildren = mappings.toChildren + (id -> List.empty),
+          roots = mappings.roots :+ id
         )
 
+      case Update.RemoveNode(id) =>
+        mappings.copy(
+          toChildren = mappings.toChildren - id,
+          roots = mappings.roots.filterNot(_ == id)
+        )
+
+      case Update.AddLink(child, parent) =>
+        mappings.copy(
+          toChildren = mappings.toChildren + (parent -> (mappings.toChildren(parent) :+ child)),
+          roots = mappings.roots.filterNot(_ == child)
+        )
+
+      case Update.RemoveLink(child, parent) =>
+        mappings.copy(
+          toChildren = mappings.toChildren + (parent -> mappings.toChildren(parent).filterNot(_ == child)),
+          roots = mappings.roots :+ child
+        )
+
+      case Update.ChangeParent(child, oldParent, newParent) =>
+        mappings.copy(toChildren =
+          mappings.toChildren +
+            (oldParent -> mappings.toChildren(oldParent).filterNot(_ == child)) +
+            (newParent -> (mappings.toChildren(newParent) :+ child))
+        )
+
+      case Update.UpdateData(_, _) =>
+        mappings
+
+      case Update.Reorder(children, Some(parent)) =>
+        mappings.copy(toChildren = mappings.toChildren + (parent -> children))
+
       case Update.Reorder(roots, None) =>
-        updateMappings(_.copy(roots = roots))
+        mappings.copy(roots = roots)
     }
 
   private def updateMappings(f: StepMappings => StepMappings): EventStream[Either[FileSystemError, ?]] =
