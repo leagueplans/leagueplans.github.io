@@ -18,7 +18,7 @@ object InventoryElement {
     playerSignal: Signal[Player],
     cache: Cache,
     itemFuse: Fuse[Item],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal,

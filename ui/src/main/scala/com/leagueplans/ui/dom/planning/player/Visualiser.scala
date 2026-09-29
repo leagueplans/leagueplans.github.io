@@ -16,7 +16,7 @@ object Visualiser {
     isGridMaster: Boolean,
     cache: Cache,
     itemFuse: Fuse[Item],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     expMultipliers: List[ExpMultiplier],
     tooltip: Tooltip,
     contextMenu: ContextMenu,

@@ -116,16 +116,21 @@ object PlanningPage {
     val plan: String = js.native
   }
 
+  /** Adds effects to the focused step. Several effects can be added together in one update. */
   private def createEffectObserver(
     focusedStepSignal: Signal[Option[Step]],
     forester: Forester[Step.ID, Step]
-  ): Signal[Option[Observer[Effect]]] =
+  ): Signal[Option[Observer[Effect | Seq[Effect]]]] =
     focusedStepSignal.map(_.map(focusedStep =>
-      Observer[Effect](effect =>
+      Observer[Effect | Seq[Effect]] { effectOrEffects =>
+        val effects = effectOrEffects match {
+          case effect: Effect => List(effect)
+          case effects: Seq[Effect @unchecked] => effects
+        }
         forester.update(focusedStep.id, step =>
-          step.deepCopy(directEffects = step.directEffects + effect)
+          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(_ + _))
         )
-      )
+      }
     ))
 
   private def createEditorFallback(forestSignal: Signal[Forest[Step.ID, Step]]): L.Div =

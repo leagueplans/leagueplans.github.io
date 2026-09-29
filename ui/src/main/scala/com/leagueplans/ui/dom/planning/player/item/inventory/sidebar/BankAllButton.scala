@@ -10,7 +10,7 @@ import com.raquo.laminar.api.{L, textToTextNode}
 object BankAllButton {
   def apply(
     depositorySignal: Signal[Depository],
-    effectObserverSignal: Signal[Option[Observer[MoveItem]]]
+    effectObserverSignal: Signal[Option[Observer[Seq[MoveItem]]]]
   ): L.Button =
     Button(
       _.handledWith(
@@ -23,9 +23,10 @@ object BankAllButton {
       L.disabled <-- effectObserverSignal.map(_.isEmpty)
     )
 
-  private def createClickObserver: Observer[(Observer[MoveItem], Depository)] =
+  // All the moves are submitted together, so that they're added to the step in one update
+  private def createClickObserver: Observer[(Observer[Seq[MoveItem]], Depository)] =
     Observer((observer, depository) =>
-      createMoves(depository).foreach(observer.onNext)
+      observer.onNext(createMoves(depository).toList)
     )
 
   private def createMoves(depository: Depository): Iterable[MoveItem] =
