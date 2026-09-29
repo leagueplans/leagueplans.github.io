@@ -13,6 +13,17 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 8, 29),
+        "New keyboard shortcuts",
+        List(
+          "Alt + arrow keys move the focused step. Up and down swap it with the steps around it, right makes" +
+            " it a substep of the step above, and left moves it out of its parent.",
+          "E edits the focused step's description.",
+          "Ctrl + C, Ctrl + X and Ctrl + V copy, cut and paste the focused step (Cmd on a Mac).",
+          "You can find every shortcut by clicking the keyboard icon above your steps."
+        )
+      ),
+      item(
         new Date(2026, 3, 15),
         "Leagues VI today!",
         List(
