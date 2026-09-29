@@ -170,7 +170,10 @@ object StepElement {
       L.onClick.handledAs(stepID) --> focusController.toggle,
       L.onKey(KeyValue.Enter).handledAs(stepID) --> focusController.toggle,
       L.inContext[L.HtmlElement](ctx =>
-        isFocused.changes --> {
+        // Deferred until the DOM has settled, so that a step inside a collapsed superstep can
+        // take focus once the superstep has started to open. Both directions are deferred to
+        // keep them in order.
+        isFocused.changes.delay(ms = 0) --> {
           case true => ctx.ref.focus()
           case false => ctx.ref.blur()
         }

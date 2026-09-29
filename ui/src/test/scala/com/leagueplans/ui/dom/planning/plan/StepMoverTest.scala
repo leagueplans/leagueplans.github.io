@@ -62,7 +62,30 @@ final class StepMoverTest extends AnyFreeSpec with Matchers {
     succeed
   }
 
+  private def reportedMoves(move: StepMover => Unit): List[Step.ID] =
+    Using(new ManualOwner) { owner =>
+      val mover = StepMover(Forester(initial, Observer.empty))
+      var moves = List.empty[Step.ID]
+      mover.moves.foreach(step => moves :+= step)(using owner)
+      move(mover)
+      moves
+    }(using _.killSubscriptions()).get
+
   "StepMover" - {
+    "reports the steps it moves" in {
+      reportedMoves(_.moveUp(stepD.id)) shouldEqual List(stepD.id)
+      reportedMoves(_.moveDown(stepB.id)) shouldEqual List(stepB.id)
+      reportedMoves(_.indent(stepD.id)) shouldEqual List(stepD.id)
+      reportedMoves(_.outdent(stepC.id)) shouldEqual List(stepC.id)
+    }
+
+    "does not report moves that don't happen" in {
+      reportedMoves(_.moveUp(stepB.id)) shouldEqual List.empty
+      reportedMoves(_.moveDown(stepE.id)) shouldEqual List.empty
+      reportedMoves(_.indent(stepB.id)) shouldEqual List.empty
+      reportedMoves(_.outdent(stepA.id)) shouldEqual List.empty
+    }
+
     "moveUp" - {
       "swaps a step with its previous sibling" in test(_.moveUp(stepD.id))(
         Map(stepA -> List(stepD, stepB), stepB -> List(stepC)),

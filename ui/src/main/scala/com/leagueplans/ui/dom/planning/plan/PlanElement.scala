@@ -29,6 +29,7 @@ object PlanElement {
     val newStepForm = NewStepForm(forester, modal)
     val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
     val stepClipboard = StepClipboard(forester, toastPublisher)
+    val stepMover = StepMover(forester)
 
     L.div(
       L.cls(Styles.plan),
@@ -44,12 +45,13 @@ object PlanElement {
         tooltip,
         contextMenu,
         focusController,
+        stepMover,
         stepClipboard
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(
         focusContext.focusID,
         focusController,
-        StepMover(forester),
+        stepMover,
         stepClipboard,
         newStepForm,
         deleteStepForm,
