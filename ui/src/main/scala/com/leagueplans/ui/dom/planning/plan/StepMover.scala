@@ -5,11 +5,7 @@ import com.leagueplans.ui.model.plan.Step
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
 
-/** Moves steps around the plan one position at a time, for keyboard shortcuts.
-  *
-  * Calls made from within an Airstream transaction (like an event handler) defer each forest
-  * update until the transaction ends, so every target order is derived from the forest as it
-  * was before the move. */
+/** Moves steps around the plan one position at a time, for keyboard shortcuts */
 final class StepMover(forester: Forester[Step.ID, Step]) {
   private val movesBus = EventBus[Step.ID]()
 
@@ -26,37 +22,39 @@ final class StepMover(forester: Forester[Step.ID, Step]) {
     swapWithSibling(step, offset = 1)
 
   /** Makes the step the last substep of its previous sibling */
-  def indent(step: Step.ID): Unit = {
-    val forest = forester.signal.now()
-    forest.siblings(step).takeWhile(_ != step).lastOption.foreach { previous =>
-      forester.move(step, previous)
-      movesBus.emit(step)
-    }
-  }
+  def indent(step: Step.ID): Unit =
+    forester.batch(batch =>
+      batch.forest.siblings(step).takeWhile(_ != step).lastOption.foreach { previous =>
+        batch.move(step, previous)
+        movesBus.emit(step)
+      }
+    )
 
   /** Makes the step the next sibling of its parent */
-  def outdent(step: Step.ID): Unit = {
-    val forest = forester.signal.now()
-    forest.toParent.get(step).foreach { parent =>
-      val newOrder = forest.siblings(parent).flatMap(sibling =>
-        if (sibling == parent) List(parent, step) else List(sibling)
-      )
-      forest.toParent.get(parent) match {
-        case Some(grandparent) => forester.move(step, grandparent)
-        case None => forester.promoteToRoot(step)
+  def outdent(step: Step.ID): Unit =
+    forester.batch { batch =>
+      val forest = batch.forest
+      forest.toParent.get(step).foreach { parent =>
+        val newOrder = forest.siblings(parent).flatMap(sibling =>
+          if (sibling == parent) List(parent, step) else List(sibling)
+        )
+        forest.toParent.get(parent) match {
+          case Some(grandparent) => batch.move(step, grandparent)
+          case None => batch.promoteToRoot(step)
+        }
+        batch.reorder(newOrder)
+        movesBus.emit(step)
       }
-      forester.reorder(newOrder)
-      movesBus.emit(step)
     }
-  }
 
-  private def swapWithSibling(step: Step.ID, offset: Int): Unit = {
-    val siblings = forester.signal.now().siblings(step)
-    val index = siblings.indexOf(step)
-    val target = index + offset
-    if (index >= 0 && siblings.indices.contains(target)) {
-      forester.reorder(siblings.updated(index, siblings(target)).updated(target, step))
-      movesBus.emit(step)
+  private def swapWithSibling(step: Step.ID, offset: Int): Unit =
+    forester.batch { batch =>
+      val siblings = batch.forest.siblings(step)
+      val index = siblings.indexOf(step)
+      val target = index + offset
+      if (index >= 0 && siblings.indices.contains(target)) {
+        batch.reorder(siblings.updated(index, siblings(target)).updated(target, step))
+        movesBus.emit(step)
+      }
     }
-  }
 }

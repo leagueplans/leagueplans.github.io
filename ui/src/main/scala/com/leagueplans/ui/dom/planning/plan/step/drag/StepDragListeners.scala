@@ -183,24 +183,27 @@ object StepDragListeners {
             forester.move(child = dropped, newParent = droppedOver)
 
           case RelativePosition.Before | RelativePosition.After =>
-            val maybeParent = forest.toParent.get(droppedOver)
-            val neighbours = maybeParent match {
-              case Some(parent) => forest.toChildren(parent).filterNot(_ == dropped)
-              case None => forest.roots.filterNot(_ == dropped)
-            }
-            // We earlier checked that dropped != droppedOver, so droppedOver is in the list
-            val (before, `droppedOver` :: after) = neighbours.span(_ != droppedOver): @unchecked
-            val newOrder =
-              if (relativeDropPosition == RelativePosition.Before)
-                ((before :+ dropped) :+ droppedOver) ++ after
-              else
-                ((before :+ droppedOver) :+ dropped) ++ after
+            // Both steps could have been removed by another tab since the drop
+            forester.batch(batch => if (batch.forest.contains(dropped) && batch.forest.contains(droppedOver)) {
+              val maybeParent = batch.forest.toParent.get(droppedOver)
+              val neighbours = maybeParent match {
+                case Some(parent) => batch.forest.toChildren(parent).filterNot(_ == dropped)
+                case None => batch.forest.roots.filterNot(_ == dropped)
+              }
+              // We earlier checked that dropped != droppedOver, so droppedOver is in the list
+              val (before, `droppedOver` :: after) = neighbours.span(_ != droppedOver): @unchecked
+              val newOrder =
+                if (relativeDropPosition == RelativePosition.Before)
+                  ((before :+ dropped) :+ droppedOver) ++ after
+                else
+                  ((before :+ droppedOver) :+ dropped) ++ after
 
-            maybeParent match {
-              case Some(parent) => forester.move(dropped, parent)
-              case None => forester.promoteToRoot(dropped)
-            }
-            forester.reorder(newOrder)
+              maybeParent match {
+                case Some(parent) => batch.move(dropped, parent)
+                case None => batch.promoteToRoot(dropped)
+              }
+              batch.reorder(newOrder)
+            })
         }
       }
     }

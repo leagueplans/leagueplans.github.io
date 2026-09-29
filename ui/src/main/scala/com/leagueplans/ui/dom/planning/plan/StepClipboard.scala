@@ -53,15 +53,17 @@ final class StepClipboard(forester: Forester[Step.ID, Step], toastPublisher: Toa
 
       case _ =>
         val regeneratedForest = forest.map((_, step) => step.copy(id = Step.ID.generate()))
-        regeneratedForest.roots.foreach(root =>
-          regeneratedForest.get(root).foreach(
-            forester.add(_, parent)
+        forester.batch { batch =>
+          regeneratedForest.roots.foreach(root =>
+            regeneratedForest.get(root).foreach(
+              batch.add(_, parent)
+            )
           )
-        )
-        regeneratedForest.foreachParent((parent, children) =>
-          children.foreach(
-            forester.add(_, parent.id)
+          regeneratedForest.foreachParent((parent, children) =>
+            children.foreach(
+              batch.add(_, parent.id)
+            )
           )
-        )
+        }
     }
 }
