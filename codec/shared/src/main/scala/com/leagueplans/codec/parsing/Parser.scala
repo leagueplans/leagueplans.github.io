@@ -5,7 +5,6 @@ import com.leagueplans.codec.parsing.ParsingFailure.Cause
 
 import java.nio.{ByteBuffer, ByteOrder}
 import scala.annotation.tailrec
-import scala.util.{Failure, Success, Try}
 
 object Parser {
   def parseVarint(bytes: Array[Byte]): Either[ParsingFailure, Encoding.Varint] =
@@ -41,34 +40,53 @@ object Parser {
     parseMessageHelper(ParserInput(bytes))
 
   private def parseVarint(input: ParserInput): Either[ParsingFailure, Encoding.Varint] =
-    input.scoped(parseVarintScoped(input))
-
-  private def parseVarintScoped(input: ParserInput)(
-    using input.Scope
-  ): Either[Cause, Encoding.Varint] = {
-    val encodedVarint = input.takeWhile(!isLastByteOfVarint(_)) ++ input.take(1)
-    val hasLastByte = encodedVarint.lastOption.exists(isLastByteOfVarint)
-
-    Either.cond(
-      hasLastByte,
-      Encoding.Varint(BinaryString.unsafe(
-        encodedVarint.map { b =>
-          val binaryString = BinaryString(removeContinuationBit(b))
-          s"${"0".repeat(VarintSegmentLength - binaryString.length)}$binaryString"
-        }.reduce((acc, s) => s"$s$acc")
-      )),
-      Cause.VarintMissingTerminalByte
+    input.scoped(
+      readVarint(input).map(raw => Encoding.Varint(toBinaryString(input, raw)))
     )
+
+  /** A varint's value, if it fits in 64 bits. Varints can be arbitrarily long, so
+    * `fitsInLong` is false when the value had to be truncated.
+    */
+  private final class RawVarint(val value: Long, val fitsInLong: Boolean, val start: Int)
+
+  private def readVarint(input: ParserInput)(using input.Scope): Either[Cause, RawVarint] = {
+    val start = input.currentPosition
+    var value = 0L
+    var fitsInLong = true
+    var shift = 0
+    var terminated = false
+
+    var b = input.nextByte()
+
+    while (!terminated && b != ParserInput.EndOfInput) {
+      val segment = b & varintSegmentMask
+      if (segment != 0) {
+        if (shift >= 64 || (shift > 64 - VarintSegmentLength && (segment >>> (64 - shift)) != 0))
+          fitsInLong = false
+        else
+          value |= segment.toLong << shift
+      }
+      terminated = (b & varintContinuationBit) == 0
+      shift += VarintSegmentLength
+      if (!terminated) b = input.nextByte()
+    }
+
+    Either.cond(terminated, RawVarint(value, fitsInLong, start), Cause.VarintMissingTerminalByte)
   }
 
-  private def isLastByteOfVarint(b: Byte): Boolean =
-    (b & varintContinuationBit) == 0
+  private def toBinaryString(input: ParserInput, raw: RawVarint): BinaryString =
+    if (raw.fitsInLong)
+      BinaryString(raw.value)
+    else
+      BinaryString.unsafe(
+        input.bytesSince(raw.start).map { b =>
+          val binaryString = BinaryString(b & varintSegmentMask)
+          s"${"0".repeat(VarintSegmentLength - binaryString.length)}$binaryString"
+        }.reduce((acc, s) => s"$s$acc")
+      )
 
-  private def removeContinuationBit(b: Byte): Int =
-    b & ~varintContinuationBit
-
-  private val varintContinuationBit: Byte =
-    Integer.parseInt("10000000", 2).toByte
+  private val varintContinuationBit: Int = 0x80
+  private val varintSegmentMask: Int = 0x7f
 
   private def parseI64(input: ParserInput): Either[ParsingFailure, Encoding.I64] =
     input
@@ -120,30 +138,26 @@ object Parser {
 
   private def parseTag(input: ParserInput): Either[ParsingFailure, (FieldNumber, Discriminant)] =
     input.scoped(
-      parseVarintScoped(input).flatMap { varint =>
-        val binary = varint.value
-        val (encodedFieldNumber, encodedDiscriminant) =
-          binary.splitAt(binary.length - Discriminant.maxBitLength)
-
+      readVarint(input).flatMap(raw =>
         for {
-          fieldNumber <- parseFieldNumber(encodedFieldNumber)
-          discriminant <- parseDiscriminant(encodedDiscriminant)
+          fieldNumber <- parseFieldNumber(input, raw)
+          discriminant <- parseDiscriminant(raw)
         } yield (fieldNumber, discriminant)
-      }
+      )
     )
 
-  private def parseFieldNumber(encoded: String): Either[Cause, FieldNumber] =
-    if (encoded.isEmpty)
-      Right(FieldNumber(0))
-    else
-      Try(Integer.parseUnsignedInt(encoded, 2)) match {
-        case Success(i) if i >= 0 => Right(FieldNumber(i))
-        case Success(i) => Left(Cause.NegativeFieldNumber(i))
-        case Failure(_) => Left(Cause.FailedToParseFieldNumber(encoded))
-      }
+  private def parseFieldNumber(input: ParserInput, raw: RawVarint): Either[Cause, FieldNumber] = {
+    val encoded = raw.value >>> Discriminant.maxBitLength
+    if (raw.fitsInLong && fitsInUnsignedInt(encoded))
+      Either.cond(encoded.toInt >= 0, FieldNumber(encoded.toInt), Cause.NegativeFieldNumber(encoded.toInt))
+    else {
+      val binary = toBinaryString(input, raw)
+      Left(Cause.FailedToParseFieldNumber(binary.dropRight(Discriminant.maxBitLength)))
+    }
+  }
 
-  private def parseDiscriminant(encoded: String): Either[Cause, Discriminant] = {
-    val ordinal = Integer.parseUnsignedInt(encoded, 2)
+  private def parseDiscriminant(raw: RawVarint): Either[Cause, Discriminant] = {
+    val ordinal = (raw.value & ((1 << Discriminant.maxBitLength) - 1)).toInt
     Discriminant.from(ordinal).toRight(
       Cause.UnrecognisedDiscriminant(ordinal)
     )
@@ -159,8 +173,15 @@ object Parser {
   private def parseMessageField(input: ParserInput): Either[ParsingFailure, Encoding.Message] =
     parseLength(input, Discriminant.Message).flatMap(length =>
       input
-        .scoped(takeOrFail(input, length, Discriminant.Message))
-        .flatMap(bytes => parseMessageHelper(ParserInput(bytes)))
+        .scoped {
+          val nested = input.takeInput(length)
+          Either.cond(
+            nested.length == length,
+            nested,
+            Cause.NotEnoughBytesRemaining(length, Discriminant.Message)
+          )
+        }
+        .flatMap(parseMessageHelper)
     )
 
   private def takeOrFail(input: ParserInput, n: Int, discriminant: Discriminant)(
@@ -179,12 +200,14 @@ object Parser {
     discriminant: Discriminant
   ): Either[ParsingFailure, Int] =
     input.scoped(
-      parseVarintScoped(input).flatMap(varint =>
-        Try(Integer.parseUnsignedInt(varint.value, 2)) match {
-          case Success(length) if length >= 0 => Right(length)
-          case Success(length) => Left(Cause.NegativeLength(length, discriminant))
-          case Failure(_) => Left(Cause.FailedToParseLength(varint.value, discriminant))
-        }
+      readVarint(input).flatMap(raw =>
+        if (raw.fitsInLong && fitsInUnsignedInt(raw.value))
+          Either.cond(raw.value.toInt >= 0, raw.value.toInt, Cause.NegativeLength(raw.value.toInt, discriminant))
+        else
+          Left(Cause.FailedToParseLength(toBinaryString(input, raw), discriminant))
       )
     )
+
+  private def fitsInUnsignedInt(l: Long): Boolean =
+    (l >>> 32) == 0
 }
