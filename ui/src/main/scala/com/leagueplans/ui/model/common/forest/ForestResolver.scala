@@ -39,9 +39,6 @@ object ForestResolver {
           updatedRoots = forest.roots :+ child
         )
         
-      case ChangeParent(child, oldParent, newParent) =>
-        resolve(forest, List(RemoveLink(child, oldParent), AddLink(child, newParent)))
-        
       case UpdateData(id, data) =>
         make(forest)(updatedNodes = forest.nodes + (id -> data))
 

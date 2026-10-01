@@ -131,8 +131,8 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
 
       case Update.AddLink(child, parent) =>
         val gapStart = runningStartFor(child)
-        // AddLink only fires when child is a root (ChangeParent handles non-root moves via
-        // RemoveLink + AddLink), so child's current siblings are the other roots.
+        // AddLink only fires when child is a root (a move between parents is a RemoveLink
+        // followed by an AddLink), so child's current siblings are the other roots.
         val oldFollowingRoots = forest.siblings(child).dropWhile(_ != child).drop(1)
         forest = ForestResolver.resolve(forest, Update.AddLink(child, parent))
         // 1. Heal the gap left in roots
@@ -155,10 +155,6 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
         // parent doesn't always reach it.
         recomputeSubtreeStarts(child, runningStartFor(child))
         updateEndTime()
-
-      case Update.ChangeParent(child, oldParent, newParent) =>
-        update(Update.RemoveLink(child, oldParent))
-        update(Update.AddLink(child, newParent))
 
       case Update.UpdateData(id, data) =>
         forest.get(id).foreach { old =>

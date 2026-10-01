@@ -467,7 +467,7 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
     }
   }
 
-  "ChangeParent" - {
+  "Moving between parents" - {
     "moving a child updates both old and new parents' timings" in {
       val p1 = step("p1", dur = StepDuration.ticks(1))
       val p2 = step("p2", dur = StepDuration.ticks(2))
@@ -477,7 +477,9 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
         parentsToChildren = Map(p1.id -> List(c.id)),
         roots = List(p1.id, p2.id)
       ))
-      k.update(Update.ChangeParent(c.id, p1.id, p2.id))
+      // As ForestInterpreter emits a move between parents
+      k.update(Update.RemoveLink(c.id, p1.id))
+      k.update(Update.AddLink(c.id, p2.id))
 
       // p1 loses c: its totalChildDuration clears
       k.get(p1.id).now().totalChildDuration shouldBe None

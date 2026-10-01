@@ -50,22 +50,15 @@ final class ForestTest extends CodecSpec {
             Array[Byte](0b1000) ++ parentIDEnc
         )
 
-        "ChangeParent" in test(
-          Forest.Update.ChangeParent(child2ID, parentID, child1ID),
-          Array[Byte](0, 0b100, 0b1100, 0b110, 0) ++ child2IDEnc ++
-            Array[Byte](0b1000) ++ parentIDEnc ++
-            Array[Byte](0b10000) ++ child1IDEnc
-        )
-
         "UpdateData" in test(
           Forest.Update.UpdateData(parentID, child1),
-          Array[Byte](0, 0b101, 0b1100, 0b100, 0) ++ parentIDEnc ++
+          Array[Byte](0, 0b100, 0b1100, 0b100, 0) ++ parentIDEnc ++
             Array[Byte](0b1000) ++ child1Enc
         )
 
         "Reorder" in test(
           Forest.Update.Reorder(List(child2ID, child1ID), Some(parentID)),
-          Array[Byte](0, 0b110, 0b1100, 0b110, 0) ++ child2IDEnc ++
+          Array[Byte](0, 0b101, 0b1100, 0b110, 0) ++ child2IDEnc ++
             Array[Byte](0) ++ child1IDEnc ++
             Array[Byte](0b1000) ++ parentIDEnc
         )

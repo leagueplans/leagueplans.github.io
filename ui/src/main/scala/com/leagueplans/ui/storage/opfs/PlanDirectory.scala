@@ -136,13 +136,6 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
           roots = mappings.roots :+ child
         )
 
-      case Update.ChangeParent(child, oldParent, newParent) =>
-        mappings.copy(toChildren =
-          mappings.toChildren +
-            (oldParent -> mappings.toChildren(oldParent).filterNot(_ == child)) +
-            (newParent -> (mappings.toChildren(newParent) :+ child))
-        )
-
       case Update.UpdateData(_, _) =>
         mappings
 

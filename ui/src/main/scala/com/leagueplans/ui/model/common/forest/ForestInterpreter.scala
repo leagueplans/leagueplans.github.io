@@ -32,10 +32,8 @@ final class ForestInterpreter[ID, T](forest: Forest[ID, T])(using HasID.Aux[T, I
 
           (maybeAddLink, maybeRemoveLink) match {
             case (Some(addLink), Some(removeLink)) =>
-              val changeParent = Option.when(addLink.parent != removeLink.parent)(
-                ChangeParent(childID, removeLink.parent, addLink.parent)
-              ).toList
-              changeParent ++ updateData
+              if (addLink.parent == removeLink.parent) updateData
+              else List(removeLink, addLink) ++ updateData
               
             case (Some(addLink), None) =>
               updateData :+ addLink

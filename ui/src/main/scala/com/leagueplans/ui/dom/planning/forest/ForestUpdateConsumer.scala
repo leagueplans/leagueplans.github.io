@@ -88,10 +88,6 @@ final class ForestUpdateConsumer[ID, Data, Node] private(
         }
         false
 
-      case ChangeParent(child, oldParent, newParent) =>
-        evalOne(RemoveLink(child, oldParent))
-        evalOne(AddLink(child, newParent))
-
       case UpdateData(id, data) =>
         state.get(id).foreach(_.dataUpdater.onNext(data))
         false
