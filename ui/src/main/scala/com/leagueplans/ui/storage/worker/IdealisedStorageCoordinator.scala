@@ -6,6 +6,7 @@ import com.leagueplans.ui.storage.worker.IdealisedStorageCoordinator.{InboundPor
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
+import com.leagueplans.uicommon.wrappers.locks.Locks
 import com.leagueplans.uicommon.wrappers.workers.{MessagePortClient, SharedWorkerScope}
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
@@ -25,7 +26,7 @@ private object IdealisedStorageCoordinator {
     val scope = new SharedWorkerScope[Outbound.ToClient, Inbound.ToCoordinator]
     val messageBus = EventBus[(InboundPort, Inbound.ToCoordinator)]()
     val coordinator = IdealisedStorageCoordinator(
-      PlanSubscriptions.empty,
+      PlanSubscriptions[InboundPort](Locks.web),
       MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](WorkerFactory.storageWorker())
     )
 
@@ -45,7 +46,7 @@ private object IdealisedStorageCoordinator {
 }
 
 private final class IdealisedStorageCoordinator(
-  subscriptions: PlanSubscriptions[Outbound.ToClient, Inbound.ToCoordinator],
+  subscriptions: PlanSubscriptions[InboundPort],
   storageWorker: WorkerPort
 ) {
   def handle(port: InboundPort, message: Inbound.ToCoordinator): EventStream[Result] =

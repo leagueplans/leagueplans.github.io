@@ -68,12 +68,11 @@ object StorageCoordinator {
     val scope = new SharedWorkerScope[MsgOut, MsgIn]
     val messageBus = EventBus[(Port, Inbound.ToCoordinator)]()
 
-    val subscriptions = PlanSubscriptions.empty[MsgOut, MsgIn]
-    val planLocks = PlanLocks(Locks.web)
+    val subscriptions = PlanSubscriptions[Port](Locks.web)
     val setMessageHandler = toSetMessageHandler((port, message) =>
       messageBus.writer.onNext((port, message))
     )
-    val coordinator = StorageCoordinator(subscriptions, planLocks, setMessageHandler)
+    val coordinator = StorageCoordinator(subscriptions, setMessageHandler)
 
     messageBus
       .events
@@ -86,8 +85,7 @@ object StorageCoordinator {
       setMessageHandler(port)(message =>
         onError(
           Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(message)),
-          subscriptions,
-          planLocks
+          subscriptions
         ).foreach((port, message) => port.send(Left(message)))
       )
     )
@@ -104,37 +102,20 @@ object StorageCoordinator {
 
   private def onError(
     error: Outbound.ProtocolFailure,
-    subscriptions: PlanSubscriptions[MsgOut, MsgIn],
-    planLocks: PlanLocks
+    subscriptions: PlanSubscriptions[Port]
   ): Result =
     subscriptions.all.flatMap { case (planID, (_, ports)) =>
       ports.flatMap { port =>
-        deregister(port, planID, subscriptions, planLocks)
+        subscriptions.deregister(port, planID)
         List((port, error), (port, Outbound.SubscriptionTerminated(planID)))
       }
     }
-
-  /** Releases the plan's lock once the plan has no subscribers left */
-  private def deregister(
-    port: Port,
-    planID: PlanID,
-    subscriptions: PlanSubscriptions[MsgOut, MsgIn],
-    planLocks: PlanLocks
-  ): Unit = {
-    subscriptions.deregister(port, planID)
-    if (subscriptions.get(planID).isEmpty)
-      planLocks.release(planID)
-  }
 }
 
 private final class StorageCoordinator(
-  subscriptions: PlanSubscriptions[MsgOut, MsgIn],
-  planLocks: PlanLocks,
+  subscriptions: PlanSubscriptions[Port],
   setMessageHandler: Port => (Outbound.ToCoordinator => ?) => Unit
 ) {
-  private def deregister(port: Port, planID: PlanID): Unit =
-    StorageCoordinator.deregister(port, planID, subscriptions, planLocks)
-
   def handle(port: Port, message: Inbound.ToCoordinator): EventStream[Result] =
     message match {
       case list: Inbound.ListPlans => handleListPlans(port, list)
@@ -165,41 +146,36 @@ private final class StorageCoordinator(
   // after we've read it
   private def handleSubscribe(port: Port, message: Inbound.Subscribe): EventStream[Result] = {
     val planID = message.planID
-    planLocks.steal(planID, onLost = () => takeOver(planID)).flatMapSwitch {
+    subscriptions.lock(planID, onTakenOver = notifyTakenOver(planID)).flatMapSwitch {
       case Left(reason) =>
         lift((port, Outbound.SubscriptionFailed(message.requestID, planID, SubscriptionError.LockUnavailable(reason))))
 
       case Right(()) =>
-      deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](port, Inbound.Read(planID)) {
-        case Outbound.ReadFailed(_, reason) =>
-          if (subscriptions.get(planID).isEmpty) planLocks.release(planID)
-          List((port, Outbound.SubscriptionFailed(message.requestID, planID, SubscriptionError.FileSystem(reason))))
+        deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](port, Inbound.Read(planID)) {
+          case Outbound.ReadFailed(_, reason) =>
+            subscriptions.releaseIfUnused(planID)
+            List((port, Outbound.SubscriptionFailed(message.requestID, planID, SubscriptionError.FileSystem(reason))))
 
-        case Outbound.ReadSucceeded(_, plan) =>
-          val lamportTimestamp = subscriptions.register(port, planID)
-          val subscription = (port, Outbound.Subscription(message.requestID, planID, lamportTimestamp, plan))
-          // Another version of the app may have taken the plan while we were reading it
-          if (planLocks.isHeld(planID))
-            List(subscription)
-          else {
-            deregister(port, planID)
-            List(subscription, (port, Outbound.SubscriptionTakenOver(planID)))
-          }
-      }
+          case Outbound.ReadSucceeded(_, plan) =>
+            val lamportTimestamp = subscriptions.register(port, planID)
+            val subscription = (port, Outbound.Subscription(message.requestID, planID, lamportTimestamp, plan))
+            // Another version of the app may have taken the plan while we were reading it
+            if (subscriptions.isLocked(planID))
+              List(subscription)
+            else {
+              subscriptions.deregister(port, planID)
+              List(subscription, (port, Outbound.SubscriptionTakenOver(planID)))
+            }
+        }
     }
   }
 
-  /** Another version of the app has taken the plan's lock, so this one must stop using it */
-  private def takeOver(planID: PlanID): Unit =
-    subscriptions.get(planID).foreach((_, ports) =>
-      ports.foreach { port =>
-        deregister(port, planID)
-        port.send(Left(Outbound.SubscriptionTakenOver(planID)))
-      }
-    )
+  /** Another version of the app has taken the plan, and its subscribers have been dropped */
+  private def notifyTakenOver(planID: PlanID)(ports: Set[Port]): Unit =
+    ports.foreach(_.send(Left(Outbound.SubscriptionTakenOver(planID))))
 
   private def handleUnsubscribe(port: Port, message: Inbound.Unsubscribe): EventStream[Result] = {
-    deregister(port, message.planID)
+    subscriptions.deregister(port, message.planID)
     lift((port, Outbound.SubscriptionTerminated(message.planID)))
   }
 
@@ -216,7 +192,7 @@ private final class StorageCoordinator(
         if (currentLamport.increment == message.lamport)
           applyUpdate(port, message, ports - port)
         else {
-          deregister(port, message.planID)
+          subscriptions.deregister(port, message.planID)
           lift(
             (port, Outbound.UpdateFailed(message.planID, message.lamport, UpdateError.OutOfSync)),
             (port, Outbound.SubscriptionTerminated(message.planID))
@@ -243,7 +219,7 @@ private final class StorageCoordinator(
         // from the file system.
         val broadcast = Outbound.SubscriptionTerminated(message.planID)
         (otherSubscribers + sourcePort).map { port =>
-          deregister(port, message.planID)
+          subscriptions.deregister(port, message.planID)
           (port, broadcast)
         }.toList.prepended((sourcePort, failure))
 
@@ -254,27 +230,18 @@ private final class StorageCoordinator(
           ((sourcePort, Outbound.UpdateSucceeded(message.planID, message.lamport)))
     }
 
-  // Plans open in any version of the app, including this one, hold a lock
   private def handleDelete(port: Port, message: Inbound.Delete): EventStream[Result] = {
-    val openElsewhere: Result = List((
-      port,
-      Outbound.DeleteFailed(message.requestID, message.planID, DeletionError.PlanOpenInAnotherWindow)
-    ))
+    def failed(reason: DeletionError): Result =
+      List((port, Outbound.DeleteFailed(message.requestID, message.planID, reason)))
 
-    if (subscriptions.get(message.planID).nonEmpty)
-      EventStream.fromValue(openElsewhere, emitOnce = true)
-    else
-      planLocks.whileAvailable(message.planID)(
-        ifUnavailable = openElsewhere,
-        ifFailed = reason => List((
-          port,
-          Outbound.DeleteFailed(message.requestID, message.planID, DeletionError.LockUnavailable(reason))
-        ))
-      )(
-        deferToWorker[Outbound.DeleteFailed | Outbound.DeleteSucceeded](port, message)(resp =>
-          List((port, resp))
-        )
+    subscriptions.whileUnused(message.planID)(
+      ifInUse = failed(DeletionError.PlanOpenInAnotherWindow),
+      ifFailed = reason => failed(DeletionError.LockUnavailable(reason))
+    )(
+      deferToWorker[Outbound.DeleteFailed | Outbound.DeleteSucceeded](port, message)(resp =>
+        List((port, resp))
       )
+    )
   }
 
   private def deferToWorker[Response <: Outbound.ToCoordinator](port: Port, message: Inbound.ToWorker)(
@@ -296,13 +263,13 @@ private final class StorageCoordinator(
 
     eventBus.events.map {
       case error: ProtocolError =>
-        onError(Outbound.ProtocolFailure(error), subscriptions, planLocks)
+        onError(Outbound.ProtocolFailure(error), subscriptions)
 
       case response: Response =>
         handleResponse(response)
 
       case unexpectedMessage: Outbound.ToCoordinator =>
-        onError(Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage)), subscriptions, planLocks)
+        onError(Outbound.ProtocolFailure(ProtocolError.UnexpectedMessage(unexpectedMessage)), subscriptions)
     }
   }
 
