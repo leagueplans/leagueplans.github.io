@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID}
-import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
+import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, SubscriptionError, UpdateError}
 import com.leagueplans.ui.storage.worker.StorageCoordinator.*
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
@@ -165,11 +165,15 @@ private final class StorageCoordinator(
   // after we've read it
   private def handleSubscribe(port: Port, message: Inbound.Subscribe): EventStream[Result] = {
     val planID = message.planID
-    planLocks.steal(planID, onLost = () => takeOver(planID)).flatMapSwitch(_ =>
+    planLocks.steal(planID, onLost = () => takeOver(planID)).flatMapSwitch {
+      case Left(reason) =>
+        lift((port, Outbound.SubscriptionFailed(message.requestID, planID, SubscriptionError.LockUnavailable(reason))))
+
+      case Right(()) =>
       deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](port, Inbound.Read(planID)) {
         case Outbound.ReadFailed(_, reason) =>
           if (subscriptions.get(planID).isEmpty) planLocks.release(planID)
-          List((port, Outbound.SubscriptionFailed(message.requestID, planID, reason)))
+          List((port, Outbound.SubscriptionFailed(message.requestID, planID, SubscriptionError.FileSystem(reason))))
 
         case Outbound.ReadSucceeded(_, plan) =>
           val lamportTimestamp = subscriptions.register(port, planID)
@@ -182,7 +186,7 @@ private final class StorageCoordinator(
             List(subscription, (port, Outbound.SubscriptionTakenOver(planID)))
           }
       }
-    )
+    }
   }
 
   /** Another version of the app has taken the plan's lock, so this one must stop using it */
@@ -260,7 +264,13 @@ private final class StorageCoordinator(
     if (subscriptions.get(message.planID).nonEmpty)
       EventStream.fromValue(openElsewhere, emitOnce = true)
     else
-      planLocks.whileAvailable(message.planID)(openElsewhere)(
+      planLocks.whileAvailable(message.planID)(
+        ifUnavailable = openElsewhere,
+        ifFailed = reason => List((
+          port,
+          Outbound.DeleteFailed(message.requestID, message.planID, DeletionError.LockUnavailable(reason))
+        ))
+      )(
         deferToWorker[Outbound.DeleteFailed | Outbound.DeleteSucceeded](port, message)(resp =>
           List((port, resp))
         )

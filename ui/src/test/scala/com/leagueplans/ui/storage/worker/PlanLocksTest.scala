@@ -82,11 +82,12 @@ final class PlanLocksTest extends AsyncFreeSpec with Matchers {
         }
       }
 
-      "leaves the plan unlocked, rather than unusable, if locks don't work" in {
+      "reports why the lock couldn't be taken" in {
         val planLocks = PlanLocks(FakeLocks(failing = true))
-        first(planLocks.steal(planID, () => ())).map(_ =>
+        first(planLocks.steal(planID, () => ())).map { result =>
+          result shouldEqual Left("No locks here")
           planLocks.isHeld(planID) shouldBe false
-        )
+        }
       }
     }
 
@@ -106,22 +107,28 @@ final class PlanLocksTest extends AsyncFreeSpec with Matchers {
     }
 
     "whileAvailable" - {
+      var ran = false
+      def run(planLocks: PlanLocks): Future[String] = {
+        ran = false
+        first(planLocks.whileAvailable(planID)(
+          ifUnavailable = "unavailable",
+          ifFailed = reason => s"failed: $reason"
+        ) {
+          ran = true
+          EventStream.fromValue("ran", emitOnce = true)
+        })
+      }
+
       "runs the action while holding the lock, then releases it" in {
         val locks = FakeLocks(available = true)
-        first(PlanLocks(locks).whileAvailable(planID)("unavailable")(
-          EventStream.fromValue("ran", emitOnce = true)
-        )).map { result =>
+        run(PlanLocks(locks)).map { result =>
           result shouldEqual "ran"
           locks.releases should have size 1
         }
       }
 
       "doesn't run the action if another coordinator holds the lock" in {
-        var ran = false
-        first(PlanLocks(FakeLocks(available = false)).whileAvailable(planID)("unavailable") {
-          ran = true
-          EventStream.fromValue("ran", emitOnce = true)
-        }).map { result =>
+        run(PlanLocks(FakeLocks(available = false))).map { result =>
           result shouldEqual "unavailable"
           ran shouldBe false
         }
@@ -131,16 +138,18 @@ final class PlanLocksTest extends AsyncFreeSpec with Matchers {
         val planLocks = PlanLocks(FakeLocks())
         for {
           _ <- first(planLocks.steal(planID, () => ()))
-          result <- first(planLocks.whileAvailable(planID)("unavailable")(
-            EventStream.fromValue("ran", emitOnce = true)
-          ))
-        } yield result shouldEqual "unavailable"
+          result <- run(planLocks)
+        } yield {
+          result shouldEqual "unavailable"
+          ran shouldBe false
+        }
       }
 
-      "runs the action anyway if locks don't work" in {
-        first(PlanLocks(FakeLocks(failing = true)).whileAvailable(planID)("unavailable")(
-          EventStream.fromValue("ran", emitOnce = true)
-        )).map(_ shouldEqual "ran")
+      "doesn't run the action if the lock can't be requested" in {
+        run(PlanLocks(FakeLocks(failing = true))).map { result =>
+          result shouldEqual "failed: No locks here"
+          ran shouldBe false
+        }
       }
     }
   }

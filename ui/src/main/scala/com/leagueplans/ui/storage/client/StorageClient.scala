@@ -2,7 +2,7 @@ package com.leagueplans.ui.storage.client
 
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError}
+import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.storage.worker.StorageCoordinator
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
@@ -66,7 +66,7 @@ final class StorageClient(
     val deletes: mutable.Map[Long, Observer[Either[DeletionError, Unit]]] =
       mutable.Map.empty
 
-    val subscriptions: mutable.Map[Long, Observer[Either[FileSystemError, (Plan, PlanSubscription)]]] =
+    val subscriptions: mutable.Map[Long, Observer[Either[SubscriptionError, (Plan, PlanSubscription)]]] =
       mutable.Map.empty
   }
 
@@ -134,9 +134,9 @@ final class StorageClient(
     promise.signal
   }
 
-  def subscribe(id: PlanID): StrictSignal[Option[Either[FileSystemError, (Plan, PlanSubscription)]]] = {
+  def subscribe(id: PlanID): StrictSignal[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]] = {
     val requestID = nextID()
-    val promise = Var[Option[Either[FileSystemError, (Plan, PlanSubscription)]]](None)
+    val promise = Var[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]](None)
     requests.subscriptions += requestID -> promise.someWriter
     send(Inbound.Subscribe(requestID, id))
     setBusy()

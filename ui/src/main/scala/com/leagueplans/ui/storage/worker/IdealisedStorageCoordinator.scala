@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.ui.storage.model.LamportTimestamp
-import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, UpdateError}
+import com.leagueplans.ui.storage.model.errors.{DeletionError, ProtocolError, SubscriptionError, UpdateError}
 import com.leagueplans.ui.storage.worker.IdealisedStorageCoordinator.{InboundPort, Result, WorkerPort}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
@@ -77,7 +77,7 @@ private final class IdealisedStorageCoordinator(
   private def handleSubscribe(port: InboundPort, message: Inbound.Subscribe): EventStream[Result] =
     deferToWorker[Outbound.ReadFailed | Outbound.ReadSucceeded](Inbound.Read(message.planID)) {
       case Outbound.ReadFailed(_, reason) =>
-        List((port, Outbound.SubscriptionFailed(message.requestID, message.planID, reason)))
+        List((port, Outbound.SubscriptionFailed(message.requestID, message.planID, SubscriptionError.FileSystem(reason))))
       case Outbound.ReadSucceeded(_, plan) =>
         val lamportTimestamp = subscriptions.register(port, message.planID)
         List((port, Outbound.Subscription(message.requestID, message.planID, lamportTimestamp, plan)))

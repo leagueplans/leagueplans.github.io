@@ -8,7 +8,7 @@ import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.storage.ExportedPlanDecoder
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.migrations.MigrationError
-import com.leagueplans.ui.storage.model.errors.FileSystemError
+import com.leagueplans.ui.storage.model.errors.{FileSystemError, SubscriptionError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.dom.form.{Form, Select, TextInput}
@@ -129,7 +129,9 @@ object NewPlanForm {
       .andThen[DecodingFailure | MigrationError | FileSystemError, PlanID]((metadata, plan) =>
         storage.create(metadata, plan).changes.collectSome
       )
-      .andThen(planID => storage.subscribe(planID).changes.collectSome)
+      .andThen[DecodingFailure | MigrationError | FileSystemError | SubscriptionError, (Plan, PlanSubscription)](
+        planID => storage.subscribe(planID).changes.collectSome
+      )
       .map { result =>
         result match {
           case Right(plan) => 
@@ -154,6 +156,13 @@ object NewPlanForm {
               ToastHub.Type.Warning,
               15.seconds,
               s"Failed to create plan. Cause: [${error.message}]"
+            )
+
+          case Left(error: SubscriptionError) =>
+            toastPublisher.publish(
+              ToastHub.Type.Warning,
+              15.seconds,
+              s"Created the plan, but failed to open it. Cause: [${error.message}]"
             )
         }
         ()

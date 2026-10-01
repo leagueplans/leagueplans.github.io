@@ -3,7 +3,7 @@ package com.leagueplans.ui.storage.worker
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, UpdateError}
+import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, SubscriptionError, UpdateError}
 import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, StepUpdates}
 
 object StorageProtocol {
@@ -76,7 +76,7 @@ object StorageProtocol {
     final case class FetchFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient with ToCoordinator
 
     final case class Subscription(requestID: Long, planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
-    final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient
+    final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: SubscriptionError) extends ToClient
     final case class SubscriptionTerminated(planID: PlanID) extends ToClient
     /** The plan was opened by another version of the app, which now owns it */
     final case class SubscriptionTakenOver(planID: PlanID) extends ToClient
