@@ -5,6 +5,7 @@ import com.raquo.airstream.core.{Observer, Signal, Sink}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import org.scalajs.dom.{HTMLElement, document}
 import org.scalajs.dom.html.Dialog
 
 import scala.scalajs.js
@@ -27,7 +28,17 @@ object Modal {
         L.inContext(node =>
           List(
             contents.signal.map(_.nonEmpty) --> {
-              case true => if (!node.ref.open) node.ref.showModal()
+              case true =>
+                if (!node.ref.open) {
+                  node.ref.showModal()
+                  // showModal focuses the first focusable element in the dialog. If the modal
+                  // contents have none, that'll be in the popovers, such as a toast's dismiss
+                  // button. Pressing enter would then dismiss the toast.
+                  document.activeElement match {
+                    case active: HTMLElement if popovers.ref.contains(active) => active.blur()
+                    case _ => ()
+                  }
+                }
               case false => if (node.ref.open) node.ref.close()
             },
             L.onClick.filterByTarget(_ == node.ref).handledAs(None) --> contents
