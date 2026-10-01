@@ -7,9 +7,20 @@ import scala.collection.mutable
 object StatusTracker {
   val empty: StatusTracker = StatusTracker(mutable.Map.empty)
   
-  enum Status {
-    case Idle, Busy
-    case Failed(reason: String)
+  sealed trait Status
+
+  object Status {
+    case object Idle extends Status
+    case object Busy extends Status
+
+    /** Problems aren't sealed, so that a component can describe its own. Code that only displays
+      * statuses can show any problem through its reason.
+      */
+    trait Problem extends Status {
+      def reason: String
+    }
+
+    final case class Failed(reason: String) extends Problem
   }
 }
 

@@ -20,7 +20,7 @@ object Status {
       L.cls <-- status.map {
         case StatusTracker.Status.Idle => Styles.idle
         case StatusTracker.Status.Busy => Styles.busy
-        case _: StatusTracker.Status.Failed => Styles.failed
+        case _: StatusTracker.Status.Problem => Styles.failed
       }
     )
 
@@ -34,7 +34,7 @@ object Status {
           L.text <-- status.map {
             case StatusTracker.Status.Idle => "Idle"
             case StatusTracker.Status.Busy => "Working"
-            case StatusTracker.Status.Failed(reason) => reason
+            case problem: StatusTracker.Status.Problem => problem.reason
           }
         ),
         FloatingConfig.basicAnchoredTooltip(

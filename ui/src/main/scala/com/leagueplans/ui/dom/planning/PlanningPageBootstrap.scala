@@ -17,7 +17,6 @@ import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
 
-import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
 
 object PlanningPageBootstrap {
@@ -49,6 +48,7 @@ object PlanningPageBootstrap {
       focusController,
       CollapsedSteps(subscription.planID, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,
+      subscription.status,
       cache,
       itemFuse,
       tooltip,
@@ -57,7 +57,7 @@ object PlanningPageBootstrap {
       toastPublisher
     ).amend(
       // Subscription events
-      subscription.status --> createStatusObserver(statusTracker, toastPublisher),
+      subscription.status --> createStatusObserver(statusTracker),
       subscription.updates.collect { case StepUpdates(updates) => updates } --> Observer(forester.inject),
       subscription.updates.collect { case s: Plan.Settings => s } --> settings,
       // Projection notifications
@@ -76,27 +76,15 @@ object PlanningPageBootstrap {
     )
   }
 
-  private def createStatusObserver(
-    tracker: StatusTracker,
-    toastPublisher: ToastHub.Publisher
-  ): Observer[StatusTracker.Status] =
+  private def createStatusObserver(tracker: StatusTracker): Observer[StatusTracker.Status] =
     Observer { status =>
       tracker.set(StorageClient.statusKey, status)
       status match {
         case StatusTracker.Status.Busy =>
           window.onbeforeunload = _.preventDefault()
 
-        case StatusTracker.Status.Idle =>
+        case StatusTracker.Status.Idle | _: StatusTracker.Status.Problem =>
           window.onbeforeunload = _ => ()
-
-        case StatusTracker.Status.Failed(cause) =>
-          window.onbeforeunload = _ => ()
-          toastPublisher.publish(
-            ToastHub.Type.Error,
-            1.minute,
-            "Lost connection with the file system",
-            Some(s"Changes to this plan can't be saved. Cause: $cause")
-          )
       }
     }
 }

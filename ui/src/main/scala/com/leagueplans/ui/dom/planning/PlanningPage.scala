@@ -9,7 +9,9 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
 import com.leagueplans.ui.model.player.mode.GridMaster
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
@@ -29,6 +31,7 @@ object PlanningPage {
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
     stepsWithErrors: Signal[Map[Step.ID, List[String]]],
+    storageStatus: Signal[StatusTracker.Status],
     cache: Cache,
     itemFuse: Fuse[Item],
     tooltip: Tooltip,
@@ -99,6 +102,7 @@ object PlanningPage {
 
     L.div(
       L.cls(Styles.page),
+      L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
       L.div(
         L.cls(Styles.lhs),
         L.child <-- visualiser.map(_.amend(L.cls(Styles.state))),
@@ -111,12 +115,20 @@ object PlanningPage {
   @js.native @JSImport("/styles/planning/planningPage.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val page: String = js.native
+    val banner: String = js.native
     val lhs: String = js.native
     val state: String = js.native
     val editor: String = js.native
     val editorFallback: String = js.native
     val plan: String = js.native
   }
+
+  private def toStorageFailureBanner(status: StatusTracker.Status): Option[L.Div] =
+    status match {
+      case PlanSubscription.TakenOver => Some(StorageFailureBanner.takenOver())
+      case problem: StatusTracker.Status.Problem => Some(StorageFailureBanner.lostConnection(problem.reason))
+      case StatusTracker.Status.Idle | StatusTracker.Status.Busy => None
+    }
 
   /** Adds effects to the focused step. Several effects can be added together in one update. */
   private def createEffectObserver(

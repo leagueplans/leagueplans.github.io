@@ -19,6 +19,13 @@ object PlanSubscription {
     case UpdateSuccessful(lamport: LamportTimestamp)
     case UpdateFailed(lamport: LamportTimestamp, reason: UpdateError)
   }
+
+  /** The plan was opened by another version of the app, which now owns it */
+  case object TakenOver extends Status.Problem {
+    val reason: String =
+      "This plan has been opened in a tab running a different version of the site. " +
+        "Reload this page to continue editing it."
+  }
 }
 
 final class PlanSubscription(
@@ -29,12 +36,13 @@ final class PlanSubscription(
   unsubscribe: () => ?
 ) extends AutoCloseable {
   private var currentLamport = initialLamport
-  private val internalStatus = Var(Status.Idle)
+  private val internalStatus = Var[Status](Status.Idle)
   private val upstream = messages.withKillSwitch(resetOnStop = false)
   private val upstreamKillSwitch = upstream.killSwitch
-  
+
+  /** Once the subscription has a problem, it stops for good */
   val status: Signal[Status] = internalStatus.signal.distinct
-  
+
   val updates: EventStream[StepUpdates | Plan.Settings] =
     upstream.collect(Function.unlift {
       case Message.Done =>
@@ -44,10 +52,7 @@ final class PlanSubscription(
 
       case Message.TakenOver =>
         upstreamKillSwitch.kill()
-        internalStatus.set(Status.Failed(
-          "This plan has been opened in a tab running a different version of the site. " +
-            "Reload this page to continue editing it."
-        ))
+        internalStatus.set(PlanSubscription.TakenOver)
         None
 
       case Message.Error(cause) =>
@@ -98,6 +103,6 @@ final class PlanSubscription(
   private def ifRunning(f: Status.Idle.type | Status.Busy.type => Status): Unit =
     internalStatus.update {
       case status @ (Status.Idle | Status.Busy) => f(status)
-      case terminated: Status.Failed => terminated
+      case stopped: Status.Problem => stopped
     }
 }

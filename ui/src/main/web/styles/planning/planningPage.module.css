@@ -1,9 +1,19 @@
+/* The banner's row collapses when there's no banner */
 .page {
-  display: flex;
+  display: grid;
+  grid-template-columns: 65fr 35fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "banner banner"
+    "lhs    plan";
+}
+
+.banner {
+  grid-area: banner;
 }
 
 .lhs {
-  flex: 65;
+  grid-area: lhs;
 
   display: flex;
   flex-direction: column;
@@ -43,6 +53,5 @@
 }
 
 .plan {
-  flex: 35;
-  height: 100%;
+  grid-area: plan;
 }

@@ -72,7 +72,7 @@ final class StorageClient(
 
   private val subscriptionBus = EventBus[(PlanID, PlanSubscription.Message) | PlanSubscription.Message]()
   private val plansVar = Var[Map[PlanID, PlanMetadata]](Map.empty)
-  private val statusVar = Var(StatusTracker.Status.Idle).distinct
+  private val statusVar = Var[StatusTracker.Status](StatusTracker.Status.Idle).distinct
 
   private def setBusy(): Unit =
     statusVar.set(StatusTracker.Status.Busy)
