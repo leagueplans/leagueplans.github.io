@@ -1,74 +1,118 @@
-.toastHub {}
-
-.icon {
-  margin-right: 0.5rem;
-  font-size: 1.5rem;
+.toastHub {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
 }
 
-@keyframes dropIn {
-  0% {
-    transform: translateY(-200%);
-    opacity: 0%;
-  }
+/* Wraps each toast so that its height can collapse smoothly when it leaves. The toasts'
+ * animations are played from ToastHub.scala.
+ */
+.slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  padding-top: 0.5rem;
+}
 
-  100% {
-    transform: translateY(0%);
-    opacity: 100%;
-  }
+.leaving {
+  pointer-events: none;
 }
 
 .toast {
-  width: fit-content;
-  float: right;
-  margin-top: 0.4rem;
-  border-style: solid;
-  border-radius: 2rem;
-
-  padding: 0.5rem;
-  font-size: 1.2rem;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.4rem 0.7rem 0.75rem;
 
-  animation: 1s ease-out 0s 1 dropIn;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--toast-accent);
+  border-radius: 0.4rem;
+
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--toast-accent) 16%, transparent),
+      transparent 45%
+    ),
+    var(--bg-raised);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.5);
+
+  color: #e4e6eb;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .info {
   composes: toast;
+  --toast-accent: var(--info);
+}
 
-  color: white;
-  background-color: #1879d9;
+.success {
+  composes: toast;
+  --toast-accent: var(--success);
 }
 
 .warning {
   composes: toast;
-
-  color: black;
-  background-color: #ffff85;
+  --toast-accent: var(--warning);
 }
 
 .error {
   composes: toast;
+  --toast-accent: var(--error);
+}
 
-  color: white;
-  background-color: #c70303;
+.icon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+
+  color: var(--toast-accent);
+  font-size: 1.05rem;
+}
+
+.content {
+  flex-grow: 1;
+  align-self: center;
+
+  overflow-wrap: anywhere;
 }
 
 .dismiss {
-  margin-left: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.1rem 0.35rem;
 
-  border-style: none;
-  border-radius: 1rem;
+  border: none;
+  border-radius: 0.3rem;
 
   background: none;
-  color: unset;
-  font-size: 1.5rem;
+  color: #9aa0ab;
+  font-size: 1rem;
 }
 
 .dismiss:hover, .dismiss:focus-visible {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.dismiss:focus-visible {
+  outline: 1px dashed white;
 }
 
 .dismiss:active {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.countdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+
+  background-color: var(--toast-accent);
+  opacity: 0.6;
+  transform-origin: left;
 }

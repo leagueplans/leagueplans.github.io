@@ -22,10 +22,12 @@
 .toastHub {
   position: fixed;
   z-index: 1;
-  bottom: 0.4rem;
+  /* Clear the footer, so that its status indicators stay visible. Bootstrap.scala sets the
+   * footer's height. */
+  bottom: calc(var(--footer-height, 2rem) + 0.5rem);
   right: 0.4rem;
 
-  width: min(90%, 40rem);
+  width: min(calc(100% - 0.8rem), 26rem);
 }
 
 .modal {}

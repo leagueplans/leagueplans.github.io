@@ -8,6 +8,7 @@ import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}
@@ -31,9 +32,13 @@ object Bootstrap {
     )
 
     val (modalElement, modalController) = Modal(popovers)
+    val footer = Footer(statusTracker, tooltipController).amend(L.cls(Styles.footer))
 
     L.div(
       L.cls(Styles.bootstrap),
+      // The footer's credits wrap in narrow windows, so the toasts need to know how tall it is
+      // to stay clear of its status indicators
+      L.styleProp[String]("--footer-height") <-- footer.trackHeight().map(height => s"${height}px"),
       L.child.maybe <-- modalController.isOpen.invert.map(Option.when(_)(popovers)),
       modalElement.amend(L.cls(Styles.modal)),
       L.div(
@@ -41,7 +46,7 @@ object Bootstrap {
         L.child <-- toPageSignal(
           statusTracker, tooltipController, contextMenuController, modalController, toastPublisher
         ).map(_.amend(L.cls(Styles.pageContent))),
-        Footer(statusTracker, tooltipController).amend(L.cls(Styles.footer))
+        footer
       )
     )
   }

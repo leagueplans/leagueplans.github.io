@@ -151,7 +151,7 @@ object ExportBankTagsForm {
     Button(
       _.handledWith(_.writeToClipboard(tagsSignal)) --> (_ =>
         toastPublisher.publish(
-          ToastHub.Type.Info,
+          ToastHub.Type.Success,
           2500.milliseconds,
           "Copied bank tags to clipboard"
         )

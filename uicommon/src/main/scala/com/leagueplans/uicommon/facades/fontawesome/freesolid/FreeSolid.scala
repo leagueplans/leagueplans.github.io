@@ -42,6 +42,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCheck")
   object faCheck extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleCheck")
+  object faCircleCheck extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faCircleExclamation")
   object faCircleExclamation extends IconDefinition
 

@@ -48,7 +48,7 @@ object UpdateButton {
         result match {
           case Right(_) =>
             toastPublisher.publish(
-              ToastHub.Type.Info,
+              ToastHub.Type.Success,
               5.seconds,
               "Successfully updated plan to the latest save file format"
             )

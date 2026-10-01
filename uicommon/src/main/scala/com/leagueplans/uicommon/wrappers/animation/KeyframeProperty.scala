@@ -12,9 +12,11 @@ object KeyframeProperty {
   private def prop[V](name: String): KeyframeProperty[V] =
     new KeyframeProperty[V](name) {}
 
+  val gridTemplateRows: KeyframeProperty[String] = prop("gridTemplateRows")
   val height: KeyframeProperty[String] = prop("height")
   val offset: KeyframeProperty[Double] = prop("offset")
   val opacity: KeyframeProperty[Double] = prop("opacity")
+  val paddingTop: KeyframeProperty[String] = prop("paddingTop")
   val scale: KeyframeProperty[Double] = prop("scale")
   val transform: KeyframeProperty[String] = prop("transform")
 }
