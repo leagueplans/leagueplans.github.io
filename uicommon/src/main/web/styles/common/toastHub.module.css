@@ -77,7 +77,47 @@
   flex-grow: 1;
   align-self: center;
 
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+
   overflow-wrap: anywhere;
+}
+
+.title {
+  font-weight: 500;
+}
+
+.detail {
+  color: #aab0bb;
+  font-size: 0.8rem;
+}
+
+.action {
+  margin-top: 0.3rem;
+  padding: 0.15rem 0.5rem;
+
+  border: 1px solid color-mix(in srgb, var(--toast-accent) 60%, transparent);
+  border-radius: 0.3rem;
+
+  background: none;
+  color: var(--toast-accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.action:hover, .action:focus-visible {
+  background-color: color-mix(in srgb, var(--toast-accent) 15%, transparent);
+}
+
+.action:focus-visible {
+  outline: 1px dashed white;
+}
+
+.action:active {
+  background-color: color-mix(in srgb, var(--toast-accent) 25%, transparent);
 }
 
 .dismiss {

@@ -10,7 +10,7 @@ import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.L
 import org.scalajs.dom.*
 
 import scala.concurrent.duration.DurationInt
@@ -52,9 +52,10 @@ object DownloadButton {
     storage.fetch(id).changes.collectSome.flatMapSwitch {
       case Left(error) =>
         toastPublisher.publish(
-          ToastHub.Type.Warning,
+          ToastHub.Type.Error,
           15.seconds,
-          s"Failed to prepare download. Cause: [${error.message}]"
+          "Couldn't prepare download",
+          Some(error.message)
         )
         EventStream.fromValue(())
 

@@ -6,7 +6,6 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.uicommon.dom.ToastHub
 import com.leagueplans.uicommon.wrappers.Clipboard
-import com.raquo.laminar.api.textToTextNode
 
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js

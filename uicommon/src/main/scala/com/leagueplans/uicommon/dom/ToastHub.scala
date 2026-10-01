@@ -10,7 +10,7 @@ import com.leagueplans.uicommon.wrappers.animation.{Animation, KeyframeProperty}
 import com.raquo.airstream.core.{Observer, Signal, Sink}
 import com.raquo.airstream.eventbus.{EventBus, WriteBus}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, nodeOptionToModifier, textToTextNode}
 import org.scalajs.dom.{Event, window}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -20,13 +20,28 @@ import scala.scalajs.js.annotation.JSImport
 object ToastHub {
   enum Type { case Info, Success, Warning, Error }
 
-  final case class Toast(`type`: Type, duration: Duration, content: L.Node)
+  /** Clicking an action runs it, then dismisses the toast */
+  final case class Action(label: String, run: () => Unit)
+
+  final case class Toast(
+    `type`: Type,
+    duration: Duration,
+    title: String,
+    detail: Option[String],
+    action: Option[Action]
+  )
 
   final class Publisher(underlying: WriteBus[Toast]) extends Sink[Toast] {
     export underlying.toObserver
 
-    def publish(`type`: Type, duration: Duration, content: L.Node): Unit =
-      publish(Toast(`type`, duration, content))
+    def publish(
+      `type`: Type,
+      duration: Duration,
+      title: String,
+      detail: Option[String] = None,
+      action: Option[Action] = None
+    ): Unit =
+      publish(Toast(`type`, duration, title, detail, action))
 
     def publish(toast: Toast): Unit =
       underlying.onNext(toast)
@@ -62,6 +77,9 @@ object ToastHub {
     val leaving: String = js.native
     val icon: String = js.native
     val content: String = js.native
+    val title: String = js.native
+    val detail: String = js.native
+    val action: String = js.native
     val info: String = js.native
     val success: String = js.native
     val warning: String = js.native
@@ -107,9 +125,9 @@ object ToastHub {
     KeyframeProperty.opacity(1, 0)
   )
 
-  /* Dismissal happens in two phases. The countdown finishing or the user clicking the
-   * dismiss button plays an exit animation. The toast is only removed from the hub once that
-   * animation has finished.
+  /* Dismissal happens in two phases. The countdown finishing or the user clicking one of
+   * the toast's buttons plays an exit animation. The toast is only removed from the hub once
+   * that animation has finished.
    */
   private def toNode(
     toast: Toast,
@@ -139,7 +157,12 @@ object ToastHub {
       L.cls(style),
       L.role(role),
       FontAwesome.icon(icon).amend(L.svg.cls(Styles.icon)),
-      L.div(L.cls(Styles.content), toast.content),
+      L.div(
+        L.cls(Styles.content),
+        L.p(L.cls(Styles.title), toast.title),
+        toast.detail.map(detail => L.p(L.cls(Styles.detail), detail)),
+        toast.action.map(actionButton(_, dismiss))
+      ),
       dismissButton(dismiss, tooltip),
       countdown(toast.duration, paused, dismiss)
     )
@@ -168,6 +191,15 @@ object ToastHub {
       case Type.Warning => (Styles.warning, FreeSolid.faTriangleExclamation, "alert")
       case Type.Error => (Styles.error, FreeSolid.faCircleExclamation, "alert")
     }
+
+  private def actionButton(action: Action, dismissObserver: Observer[Unit]): L.Button =
+    Button(_.handled --> Observer[Unit] { _ =>
+      action.run()
+      dismissObserver.onNext(())
+    }).amend(
+      L.cls(Styles.action),
+      action.label
+    )
 
   private def dismissButton(observer: Observer[Unit], tooltip: Tooltip): L.Button =
     Button(_.handled --> observer).amend(

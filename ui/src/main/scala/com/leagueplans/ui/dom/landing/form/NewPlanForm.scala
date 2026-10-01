@@ -139,30 +139,34 @@ object NewPlanForm {
             
           case Left(error: DecodingFailure) => 
             toastPublisher.publish(
-              ToastHub.Type.Warning,
+              ToastHub.Type.Error,
               15.seconds,
-              s"Failed to decode imported data. Cause: [${error.getMessage}]"
+              "Couldn't read the imported plan file",
+              Some(error.getMessage)
             )
 
           case Left(error: MigrationError) =>
             toastPublisher.publish(
-              ToastHub.Type.Warning,
+              ToastHub.Type.Error,
               15.seconds,
-              s"Failed to update plan to the latest save file format. Cause: [${error.message}]"
+              "Couldn't update the imported plan to the latest save format",
+              Some(error.message)
             )
             
           case Left(error: FileSystemError) =>
             toastPublisher.publish(
-              ToastHub.Type.Warning,
+              ToastHub.Type.Error,
               15.seconds,
-              s"Failed to create plan. Cause: [${error.message}]"
+              "Couldn't create plan",
+              Some(error.message)
             )
 
           case Left(error: SubscriptionError) =>
             toastPublisher.publish(
               ToastHub.Type.Warning,
               15.seconds,
-              s"Created the plan, but failed to open it. Cause: [${error.message}]"
+              "Created plan, but couldn't open it",
+              Some(error.message)
             )
         }
         ()

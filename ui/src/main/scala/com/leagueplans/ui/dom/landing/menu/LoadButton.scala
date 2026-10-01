@@ -41,9 +41,10 @@ object LoadButton {
         case Right(plan) => selectionObserver.onNext(plan)
         case Left(error) => 
           toastPublisher.publish(
-            ToastHub.Type.Warning,
+            ToastHub.Type.Error,
             15.seconds,
-            s"Failed to load plan. Cause: [${error.message}]"
+            "Couldn't load plan",
+            Some(error.message)
           )
       }
       ()

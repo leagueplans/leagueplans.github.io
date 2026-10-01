@@ -13,8 +13,9 @@ import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, textToTextNode}
+import org.scalajs.dom.window
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 
 object UpdateButton {
   def apply(
@@ -50,40 +51,47 @@ object UpdateButton {
             toastPublisher.publish(
               ToastHub.Type.Success,
               5.seconds,
-              "Successfully updated plan to the latest save file format"
+              "Updated plan to the latest save format"
             )
 
           case Left(error: DecodingFailure) =>
-            toastPublisher.publish(
-              ToastHub.Type.Warning,
-              15.seconds,
-              s"Unexpected error decoding plan." +
-                s" Please report this to @Granarder via discord. Cause: [${error.getMessage}]"
-            )
+            publishBug("Unexpected error reading plan", error.getMessage, toastPublisher)
 
           case Left(error: MigrationError) =>
-            toastPublisher.publish(
-              ToastHub.Type.Warning,
-              15.seconds,
-              s"Unexpected error migrating plan to the latest save file format." +
-                s" Please report this to @Granarder via discord. Cause: [${error.message}]"
-            )
+            publishBug("Unexpected error updating plan to the latest save format", error.message, toastPublisher)
 
           case Left(error: FileSystemError) =>
             toastPublisher.publish(
-              ToastHub.Type.Warning,
+              ToastHub.Type.Error,
               15.seconds,
-              s"Failed to update plan. Cause: [${error.message}]"
+              "Couldn't update plan",
+              Some(error.message)
             )
 
           case Left(error: DeletionError) =>
             toastPublisher.publish(
               ToastHub.Type.Warning,
               15.seconds,
-              s"Successfully updated plan, but failed to delete the old copy. Cause [${error.message}]"
+              "Updated plan, but couldn't delete the old copy",
+              Some(error.message)
             )
         }
         ()
       }
   }
+
+  // These stay until dismissed, since we want the user to have time to report them
+  private def publishBug(title: String, cause: String, toastPublisher: ToastHub.Publisher): Unit =
+    toastPublisher.publish(
+      ToastHub.Type.Error,
+      Duration.Inf,
+      title,
+      Some(s"Please report this to @Granarder on Discord. Cause: $cause"),
+      Some(ToastHub.Action(
+        "Copy error details",
+        () => window.navigator.clipboard.writeText(s"$title\n$cause").`then`[Unit](_ =>
+          toastPublisher.publish(ToastHub.Type.Success, 2500.milliseconds, "Copied error details")
+        ): Unit
+      ))
+    )
 }

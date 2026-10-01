@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.landing.menu
 import com.leagueplans.ui.dom.planning.plan.CollapsedSteps
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.PlanID
+import com.leagueplans.ui.storage.model.errors.DeletionError
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
@@ -10,7 +11,7 @@ import com.leagueplans.uicommon.utils.airstream.PromiseLikeOps.onComplete
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.Observer
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.L
 
 import scala.concurrent.duration.DurationInt
 
@@ -48,9 +49,14 @@ object DeleteButton {
   ): Unit =
     storage.delete(id).onComplete(
       error => toastPublisher.publish(
-        ToastHub.Type.Warning,
+        // Nothing has gone wrong if the plan is open elsewhere, so we warn rather than error
+        error match {
+          case DeletionError.PlanOpenInAnotherWindow => ToastHub.Type.Warning
+          case _: (DeletionError.LockUnavailable | DeletionError.FileSystem) => ToastHub.Type.Error
+        },
         15.seconds,
-        s"Failed to delete plan. Cause: [${error.message}]"
+        "Couldn't delete plan",
+        Some(error.message)
       ),
       onSuccess = _ => CollapsedSteps.forget(id)
     )

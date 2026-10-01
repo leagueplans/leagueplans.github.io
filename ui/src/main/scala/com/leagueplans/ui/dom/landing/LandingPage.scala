@@ -101,9 +101,10 @@ object LandingPage {
       storage.refreshPlans().changes.collectSome --> {
         case Left(error) =>
           toastPublisher.publish(
-            ToastHub.Type.Warning,
+            ToastHub.Type.Error,
             15.seconds,
-            s"Failed to load plan. Cause: [${error.message}]"
+            "Couldn't load plan",
+            Some(error.message)
           )
         case Right(()) =>
           hasRefreshedState.set(true)

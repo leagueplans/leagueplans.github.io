@@ -11,7 +11,7 @@ import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.L
 
 import scala.concurrent.duration.Duration
 import scala.scalajs.js
@@ -98,7 +98,8 @@ object Bootstrap {
           toastPublisher.publish(
             ToastHub.Type.Error,
             Duration.Inf,
-            s"Failed to load $key"
+            "Couldn't load game data",
+            Some(s"Failed to load $key")
           )
           throw error
       }

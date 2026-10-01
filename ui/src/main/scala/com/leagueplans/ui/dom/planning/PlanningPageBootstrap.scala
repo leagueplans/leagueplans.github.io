@@ -14,7 +14,7 @@ import com.leagueplans.uicommon.facades.fusejs.FuseOptions
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
 
 import scala.concurrent.duration.DurationInt
@@ -94,7 +94,8 @@ object PlanningPageBootstrap {
           toastPublisher.publish(
             ToastHub.Type.Error,
             1.minute,
-            s"Lost connection with the file system. Cannot save changes to the plan. Cause: [$cause]"
+            "Lost connection with the file system",
+            Some(s"Changes to this plan can't be saved. Cause: $cause")
           )
       }
     }
