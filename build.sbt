@@ -109,7 +109,7 @@ lazy val uicommon =
         "io.circe" %%% "circe-scalajs" % circeVersion
       )
     )
-    .dependsOn(codec.js)
+    .dependsOn(codec.js % "compile->compile;test->test")
 
 // Vite outputs a warning about sourcemaps. I don't know why, since the browser can
 // find and use the sourcemaps correctly. I did an investigation and wrote up a

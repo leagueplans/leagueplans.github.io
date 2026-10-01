@@ -1,6 +1,5 @@
-package com.leagueplans.ui.storage.worker
+package com.leagueplans.uicommon.wrappers.locks
 
-import com.leagueplans.uicommon.wrappers.locks.Locks
 import org.scalajs.dom.{Lock, LockManager, LockOptions}
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor
 import org.scalatest.freespec.AsyncFreeSpec
@@ -10,8 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.util.Failure
 
-/** Tests [[Locks]] against a fake lock manager, since the Web Locks API isn't available here. It
-  * lives with the storage tests because uicommon has no test setup. */
+/** Tests [[Locks]] against a fake lock manager, since the Web Locks API isn't available here */
 final class LocksTest extends AsyncFreeSpec with Matchers {
   override implicit val executionContext: ExecutionContext = MacrotaskExecutor.Implicits.global
 
