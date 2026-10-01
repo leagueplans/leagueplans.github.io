@@ -13,11 +13,10 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
-        new Date(2026, 8, 29),
+        new Date(2026, 9, 1),
         "New keyboard shortcuts",
         List(
-          "Alt + arrow keys move the focused step. Up and down swap it with the steps around it, right makes" +
-            " it a substep of the step above, and left moves it out of its parent.",
+          "Alt + arrow keys moves the focused step.",
           "E edits the focused step's description.",
           "Ctrl + C, Ctrl + X and Ctrl + V copy, cut and paste the focused step (Cmd on a Mac).",
           "You can find every shortcut by clicking the keyboard icon above your steps."
@@ -76,14 +75,6 @@ object Changelog {
           "Cutting a step within a plan will move it to the target location",
           "Copying a step within a plan will duplicate the step and its substeps at the target location",
           "Steps will now bring their substeps with them when copied and pasted between separate plans"
-        )
-      ),
-      item(
-        new Date(2026, 2, 9),
-        "Step duration tracking",
-        List(
-          "You can now set how long each step takes. The tool will use these to show you when" +
-            " you're expected to start and finish each step."
         )
       )
     )
