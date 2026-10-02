@@ -25,6 +25,8 @@ enum SchemaVersion(val date: Date) {
   case V6 extends SchemaVersion(new Date(2026, 2, 6))
   /** An item ID migration. Most changes are due to the removal of the sailing alpha */
   case V7 extends SchemaVersion(new Date(2026, 8, 27))
+  /** Removes the Architectural Alliance miniquest, which was removed from the game */
+  case V8 extends SchemaVersion(new Date(2026, 9, 3))
 
   def number: Int = ordinal + 1
 }
