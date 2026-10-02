@@ -61,6 +61,7 @@ object StatsElement {
       L.cls(Styles.stats),
       L.children <-- statPanes,
       L.li(
+        L.cls(Styles.totalLevel),
         TotalLevelPane(
           statsSignal.map(stats => 
             Stats(stats.map(stat => stat.skill -> stat.exp).toMap)
@@ -74,5 +75,6 @@ object StatsElement {
   @js.native @JSImport("/styles/planning/player/stats/statsElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val stats: String = js.native
+    val totalLevel: String = js.native
   }
 }

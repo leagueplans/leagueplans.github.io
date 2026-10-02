@@ -65,10 +65,17 @@
 }
 
 .total {
-  composes: level;
+  composes: osrs-font from "../../../fonts.module.css";
 
-  top: 20%;
-  left: 5%;
+  height: 16px;
+  line-height: 16px;
+
+  background-color: black;
+
+  text-align: center;
+  font-size: 16px;
+  color: yellow;
+  text-shadow: 1px 1px black;
 }
 
 .xp {

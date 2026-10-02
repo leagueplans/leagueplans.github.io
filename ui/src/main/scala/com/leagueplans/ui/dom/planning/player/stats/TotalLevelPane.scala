@@ -5,7 +5,7 @@ import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.L
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -13,26 +13,14 @@ import scala.scalajs.js.annotation.JSImport
 object TotalLevelPane {
   def apply(stats: Signal[Stats], tooltip: Tooltip): L.Div =
     L.div(
-      L.cls(Styles.pane),
-      L.child <-- stats.splitOne(_.totalLevel)((level, _, _) =>
-        L.span(L.cls(Styles.total), s"Total level:", L.br(), level)
-      ),
-      L.img(
-        L.cls(Styles.background),
-        L.src(background),
-        L.alt("Total level")
-      ),
+      L.cls(Styles.total),
+      L.text <-- stats.map(s => s"Total level: ${s.totalLevel}"),
       tooltip.register(toTooltipContents(stats), FloatingConfig.basicTooltip(Placement.right))
     )
 
-  @js.native @JSImport("/images/stat-window/total-level-background.png", JSImport.Default)
-  private val background: String = js.native
-
   @js.native @JSImport("/styles/planning/player/stats/pane.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val pane: String = js.native
     val tooltip: String = js.native
-    val background: String = js.native
     val total: String = js.native
   }
 

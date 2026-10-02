@@ -13,6 +13,13 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 9, 2),
+        "Sailing support",
+        List(
+          "Sailing now appears in the stats panel, and you can add Sailing experience and requirements to your steps."
+        )
+      ),
+      item(
         new Date(2026, 9, 1),
         "New keyboard shortcuts",
         List(

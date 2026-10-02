@@ -13,3 +13,7 @@
 
   list-style-type: none;
 }
+
+.totalLevel {
+  grid-column: 1 / -1;
+}

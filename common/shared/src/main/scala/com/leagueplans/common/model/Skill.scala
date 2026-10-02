@@ -9,7 +9,9 @@ import scala.util.Try
 enum Skill {
   case Agility, Attack, Construction, Cooking, Crafting, Defence, Farming,
   Firemaking, Fishing, Fletching, Herblore, Hitpoints, Hunter, Magic, Mining,
-  Prayer, Ranged, Runecraft, Slayer, Smithing, Strength, Thieving, Woodcutting
+  Prayer, Ranged, Runecraft, Slayer, Smithing, Strength, Thieving, Woodcutting,
+  // Skills are encoded by ordinal, so new skills must be appended to keep saved plans readable
+  Sailing
 }
 
 object Skill {
@@ -33,7 +35,7 @@ object Skill {
       Prayer,       Crafting,  Firemaking,
       Magic,        Fletching, Woodcutting,
       Runecraft,    Slayer,    Farming,
-      Construction, Hunter
+      Construction, Hunter,    Sailing
     )
 
   given Encoder[Skill] = Encoder.derived

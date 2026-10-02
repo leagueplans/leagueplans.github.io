@@ -37,6 +37,7 @@ final class SkillTest extends CodecSpec {
       "Strength" in test(Skill.Strength, 0b10100)
       "Thieving" in test(Skill.Thieving, 0b10101)
       "Woodcutting" in test(Skill.Woodcutting, 0b10110)
+      "Sailing" in test(Skill.Sailing, 0b10111)
     }
   }
 }

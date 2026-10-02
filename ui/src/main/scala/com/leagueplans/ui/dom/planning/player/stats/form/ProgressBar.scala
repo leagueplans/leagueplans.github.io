@@ -85,7 +85,7 @@ object ProgressBar {
     )
 
   // Sourced from RuneLite
-  // https://github.com/runelite/runelite/blob/8ef9321dd8a5640d7925abdf528fde291455cfe7/runelite-client/src/main/java/net/runelite/client/ui/SkillColor.java#L31
+  // https://github.com/runelite/runelite/blob/8616e205c63ab8e162b1ca182822438855af85f6/runelite-client/src/main/java/net/runelite/client/ui/SkillColor.java#L31
   private val skillToColour: Map[Skill, String] =
     Map(
       Agility -> L.style.rgb(58, 60, 137),
@@ -106,6 +106,7 @@ object ProgressBar {
       Prayer -> L.style.rgb(159, 147, 35),
       Ranged -> L.style.rgb(109, 144, 23),
       Runecraft -> L.style.rgb(170, 141, 26),
+      Sailing -> L.style.rgb(11, 165, 157),
       Slayer -> L.style.rgb(100, 100, 100),
       Smithing -> L.style.rgb(108, 107, 82),
       Strength -> L.style.rgb(4, 149, 90),
