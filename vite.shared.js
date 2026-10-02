@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -19,10 +20,22 @@ export function uicommonAliases() {
   ];
 }
 
-/** Runs the Scala.js linker for one project and returns where it put its output. */
+/** Returns where the Scala.js linker puts one project's output.
+ *
+ * For a build, this runs the linker first. The dev server doesn't, as it relies on
+ * `sbt ~<project>/fastLinkJS` running alongside it. Starting sbt from here would fail
+ * whenever that other sbt was still loading.
+ */
 export function linkOutputDir(project, command) {
-  const task = command === "serve" ? "fastLinkOutputDir" : "fullLinkOutputDir";
-  return printSbtTask(`${project}/${task}`);
+  return command === "serve" ? fastLinkOutputDir(project) : printSbtTask(`${project}/fullLinkOutputDir`);
+}
+
+/** Must match `fastLinkJS / scalaJSLinkerOutputDirectory` in build.sbt. */
+function fastLinkOutputDir(project) {
+  const dir = resolve(repoRoot, project, "target/fastopt");
+  if (!existsSync(resolve(dir, "main.js")))
+    console.warn(`No Scala.js output in ${dir} yet. Start \`sbt ~${project}/fastLinkJS\`, then reload the page once it has linked.`);
+  return dir;
 }
 
 function printSbtTask(task) {

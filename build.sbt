@@ -65,7 +65,6 @@ lazy val wikiScraper =
     )
     .dependsOn(common.jvm)
 
-val fastLinkOutputDir = taskKey[String]("output directory for `npm run dev`")
 val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 
 lazy val scalaJSSettings = List(
@@ -77,11 +76,9 @@ lazy val scalaJSSettings = List(
 
 lazy val viteSettings = List(
   scalaJSUseMainModuleInitializer := true,
-  fastLinkOutputDir := {
-    // Ensure that fastLinkJS has run, then return its output directory
-    (Compile / fastLinkJS).value
-    (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.getAbsolutePath
-  },
+  // `npm run dev` reads the bundle from here without asking sbt, because a second sbt can't
+  // start while another is still loading. vite.shared.js names the same directory.
+  Compile / fastLinkJS / scalaJSLinkerOutputDirectory := target.value / "fastopt",
   fullLinkOutputDir := {
     // Ensure that fullLinkJS has run, then return its output directory
     (Compile / fullLinkJS).value
