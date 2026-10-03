@@ -76,7 +76,7 @@ final class UndoController(
     toastPublisher.publish(
       ToastHub.Type.Warning,
       10.seconds,
-      s"Couldn't $action \"${StepChangeLabel.describe(entry)}\"",
-      detail = Some("Those steps have been changed in another tab since.")
+      s"Couldn't $action: ${StepChangeLabel.describe(entry)}",
+      detail = Some("Another tab has changed those steps since.")
     )
 }
