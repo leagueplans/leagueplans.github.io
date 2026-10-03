@@ -18,7 +18,10 @@ object Forester {
     new Forester(
       Var(forest).distinct,
       externalObserver,
-      // See .claude/plans/04-undo-redo.md for how these were measured
+      // Measured in Node on a 1,455-step plan. 200 everyday entries held a few MB, or about
+      // 13 MB for edits to the roots of a flat plan, since each entry copies the list of roots.
+      // The weight budget, roughly 20-26 MB, keeps all of those, but also bounds extremes, such
+      // as 200 deletions of the whole plan, which held 270 MB.
       ForestHistory.empty(maxEntries = 200, maxWeight = 1_000_000)
     )
 

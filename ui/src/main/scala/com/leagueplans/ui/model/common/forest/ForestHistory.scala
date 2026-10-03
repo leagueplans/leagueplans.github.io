@@ -7,8 +7,10 @@ object ForestHistory {
     * either side of the change, and nothing else. */
   final case class Entry[ID, T](touched: Touched[ID], before: Slice[ID, T], after: Slice[ID, T]) {
     /** Roughly the memory the entry holds, in units of about 20 bytes. Measured in Node, each
-      * touched node or list costs about 20 units, and each ID in a captured list about 1. The
-      * entry's data isn't counted, as it's usually shared with the forest. */
+      * touched node or list costs about 20 units, and each ID in a captured list about 1.
+      *
+      * The nodes' data isn't counted. Data that only the history holds, such as deleted nodes
+      * or earlier versions of edited ones, makes an entry heavier than its weight suggests. */
     lazy val weight: Int =
       20 * (touched.nodes.size + touched.lists.size) +
         (before.lists.valuesIterator ++ after.lists.valuesIterator).map(_.fold(0)(_.size)).sum
