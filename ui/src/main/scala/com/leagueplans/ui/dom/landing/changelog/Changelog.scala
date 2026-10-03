@@ -13,6 +13,13 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 9, 3),
+        "Undo and redo",
+        List(
+          "Ctrl + Z undoes your last change to your steps, and Ctrl + Shift + Z redoes it (Cmd on a Mac)."
+        )
+      ),
+      item(
         new Date(2026, 9, 2),
         "Sailing support",
         List(
