@@ -37,7 +37,7 @@ object PlanElement {
     L.div(
       L.cls(Styles.plan),
       undoController.modifier,
-      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepForm, deleteStepForm).amend(
+      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepForm, deleteStepForm, undoController).amend(
         L.cls(Styles.header)
       ),
       InteractiveForest(

@@ -1,8 +1,10 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.uicommon.dom.{Button, IconButtonModifiers, Modal, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.commontypes.IconDefinition
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
@@ -20,13 +22,20 @@ object PlanHeader {
     tooltip: Tooltip,
     modal: Modal,
     newStepForm: NewStepForm,
-    deleteStepForm: DeleteStepForm
+    deleteStepForm: DeleteStepForm,
+    undoController: UndoController
   ): L.Div =
     L.div(
       L.cls(Styles.header),
       showShortcutsButton(tooltip, modal),
       L.img(L.cls(Styles.planIcon), L.src(planIcon), L.alt("Plan section icon")),
       L.span(L.cls(Styles.name), planName),
+      toHistoryButton(FreeSolid.faArrowRotateLeft, "Undo", "Ctrl+Z", undoController.undoLabel, tooltip)(
+        undoController.undo()
+      ),
+      toHistoryButton(FreeSolid.faArrowRotateRight, "Redo", "Ctrl+Shift+Z", undoController.redoLabel, tooltip)(
+        undoController.redo()
+      ),
       toAddStepButton(focus, newStepForm),
       L.child <-- toDeleteStepButton(focus, deleteStepForm, tooltip)
     )
@@ -39,6 +48,8 @@ object PlanHeader {
     val header: String = js.native
     val showShortcutsIcon: String = js.native
     val showShortcutsButton: String = js.native
+    val historyButton: String = js.native
+    val historyIcon: String = js.native
     val planIcon: String = js.native
     val name: String = js.native
     val addStepButton: String = js.native
@@ -60,6 +71,29 @@ object PlanHeader {
       )
     )
   }
+
+  /** @param label a description of the change the button would undo or redo, if there is one */
+  private def toHistoryButton(
+    icon: IconDefinition,
+    action: String,
+    shortcut: String,
+    label: Signal[Option[String]],
+    tooltip: Tooltip
+  )(run: => Unit): L.Button =
+    Button(_.handled --> (_ => run)).amend(
+      L.cls(Styles.historyButton),
+      L.disabled <-- label.map(_.isEmpty),
+      FontAwesome.icon(icon).amend(L.svg.cls(Styles.historyIcon)),
+      IconButtonModifiers.using(
+        tooltipContents = label.map {
+          case Some(change) => s"$action: $change ($shortcut)"
+          case None => s"Nothing to ${action.toLowerCase}"
+        },
+        screenReaderDescription = Signal.fromValue(action.toLowerCase),
+        tooltip,
+        tooltipPlacement = Placement.bottom
+      )
+    )
 
   private def toAddStepButton(
     focus: Signal[Option[Step.ID]],

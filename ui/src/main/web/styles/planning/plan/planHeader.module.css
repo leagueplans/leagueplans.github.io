@@ -50,6 +50,30 @@
   text-align: center;
 }
 
+.historyIcon {
+  color: white;
+  font-size: 1rem;
+}
+
+.historyButton {
+  composes: focus;
+
+  border: none;
+  background: none;
+}
+
+.historyButton:enabled:hover, .historyButton:enabled:focus-visible {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.historyButton:enabled:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.historyButton:disabled {
+  opacity: 0.4;
+}
+
 .addStepButton {
   composes: focus;
 
