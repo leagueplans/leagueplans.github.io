@@ -23,12 +23,17 @@ object ToastHub {
   /** Clicking an action runs it, then dismisses the toast */
   final case class Action(label: String, run: () => Unit)
 
+  /** @param key if given, the toast replaces any toast on screen with the same key, in place and
+    *            without animating in. Useful for reporting on something that keeps changing,
+    *            so that the reports don't pile up.
+    */
   final case class Toast(
     `type`: Type,
     duration: Duration,
     title: String,
     detail: Option[String],
-    action: Option[Action]
+    action: Option[Action],
+    key: Option[String] = None
   )
 
   final class Publisher(underlying: WriteBus[Toast]) extends Sink[Toast] {
@@ -39,9 +44,10 @@ object ToastHub {
       duration: Duration,
       title: String,
       detail: Option[String] = None,
-      action: Option[Action] = None
+      action: Option[Action] = None,
+      key: Option[String] = None
     ): Unit =
-      publish(Toast(`type`, duration, title, detail, action))
+      publish(Toast(`type`, duration, title, detail, action, key))
 
     def publish(toast: Toast): Unit =
       underlying.onNext(toast)
@@ -55,20 +61,33 @@ object ToastHub {
     val node = L.div(
       L.cls(Styles.toastHub),
       L.children <-- activeToastVar.signal.split(identity)((_, entry, _) =>
-        toNode(entry.toast, filterer.contramap[Unit](_ => entry), tooltip)
+        toNode(entry, filterer.contramap[Unit](_ => entry), tooltip)
       ),
-      // Newest toasts go last, so that they appear closest to the corner of the screen
-      bus.events.withCurrentValueOf(activeToastVar)
-        .map((toast, acc) => acc :+ Entry(toast)) --> activeToastVar
+      bus.events.withCurrentValueOf(activeToastVar).map(add) --> activeToastVar
     )
 
     (node, Publisher(bus.writer))
   }
 
+  private def add(toast: Toast, entries: List[Entry]): List[Entry] = {
+    val replaceable = toast.key.map(key =>
+      entries.indexWhere(entry => entry.toast.key.contains(key) && !entry.leaving)
+    ).filter(_ >= 0)
+
+    replaceable match {
+      case Some(index) => entries.updated(index, Entry(toast, isReplacement = true))
+      // Newest toasts go last, so that they appear closest to the corner of the screen
+      case None => entries :+ Entry(toast, isReplacement = false)
+    }
+  }
+
   /* Entries are compared by reference, so that publishing the same toast twice results
    * in two toasts that are displayed and dismissed independently
    */
-  private final class Entry(val toast: Toast)
+  private final class Entry(val toast: Toast, val isReplacement: Boolean) {
+    /** Whether the toast is animating out, and so can no longer be replaced */
+    var leaving: Boolean = false
+  }
 
   @js.native @JSImport("/styles/common/toastHub.module.css", JSImport.Default)
   private object Styles extends js.Object {
@@ -130,10 +149,11 @@ object ToastHub {
    * that animation has finished.
    */
   private def toNode(
-    toast: Toast,
+    entry: Entry,
     removalObserver: Observer[Unit],
     tooltip: Tooltip
   ): L.Div = {
+    val toast = entry.toast
     val leaving = Var(false)
     val (style, icon, role) = typeSpecificAttributes(toast.`type`)
 
@@ -146,6 +166,7 @@ object ToastHub {
     lazy val dismiss: Observer[Unit] = Observer { _ =>
       if (!leaving.now()) {
         leaving.set(true)
+        entry.leaving = true
         val exit = (if (prefersReducedMotion) fadeOut else slideOut).play(slot)
         exit.onfinish = (_ => removalObserver.onNext(())): js.Function1[Event, Unit]
         // Otherwise a cancelled exit would leave the toast on screen for good
@@ -166,7 +187,8 @@ object ToastHub {
       dismissButton(dismiss, tooltip),
       countdown(toast.duration, paused, dismiss)
     )
-    if (!prefersReducedMotion) slideIn.play(toastElement): Unit
+    // A replacement takes the place of a toast that's already on screen
+    if (!prefersReducedMotion && !entry.isReplacement) slideIn.play(toastElement): Unit
 
     lazy val slot: L.Div = L.div(
       L.cls(Styles.slot),

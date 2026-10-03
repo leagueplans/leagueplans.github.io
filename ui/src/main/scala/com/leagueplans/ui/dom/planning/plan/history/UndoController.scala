@@ -7,10 +7,10 @@ import com.leagueplans.ui.model.common.forest.ForestHistory.Entry
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.uicommon.dom.ToastHub
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, enrichSource, seqToModifier}
+import com.raquo.laminar.api.{L, enrichSource}
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
+import scala.scalajs.js
 
 /** Undoes and redoes changes to a plan's steps, then focuses the affected step and reports what
   * happened */
@@ -28,46 +28,45 @@ final class UndoController(
   val redoLabel: Signal[Option[String]] =
     forester.historyStatus.map(_.nextRedo.map(StepChangeLabel.describe))
 
-  // Holding down the shortcut undoes many changes in quick succession, so they're reported
-  // together once the user stops
-  private val unreported = ListBuffer.empty[HistoryOutcome[Step.ID, Step]]
+  // Holding down the shortcut undoes many changes in quick succession. They're reported
+  // together, in one toast that's updated as each change is undone.
+  private val burstGapMillis = 1000
+  private var burst = List.empty[HistoryOutcome[Step.ID, Step]]
+  private var lastReported = Double.NegativeInfinity
 
   /** Mount this on the planning page */
   val modifier: L.Modifier[L.Element] =
-    List(
-      forester.historyOutcomes --> { outcome =>
-        outcome match {
-          case HistoryOutcome.Undone(entry) => refocus(entry); unreported += outcome
-          case HistoryOutcome.Redone(entry) => refocus(entry); unreported += outcome
-          case HistoryOutcome.UndoConflict(entry) => reportConflict("undo", entry)
-          case HistoryOutcome.RedoConflict(entry) => reportConflict("redo", entry)
-        }
-      },
-      forester.historyOutcomes.debounce(500) --> (_ => reportApplied())
-    )
+    forester.historyOutcomes --> { outcome =>
+      outcome match {
+        case HistoryOutcome.Undone(entry) => refocus(entry); reportApplied(outcome)
+        case HistoryOutcome.Redone(entry) => refocus(entry); reportApplied(outcome)
+        case HistoryOutcome.UndoConflict(entry) => reportConflict("undo", entry)
+        case HistoryOutcome.RedoConflict(entry) => reportConflict("redo", entry)
+      }
+    }
 
   private def refocus(entry: Entry[Step.ID, Step]): Unit =
     focusController.update((focus, forest) => UndoFocus.target(entry, forest, focus))
 
-  private def reportApplied(): Unit = {
-    val outcomes = unreported.toList
-    unreported.clear()
-    val title = outcomes match {
-      case List(HistoryOutcome.Undone(entry)) => Some(s"Undid: ${StepChangeLabel.describe(entry)}")
-      case List(HistoryOutcome.Redone(entry)) => Some(s"Redid: ${StepChangeLabel.describe(entry)}")
+  private def reportApplied(outcome: HistoryOutcome[Step.ID, Step]): Unit = {
+    val now = js.Date.now()
+    burst = if (now - lastReported < burstGapMillis) burst :+ outcome else List(outcome)
+    lastReported = now
+    toastPublisher.publish(ToastHub.Type.Info, 4.seconds, describe(burst), key = Some("plan-history"))
+  }
+
+  private def describe(outcomes: List[HistoryOutcome[Step.ID, Step]]): String =
+    outcomes match {
+      case List(HistoryOutcome.Undone(entry)) => s"Undid: ${StepChangeLabel.describe(entry)}"
+      case List(HistoryOutcome.Redone(entry)) => s"Redid: ${StepChangeLabel.describe(entry)}"
       case _ =>
         val undos = outcomes.count(_.isInstanceOf[HistoryOutcome.Undone[?, ?]])
         val redos = outcomes.count(_.isInstanceOf[HistoryOutcome.Redone[?, ?]])
         List(
           Option.when(undos > 0)(s"undid ${changes(undos)}"),
           Option.when(redos > 0)(s"redid ${changes(redos)}")
-        ).flatten match {
-          case Nil => None
-          case parts => Some(parts.mkString(", ").capitalize)
-        }
+        ).flatten.mkString(", ").capitalize
     }
-    title.foreach(toastPublisher.publish(ToastHub.Type.Info, 4.seconds, _))
-  }
 
   private def changes(count: Int): String =
     if (count == 1) "1 change" else s"$count changes"
