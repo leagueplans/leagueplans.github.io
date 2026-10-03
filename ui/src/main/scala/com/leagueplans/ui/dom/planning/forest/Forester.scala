@@ -1,7 +1,8 @@
 package com.leagueplans.ui.dom.planning.forest
 
 import com.leagueplans.ui.model.common.forest.Forest.Update
-import com.leagueplans.ui.model.common.forest.{Forest, ForestInterpreter, ForestResolver}
+import com.leagueplans.ui.model.common.forest.ForestHistory.{Entry, Result}
+import com.leagueplans.ui.model.common.forest.{Forest, ForestHistory, ForestInterpreter, ForestResolver, Touched}
 import com.leagueplans.uicommon.utils.HasID
 import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
@@ -14,8 +15,23 @@ object Forester {
     forest: Forest[ID, T],
     externalObserver: Observer[List[Forest.Update[ID, T]]]
   )(using HasID.Aux[T, ID]): Forester[ID, T] =
-    new Forester(Var(forest).distinct, externalObserver)
+    new Forester(
+      Var(forest).distinct,
+      externalObserver,
+      // See .claude/plans/04-undo-redo.md for how these were measured
+      ForestHistory.empty(maxEntries = 200, maxWeight = 1_000_000)
+    )
 
+  enum HistoryOutcome[ID, T] {
+    case Undone(entry: Entry[ID, T])
+    case Redone(entry: Entry[ID, T])
+    /** The entry was discarded, because part of the forest it touched has changed since */
+    case UndoConflict(entry: Entry[ID, T])
+    /** The entry was discarded, because part of the forest it touched has changed since */
+    case RedoConflict(entry: Entry[ID, T])
+  }
+
+  final case class HistoryStatus[ID, T](nextUndo: Option[Entry[ID, T]], nextRedo: Option[Entry[ID, T]])
   /** A group of operations whose updates are emitted together. Each operation applies to the
     * forest as the operations before it left it. */
   final class Batch[ID, T] private[Forester](initial: Forest[ID, T])(using HasID.Aux[T, ID]) {
@@ -64,20 +80,34 @@ object Forester {
   }
 }
 
-/** Optimises updates to the forest.
+/** Optimises updates to the forest, and records them so that they can be undone.
   *
   * The updates produced by each operation, or by each [[batch]] of operations, are emitted
-  * together, as a single non-empty batch. */
+  * together, as a single non-empty batch. Each batch is one entry in the undo history, so a
+  * gesture that makes several changes should make them in one batch.
+  *
+  * All local edits to the forest must go through a forester, or they can't be undone. */
 final class Forester[ID, T](
   forestState: Var[Forest[ID, T]],
-  externalObserver: Observer[List[Forest.Update[ID, T]]]
+  externalObserver: Observer[List[Forest.Update[ID, T]]],
+  initialHistory: ForestHistory[ID, T]
 )(using HasID.Aux[T, ID]) {
+  import Forester.{HistoryOutcome, HistoryStatus}
+
   val signal: StrictSignal[Forest[ID, T]] =
     forestState.signal
 
   private val updateBus = EventBus[List[Update[ID, T]]]()
   /** A stream of _all_ batches handled by this forester, including those that were injected */
   val updates: EventStream[List[Update[ID, T]]] = updateBus.events
+
+  private var history = initialHistory
+  private val historyStatusState = Var(HistoryStatus[ID, T](None, None))
+  val historyStatus: StrictSignal[HistoryStatus[ID, T]] = historyStatusState.signal
+
+  private val historyOutcomeBus = EventBus[HistoryOutcome[ID, T]]()
+  /** Emitted after the forest has been updated */
+  val historyOutcomes: EventStream[HistoryOutcome[ID, T]] = historyOutcomeBus.events
 
   def add(data: T): Unit =
     batch(_.add(data))
@@ -118,13 +148,58 @@ final class Forester[ID, T](
       operations(batch)
       val updates = batch.updates
       if (updates.nonEmpty) {
-        externalObserver.onNext(updates)
-        updateBus.emit(updates)
+        emit(updates)
+        setHistory(history.record(forest, batch.forest, Touched.from(updates)))
       }
       batch.forest
     }
 
-  /** Intended for batches that should not be propagated to an external observer */
+  /** Undoes the most recent recorded batch. Like [[batch]], the undo is deferred when called
+    * from within an Airstream transaction. */
+  def undo(): Unit =
+    travel(_.undo(_), HistoryOutcome.Undone(_), HistoryOutcome.UndoConflict(_))
+
+  /** Redoes the most recently undone batch. Like [[batch]], the redo is deferred when called
+    * from within an Airstream transaction. */
+  def redo(): Unit =
+    travel(_.redo(_), HistoryOutcome.Redone(_), HistoryOutcome.RedoConflict(_))
+
+  private def travel(
+    step: (ForestHistory[ID, T], Forest[ID, T]) => Result[ID, T],
+    onApplied: Entry[ID, T] => HistoryOutcome[ID, T],
+    onConflict: Entry[ID, T] => HistoryOutcome[ID, T]
+  ): Unit =
+    forestState.update { forest =>
+      step(history, forest) match {
+        case Result.NothingToDo() =>
+          forest
+
+        case Result.Conflict(entry, updatedHistory) =>
+          setHistory(updatedHistory)
+          historyOutcomeBus.emit(onConflict(entry))
+          forest
+
+        case Result.Applied(entry, updates, updatedHistory) =>
+          // Saved like any other batch, but not recorded
+          emit(updates)
+          setHistory(updatedHistory)
+          historyOutcomeBus.emit(onApplied(entry))
+          ForestResolver.resolve(forest, updates)
+      }
+    }
+
+  private def emit(updates: List[Update[ID, T]]): Unit = {
+    externalObserver.onNext(updates)
+    updateBus.emit(updates)
+  }
+
+  private def setHistory(updated: ForestHistory[ID, T]): Unit = {
+    history = updated
+    historyStatusState.set(HistoryStatus(updated.undoStack.headOption, updated.redoStack.headOption))
+  }
+
+  /** Intended for batches that should not be propagated to an external observer. They aren't
+    * recorded in the undo history either. */
   def inject(updates: List[Update[ID, T]]): Unit =
     forestState.update { forest =>
       val updated = ForestResolver.resolve(forest, updates)
