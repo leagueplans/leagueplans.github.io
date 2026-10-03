@@ -24,6 +24,11 @@ object FileEncoding {
   * the tmp file is complete. If it is complete, then we can finish the outstanding
   * write protocol.
   *
+  * Writable streams only change a file once they're closed, but that doesn't make
+  * this protocol redundant. Safari applies a closed stream by copying its contents
+  * over the original file in place (see `FileSystemStorageHandle::closeWritable` in
+  * WebKit), so a crash during the copy can still leave a partially written file.
+  *
   * In order to distinguish between files which have been completely written to, and
   * files which have only partially been written to, we use this `FileEncoding` type.
   * The binary encoding of this type is equal to

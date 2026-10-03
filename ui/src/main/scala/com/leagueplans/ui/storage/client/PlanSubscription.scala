@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker.Status
 import com.leagueplans.ui.storage.client.PlanSubscription.Message
 import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, StepUpdates}
-import com.leagueplans.ui.storage.model.errors.{ProtocolError, UpdateError}
+import com.leagueplans.ui.storage.model.errors.UpdateError
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.withKillSwitch
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -14,7 +14,6 @@ object PlanSubscription {
     case Done
     /** The plan was opened by another version of the app, which now owns it */
     case TakenOver
-    case Error(cause: ProtocolError)
     case Update(lamport: LamportTimestamp, data: StepUpdates | Plan.Settings)
     case UpdateSuccessful(lamport: LamportTimestamp)
     case UpdateFailed(lamport: LamportTimestamp, reason: UpdateError)
@@ -55,11 +54,6 @@ final class PlanSubscription(
         internalStatus.set(PlanSubscription.TakenOver)
         None
 
-      case Message.Error(cause) =>
-        upstreamKillSwitch.kill()
-        internalStatus.set(Status.Failed(cause.description))
-        None
-        
       case Message.Update(lamport, update) =>
         if (lamport == currentLamport.increment) {
           currentLamport = lamport

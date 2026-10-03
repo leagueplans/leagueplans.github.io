@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
-import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
+import com.leagueplans.ui.storage.worker.StorageProtocol.{ToClient, ToCoordinator}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
 import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 import com.raquo.airstream.core.{Observer, Signal}
@@ -16,18 +16,13 @@ import scala.collection.mutable
 object StorageClient {
   val statusKey = "storage-client"
 
-  def apply(): StorageClient = {
-    val coordinator =
-      MessagePortClient[Inbound.ToCoordinator, Outbound.ToClient](WorkerFactory.storageCoordinator())
-
-    new StorageClient(coordinator.send, coordinator.setMessageHandler)
-  }
+  def apply(): StorageClient =
+    new StorageClient(
+      MessagePortClient[ToCoordinator, ToClient](WorkerFactory.storageCoordinator())
+    )
 }
 
-final class StorageClient(
-  send: Inbound.ToCoordinator => Unit,
-  setMessageHandler: (Outbound.ToClient => ?) => Unit
-) {
+final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient]) {
   private var lastRequestID: Long = 0L
   private def nextID(): Long = {
     lastRequestID += 1
@@ -90,7 +85,7 @@ final class StorageClient(
     val requestID = nextID()
     val promise = Var[Option[Either[FileSystemError, PlanID]]](None)
     requests.creates += requestID -> promise.someWriter
-    send(Inbound.Create(requestID, metadata, plan))
+    coordinator.send(ToCoordinator.Create(requestID, metadata, plan))
     triggerPlansRefresh()
     setBusy()
     promise.signal
@@ -100,7 +95,7 @@ final class StorageClient(
     val requestID = nextID()
     val promise = Var[Option[Either[FileSystemError, PlanExport]]](None)
     requests.fetches += requestID -> promise.someWriter
-    send(Inbound.Fetch(requestID, id))
+    coordinator.send(ToCoordinator.Fetch(requestID, id))
     setBusy()
     promise.signal
   }
@@ -109,7 +104,7 @@ final class StorageClient(
     val requestID = nextID()
     val promise = Var[Option[Either[DeletionError, Unit]]](None)
     requests.deletes += requestID -> promise.someWriter
-    send(Inbound.Delete(requestID, id))
+    coordinator.send(ToCoordinator.Delete(requestID, id))
     triggerPlansRefresh()
     setBusy()
     promise.signal
@@ -119,7 +114,7 @@ final class StorageClient(
     val requestID = nextID()
     val promise = Var[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]](None)
     requests.subscriptions += requestID -> promise.someWriter
-    send(Inbound.Subscribe(requestID, id))
+    coordinator.send(ToCoordinator.Subscribe(requestID, id))
     setBusy()
     promise.signal
   }
@@ -128,50 +123,50 @@ final class StorageClient(
     val requestID = nextID()
     val promise = Var[Option[Either[FileSystemError, Unit]]](None)
     requests.refreshPlans += requestID -> promise.someWriter
-    send(Inbound.ListPlans(requestID))
+    coordinator.send(ToCoordinator.ListPlans(requestID))
     setBusy()
     promise.signal
   }
 
-  setMessageHandler {
-    case Outbound.Plans(requestID, data) =>
+  coordinator.setMessageHandler {
+    case ToClient.Plans(requestID, data) =>
       requests.refreshPlans.remove(requestID).foreach { observer =>
         observer.onNext(Right(()))
         updateStatus()
       }
       plansVar.writer.onNext(data)
 
-    case Outbound.ListPlansFailed(requestID, reason) =>
+    case ToClient.ListPlansFailed(requestID, reason) =>
       requests.refreshPlans.remove(requestID).foreach { observer =>
         observer.onNext(Left(reason))
         updateStatus(failureReason = Some(reason.message))
       }
 
-    case Outbound.CreateSucceeded(requestID, planID) =>
+    case ToClient.CreateSucceeded(requestID, planID) =>
       requests.creates.remove(requestID).foreach { observer =>
         observer.onNext(Right(planID))
         updateStatus()
       }
 
-    case Outbound.CreateFailed(requestID, reason) =>
+    case ToClient.CreateFailed(requestID, reason) =>
       requests.creates.remove(requestID).foreach { observer =>
         observer.onNext(Left(reason))
         updateStatus(failureReason = Some(reason.message))
       }
 
-    case Outbound.FetchSucceeded(requestID, _, plan) =>
+    case ToClient.FetchSucceeded(requestID, _, plan) =>
       requests.fetches.remove(requestID).foreach { observer =>
         observer.onNext(Right(plan))
         updateStatus()
       }
 
-    case Outbound.FetchFailed(requestID, _, reason) =>
+    case ToClient.FetchFailed(requestID, _, reason) =>
       requests.fetches.remove(requestID).foreach { observer =>
         observer.onNext(Left(reason))
         updateStatus(failureReason = Some(reason.message))
       }
 
-    case Outbound.Subscription(requestID, planID, lamport, plan) =>
+    case ToClient.Subscription(requestID, planID, lamport, plan) =>
       requests.subscriptions.remove(requestID).foreach { observer =>
         val subscription = new PlanSubscription(
           planID,
@@ -180,59 +175,54 @@ final class StorageClient(
             case (`planID`, message) => message
             case message: PlanSubscription.Message => message
           },
-          save = (lamport, update) => send(Inbound.Update(planID, lamport, update)),
-          unsubscribe = () => send(Inbound.Unsubscribe(nextID(), planID))
+          save = (lamport, update) => coordinator.send(ToCoordinator.Update(planID, lamport, update)),
+          unsubscribe = () => coordinator.send(ToCoordinator.Unsubscribe(nextID(), planID))
         )
         observer.onNext(Right((plan, subscription)))
         updateStatus()
       }
 
-    case Outbound.SubscriptionFailed(requestID, _, reason) =>
+    case ToClient.SubscriptionFailed(requestID, _, reason) =>
       requests.subscriptions.remove(requestID).foreach { observer =>
         observer.onNext(Left(reason))
         updateStatus(failureReason = Some(reason.message))
       }
 
-    case Outbound.SubscriptionTerminated(planID) =>
+    case ToClient.SubscriptionTerminated(planID) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.Done)
       )
 
-    case Outbound.SubscriptionTakenOver(planID) =>
+    case ToClient.SubscriptionTakenOver(planID) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.TakenOver)
       )
 
-    case Outbound.Update(planID, lamport, update) =>
+    case ToClient.Update(planID, lamport, update) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.Update(lamport, update.merge))
       )
 
-    case Outbound.UpdateSucceeded(planID, lamport) =>
+    case ToClient.UpdateSucceeded(planID, lamport) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.UpdateSuccessful(lamport))
       )
 
-    case Outbound.UpdateFailed(planID, lamport, reason) =>
+    case ToClient.UpdateFailed(planID, lamport, reason) =>
       subscriptionBus.writer.onNext(
         (planID, PlanSubscription.Message.UpdateFailed(lamport, reason))
       )
 
-    case Outbound.DeleteSucceeded(requestID, _) =>
+    case ToClient.DeleteSucceeded(requestID, _) =>
       requests.deletes.remove(requestID).foreach { observer =>
         observer.onNext(Right(()))
         updateStatus()
       }
 
-    case Outbound.DeleteFailed(requestID, _, reason) =>
+    case ToClient.DeleteFailed(requestID, _, reason) =>
       requests.deletes.remove(requestID).foreach { observer =>
         observer.onNext(Left(reason))
         updateStatus(failureReason = Some(reason.message))
       }
-
-    case Outbound.ProtocolFailure(reason) =>
-      subscriptionBus.writer.onNext(
-        PlanSubscription.Message.Error(reason)
-      )
   }
 }

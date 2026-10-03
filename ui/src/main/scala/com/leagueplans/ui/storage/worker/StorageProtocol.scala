@@ -3,25 +3,22 @@ package com.leagueplans.ui.storage.worker
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, ProtocolError, SubscriptionError, UpdateError}
+import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError, UpdateError}
 import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, StepUpdates}
 
 object StorageProtocol {
-  object Inbound {
-    sealed trait ToCoordinator
-    sealed trait ToWorker
+  sealed trait ToCoordinator
 
-    final case class ListPlans(requestID: Long) extends ToCoordinator with ToWorker
+  object ToCoordinator {
+    final case class ListPlans(requestID: Long) extends ToCoordinator
 
     final case class Create(
       requestID: Long,
       metadata: PlanMetadata,
       plan: Plan
-    ) extends ToCoordinator with ToWorker
+    ) extends ToCoordinator
 
-    final case class Read(planID: PlanID) extends ToWorker
-
-    final case class Fetch(requestID: Long, planID: PlanID) extends ToCoordinator with ToWorker
+    final case class Fetch(requestID: Long, planID: PlanID) extends ToCoordinator
 
     object Update {
       def apply(
@@ -43,46 +40,35 @@ object StorageProtocol {
       planID: PlanID,
       lamport: LamportTimestamp,
       update: Either[Plan.Settings, StepUpdates]
-    ) extends ToCoordinator with ToWorker
+    ) extends ToCoordinator
 
-    final case class Delete(requestID: Long, planID: PlanID) extends ToCoordinator with ToWorker
+    final case class Delete(requestID: Long, planID: PlanID) extends ToCoordinator
 
     final case class Subscribe(requestID: Long, planID: PlanID) extends ToCoordinator
 
     final case class Unsubscribe(requestID: Long, planID: PlanID) extends ToCoordinator
 
-    object ToCoordinator {
-      given Encoder[ToCoordinator] = Encoder.derived
-      given Decoder[ToCoordinator] = Decoder.derived
-    }
-
-    object ToWorker {
-      given Encoder[ToWorker] = Encoder.derived
-      given Decoder[ToWorker] = Decoder.derived
-    }
+    given Encoder[ToCoordinator] = Encoder.derived
+    given Decoder[ToCoordinator] = Decoder.derived
   }
 
-  object Outbound {
-    sealed trait ToClient
-    sealed trait ToCoordinator
+  sealed trait ToClient
 
-    final case class Plans(requestID: Long, data: Map[PlanID, PlanMetadata]) extends ToClient with ToCoordinator
-    final case class ListPlansFailed(requestID: Long, reason: FileSystemError) extends ToClient with ToCoordinator
+  object ToClient {
+    final case class Plans(requestID: Long, data: Map[PlanID, PlanMetadata]) extends ToClient
+    final case class ListPlansFailed(requestID: Long, reason: FileSystemError) extends ToClient
 
-    final case class CreateSucceeded(requestID: Long, planID: PlanID) extends ToClient with ToCoordinator
-    final case class CreateFailed(requestID: Long, reason: FileSystemError) extends ToClient with ToCoordinator
+    final case class CreateSucceeded(requestID: Long, planID: PlanID) extends ToClient
+    final case class CreateFailed(requestID: Long, reason: FileSystemError) extends ToClient
 
-    final case class FetchSucceeded(requestID: Long, planID: PlanID, plan: PlanExport) extends ToClient with ToCoordinator
-    final case class FetchFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient with ToCoordinator
+    final case class FetchSucceeded(requestID: Long, planID: PlanID, plan: PlanExport) extends ToClient
+    final case class FetchFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient
 
     final case class Subscription(requestID: Long, planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
     final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: SubscriptionError) extends ToClient
     final case class SubscriptionTerminated(planID: PlanID) extends ToClient
     /** The plan was opened by another version of the app, which now owns it */
     final case class SubscriptionTakenOver(planID: PlanID) extends ToClient
-
-    final case class ReadSucceeded(planID: PlanID, plan: Plan) extends ToCoordinator
-    final case class ReadFailed(planID: PlanID, reason: FileSystemError) extends ToCoordinator
 
     final case class Update(
       planID: PlanID,
@@ -93,27 +79,18 @@ object StorageProtocol {
     final case class UpdateSucceeded(
       planID: PlanID,
       lamport: LamportTimestamp
-    ) extends ToClient with ToCoordinator
+    ) extends ToClient
 
     final case class UpdateFailed(
       planID: PlanID,
       lamport: LamportTimestamp,
       reason: UpdateError
-    ) extends ToClient with ToCoordinator
+    ) extends ToClient
 
-    final case class DeleteSucceeded(requestID: Long, planID: PlanID) extends ToClient with ToCoordinator
-    final case class DeleteFailed(requestID: Long, planID: PlanID, reason: DeletionError) extends ToClient with ToCoordinator
+    final case class DeleteSucceeded(requestID: Long, planID: PlanID) extends ToClient
+    final case class DeleteFailed(requestID: Long, planID: PlanID, reason: DeletionError) extends ToClient
 
-    final case class ProtocolFailure(reason: ProtocolError) extends ToClient
-
-    object ToClient {
-      given Encoder[ToClient] = Encoder.derived
-      given Decoder[ToClient] = Decoder.derived
-    }
-
-    object ToCoordinator {
-      given Encoder[ToCoordinator] = Encoder.derived
-      given Decoder[ToCoordinator] = Decoder.derived
-    }
+    given Encoder[ToClient] = Encoder.derived
+    given Decoder[ToClient] = Decoder.derived
   }
 }
