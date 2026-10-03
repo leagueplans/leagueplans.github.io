@@ -5,7 +5,14 @@ import com.leagueplans.ui.model.common.forest.Forest.Update
 object ForestHistory {
   /** A recorded change. `before` and `after` hold the state of the touched parts of the forest
     * either side of the change, and nothing else. */
-  final case class Entry[ID, T](touched: Touched[ID], before: Slice[ID, T], after: Slice[ID, T])
+  final case class Entry[ID, T](touched: Touched[ID], before: Slice[ID, T], after: Slice[ID, T]) {
+    /** Roughly the memory the entry holds, in units of about 20 bytes. Measured in Node, each
+      * touched node or list costs about 20 units, and each ID in a captured list about 1. The
+      * entry's data isn't counted, as it's usually shared with the forest. */
+    lazy val weight: Int =
+      20 * (touched.nodes.size + touched.lists.size) +
+        (before.lists.valuesIterator ++ after.lists.valuesIterator).map(_.fold(0)(_.size)).sum
+  }
 
   enum Result[ID, T] {
     case NothingToDo()
@@ -16,8 +23,12 @@ object ForestHistory {
     case Conflict(entry: Entry[ID, T], history: ForestHistory[ID, T])
   }
 
-  def empty[ID, T](limit: Int): ForestHistory[ID, T] =
-    ForestHistory(List.empty, List.empty, limit)
+  /** @param maxEntries the most entries to keep
+    * @param maxWeight the most total [[Entry.weight]] to keep. The most recent entry is always
+    *                  kept, however heavy it is.
+    */
+  def empty[ID, T](maxEntries: Int, maxWeight: Int): ForestHistory[ID, T] =
+    ForestHistory(List.empty, List.empty, maxEntries, maxWeight)
 }
 
 /** Undo and redo stacks for a forest.
@@ -31,12 +42,13 @@ object ForestHistory {
 final case class ForestHistory[ID, T](
   undoStack: List[ForestHistory.Entry[ID, T]],
   redoStack: List[ForestHistory.Entry[ID, T]],
-  limit: Int
+  maxEntries: Int,
+  maxWeight: Int
 ) {
   import ForestHistory.{Entry, Result}
 
   /** Records a change, unless it made no difference. Recording a change clears the redo stack,
-    * and the oldest entries are dropped once there are more than [[limit]].
+    * and drops the oldest entries that exceed the limits.
     *
     * @param candidates the parts of the forest the change may have touched
     */
@@ -46,8 +58,14 @@ final case class ForestHistory[ID, T](
       this
     else {
       val entry = Entry(touched, Slice.capture(before, touched), Slice.capture(after, touched))
-      ForestHistory((entry +: undoStack).take(limit), List.empty, limit)
+      copy(undoStack = trim(entry +: undoStack), redoStack = List.empty)
     }
+  }
+
+  private def trim(entries: List[Entry[ID, T]]): List[Entry[ID, T]] = {
+    val cumulativeWeights = entries.iterator.scanLeft(0L)(_ + _.weight).drop(1)
+    val withinBudget = cumulativeWeights.takeWhile(_ <= maxWeight).size
+    entries.take(withinBudget.max(1).min(maxEntries))
   }
 
   def undo(current: Forest[ID, T]): Result[ID, T] =

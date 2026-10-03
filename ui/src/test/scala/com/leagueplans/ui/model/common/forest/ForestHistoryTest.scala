@@ -33,7 +33,7 @@ final class ForestHistoryTest
       case other => fail(s"Expected the history to apply, but got $other")
     }
 
-  private val noHistory: History = ForestHistory.empty(limit = 200)
+  private val noHistory: History = ForestHistory.empty(maxEntries = 200, maxWeight = Int.MaxValue)
 
   /** Removes 3, the middle child of 1 */
   private val (afterRemoval, removed) = change(noHistory, sample, RemoveLink(3, 1), RemoveNode(3))
@@ -65,7 +65,7 @@ final class ForestHistoryTest
     "undoes and redoes sequences of changes" in forAll(opsGen) { ops =>
       // Each group of operations is one change
       val (history, forests) =
-        ops.grouped(3).foldLeft((ForestHistory.empty[Step.ID, Step](limit = 200), List(Forest.empty[Step.ID, Step]))) {
+        ops.grouped(3).foldLeft((ForestHistory.empty[Step.ID, Step](maxEntries = 200, maxWeight = Int.MaxValue), List(Forest.empty[Step.ID, Step]))) {
           case ((history, forests @ (forest :: _)), group) =>
             val (updated, updates) = group.foldLeft((forest, List.empty[Update[Step.ID, Step]])) {
               case ((forest, acc), op) =>
@@ -127,6 +127,19 @@ final class ForestHistoryTest
       }
       history.undoStack should have size 200
       history.undoStack.last.after.nodes(5) shouldEqual Some(((5 + 1000).toChar, None))
+    }
+
+    "drops the oldest entries past the weight limit" in {
+      // Each edit touches one node, and so weighs 20
+      val (history, _) = (0 until 10).foldLeft((noHistory.copy(maxWeight = 100), sample)) {
+        case ((history, forest), i) => change(history, forest, UpdateData(5, (i + 1000).toChar))
+      }
+      history.undoStack.map(_.after.nodes(5).map(_._1)) shouldEqual (5 until 10).reverse.map(i => Some((i + 1000).toChar))
+    }
+
+    "keeps the most recent entry, however heavy" in {
+      val (history, _) = change(noHistory.copy(maxWeight = 1), sample, RemoveLink(3, 1), RemoveNode(3))
+      history.undoStack should have size 1
     }
 
     "on conflict" - {
