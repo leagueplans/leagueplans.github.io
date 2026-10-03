@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.ui.dom.planning.editor.description.EditStepDescriptionForm
 import com.leagueplans.ui.dom.planning.forest.Forester
+import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -31,9 +32,11 @@ object PlanElement {
     val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
     val stepClipboard = StepClipboard(forester, toastPublisher)
     val stepMover = StepMover(forester)
+    val undoController = UndoController(forester, focusController, toastPublisher)
 
     L.div(
       L.cls(Styles.plan),
+      undoController.modifier,
       PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepForm, deleteStepForm).amend(
         L.cls(Styles.header)
       ),
@@ -58,7 +61,8 @@ object PlanElement {
         newStepForm,
         deleteStepForm,
         editDescription = step =>
-          forester.signal.now().get(step).foreach(EditStepDescriptionForm.open(_, forester, modal))
+          forester.signal.now().get(step).foreach(EditStepDescriptionForm.open(_, forester, modal)),
+        undoController
       )
     )
   }

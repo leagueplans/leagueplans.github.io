@@ -19,7 +19,10 @@ object KeyboardShortcutsModal {
           List("Delete") -> "Delete the focused step",
           List("Ctrl", "C") -> "Copy the focused step",
           List("Ctrl", "X") -> "Cut the focused step",
-          List("Ctrl", "V") -> "Paste as the last substep of the focused step"
+          List("Ctrl", "V") -> "Paste as the last substep of the focused step",
+          List("Ctrl", "Z") -> "Undo the last change, when not typing in a text box",
+          List("Ctrl", "Shift", "Z") -> "Redo the last undone change",
+          List("Ctrl", "Y") -> "Redo the last undone change"
         ),
         toSection(
           "Step movement",

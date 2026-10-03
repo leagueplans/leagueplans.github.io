@@ -1,10 +1,11 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
-import org.scalajs.dom.{Element, KeyValue, KeyboardEvent, document, window}
+import org.scalajs.dom.{Element, HTMLElement, KeyValue, KeyboardEvent, document, window}
 
 object HotkeyModifiers {
   def apply(
@@ -14,13 +15,15 @@ object HotkeyModifiers {
     stepClipboard: StepClipboard,
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm,
-    editDescription: Step.ID => Unit
+    editDescription: Step.ID => Unit,
+    undoController: UndoController
   ): L.Modifier[L.Element] =
     List(
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
       toClipboardListener(focus, stepClipboard),
-      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription)
+      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription),
+      toHistoryListener(undoController)
     )
 
   // Listens on keydown, because writing to the clipboard requires a user activation,
@@ -103,17 +106,41 @@ object HotkeyModifiers {
         case _ => /* Do nothing */
       }
 
-  private val ignoredTags = Set("input")
+  // Listens on keydown, so that holding the keys repeats the undo or redo, as it does in text
+  // boxes. Text boxes are ignored, so they keep their own undo history.
+  private def toHistoryListener(controller: UndoController): Binder.Base =
+    L.documentEvents(_.onKeyDown)
+      .filterNot(shouldIgnore)
+      .filter(event => (event.ctrlKey || event.metaKey) && !event.altKey) --> { event =>
+        (event.key.toLowerCase, event.shiftKey) match {
+          case ("z", false) =>
+            event.preventDefault()
+            controller.undo()
+          case ("z", true) | ("y", false) =>
+            event.preventDefault()
+            controller.redo()
+          case _ => /* Do nothing */
+        }
+      }
+
+  private val ignoredTags = Set("input", "textarea", "select")
   private val ignoredIDs = Set.empty[String]
 
   private def shouldIgnore(event: KeyboardEvent): Boolean =
     event.target match {
       case e: Element =>
         ignoredTags.contains(e.tagName.toLowerCase) ||
+          isContentEditable(e) ||
           ignoredIDs.contains(e.id) ||
           modalIsOpen()
       case _ =>
         modalIsOpen()
+    }
+
+  private def isContentEditable(element: Element): Boolean =
+    element match {
+      case e: HTMLElement => e.isContentEditable
+      case _ => false
     }
 
   private def modalIsOpen(): Boolean =
