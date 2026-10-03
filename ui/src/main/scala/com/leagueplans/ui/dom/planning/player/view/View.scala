@@ -1,25 +1,33 @@
 package com.leagueplans.ui.dom.planning.player.view
 
+import com.leagueplans.ui.dom.planning.section.SectionKey
 import com.leagueplans.uicommon.dom.Button
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledAs
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, StringValueMapper, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringValueMapper, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object View {
-  final case class Tab(name: String, content: L.HtmlElement)
+  final case class Tab(key: SectionKey, name: String, content: L.HtmlElement)
 
-  def apply(head: Tab, tail: Tab*): L.Div = {
-    val tabVar = Var(head)
+  /** If the selected tab stops being visible, the first visible tab is shown instead */
+  def apply(tabs: Signal[List[Tab]]): L.Div = {
+    val selectedKey = Var(Option.empty[SectionKey])
+    val viewedTab =
+      Signal.combine(tabs, selectedKey).map((tabs, maybeKey) =>
+        maybeKey.flatMap(key => tabs.find(_.key == key)).orElse(tabs.headOption)
+      )
+
     L.div(
       L.cls(Styles.view),
       L.div(
         L.cls(Styles.tabs),
-        (head +: tail).map(toTabElement(_, tabVar))
+        L.children <-- tabs.map(_.map(toTabElement(_, viewedTab, selectedKey)))
       ),
-      L.child <-- tabVar.signal.map(_.content.amend(L.cls(Styles.content)))
+      L.child.maybe <-- viewedTab.map(_.map(_.content.amend(L.cls(Styles.content))))
     )
   }
 
@@ -33,10 +41,14 @@ object View {
     val viewedTab: String = js.native
   }
 
-  private def toTabElement(tab: Tab, tabVar: Var[Tab]): L.Button =
-    Button(_.handledAs(tab) --> tabVar).amend(
-      L.cls <-- tabVar.signal.map(selectedTab =>
-        if (tab == selectedTab)
+  private def toTabElement(
+    tab: Tab,
+    viewedTab: Signal[Option[Tab]],
+    selectedKey: Var[Option[SectionKey]]
+  ): L.Button =
+    Button(_.handledAs(Some(tab.key)) --> selectedKey).amend(
+      L.cls <-- viewedTab.map(maybeViewed =>
+        if (maybeViewed.exists(_.key == tab.key))
           Styles.viewedTab
         else
           Styles.hiddenTab

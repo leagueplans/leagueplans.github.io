@@ -5,9 +5,9 @@ import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
+import com.leagueplans.ui.dom.planning.section.{SectionContext, Sections}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
-import com.leagueplans.ui.model.player.mode.GridMaster
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -64,16 +64,14 @@ object PlanningPage {
       )
 
     val visualiser =
-      settings.map(s =>
-        Visualiser(
+      Visualiser(
+        Sections.all,
+        SectionContext(
           playerSignal,
-          isLeague = s.maybeLeaguePointScoring.nonEmpty,
-          // TODO - This will break if you support changing settings
-          isGridMaster = s == Plan.Settings.Deferred(GridMaster),
+          createEffectObserver(focusContext.focus, forester),
+          settings,
           cache,
           itemFuse,
-          createEffectObserver(focusContext.focus, forester),
-          s.expMultipliers,
           tooltip,
           contextMenu,
           modal,
@@ -105,7 +103,7 @@ object PlanningPage {
       L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
       L.div(
         L.cls(Styles.lhs),
-        L.child <-- visualiser.map(_.amend(L.cls(Styles.state))),
+        visualiser.amend(L.cls(Styles.state)),
         L.child <-- editorElement
       ),
       planElement.amend(L.cls(Styles.plan))

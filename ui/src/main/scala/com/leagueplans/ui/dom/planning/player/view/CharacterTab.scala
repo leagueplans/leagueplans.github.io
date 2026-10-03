@@ -22,7 +22,7 @@ object CharacterTab {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
-    expMultipliers: List[ExpMultiplier],
+    expMultipliers: Signal[List[ExpMultiplier]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal,
@@ -55,14 +55,16 @@ object CharacterTab {
         contextMenu,
         modal
       ).amend(L.cls(Styles.bankPanel)),
-      StatsElement(
-        playerSignal,
-        effectObserverSignal,
-        expMultipliers,
-        cache,
-        tooltip,
-        modal
-      ).amend(L.cls(Styles.statsPanel))
+      L.child <-- expMultipliers.distinct.map(multipliers =>
+        StatsElement(
+          playerSignal,
+          effectObserverSignal,
+          multipliers,
+          cache,
+          tooltip,
+          modal
+        ).amend(L.cls(Styles.statsPanel))
+      )
     )
 
   @js.native @JSImport("/styles/planning/player/view/characterTab.module.css", JSImport.Default)

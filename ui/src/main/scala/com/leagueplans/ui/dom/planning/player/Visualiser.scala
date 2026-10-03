@@ -1,44 +1,14 @@
 package com.leagueplans.ui.dom.planning.player
 
-import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.player.view.*
-import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier}
-import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.*
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
-import com.raquo.airstream.core.{Observer, Signal}
+import com.leagueplans.ui.dom.planning.player.view.View
+import com.leagueplans.ui.dom.planning.section.{SectionContext, SectionDef}
 import com.raquo.laminar.api.L
 
 object Visualiser {
-  def apply(
-    playerSignal: Signal[Player],
-    isLeague: Boolean,
-    isGridMaster: Boolean,
-    cache: Cache,
-    itemFuse: Fuse[Item],
-    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
-    expMultipliers: List[ExpMultiplier],
-    tooltip: Tooltip,
-    contextMenu: ContextMenu,
-    modal: Modal,
-    toastPublisher: ToastHub.Publisher
-  ): L.Div = {
-    val characterTab = View.Tab("Character", CharacterTab(playerSignal, cache, itemFuse, effectObserverSignal, expMultipliers, tooltip, contextMenu, modal, toastPublisher))
-    val questTab = View.Tab("Quests & Diaries", QuestAndDiaryTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenu))
-
-    if (isLeague)
-      View(
-        characterTab,
-        questTab,
-        View.Tab("League progress", LeagueTab(playerSignal, cache, effectObserverSignal, tooltip, contextMenu))
-      )
-    else if (isGridMaster)
-      View(
-        characterTab,
-        questTab,
-        View.Tab("Grid progress", GridTab(playerSignal, cache, effectObserverSignal))
-      )
-    else
-      View(characterTab, questTab)
+  def apply(sections: List[SectionDef], context: SectionContext): L.Div = {
+    val tabs = sections.map(section => section -> View.Tab(section.key, section.title, section.render(context)))
+    View(context.settings.map(settings =>
+      tabs.collect { case (section, tab) if section.visibleIn(settings) => tab }
+    ))
   }
 }
