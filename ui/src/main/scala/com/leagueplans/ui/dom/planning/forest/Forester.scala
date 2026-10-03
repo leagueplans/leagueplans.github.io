@@ -32,6 +32,7 @@ object Forester {
   }
 
   final case class HistoryStatus[ID, T](nextUndo: Option[Entry[ID, T]], nextRedo: Option[Entry[ID, T]])
+
   /** A group of operations whose updates are emitted together. Each operation applies to the
     * forest as the operations before it left it. */
   final class Batch[ID, T] private[Forester](initial: Forest[ID, T])(using HasID.Aux[T, ID]) {
