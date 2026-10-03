@@ -26,6 +26,10 @@ final class FocusController private[FocusController](updater: Observer[FocusCont
   def set(step: Step.ID): Unit =
     updater.onNext((_, _) => Some(step))
 
+  /** Chooses the focus from the current focus and forest */
+  def update(f: (Option[Step.ID], Forest[Step.ID, Step]) => Option[Step.ID]): Unit =
+    updater.onNext(f)
+
   def toggle(step: Step.ID): Unit =
     updater.onNext {
       case (Some(`step`), _) => None
