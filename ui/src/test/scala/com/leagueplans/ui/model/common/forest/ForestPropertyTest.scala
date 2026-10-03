@@ -15,7 +15,6 @@ import com.raquo.airstream.ownership.ManualOwner
 import org.scalacheck.Gen
 import org.scalatest.Assertion
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.{Random, Using}
@@ -24,7 +23,7 @@ import scala.util.{Random, Using}
   * as [[com.leagueplans.ui.dom.planning.forest.Forester]] does. */
 final class ForestPropertyTest
   extends AnyFreeSpec
-    with Matchers
+    with ForestAssertions
     with ScalaCheckDrivenPropertyChecks {
 
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration =
@@ -41,39 +40,6 @@ final class ForestPropertyTest
       updated
     }
     succeed
-  }
-
-  private def resolveAll(ops: List[Op]): Forest[Step.ID, Step] =
-    ops.foldLeft(Forest.empty[Step.ID, Step])((forest, op) => ForestResolver.resolve(forest, toUpdates(forest, op)))
-
-  /** Every step in the forest has a node in the tree, whose data, parent and children match */
-  private def treeMatches(
-    tree: ForestUpdateConsumer[Step.ID, Step, TreeNode],
-    forest: Forest[Step.ID, Step]
-  ): Assertion =
-    Using(new ManualOwner) { owner =>
-      allIDs.filterNot(forest.contains).flatMap(tree.get) shouldBe empty
-      forest.nodes.foreach { (id, step) =>
-        val node = tree.get(id).getOrElse(fail(s"No node for $id"))
-        withClue(s"Node $id:") {
-          node.data.observe(using owner).now() shouldEqual step
-          node.parent.observe(using owner).now().map(_.id) shouldEqual forest.toParent.get(id)
-          node.children.observe(using owner).now().map(_.id) shouldEqual forest.toChildren(id)
-        }
-      }
-      succeed
-    }(using _.killSubscriptions()).get
-
-  private def timingsMatch(
-    incremental: TimeKeeper,
-    fromScratch: TimeKeeper,
-    forest: Forest[Step.ID, Step]
-  ): Assertion = {
-    def timings(timeKeeper: TimeKeeper) =
-      forest.nodes.keys.map(id => id -> timeKeeper.get(id).now()).toMap
-
-    timings(incremental) shouldEqual timings(fromScratch)
-    incremental.endTime.now() shouldEqual fromScratch.endTime.now()
   }
 
   "Forest operations" - {
@@ -194,6 +160,12 @@ private object ForestPropertyTest {
 
   private def step(id: Step.ID, variant: Variant): Step =
     Step(id, StepDetails(variant.toString).copy(repetitions = variant.repetitions, duration = variant.duration))
+
+  def resolveAll(ops: List[Op]): Forest[Step.ID, Step] =
+    resolveAll(Forest.empty, ops)
+
+  def resolveAll(forest: Forest[Step.ID, Step], ops: List[Op]): Forest[Step.ID, Step] =
+    ops.foldLeft(forest)((forest, op) => ForestResolver.resolve(forest, toUpdates(forest, op)))
 
   def toUpdates(forest: Forest[Step.ID, Step], op: Op): List[Update[Step.ID, Step]] = {
     val interpreter = ForestInterpreter(forest)
