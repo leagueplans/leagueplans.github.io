@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.RenderMode
+import com.leagueplans.ui.dom.planning.DisplayedState
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
@@ -17,7 +17,6 @@ import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
@@ -30,7 +29,7 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
-    renderMode: Var[RenderMode],
+    displayedState: DisplayedState,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
@@ -45,7 +44,7 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
-        RenderModeSection(stepSignal, forester, renderMode, tooltip).amend(L.cls(Styles.viewToggle)),
+        RenderModeSection(stepSignal, forester, displayedState.renderMode, tooltip).amend(L.cls(Styles.viewToggle)),
         TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)

@@ -7,7 +7,7 @@ import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, Pl
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{SectionContext, Sections}
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Effect, Plan, Step}
+import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -15,7 +15,7 @@ import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.{Val, Var}
+import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
@@ -39,13 +39,7 @@ object PlanningPage {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val renderMode = Var(RenderMode.AfterEffects)
-    val playerSignal =
-      renderMode.signal.flatMapSwitch {
-        case RenderMode.Before => focusContext.playerBeforeCurrentFocus
-        case RenderMode.AfterEffects => focusContext.playerAfterEffectsOfCurrentFocus
-        case RenderMode.AfterAllReps => focusContext.playerAfterAllRepsOfCurrentFocus
-      }
+    val displayedState = DisplayedState(focusContext)
 
     val planElement =
       PlanElement(
@@ -67,8 +61,11 @@ object PlanningPage {
       Visualiser(
         Sections.all,
         SectionContext(
-          playerSignal,
+          displayedState.displayedPlayer,
+          displayedState.playerAtInsertion,
+          displayedState.baseline,
           createEffectObserver(focusContext.focus, forester),
+          createRequirementObserver(focusContext.focus, forester),
           settings,
           cache,
           itemFuse,
@@ -90,7 +87,7 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
-            renderMode,
+            displayedState,
             timeKeeper,
             tooltip,
             modal
@@ -143,6 +140,17 @@ object PlanningPage {
           step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(_ + _))
         )
       }
+    ))
+
+  /** Adds a requirement to the focused step */
+  private def createRequirementObserver(
+    focusedStepSignal: Signal[Option[Step]],
+    forester: Forester[Step.ID, Step]
+  ): Signal[Option[Observer[Requirement]]] =
+    focusedStepSignal.map(_.map(focusedStep =>
+      Observer[Requirement](requirement =>
+        forester.update(focusedStep.id, step => step.deepCopy(requirements = step.requirements :+ requirement))
+      )
     ))
 
   private def createEditorFallback(forestSignal: Signal[Forest[Step.ID, Step]]): L.Div =
