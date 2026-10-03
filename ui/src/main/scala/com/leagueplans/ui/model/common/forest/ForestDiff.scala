@@ -4,12 +4,15 @@ import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.Forest.Update.*
 
 object ForestDiff {
-  /** Updates that turn one forest into another. Every consumer of forest updates can apply them
-    * in order:
-    *  - no update refers to a node that doesn't exist
-    *  - links are only added to nodes that are roots
-    *  - no intermediate forest contains a cycle
-    *  - a node is unlinked from its parent before it is removed
+  /** Updates that turn one forest into another.
+    *
+    * The updates are ordered so that every consumer of forest updates can apply them one at a
+    * time. All updates satisfy the following:
+    *  - no update refers to a node that doesn't exist, which storage relies on
+    *  - a child node is only linked to a parent while the child is a root, which the TimeKeeper
+    *    relies on
+    *  - no forest along the way contains a cycle, which would make traversals loop forever
+    *  - a node is unlinked from its parent before it's removed, which the step tree relies on
     */
   def diff[ID, T](from: Forest[ID, T], to: Forest[ID, T]): List[Update[ID, T]] =
     diff(from, to, Touched.all(from, to)).getOrElse(
