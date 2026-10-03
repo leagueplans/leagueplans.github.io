@@ -2,15 +2,15 @@ package com.leagueplans.uicommon.dom.form
 
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, enrichSource}
-import org.scalajs.dom.{File, console}
+import org.scalajs.dom.File
 
 object ValidatedFileInput {
-  def apply[T](id: String, accept: String)(
+  def apply[T](id: String, accept: String, onError: Throwable => Unit)(
     parse: File => EventStream[Either[Throwable, T]]
   ): (L.Input, L.Label, Signal[Option[T]]) = {
     val (input, label, fileSignal) = FileInput(id, accept)
     val dataSignal = parseFile(fileSignal, parse)
-    val validatedInput = input.amend(setValidity(dataSignal))
+    val validatedInput = input.amend(setValidity(dataSignal, onError))
     (validatedInput, label, collapse(dataSignal))
   }
   
@@ -24,12 +24,13 @@ object ValidatedFileInput {
     }
     
   private def setValidity(
-    dataSignal: Signal[Option[Either[Throwable, ?]]]
+    dataSignal: Signal[Option[Either[Throwable, ?]]],
+    onError: Throwable => Unit
   ): L.Modifier[L.Input] =
     L.inContext(node =>
       dataSignal --> {
         case Some(Left(error)) =>
-          console.error(s"Failed to parse uploaded file", error)
+          onError(error)
           node.ref.setCustomValidity("Unable to parse the provided file")
         case _ =>
           node.ref.setCustomValidity("")

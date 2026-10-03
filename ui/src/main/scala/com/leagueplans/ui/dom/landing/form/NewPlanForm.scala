@@ -33,7 +33,7 @@ object NewPlanForm {
   ): L.FormElement = {
     val (nameInput, nameLabel, nameSignal) = createNameInput()
     val (modeSelect, modeLabel, modeSignal) = createModeSelect()
-    val (importInput, importLabel, importSignal) = createImportInput()
+    val (importInput, importLabel, importSignal) = createImportInput(toastPublisher)
 
     val (form, submitButton) = createForm(() => 
       onSubmit(
@@ -93,8 +93,19 @@ object NewPlanForm {
       )
     )
 
-  private def createImportInput(): (L.Input, L.Label, Signal[Option[PlanExport]]) =
-    GzipFileInput[PlanExport](id = "import-existing-plan-input")
+  private def createImportInput(
+    toastPublisher: ToastHub.Publisher
+  ): (L.Input, L.Label, Signal[Option[PlanExport]]) =
+    GzipFileInput[PlanExport](
+      id = "import-existing-plan-input",
+      onError = error =>
+        toastPublisher.publish(
+          ToastHub.Type.Error,
+          15.seconds,
+          "Couldn't read the imported plan file",
+          Some(error.getMessage)
+        )
+    )
     
   private def createForm[T](
     onSubmit: () => EventStream[?]
