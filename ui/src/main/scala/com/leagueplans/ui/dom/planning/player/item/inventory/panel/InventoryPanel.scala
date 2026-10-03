@@ -18,7 +18,7 @@ object InventoryPanel {
   def apply(
     playerSignal: Signal[Player],
     cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal
@@ -56,7 +56,7 @@ object InventoryPanel {
   private def toStackElement(
     playerSignal: Signal[Player],
     cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     panel: L.HtmlElement,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
@@ -72,7 +72,7 @@ object InventoryPanel {
     stack: ItemStack,
     cache: Cache,
     playerSignal: Signal[Player],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     contextMenu: ContextMenu,
     modal: Modal
   ): Binder.Base =

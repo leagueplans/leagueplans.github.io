@@ -23,7 +23,7 @@ object InventoryItemContextMenu {
     stack: ItemStack,
     player: Player,
     cache: Cache,
-    effectObserver: Observer[Effect],
+    effectObserver: Observer[Effect | Seq[Effect]],
     contextMenu: ContextMenu,
     modal: Modal
   ): L.Div = {
@@ -86,7 +86,7 @@ object InventoryItemContextMenu {
     stack: ItemStack,
     cache: Cache,
     player: Player,
-    effectObserver: Observer[MoveItem],
+    effectObserver: Observer[Seq[MoveItem]],
     contextMenu: ContextMenu,
   ): Option[ContextMenuList.Item] =
     (stack.noted, stack.item.equipmentType) match {
@@ -118,7 +118,8 @@ object InventoryItemContextMenu {
         )
 
         val observer = Observer[Unit](_ =>
-          (unequipEffects.toList :+ equipEffect).foreach(effectObserver.onNext)
+          // One update, so that equipping undoes in one go
+          effectObserver.onNext(unequipEffects.toList :+ equipEffect)
         )
 
         Some(ContextMenuList.Item(
