@@ -4,13 +4,13 @@ import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.uicommon.dom.{Button, IconButtonModifiers, Modal, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
-import com.leagueplans.uicommon.facades.fontawesome.commontypes.IconDefinition
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.codecs.StringAsIsCodec
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -30,10 +30,10 @@ object PlanHeader {
       showShortcutsButton(tooltip, modal),
       L.img(L.cls(Styles.planIcon), L.src(planIcon), L.alt("Plan section icon")),
       L.span(L.cls(Styles.name), planName),
-      toHistoryButton(FreeSolid.faArrowRotateLeft, "Undo", "Ctrl+Z", undoController.undoLabel, tooltip)(
+      toHistoryButton(undoIcon, "Undo", "Ctrl+Z", undoController.undoLabel, tooltip)(
         undoController.undo()
       ),
-      toHistoryButton(FreeSolid.faArrowRotateRight, "Redo", "Ctrl+Shift+Z", undoController.redoLabel, tooltip)(
+      toHistoryButton(redoIcon, "Redo", "Ctrl+Shift+Z", undoController.redoLabel, tooltip)(
         undoController.redo()
       ),
       toAddStepButton(focus, newStepForm),
@@ -72,9 +72,30 @@ object PlanHeader {
     )
   }
 
+  // Font Awesome's undo arrows are filled curves, which look jagged at this size on screens
+  // without high pixel density. These simpler stroked arrows stay smooth.
+  private def undoIcon: L.SvgElement =
+    historyIcon(arrowhead = "M5.5 2.5 2 6l3.5 3.5", shaft = "M2 6h8a4 4 0 0 1 0 8H6")
+
+  private def redoIcon: L.SvgElement =
+    historyIcon(arrowhead = "M10.5 2.5 14 6l-3.5 3.5", shaft = "M14 6H6a4 4 0 0 0 0 8h4")
+
+  private def historyIcon(arrowhead: String, shaft: String): L.SvgElement =
+    L.svg.svg(
+      L.svg.viewBox("0 0 16 16"),
+      L.svg.fill("none"),
+      L.svg.stroke("currentColor"),
+      L.svg.strokeWidth("2"),
+      L.svg.strokeLineCap("round"),
+      L.svg.strokeLineJoin("round"),
+      L.svg.svgAttr("aria-hidden", StringAsIsCodec, namespace = None)("true"),
+      L.svg.path(L.svg.d(arrowhead)),
+      L.svg.path(L.svg.d(shaft))
+    )
+
   /** @param label a description of the change the button would undo or redo, if there is one */
   private def toHistoryButton(
-    icon: IconDefinition,
+    icon: L.SvgElement,
     action: String,
     shortcut: String,
     label: Signal[Option[String]],
@@ -83,7 +104,7 @@ object PlanHeader {
     Button(_.handled --> (_ => run)).amend(
       L.cls(Styles.historyButton),
       L.disabled <-- label.map(_.isEmpty),
-      FontAwesome.icon(icon).amend(L.svg.cls(Styles.historyIcon)),
+      icon.amend(L.svg.cls(Styles.historyIcon)),
       IconButtonModifiers.using(
         tooltipContents = label.map {
           case Some(change) => s"$action: $change ($shortcut)"

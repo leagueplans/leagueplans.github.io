@@ -51,8 +51,10 @@
 }
 
 .historyIcon {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
   color: white;
-  font-size: 1rem;
 }
 
 .historyButton {
