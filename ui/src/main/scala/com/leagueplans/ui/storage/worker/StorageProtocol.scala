@@ -104,7 +104,6 @@ object StorageProtocol {
     final case class DeleteSucceeded(requestID: Long, planID: PlanID) extends ToClient with ToCoordinator
     final case class DeleteFailed(requestID: Long, planID: PlanID, reason: DeletionError) extends ToClient with ToCoordinator
 
-    final case class WorkerFailedToStart(error: FileSystemError) extends ToCoordinator
     final case class ProtocolFailure(reason: ProtocolError) extends ToClient
 
     object ToClient {

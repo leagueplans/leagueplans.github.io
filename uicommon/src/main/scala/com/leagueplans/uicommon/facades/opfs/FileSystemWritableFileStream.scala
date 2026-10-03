@@ -12,4 +12,7 @@ trait FileSystemWritableFileStream extends js.Object {
   def truncate(size: Long): js.Promise[Unit] = js.native
 
   def close(): js.Promise[Unit] = js.native
+
+  // Inherited from WritableStream
+  def abort(reason: js.UndefOr[js.Any] = js.native): js.Promise[Unit] = js.native
 }

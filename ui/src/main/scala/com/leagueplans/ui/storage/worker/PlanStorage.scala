@@ -2,47 +2,13 @@ package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.ui.storage.model.errors.{DeletionError, UpdateError, FileSystemError as UIError}
 import com.leagueplans.ui.storage.opfs.{PlansDirectory, RootDirectory}
+import com.leagueplans.ui.storage.worker.PlanStorage.convert
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
-import com.leagueplans.ui.storage.worker.StorageWorker.convert
-import com.leagueplans.uicommon.utils.airstream.ObservableOps.flatMapConcat
 import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandle, FileSystemError as OPFSError}
-import com.leagueplans.uicommon.wrappers.workers.DedicatedWorkerScope
-import com.raquo.airstream.core.{EventStream, Observer}
-import com.raquo.airstream.eventbus.EventBus
-import com.raquo.airstream.ownership.ManualOwner
+import com.leagueplans.uicommon.wrappers.workers.WorkerScope
+import com.raquo.airstream.core.EventStream
 
-import scala.scalajs.js.annotation.JSExportTopLevel
-
-private object StorageWorker {
-  @JSExportTopLevel("run", moduleID = "storageworker")
-  def run(): Unit = {
-    val scope = new DedicatedWorkerScope[Outbound.ToCoordinator, Inbound.ToWorker]
-    val messageBus = EventBus[Inbound.ToWorker]()
-
-    createWorker(scope)
-      // combineWith will cause messages to be dropped if they arrive before
-      // the worker is available. The current design assumes at most one
-      // message will be queued on the port at a time.
-      .combineWith(messageBus.events)
-      .flatMapConcat {
-        case (Left(error), _) => EventStream.fromValue(error, emitOnce = true)
-        case (Right(worker), message) => worker.handle(message)
-      }
-      .addObserver(
-        Observer(scope.port.send)
-      )(using new ManualOwner)
-
-    scope.port.setMessageHandler(messageBus.writer.onNext)
-  }
-
-  private def createWorker(
-    scope: DedicatedWorkerScope[Outbound.ToCoordinator, Inbound.ToWorker]
-  ): EventStream[Either[Outbound.ToCoordinator, StorageWorker]] =
-    RootDirectory.from(scope).map {
-      case Left(error) => Left(Outbound.WorkerFailedToStart(convert(error)))
-      case Right(root) => Right(StorageWorker(root.plans))
-    }
-
+private object PlanStorage {
   private def convert(error: OPFSError): UIError =
     error match {
       case OPFSError.DecodingError(name, cause) =>
@@ -70,42 +36,94 @@ private object StorageWorker {
     }
 }
 
-private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
+/** Reads and writes plans in the OPFS. Requests must not overlap, so the coordinator
+  * waits for each to finish before starting the next. */
+private final class PlanStorage(scope: WorkerScope) {
+  private var plansDirectory: Option[PlansDirectory[DirectoryHandle]] = None
+
   def handle(message: Inbound.ToWorker): EventStream[Outbound.ToCoordinator] =
-    message match {
-      case list: Inbound.ListPlans => handleListPlans(list)
-      case create: Inbound.Create => handleCreate(create)
-      case fetch: Inbound.Fetch => handleFetch(fetch)
-      case read: Inbound.Read => handleRead(read)
-      case update: Inbound.Update => handleUpdate(update)
-      case delete: Inbound.Delete => handleDelete(delete)
+    getPlansDirectory().flatMapSwitch {
+      case Left(error) => EventStream.fromValue(failed(message, convert(error)), emitOnce = true)
+      case Right(directory) => handle(directory, message)
     }
 
-  private def handleListPlans(message: Inbound.ListPlans): EventStream[Outbound.ToCoordinator] =
+  // A failed attempt isn't remembered, so the next request will try again
+  private def getPlansDirectory(): EventStream[Either[OPFSError, PlansDirectory[DirectoryHandle]]] =
+    plansDirectory match {
+      case Some(directory) =>
+        EventStream.fromValue(Right(directory), emitOnce = true)
+      case None =>
+        RootDirectory.from(scope).map(_.map { root =>
+          plansDirectory = Some(root.plans)
+          root.plans
+        })
+    }
+
+  private def failed(message: Inbound.ToWorker, error: UIError): Outbound.ToCoordinator =
+    message match {
+      case list: Inbound.ListPlans => Outbound.ListPlansFailed(list.requestID, error)
+      case create: Inbound.Create => Outbound.CreateFailed(create.requestID, error)
+      case fetch: Inbound.Fetch => Outbound.FetchFailed(fetch.requestID, fetch.planID, error)
+      case read: Inbound.Read => Outbound.ReadFailed(read.planID, error)
+      case update: Inbound.Update =>
+        Outbound.UpdateFailed(update.planID, update.lamport, UpdateError.FileSystem(error))
+      case delete: Inbound.Delete =>
+        Outbound.DeleteFailed(delete.requestID, delete.planID, DeletionError.FileSystem(error))
+    }
+
+  private def handle(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.ToWorker
+  ): EventStream[Outbound.ToCoordinator] =
+    message match {
+      case list: Inbound.ListPlans => handleListPlans(directory, list)
+      case create: Inbound.Create => handleCreate(directory, create)
+      case fetch: Inbound.Fetch => handleFetch(directory, fetch)
+      case read: Inbound.Read => handleRead(directory, read)
+      case update: Inbound.Update => handleUpdate(directory, update)
+      case delete: Inbound.Delete => handleDelete(directory, delete)
+    }
+
+  private def handleListPlans(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.ListPlans
+  ): EventStream[Outbound.ToCoordinator] =
     directory.listPlans().map {
       case Left(error) => Outbound.ListPlansFailed(message.requestID, convert(error))
       case Right(plans) => Outbound.Plans(message.requestID, plans)
     }
 
-  private def handleCreate(message: Inbound.Create): EventStream[Outbound.ToCoordinator] =
+  private def handleCreate(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.Create
+  ): EventStream[Outbound.ToCoordinator] =
     directory.create(message.metadata, message.plan).map {
       case Left(error) => Outbound.CreateFailed(message.requestID, convert(error))
       case Right(planID) => Outbound.CreateSucceeded(message.requestID, planID)
     }
 
-  private def handleFetch(message: Inbound.Fetch): EventStream[Outbound.ToCoordinator] =
+  private def handleFetch(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.Fetch
+  ): EventStream[Outbound.ToCoordinator] =
     directory.fetch(message.planID).map {
       case Left(error) => Outbound.FetchFailed(message.requestID, message.planID, convert(error))
       case Right(plan) => Outbound.FetchSucceeded(message.requestID, message.planID, plan)
     }
 
-  private def handleRead(message: Inbound.Read): EventStream[Outbound.ToCoordinator] =
+  private def handleRead(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.Read
+  ): EventStream[Outbound.ToCoordinator] =
     directory.read(message.planID).map {
       case Left(error) => Outbound.ReadFailed(message.planID, convert(error))
       case Right(plan) => Outbound.ReadSucceeded(message.planID, plan)
     }
 
-  private def handleUpdate(message: Inbound.Update): EventStream[Outbound.ToCoordinator] =
+  private def handleUpdate(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.Update
+  ): EventStream[Outbound.ToCoordinator] =
     directory.applyUpdate(message.planID, message.update.merge).map {
       case Left(error) =>
         Outbound.UpdateFailed(
@@ -117,7 +135,10 @@ private final class StorageWorker(directory: PlansDirectory[DirectoryHandle]) {
         Outbound.UpdateSucceeded(message.planID, message.lamport)
     }
 
-  private def handleDelete(message: Inbound.Delete): EventStream[Outbound.ToCoordinator] =
+  private def handleDelete(
+    directory: PlansDirectory[DirectoryHandle],
+    message: Inbound.Delete
+  ): EventStream[Outbound.ToCoordinator] =
     directory.delete(message.planID).map {
       case Left(error) =>
         Outbound.DeleteFailed(

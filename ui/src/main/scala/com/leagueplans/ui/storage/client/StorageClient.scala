@@ -4,7 +4,6 @@ import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError}
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
-import com.leagueplans.ui.storage.worker.StorageCoordinator
 import com.leagueplans.ui.storage.worker.StorageProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
 import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
@@ -18,29 +17,11 @@ object StorageClient {
   val statusKey = "storage-client"
 
   def apply(): StorageClient = {
-    val coordinator = startCoordinator()
-    val worker =
-      MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator](WorkerFactory.storageWorker())
+    val coordinator =
+      MessagePortClient[Inbound.ToCoordinator, Outbound.ToClient](WorkerFactory.storageCoordinator())
 
-    worker.setMessageHandler(message => coordinator.send(Right(message)))
-
-    new StorageClient(
-      message => coordinator.send(Left(message)),
-      toSetMessageHandler(coordinator, worker)
-    )
+    new StorageClient(coordinator.send, coordinator.setMessageHandler)
   }
-
-  private def startCoordinator(): MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut] =
-    MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut](WorkerFactory.storageCoordinator())
-
-  private def toSetMessageHandler(
-    coordinator: MessagePortClient[StorageCoordinator.MsgIn, StorageCoordinator.MsgOut],
-    worker: MessagePortClient[Inbound.ToWorker, Outbound.ToCoordinator]
-  ): (Outbound.ToClient => ?) => Unit =
-    onResponse => coordinator.setMessageHandler {
-      case Right(message) => worker.send(message)
-      case Left(message) => onResponse(message)
-    }
 }
 
 final class StorageClient(
