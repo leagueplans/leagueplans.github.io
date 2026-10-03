@@ -31,15 +31,20 @@ final class DeleteStepForm(
   tooltip: Tooltip,
   modal: Modal
 ) {
-  def open(step: Step.ID): Unit =
-    FormOpener(
-      modal,
-      toForm(forester.signal.now().subtree(step)),
-      _ => {
-        focusController.moveOutOf(step)
-        forester.remove(step)
-      }
-    ).open()
+  /** Asks for confirmation before deleting a step with substeps. Deleting a single step can be
+    * undone easily enough that it doesn't need confirming. */
+  def open(step: Step.ID): Unit = {
+    val steps = forester.signal.now().subtree(step)
+    if (steps.size <= 1)
+      delete(step)
+    else
+      FormOpener(modal, toForm(steps), _ => delete(step)).open()
+  }
+
+  private def delete(step: Step.ID): Unit = {
+    focusController.moveOutOf(step)
+    forester.remove(step)
+  }
 
   private def toForm(steps: Forest[Step.ID, Step]): (L.FormElement, EventStream[Unit]) = {
     val root = steps.roots.headOption.flatMap(steps.get)
@@ -48,12 +53,9 @@ final class DeleteStepForm(
       L.cls(Styles.form, Modal.Styles.form),
       L.p(
         L.cls(Styles.title, Modal.Styles.title),
-        if (steps.size > 1)
-          "Are you sure you want to delete these steps?"
-        else
-          "Are you sure you want to delete this step?"
+        "Are you sure you want to delete these steps?"
       ),
-      L.p(L.cls(Styles.disclaimer), "This cannot be undone"),
+      L.p(L.cls(Styles.disclaimer), "You can undo this with Ctrl+Z"),
       root.map(
         StepPreview(
           _,
@@ -68,7 +70,7 @@ final class DeleteStepForm(
       ),
       submitButton.amend(
         L.cls(Styles.confirm, Modal.Styles.deletionButton),
-        L.value(if (steps.size > 1) "Delete steps" else "Delete step")
+        L.value("Delete steps")
       )
     )
 
