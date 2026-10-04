@@ -54,7 +54,7 @@ object NewPlanForm {
         InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
         importLabel.amend(L.cls(Styles.label), "Initial data:"),
         tooltip.register(
-          L.span(L.cls(Styles.tooltip), "You can ignore this if you'd like to start from scratch"),
+          L.span(L.cls(Styles.tooltip), "Optional. Leave this empty to start from scratch."),
           FloatingConfig.basicTooltip(Placement.left)
         )
       ),

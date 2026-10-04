@@ -86,8 +86,8 @@ object StepHeader {
       case true =>
         CollapseButton(
           animationController,
-          tooltipContents = "Toggle substep visibility",
-          screenReaderDescription = "toggle substep visibility",
+          tooltipContents = "Show or hide substeps",
+          screenReaderDescription = "show or hide substeps",
           L.svg.cls(Styles.substepsToggleIcon),
           tooltip
         ).amend(L.cls(Styles.substepsToggle))
@@ -106,7 +106,7 @@ object StepHeader {
       L.onMouseEnter.mapToStrict(true) --> draggableObserver,
       L.onMouseLeave.mapToStrict(false) --> draggableObserver,
       tooltip.register(
-        L.span(L.cls(Styles.tooltip), "Drag to reposition"),
+        L.span(L.cls(Styles.tooltip), "Drag to move this step"),
         FloatingConfig.basicTooltip(placement = Placement.left)
       )
     )

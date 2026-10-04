@@ -69,8 +69,8 @@ object StepPreview {
       Option.when(hasSubsteps)(
         CollapseButton(
           animationController,
-          tooltipContents = "Toggle substep visibility",
-          screenReaderDescription = "toggle substep visibility",
+          tooltipContents = "Show or hide substeps",
+          screenReaderDescription = "show or hide substeps",
           L.svg.cls(Styles.substepsToggleIcon),
           tooltip
         ).amend(L.cls(Styles.substepsToggle)),

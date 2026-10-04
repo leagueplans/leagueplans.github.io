@@ -29,8 +29,8 @@ object DownloadButton {
 
     Button(_.handled --> clickStream.writer).amend(
       IconButtonModifiers(
-        tooltipContents = "Download",
-        screenReaderDescription = "download",
+        tooltipContents = "Download plan",
+        screenReaderDescription = "download plan",
         tooltip,
         tooltipPlacement = Placement.left
       ),

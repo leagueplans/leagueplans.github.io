@@ -1,16 +1,24 @@
-.tooltipContainer {
-  filter: drop-shadow(0 0 2px black);
-}
+.tooltipContainer {}
 
 .hasTooltip {}
 
+/* Matches the planning page's navy panels */
 .tooltip {
-  padding: 0.4rem;
-  border-radius: 0.5rem;
+  padding: 6px 9px;
 
-  background-color: #ededed;
-  color: black;
-  font-size: 0.9rem;
+  border: 1px solid #34405c;
+  border-radius: 6px;
+  background-color: #0b0f19;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color: #d9d0c0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.tooltip strong {
+  color: #f1ebe0;
+  font-weight: 600;
 }
 
 /* This is a trick which creates a small region around the tooltip where

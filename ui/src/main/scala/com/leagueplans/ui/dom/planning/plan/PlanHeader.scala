@@ -146,7 +146,7 @@ object PlanHeader {
           tooltip.register(
             L.span(
               L.cls(Styles.disabledDeleteStepButtonExplainer),
-              "You must focus the step you wish to delete"
+              "Focus a step to delete it"
             ),
             FloatingConfig.basicTooltip(Placement.bottom)
           )

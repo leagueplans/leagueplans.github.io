@@ -128,7 +128,7 @@ object AddItemForm {
       L.cls(Styles.noteLabel),
       InfoIcon().amend(L.svg.cls(Styles.infoIcon)),
       tooltip.register(
-        L.span(L.cls(Styles.tooltip), "Items that cannot be noted will ignore this setting"),
+        L.span(L.cls(Styles.tooltip), "Items that can't be noted are always added unnoted"),
         FloatingConfig.basicTooltip(Placement.left)
       ),
       "Should the items be noted?"

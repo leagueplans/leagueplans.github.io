@@ -73,7 +73,7 @@ object StepElement {
         L.div(L.cls(Styles.substepsSidebar)),
         toSubsteps(substepsSignal, isDraggingSignal, animationController),
         tooltip.register(
-          L.span(L.cls(Styles.tooltip), "Click to toggle focus"),
+          L.span(L.cls(Styles.tooltip), "Click to focus or unfocus"),
           FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
         ),
         toFocusListeners(stepID, isFocused, focusController),

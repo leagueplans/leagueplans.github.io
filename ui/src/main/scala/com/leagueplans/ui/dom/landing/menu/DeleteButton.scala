@@ -35,8 +35,8 @@ object DeleteButton {
     Button(_.handled --> confirmer).amend(
       FontAwesome.icon(FreeSolid.faXmark),
       IconButtonModifiers(
-        tooltipContents = "Delete",
-        screenReaderDescription = "delete",
+        tooltipContents = "Delete plan",
+        screenReaderDescription = "delete plan",
         tooltip,
         tooltipPlacement = Placement.left
       )
