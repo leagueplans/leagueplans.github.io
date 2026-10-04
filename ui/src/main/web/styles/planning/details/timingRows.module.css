@@ -1,0 +1,183 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  border: 1px solid #29324a;
+  border-radius: 6px;
+  background-color: #0f1421;
+  font-family: var(--font-ui);
+}
+
+.rows > * + * {
+  border-top: 1px solid #1d2539;
+}
+
+.row {
+  display: grid;
+  /* Fits "5m 21s → 7m 51s" on one line at the column's narrowest */
+  grid-template-columns: 13px 44px minmax(0, 1fr) 12px;
+  column-gap: 7px;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: #b3a896;
+  font-family: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+/* The whole row can be clicked to edit it */
+.editable {
+  /* Room for the pencil, which is drawn like the effect rows' menu buttons */
+  grid-template-columns: 13px 44px minmax(0, 1fr) 22px;
+}
+
+.editable:hover, .editable:focus-visible {
+  background-color: #1b2438;
+  outline: none;
+}
+
+.editable:hover .pencil, .editable:focus-visible .pencil {
+  background-color: #29324a;
+  color: #f1ebe0;
+  opacity: 1;
+}
+
+.editing {
+  background-color: #121a2b;
+  box-shadow: inset 2px 0 0 #5b7cc6;
+}
+
+/* Can't be edited, so they're dimmer and don't react to the mouse */
+.readOnly .value {
+  color: #b3a896;
+}
+
+.icon {
+  width: 13px;
+  height: 13px;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.content {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+
+/* An editable row's value comes wrapped in a span, whose children should space out like the
+ * read-only rows' */
+.content > span {
+  display: contents;
+}
+
+.value {
+  color: #f1ebe0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 500;
+}
+
+.note {
+  color: #8a8173;
+  font-size: 0.75rem;
+}
+
+.pencil {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+
+  border-radius: 4px;
+  color: #b3a896;
+  opacity: 0.6;
+}
+
+.pencil svg {
+  width: 14px;
+  height: 14px;
+}
+
+.input {
+  width: 100%;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0 6px;
+
+  border: 1px solid #5b7cc6;
+  border-radius: 4px;
+  background-color: #0b0f19;
+  color: #f1ebe0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.input:focus {
+  outline: none;
+}
+
+.input[aria-invalid="true"] {
+  border-color: #ec6a62;
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px 10px 32px;
+
+  background-color: #121a2b;
+  color: #b3a896;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.example {
+  padding: 1px 6px;
+
+  border: 1px solid #34405c;
+  border-radius: 4px;
+  background-color: #151c2c;
+  color: #f1ebe0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.example:hover, .example:focus-visible {
+  border-color: #5b7cc6;
+}
+
+.valid {
+  color: #6cc478;
+}
+
+.invalid {
+  color: #ec6a62;
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 16rem;
+}

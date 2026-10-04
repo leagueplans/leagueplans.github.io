@@ -1,0 +1,23 @@
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 16px;
+
+  background-color: #151c2c;
+  color: #f1ebe0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section {
+  box-sizing: border-box;
+
+  border: solid rgba(255, 253, 214, 0.5);
+  border-width: 1px;
+  border-radius: 0.3rem;
+}

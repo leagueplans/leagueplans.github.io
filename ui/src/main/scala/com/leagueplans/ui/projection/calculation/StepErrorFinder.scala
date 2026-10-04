@@ -6,6 +6,7 @@ import com.leagueplans.ui.model.plan.Effect.{CompleteDiaryTask, CompleteGridTile
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.validation.{EffectValidator, RequirementValidator}
+import com.leagueplans.ui.projection.model.StepError
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
@@ -17,10 +18,10 @@ final class StepErrorFinder(settings: Plan.Settings, resolver: EffectResolver, c
   def findAsync(
     forest: Forest[Step.ID, Step],
     signal: dom.AbortSignal
-  ): Future[Option[Map[Step.ID, List[String]]]] =
+  ): Future[Option[Map[Step.ID, List[StepError]]]] =
     ForestFolder.foldLeftAsync(
       forest,
-      (Map.empty[Step.ID, List[String]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], settings.initialPlayer),
+      (Map.empty[Step.ID, List[StepError]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], settings.initialPlayer),
       signal,
       _.repetitions
     ) { case ((errors, completionOwners, processedReps, player), step, reps) =>
@@ -34,7 +35,7 @@ final class StepErrorFinder(settings: Plan.Settings, resolver: EffectResolver, c
           else {
             val (stepErrors, updatedPlayer, updatedOwners) = validateStep(step.id, repPlayer, step, owners)
             val prefixedErrors =
-              if (reps > 1 || overallReps > 1) stepErrors.map(e => s"Rep $overallReps: $e")
+              if (reps > 1 || overallReps > 1) stepErrors.map(e => e.copy(message = s"Rep $overallReps: ${e.message}"))
               else stepErrors
             val newErrors = if (prefixedErrors.isEmpty) errors else errors + (step.id -> prefixedErrors)
             (newErrors, updatedOwners, updatedPlayer)
@@ -52,17 +53,22 @@ final class StepErrorFinder(settings: Plan.Settings, resolver: EffectResolver, c
     player: Player,
     step: Step,
     completionOwners: Map[Effect, Step.ID]
-  ): (List[String], Player, Map[Effect, Step.ID]) = {
-    val requirementErrors = RequirementValidator.validate(step.requirements)(player, maybeLeague, cache)
+  ): (List[StepError], Player, Map[Effect, Step.ID]) = {
+    val requirementErrors =
+      step.requirements.zipWithIndex.flatMap((requirement, index) =>
+        RequirementValidator.validate(requirement)(player, maybeLeague, cache).map(
+          StepError(StepError.Source.Requirement(index, requirement), _)
+        )
+      )
     val (effectErrors, postEffectsPlayer, updatedOwners) =
-      step.directEffects.underlying.foldLeft((List.empty[String], player, completionOwners)) {
-        case ((errorAcc, preEffectPlayer, owners), effect) =>
+      step.directEffects.underlying.zipWithIndex.foldLeft((List.empty[StepError], player, completionOwners)) {
+        case ((errorAcc, preEffectPlayer, owners), (effect, index)) =>
           val postEffectPlayer = resolver.resolve(preEffectPlayer, effect)
           val errors =
             if (owners.get(effect).contains(stepId)) List.empty
             else EffectValidator.validate(effect)(preEffectPlayer, postEffectPlayer, maybeLeague, cache)
           val newOwners = recordOwnership(effect, stepId, owners)
-          (errorAcc ++ errors, postEffectPlayer, newOwners)
+          (errorAcc ++ errors.map(StepError(StepError.Source.Effect(index, effect), _)), postEffectPlayer, newOwners)
       }
     (requirementErrors ++ effectErrors, postEffectsPlayer, updatedOwners)
   }

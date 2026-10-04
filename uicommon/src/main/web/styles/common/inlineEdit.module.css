@@ -1,0 +1,36 @@
+.container {
+  display: inline-flex;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 6rem;
+  height: 1.3rem;
+  padding: 0 4px;
+
+  border: 1px solid #5b7cc6;
+  border-radius: 3px;
+  background-color: #0f1421;
+  color: #f1ebe0;
+  font: inherit;
+}
+
+.input[aria-invalid="true"] {
+  border-color: #ec6a62;
+}
+
+.input:focus {
+  outline: none;
+}

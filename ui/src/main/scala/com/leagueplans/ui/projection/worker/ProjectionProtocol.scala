@@ -4,7 +4,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.projection.model.Projection
+import com.leagueplans.ui.projection.model.{Projection, StepError}
 
 object ProjectionProtocol {
   sealed trait Inbound {
@@ -42,7 +42,7 @@ object ProjectionProtocol {
   object Outbound {
     final case class Computed(id: Long, result: Projection) extends Outbound
     final case class ComputeFailed(id: Long, message: String) extends Outbound
-    final case class ErrorsComputed(id: Long, errors: Map[Step.ID, List[String]]) extends Outbound
+    final case class ErrorsComputed(id: Long, errors: Map[Step.ID, List[StepError]]) extends Outbound
     final case class ErrorDetectionSkipped(id: Long) extends Outbound
     final case class ErrorDetectionFailed(id: Long, message: String) extends Outbound
 

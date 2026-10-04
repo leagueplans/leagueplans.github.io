@@ -78,6 +78,7 @@ final class ColumnLayout private (initial: (plan: Int, details: Int)) {
       if (collapsed) collapsedWidth else width
     )
 
+  def isDetailsCollapsed: Boolean = current.collapsed
   def currentPlanWidth(): Int = current.plan
   def currentDetailsWidth(): Int = current.details
 

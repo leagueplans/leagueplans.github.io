@@ -3,7 +3,7 @@ package com.leagueplans.ui.projection.client
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.model.Projection
+import com.leagueplans.ui.projection.model.{Projection, StepError}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
@@ -40,7 +40,7 @@ object ProjectionClient {
 final class ProjectionClient(
   port: MessagePortClient[Inbound, Outbound],
   _projection: Var[Projection],
-  _stepsWithErrors: Var[Map[Step.ID, List[String]]],
+  _stepsWithErrors: Var[Map[Step.ID, List[StepError]]],
   _projectionStatus: Var[StatusTracker.Status],
   _errorDetectionStatus: Var[StatusTracker.Status],
   private var lastSentID: Long,
@@ -99,7 +99,7 @@ final class ProjectionClient(
   val errorDetectionStatus: StrictSignal[StatusTracker.Status] =
     _errorDetectionStatus.signal
 
-  val stepsWithErrors: StrictSignal[Map[Step.ID, List[String]]] =
+  val stepsWithErrors: StrictSignal[Map[Step.ID, List[StepError]]] =
     _stepsWithErrors.signal
 
   def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings): Unit =

@@ -1,34 +1,34 @@
-package com.leagueplans.ui.dom.planning.editor
+package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.editor.description.StepDescription
-import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
-import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
+import com.leagueplans.ui.dom.planning.editor.{EffectRenderer, NewRequirementForm, RequirementRenderer, Section}
 import com.leagueplans.ui.dom.planning.forest.Forester
+import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.{FormOpener, Modal, Tooltip}
-import com.leagueplans.uicommon.facades.floatingui.Placement
-import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.HasID
-import com.leagueplans.uicommon.utils.laminar.FontAwesome
-import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
-import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.laminar.api.L
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object EditorElement {
+/** Everything about the focused step: where it sits in the plan, its description, timings,
+  * problems, effects and requirements */
+object StepDetails {
   def apply(
     cache: Cache,
     itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
-    warningsSignal: Signal[List[String]],
+    errorsSignal: Signal[List[StepError]],
     forester: Forester[Step.ID, Step],
+    focusController: FocusController,
     timeKeeper: TimeKeeper,
+    descriptionFocusRequests: EventStream[Unit],
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
@@ -36,43 +36,25 @@ object EditorElement {
     val requirementRenderer = RequirementRenderer(cache, tooltip)
 
     L.div(
-      L.cls(Styles.editor),
-      StepDescription(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.description)),
-      L.child <-- warningsSignal.map(toWarningIcon(_, tooltip)),
+      L.cls(Styles.details),
       L.div(
-        L.cls(Styles.sections),
-        Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
-        TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
-        L.child <-- toEffects(effectRenderer, stepSignal, forester),
-        L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
-      )
+        L.cls(Styles.header),
+        Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
+        DescriptionField(stepSignal, forester, descriptionFocusRequests),
+        TimingRows(stepSignal, forester, timeKeeper, tooltip)
+      ),
+      ProblemList(errorsSignal, EffectText(cache)),
+      L.child <-- toEffects(effectRenderer, stepSignal, forester),
+      L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
     )
   }
 
-  @js.native @JSImport("/styles/planning/editor/editor.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/details/stepDetails.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val editor: String = js.native
-    val description: String = js.native
-    val warningIcon: String = js.native
-    val warningTooltip: String = js.native
-    val sections: String = js.native
-    val repetitions: String = js.native
-    val timeTracking: String = js.native
+    val details: String = js.native
+    val header: String = js.native
     val section: String = js.native
   }
-
-  private def toWarningIcon(warnings: List[String], tooltip: Tooltip): L.Node =
-    if (warnings.isEmpty)
-      L.emptyNode
-    else
-      L.div(
-        L.cls(Styles.warningIcon),
-        tooltip.register(
-          L.div(L.cls(Styles.warningTooltip), warnings.map(L.p(_))),
-          FloatingConfig.basicTooltip(Placement.right)
-        ),
-        FontAwesome.icon(FreeSolid.faTriangleExclamation)
-      )
 
   private def toEffects(
     renderer: EffectRenderer,

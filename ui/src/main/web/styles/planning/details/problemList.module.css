@@ -1,0 +1,23 @@
+.problems {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+
+  border: 1px solid #5e2b29;
+  border-radius: 5px;
+  background-color: #3d1b1a;
+  color: #f6b9b4;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+/* The heaviest weight the page loads, rather than bold, which the browser would fake and blur */
+.problems > b {
+  font-weight: 600;
+}
+
+.source {
+  font-weight: 500;
+}

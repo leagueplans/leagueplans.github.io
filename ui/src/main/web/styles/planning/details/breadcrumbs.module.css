@@ -1,0 +1,41 @@
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+
+  color: #b3a896;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+}
+
+.crumb {
+  max-width: 190px;
+  padding: 0;
+  overflow: hidden;
+
+  border: 0;
+  background: none;
+  color: #b3a896;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb:hover, .crumb:focus-visible {
+  color: #f1ebe0;
+  text-decoration: underline;
+}
+
+.separator {
+  color: #8a8173;
+}
+
+/* Descriptions can be long, and can have line breaks */
+.tooltip {
+  display: block;
+  width: max-content;
+  max-width: 320px;
+  white-space-collapse: preserve-breaks;
+  overflow-wrap: anywhere;
+}

@@ -1,9 +1,8 @@
 package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.editor.EditorElement
+import com.leagueplans.ui.dom.planning.details.{DetailsColumn, StepDetails}
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.details.DetailsColumn
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
@@ -11,11 +10,13 @@ import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.model.PlanID
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Val
 import com.raquo.laminar.api.{L, enrichSource}
 
@@ -32,7 +33,7 @@ object PlanningPage {
     timeKeeper: TimeKeeper,
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
-    stepsWithErrors: Signal[Map[Step.ID, List[String]]],
+    stepsWithErrors: Signal[Map[Step.ID, List[StepError]]],
     storageStatus: Signal[StatusTracker.Status],
     cache: Cache,
     itemFuse: Fuse[Item],
@@ -43,6 +44,7 @@ object PlanningPage {
   ): L.Div = {
     val displayedState = DisplayedState(focusContext)
     val layout = ColumnLayout.load()
+    val descriptionFocusRequests = EventBus[Unit]()
 
     val planElement =
       PlanElement(
@@ -53,6 +55,11 @@ object PlanningPage {
         collapsedSteps,
         editingEnabled = Val(true),
         stepsWithErrors.map(_.keySet).distinct,
+        editDescription = () => {
+          if (layout.isDetailsCollapsed) layout.toggleDetails()
+          // Waits for the details to render, in case they were collapsed
+          js.timers.setTimeout(0)(descriptionFocusRequests.emit(())): Unit
+        },
         timeKeeper,
         tooltip,
         contextMenu,
@@ -92,15 +99,19 @@ object PlanningPage {
     val editorElement =
       focusContext.focus.splitOption(
         project = (_, stepSignal) =>
-          EditorElement(
+          StepDetails(
             cache,
             itemFuse,
             stepSignal,
+            // The problems lag behind the step while they're recalculated, so any that no longer
+            // match it are left out until they catch up
             Signal.combine(stepSignal, stepsWithErrors).map((step, stepsWithErrors) =>
-              stepsWithErrors.getOrElse(step.id, List.empty)
+              stepsWithErrors.getOrElse(step.id, List.empty).filter(_.source.isCurrentFor(step))
             ),
             forester,
+            focusController,
             timeKeeper,
+            descriptionFocusRequests.events,
             tooltip,
             modal
           ).amend(L.cls(Styles.editor)),

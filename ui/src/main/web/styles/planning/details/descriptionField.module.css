@@ -1,0 +1,27 @@
+.description {
+  box-sizing: border-box;
+  width: calc(100% + 10px);
+  margin: 0 -5px;
+  padding: 3px 5px;
+  overflow: hidden;
+  resize: none;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #f1ebe0;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.description:hover {
+  border-color: #29324a;
+}
+
+.description:focus {
+  border-color: #5b7cc6;
+  background-color: #0f1421;
+  outline: none;
+}

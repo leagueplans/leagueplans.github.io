@@ -1,6 +1,5 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.planning.editor.description.EditStepDescriptionForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
@@ -22,6 +21,7 @@ object PlanElement {
     collapsedSteps: CollapsedSteps,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
+    editDescription: () => Unit,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
@@ -60,8 +60,7 @@ object PlanElement {
         stepClipboard,
         newStepForm,
         deleteStepForm,
-        editDescription = step =>
-          forester.signal.now().get(step).foreach(EditStepDescriptionForm.open(_, forester, modal)),
+        editDescription = _ => editDescription(),
         undoController
       )
     )
