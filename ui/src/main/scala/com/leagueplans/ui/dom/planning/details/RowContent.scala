@@ -5,7 +5,9 @@ import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.plan.{Effect, Requirement}
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.ItemStack
+import com.leagueplans.ui.model.player.item.{ItemRoute, ItemStack}
+import com.leagueplans.uicommon.dom.ContextMenu
+import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
@@ -14,12 +16,19 @@ import scala.scalajs.js.annotation.JSImport
 /** What an effect or requirement row shows, apart from its amount
   *
   * @param icon creates the row's icon
+  * @param editableDetail shown in place of the detail, for rows that can be changed from it.
+  *                       It's given where to send the changed value.
   */
-final case class RowContent(icon: () => L.Node, title: String, detail: String)
+final case class RowContent[+T](
+  icon: () => L.Node,
+  title: String,
+  detail: String,
+  editableDetail: Option[Observer[T] => L.Node] = None
+)
 
 object RowContent {
   /** @param multiplierAt the exp multiplier for a skill at the start of the step */
-  def of(effect: Effect, cache: Cache, multiplierAt: Skill => Double): RowContent =
+  def of(effect: Effect, cache: Cache, multiplierAt: Skill => Double, contextMenu: ContextMenu): RowContent[Effect] =
     effect match {
       case Effect.GainExp(skill, baseExp) =>
         val multiplier = multiplierAt(skill)
@@ -34,15 +43,14 @@ object RowContent {
           else s"Added to the ${target.name.toLowerCase}"
         RowContent(itemIcon(item, quantity.abs, note, cache), itemTitle(item, note, cache), detail)
 
-      case Effect.MoveItem(item, quantity, source, notedInSource, target, notedInTarget) =>
-        val noting =
-          if (notedInSource == notedInTarget) ""
-          else if (notedInTarget) " · noted"
-          else " · unnoted"
+      case move @ Effect.MoveItem(item, quantity, _, notedInSource, _, noteInTarget) =>
+        // Notes are only ever withdrawn or deposited, so the item is noted on one side at most
+        val noted = notedInSource || noteInTarget
         RowContent(
-          itemIcon(item, quantity, notedInSource, cache),
-          itemTitle(item, notedInSource, cache),
-          s"${source.name} → ${target.name}$noting"
+          itemIcon(item, quantity, noted, cache),
+          itemTitle(item, noted, cache),
+          ItemRoute.of(move).label,
+          editableDetail = Some(onChange => MoveLocations(move, cache.items(item), contextMenu, onChange))
         )
 
       case Effect.UnlockSkill(skill) =>
@@ -74,7 +82,7 @@ object RowContent {
         RowContent(glyph(s"${tile.row},${tile.column}"), tile.description, "Grid tile")
     }
 
-  def of(requirement: Requirement, cache: Cache, effectText: EffectText): RowContent =
+  def of(requirement: Requirement, cache: Cache, effectText: EffectText): RowContent[Requirement] =
     requirement match {
       case Requirement.SkillLevel(skill, _) =>
         RowContent(() => skillIcon(skill), s"$skill level", "At the start of this step")

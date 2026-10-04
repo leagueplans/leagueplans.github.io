@@ -120,7 +120,7 @@ object StepDetails {
         RowList[Effect](
           Kind.Effects,
           effects,
-          expMultiplierAt.map(multiplierAt => RowContent.of(_, cache, multiplierAt)),
+          expMultiplierAt.map(multiplierAt => RowContent.of(_, cache, multiplierAt, contextMenu)),
           RowAmounts.of,
           RowAmounts.withAmount,
           errors = errorsByKind.map(_._1),

@@ -1,7 +1,8 @@
 package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.common.model.{Item, Skill}
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.plan.Effect.MoveItem
+import com.leagueplans.ui.model.player.item.{Depository, ItemRoute}
 import com.leagueplans.ui.model.player.mode.*
 import com.leagueplans.ui.model.player.skill.Level
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -31,6 +32,19 @@ object Validator {
           heldCount >= requiredCount,
           right = (),
           left = s"${kind.name} does not have enough of ${if (noted) "noted " else ""}${cache.items(itemID).name}"
+        )
+      }
+    }
+
+  def possibleRoute(move: MoveItem): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
+        val item = cache.items(move.item)
+        val route = ItemRoute.of(move)
+        Either.cond(
+          ItemRoute.isPossible(move, item),
+          right = (),
+          left = s"${item.name} can't be moved from ${route.from.label} to ${route.to.label}"
         )
       }
     }

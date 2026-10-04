@@ -1,0 +1,29 @@
+.locations {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+}
+
+/* Drawn like the amount, since both can be clicked to change them */
+.location {
+  padding: 0 5px;
+
+  border: 1px solid #34405c;
+  border-radius: 4px;
+  background-color: #1b2438;
+  color: #d9d0c0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 16px;
+}
+
+.location:hover, .location:focus-visible {
+  border-color: #5b7cc6;
+  color: #f1ebe0;
+  outline: none;
+}
+
+.arrow {
+  color: #8a8173;
+}

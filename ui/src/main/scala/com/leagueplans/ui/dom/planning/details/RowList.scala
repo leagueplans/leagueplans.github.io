@@ -33,7 +33,7 @@ object RowList {
   def apply[T](
     kind: RowSelection.Kind,
     items: Signal[List[T]],
-    content: Signal[T => RowContent],
+    content: Signal[T => RowContent[T]],
     amount: T => Option[RowAmounts.Amount],
     withAmount: (T, String) => Either[String, T],
     errors: Signal[Map[Int, List[String]]],
@@ -83,7 +83,7 @@ object RowList {
     value: Signal[T],
     index: Signal[Int],
     dragIcon: L.SvgElement,
-    content: Signal[T => RowContent],
+    content: Signal[T => RowContent[T]],
     amount: T => Option[RowAmounts.Amount],
     withAmount: (T, String) => Either[String, T],
     errors: Signal[Map[Int, List[String]]],
@@ -149,7 +149,7 @@ object RowList {
           case (Some(Left(error)), _) =>
             L.div(L.cls(Styles.detail, Styles.invalid), error)
           case (None, content) =>
-            L.div(L.cls(Styles.detail), content.detail)
+            L.div(L.cls(Styles.detail), content.editableDetail.fold(L.textToTextNode(content.detail))(_(commits.writer)))
         },
         L.children <-- rowErrors.map(_.map(message => L.div(L.cls(Styles.error), message)))
       ),

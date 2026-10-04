@@ -46,7 +46,10 @@ object EffectValidator extends EffectValidator[Effect] {
 
   private val moveItemValidator: EffectValidator[MoveItem] =
     from(
-      pre = move => List(Validator.hasItem(move.source, move.item, move.notedInSource, move.quantity)),
+      pre = move => List(
+        Validator.possibleRoute(move),
+        Validator.hasItem(move.source, move.item, move.notedInSource, move.quantity)
+      ),
       post = move => List(Validator.depositorySize(move.target))
     )
 
