@@ -6,7 +6,7 @@ import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.dom.collapse.{CollapseButton, HeightMask, InvertibleAnimationController}
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, optionToModifier, seqToModifier, textToTextNode}
 
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
@@ -28,9 +28,9 @@ object StepPreview {
     val headerHeight = header.trackHeight()
 
     L.div(
-      L.cls(Styles.step),
+      L.cls(StepStyles.step),
       header,
-      L.div(L.cls(Styles.substepsSidebar)),
+      L.div(L.cls(StepStyles.substepsSidebar)),
       toSubsteps(
         substeps,
         forest,
@@ -41,19 +41,24 @@ object StepPreview {
     )
   }
 
-  @js.native @JSImport("/styles/planning/plan/step/preview.module.css", JSImport.Default)
-  private object Styles extends js.Object {
+  // The plan's own styles, so that the preview looks like the step in the plan
+  @js.native @JSImport("/styles/planning/plan/step/step.module.css", JSImport.Default)
+  private object StepStyles extends js.Object {
     val step: String = js.native
-
-    val header: String = js.native
-    val description: String = js.native
-    val substepsToggleIcon: String = js.native
-    val substepsToggle: String = js.native
-
+    val headerWhileNotDragging: String = js.native
     val substepsSidebar: String = js.native
-    val substeps: String = js.native
+    val substepsWhileNotDragging: String = js.native
     val substepList: String = js.native
     val substep: String = js.native
+  }
+
+  @js.native @JSImport("/styles/planning/plan/step/header.module.css", JSImport.Default)
+  private object HeaderStyles extends js.Object {
+    val header: String = js.native
+    val substepsToggleIcon: String = js.native
+    val substepsToggle: String = js.native
+    val title: String = js.native
+    val description: String = js.native
   }
 
   private def toHeader(
@@ -64,18 +69,19 @@ object StepPreview {
     tooltip: Tooltip
   ): L.Div =
     L.div(
-      L.cls(Styles.header),
+      L.cls(HeaderStyles.header, StepStyles.headerWhileNotDragging),
+      L.cls(StepBackground.from(isFocused = false, isComplete = false, hasErrors = false, isHovering = false)),
       L.top <-- offsetSignal.map(offset => L.style.px(offset)),
       Option.when(hasSubsteps)(
         CollapseButton(
           animationController,
           tooltipContents = "Show or hide substeps",
           screenReaderDescription = "show or hide substeps",
-          L.svg.cls(Styles.substepsToggleIcon),
+          L.svg.cls(HeaderStyles.substepsToggleIcon),
           tooltip
-        ).amend(L.cls(Styles.substepsToggle)),
+        ).amend(L.cls(HeaderStyles.substepsToggle)),
       ),
-      L.p(L.cls(Styles.description), step.description)
+      L.div(L.cls(HeaderStyles.title), L.p(L.cls(HeaderStyles.description), step.description))
     )
 
   private def toSubsteps(
@@ -86,16 +92,16 @@ object StepPreview {
     tooltip: Tooltip
   ): L.Div = {
     val list = L.ol(
-      L.cls(Styles.substepList),
+      L.cls(StepStyles.substepList),
       substeps.flatMap(forest.get).map(substep =>
         L.li(
-          L.cls(Styles.substep),
+          L.cls(StepStyles.substep),
           StepPreview(substep, forest, headerOffset, tooltip)
         )
       )
     )
 
-    HeightMask(list, animationController).amend(L.cls(Styles.substeps))
+    HeightMask(list, animationController).amend(L.cls(StepStyles.substepsWhileNotDragging))
   }
 
   private def toChildOffset(

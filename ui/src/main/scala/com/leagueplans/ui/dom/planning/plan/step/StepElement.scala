@@ -55,6 +55,9 @@ object StepElement {
       substepsSignal,
       isDraggingSignal,
       isFocused,
+      isCompleted,
+      hasErrorsSignal,
+      isHovering.signal,
       isDraggable,
       animationController,
       timeKeeper,
@@ -66,7 +69,6 @@ object StepElement {
     val element =
       L.div(
         L.cls(Styles.step),
-        L.cls <-- Signal.combine(isFocused, isCompleted, hasErrorsSignal, isHovering).map(StepBackground.from),
         L.tabIndex(0),
         L.draggable <-- isDraggable,
         header,
@@ -124,6 +126,9 @@ object StepElement {
     substepsSignal: Signal[List[L.HtmlElement]],
     isDragging: Signal[Boolean],
     isFocused: Signal[Boolean],
+    isCompleted: Signal[Boolean],
+    hasErrors: Signal[Boolean],
+    isHovering: Signal[Boolean],
     isDraggable: Var[Boolean],
     animationController: InvertibleAnimationController,
     timeKeeper: TimeKeeper,
@@ -135,11 +140,15 @@ object StepElement {
       step,
       substepsSignal.map(_.nonEmpty),
       isFocused,
+      isCompleted,
+      hasErrors,
       isDraggable.writer,
       animationController,
       timeKeeper,
       tooltip
     ).amend(
+      // Only the header, so that a step's state isn't mistaken for its substeps'
+      L.cls <-- Signal.combine(isFocused, isCompleted, hasErrors, isHovering).map(StepBackground.from),
       PlanDropZone.headerMarker,
       L.cls <-- isDragging.splitBoolean(
         whenTrue = _ => Styles.headerWhileDragging,

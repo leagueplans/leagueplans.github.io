@@ -9,7 +9,7 @@
 }
 
 .icon {
-  cursor: move;
+  cursor: grab;
 }
 
 .dragged {

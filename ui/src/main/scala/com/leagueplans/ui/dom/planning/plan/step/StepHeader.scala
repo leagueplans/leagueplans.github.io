@@ -32,6 +32,8 @@ object StepHeader {
     stepSignal: Signal[Step],
     hasSubstepsSignal: Signal[Boolean],
     isFocusedSignal: Signal[Boolean],
+    isCompletedSignal: Signal[Boolean],
+    hasErrorsSignal: Signal[Boolean],
     draggableObserver: Observer[Boolean],
     animationController: InvertibleAnimationController,
     timeKeeper: TimeKeeper,
@@ -47,6 +49,7 @@ object StepHeader {
           whenTrue = _ => toDragIcon(draggableObserver, tooltip),
           whenFalse = _ => L.emptyNode
         ),
+        L.child.maybe <-- Signal.combine(isCompletedSignal, hasErrorsSignal).distinct.map(toStateIcon),
         L.child.maybe <-- stepSignal.map(step =>
           Option.when(step.repetitions > 1)(
             L.span(L.cls(Styles.repBadge), s"${step.repetitions}×")
@@ -67,6 +70,8 @@ object StepHeader {
     val substepsToggle: String = js.native
     val title: String = js.native
     val dragIcon: String = js.native
+    val errorIcon: String = js.native
+    val completeIcon: String = js.native
     val repBadge: String = js.native
     val description: String = js.native
     val timing: String = js.native
@@ -114,6 +119,15 @@ object StepHeader {
         FloatingConfig.basicTooltip(placement = Placement.left)
       )
     )
+
+  /** A completed step's problems aren't shown, as with its background */
+  private def toStateIcon(isCompleted: Boolean, hasErrors: Boolean): Option[L.SvgElement] =
+    if (isCompleted)
+      Some(FontAwesome.icon(FreeSolid.faCheck).amend(L.svg.cls(Styles.completeIcon)))
+    else if (hasErrors)
+      Some(FontAwesome.icon(FreeSolid.faTriangleExclamation).amend(L.svg.cls(Styles.errorIcon)))
+    else
+      None
 
   private def toTimingInfo(
     stepID: Step.ID,

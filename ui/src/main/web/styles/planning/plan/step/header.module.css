@@ -1,70 +1,120 @@
 .header {
   display: grid;
   grid-template-columns: subgrid;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
+/* The same chevron as the step details' bar */
 .substepsToggleIcon {
-  color: white;
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .substepsToggle {
   grid-column: 1;
   align-self: center;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+
   border: none;
+  border-radius: 4px;
   background: none;
+  color: #b3a896;
+}
+
+/* Translucent, so that it lightens whichever colour the step is */
+.substepsToggle:hover, .substepsToggle:focus-visible {
+  background-color: rgb(255 255 255 / 0.1);
+  color: #f1ebe0;
 }
 
 .title {
   grid-column: 2;
   display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding-right: 6px;
 }
 
+/* Like the grips in the step details */
 .dragIcon {
-  align-self: center;
-  padding: 0.3rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  align-self: stretch;
+
+  color: var(--step-muted);
+  cursor: grab;
 }
 
+/* Font Awesome's icons are otherwise as wide as a square, which spills onto the description */
+.dragIcon svg {
+  width: 8px;
+  height: 13px;
+}
+
+.stateIcon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
+.errorIcon {
+  composes: stateIcon;
+  color: #ec6a62;
+}
+
+.completeIcon {
+  composes: stateIcon;
+  color: #6cc478;
+}
+
+/* Like the amounts in the step details */
 .repBadge {
-  align-self: center;
+  flex: none;
+  padding: 0 5px;
 
-  border-radius: 0.75rem;
-  padding: 0.1rem 0.45rem;
-
-  background-color: #2f4679;
-  color: #fff;
-  font-weight: bold;
-  font-size: 0.8rem;
-  letter-spacing: 0.01rem;
+  border: 1px solid #34405c;
+  border-radius: 4px;
+  background-color: #1b2438;
+  color: #f1ebe0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 16px;
 }
-
 .description {
   flex-grow: 1;
-  padding: 0.3rem 0 0.3rem 0.3rem;
+  min-width: 0;
+  padding: 0.35rem 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
   white-space-collapse: preserve-breaks;
 }
 
-.dragIcon + .description {
-  padding-left: 0;
-}
-
+/* Like the timing in the step details */
 .timing {
-  align-self: center;
   flex-shrink: 0;
-  padding: 0.3rem;
 
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
 
-  font-size: 0.8em;
-  letter-spacing: 0.01em;
-  color: rgba(180, 200, 230, 0.7);
+  color: var(--step-muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .timingIcon {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.65rem;
+  height: 0.65rem;
 }
 
 .tooltip {

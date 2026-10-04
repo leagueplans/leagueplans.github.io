@@ -1,30 +1,53 @@
-.focused {
-  background-color: #3d2c00;
+/* Applied to a step's header. --step-muted colours the header's secondary details, such as the
+ * drag handle and the timing. */
+.state {
+  background-color: #151c2c;
+  color: #e6dfd2;
+  --step-muted: #8a8173;
   transition: background-color 125ms ease-out;
+}
+
+/* The focused step is the most important thing in the plan, so it's amber, which stands apart
+ * from the navy, and from the blue of the row selected in the step details */
+.focused {
+  composes: state;
+
+  background-color: #3a2d10;
+  color: #fff6e3;
+  --step-muted: #cdb68a;
 }
 
 .incomplete {
-  background-color: var(--bg-base);
+  composes: state;
 }
 
 .hoveredIncomplete {
-  background-color: #162236;
+  composes: state;
+
+  background-color: #1b2438;
 }
 
 .errors {
-  background-color: #5b0000;
-  transition: background-color 125ms ease-out;
+  composes: state;
+
+  background-color: #4a1a1e;
 }
 
 .hoveredErrors {
-  background-color: #830000;
+  composes: state;
+
+  background-color: #5a2025;
 }
 
+/* Completed steps fade back, so the steps still to do stand out */
 .complete {
-  background-color: #1b4302;
-  transition: background-color 125ms ease-out;
+  composes: state;
+
+  color: #8a8173;
 }
 
 .hoveredComplete {
-  background-color: #2b6904;
+  composes: complete;
+
+  background-color: #1b2438;
 }

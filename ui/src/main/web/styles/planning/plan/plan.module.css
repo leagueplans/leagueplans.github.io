@@ -10,7 +10,7 @@
   grid-template-rows: auto 1fr;
   isolation: isolate;
 
-  background-color: var(--bg-base);
+  background-color: #151c2c;
 }
 
 .header {
@@ -18,7 +18,7 @@
   grid-row: 1;
   z-index: 1;
 
-  border-bottom: 1px solid rgb(77 77 77);
+  border-bottom: 1px solid #29324a;
 }
 
 .steps {
@@ -28,5 +28,5 @@
 
   overflow-y: auto;
   scroll-behavior: smooth;
-  scrollbar-color: #89a0b7 #111318;
+  scrollbar-color: #34405c #151c2c;
 }
