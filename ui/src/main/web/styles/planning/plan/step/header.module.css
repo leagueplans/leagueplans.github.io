@@ -89,6 +89,12 @@
   font-size: 0.7rem;
   line-height: 16px;
 }
+
+/* Opens the repetitions in the step details */
+.repBadge:hover, .repBadge:focus-visible {
+  border-color: #5b7cc6;
+  outline: none;
+}
 .description {
   flex-grow: 1;
   min-width: 0;

@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
@@ -31,7 +32,8 @@ object InteractiveForest {
     collapsedSteps: CollapsedSteps,
     stepMover: StepMover,
     stepClipboard: StepClipboard,
-    dragSession: DragSession
+    dragSession: DragSession,
+    editInDetails: EditRequest => Unit
   ): ReactiveHtmlElement[OList] = {
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
@@ -71,7 +73,8 @@ object InteractiveForest {
             tooltip,
             contextMenu,
             stepClipboard,
-            dragSession
+            dragSession,
+            editInDetails
           )
       )
 

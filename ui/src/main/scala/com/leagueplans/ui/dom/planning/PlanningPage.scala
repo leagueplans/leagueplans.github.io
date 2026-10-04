@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.details.{DetailsColumn, RowSelection, StepDetails}
+import com.leagueplans.ui.dom.planning.details.{DetailsColumn, EditRequest, RowSelection, StepDetails}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
@@ -45,7 +45,7 @@ object PlanningPage {
   ): L.Div = {
     val displayedState = DisplayedState(focusContext)
     val layout = ColumnLayout.load()
-    val descriptionFocusRequests = EventBus[Unit]()
+    val fieldEditRequests = EventBus[EditRequest]()
     val rowSelection = RowSelection()
     val dragSession = DragSession()
 
@@ -58,10 +58,10 @@ object PlanningPage {
         collapsedSteps,
         editingEnabled = Val(true),
         stepsWithErrors.map(_.keySet).distinct,
-        editDescription = () => {
+        editInDetails = request => {
           if (layout.isDetailsCollapsed) layout.toggleDetails()
           // Waits for the details to render, in case they were collapsed
-          js.timers.setTimeout(0)(descriptionFocusRequests.emit(())): Unit
+          js.timers.setTimeout(0)(fieldEditRequests.emit(request)): Unit
         },
         rowSelection,
         dragSession,
@@ -124,7 +124,7 @@ object PlanningPage {
             ),
             focusContext.playerBeforeCurrentFocus,
             focusContext.playerAfterAllRepsOfCurrentFocus,
-            descriptionFocusRequests.events,
+            fieldEditRequests.events,
             contextMenu,
             tooltip,
             modal

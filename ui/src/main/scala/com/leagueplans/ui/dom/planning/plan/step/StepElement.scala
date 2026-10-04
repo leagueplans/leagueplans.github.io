@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
+import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, StepClipboard}
@@ -39,7 +40,8 @@ object StepElement {
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     stepClipboard: StepClipboard,
-    dragSession: DragSession
+    dragSession: DragSession,
+    editInDetails: EditRequest => Unit
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -59,6 +61,10 @@ object StepElement {
       hasErrorsSignal,
       isHovering.signal,
       isDraggable,
+      editRepetitions = () => {
+        focusController.set(stepID)
+        editInDetails(EditRequest.Repetitions)
+      },
       animationController,
       timeKeeper,
       positionOffset,
@@ -130,6 +136,7 @@ object StepElement {
     hasErrors: Signal[Boolean],
     isHovering: Signal[Boolean],
     isDraggable: Var[Boolean],
+    editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
     timeKeeper: TimeKeeper,
     positionOffset: Signal[Int],
@@ -143,6 +150,7 @@ object StepElement {
       isCompleted,
       hasErrors,
       isDraggable.writer,
+      editRepetitions,
       animationController,
       timeKeeper,
       tooltip

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.planning.details.RowSelection
+import com.leagueplans.ui.dom.planning.details.{EditRequest, RowSelection}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.UndoController
@@ -23,7 +23,7 @@ object PlanElement {
     collapsedSteps: CollapsedSteps,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
-    editDescription: () => Unit,
+    editInDetails: EditRequest => Unit,
     rowSelection: RowSelection,
     dragSession: DragSession,
     timeKeeper: TimeKeeper,
@@ -56,7 +56,8 @@ object PlanElement {
         collapsedSteps,
         stepMover,
         stepClipboard,
-        dragSession
+        dragSession,
+        editInDetails
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(
         focusContext.focusID,
@@ -65,7 +66,7 @@ object PlanElement {
         stepClipboard,
         newStepForm,
         deleteStepForm,
-        editDescription = _ => editDescription(),
+        editDescription = _ => editInDetails(EditRequest.Description),
         undoController,
         rowSelection
       )

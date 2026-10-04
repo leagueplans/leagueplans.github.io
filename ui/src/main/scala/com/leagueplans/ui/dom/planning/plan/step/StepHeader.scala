@@ -2,7 +2,8 @@ package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.dom.{Button, Tooltip}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.uicommon.dom.collapse.{CollapseButton, InvertibleAnimationController}
 import com.leagueplans.uicommon.facades.animation.KeyframeAnimationOptions
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -35,6 +36,7 @@ object StepHeader {
     isCompletedSignal: Signal[Boolean],
     hasErrorsSignal: Signal[Boolean],
     draggableObserver: Observer[Boolean],
+    editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip
@@ -50,10 +52,8 @@ object StepHeader {
           whenFalse = _ => L.emptyNode
         ),
         L.child.maybe <-- Signal.combine(isCompletedSignal, hasErrorsSignal).distinct.map(toStateIcon),
-        L.child.maybe <-- stepSignal.map(step =>
-          Option.when(step.repetitions > 1)(
-            L.span(L.cls(Styles.repBadge), s"${step.repetitions}×")
-          )
+        L.child.maybe <-- stepSignal.map(_.repetitions).distinct.map(repetitions =>
+          Option.when(repetitions > 1)(toRepetitionsBadge(repetitions, editRepetitions, tooltip))
         ),
         L.p(
           L.cls(Styles.description),
@@ -117,6 +117,17 @@ object StepHeader {
       tooltip.register(
         L.span(L.cls(Styles.tooltip), "Drag to move this step"),
         FloatingConfig.basicTooltip(placement = Placement.left)
+      )
+    )
+
+  /** Focuses the step, rather than toggling its focus as a click elsewhere on the step would */
+  private def toRepetitionsBadge(repetitions: Int, editRepetitions: () => Unit, tooltip: Tooltip): L.Button =
+    Button(_.handled --> (_ => editRepetitions())).amend(
+      L.cls(Styles.repBadge),
+      s"$repetitions×",
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), "Change how often this step repeats"),
+        FloatingConfig.basicTooltip(placement = Placement.top)
       )
     )
 

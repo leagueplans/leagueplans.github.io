@@ -8,7 +8,7 @@ import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.DurationOps.safeMul
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
@@ -26,6 +26,7 @@ object TimingRows {
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
     timeKeeper: TimeKeeper,
+    repetitionsEditRequests: EventStream[Unit],
     tooltip: Tooltip
   ): L.Div = {
     val stepID = stepSignal.map(_.id).distinct
@@ -39,7 +40,7 @@ object TimingRows {
 
     L.div(
       L.cls(Styles.rows),
-      toRepeatRow(stepSignal, ancestorReps, forester, tooltip),
+      toRepeatRow(stepSignal, ancestorReps, forester, repetitionsEditRequests, tooltip),
       toDurationRow(stepSignal, ancestorReps, forester, tooltip),
       L.child.maybe <-- Signal.combine(timing, ancestorReps).map(toScheduleRow(_, _, tooltip)),
       L.child.maybe <-- Signal.combine(stepSignal, timing, ancestorReps, hasSubsteps).map(toTotalRow(_, _, _, _, tooltip))
@@ -59,6 +60,7 @@ object TimingRows {
     stepSignal: Signal[Step],
     ancestorReps: Signal[Int],
     forester: Forester[Step.ID, Step],
+    editRequests: EventStream[Unit],
     tooltip: Tooltip
   ): L.Div = {
     val commits = EventBus[Int]()
@@ -74,6 +76,7 @@ object TimingRows {
       parse = parseRepetitions,
       describe = n => s"×$n",
       onCommit = commits.writer,
+      editRequests,
       inputMode = "numeric",
       help = None,
       tooltipContents = toTooltip("Repeat", "How many times this step and its substeps happen, one after another."),
@@ -107,6 +110,7 @@ object TimingRows {
       parse = DurationText.parse,
       describe = describeDuration,
       onCommit = commits.writer,
+      editRequests = EventStream.empty,
       inputMode = "text",
       help = Some(durationHelp),
       tooltipContents = toTooltip(
@@ -212,6 +216,7 @@ object TimingRows {
     parse: String => Either[String, T],
     describe: T => String,
     onCommit: Observer[T],
+    editRequests: EventStream[Unit],
     inputMode: String,
     help: Option[Observer[String] => L.Modifier[L.Div]],
     tooltipContents: L.HtmlElement,
@@ -220,6 +225,7 @@ object TimingRows {
     val draft = TextDraft[T](toText, (_, text) => parse(text), onCommit)
 
     L.div(
+      editRequests.sample(value) --> draft.start,
       L.child <-- draft.isEditing.splitBoolean(
         whenFalse = _ =>
           Button(_.handledWith(_.sample(value)) --> draft.start).amend(

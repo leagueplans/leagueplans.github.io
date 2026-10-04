@@ -43,7 +43,7 @@ object StepDetails {
     expMultiplierAt: Signal[Skill => Double],
     playerBefore: Signal[Player],
     playerAfterAll: Signal[Player],
-    descriptionFocusRequests: EventStream[Unit],
+    fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
     tooltip: Tooltip,
     modal: Modal
@@ -103,8 +103,8 @@ object StepDetails {
       L.div(
         L.cls(Styles.header),
         Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
-        DescriptionField(stepSignal, forester, descriptionFocusRequests),
-        TimingRows(stepSignal, forester, timeKeeper, tooltip)
+        DescriptionField(stepSignal, forester, fieldEditRequests.filter(_ == EditRequest.Description).mapToUnit),
+        TimingRows(stepSignal, forester, timeKeeper, fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit, tooltip)
       ),
       ProblemList(
         errorsSignal,
