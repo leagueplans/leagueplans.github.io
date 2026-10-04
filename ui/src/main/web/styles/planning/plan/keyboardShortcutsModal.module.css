@@ -11,11 +11,11 @@ dialog:has(.modal) {
   display: flex;
   flex-direction: column;
 
-  border: 1px solid #29324a;
+  border: 1px solid var(--navy-line);
   border-radius: 8px;
-  background-color: #151c2c;
+  background-color: var(--navy-panel);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  color: #f1ebe0;
+  color: var(--text-bright);
   font-family: var(--font-ui);
 }
 
@@ -24,7 +24,7 @@ dialog:has(.modal) {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px 10px 20px;
-  border-bottom: 1px solid #29324a;
+  border-bottom: 1px solid var(--navy-line);
 }
 
 .title {
@@ -43,12 +43,12 @@ dialog:has(.modal) {
   border: 1px solid transparent;
   border-radius: 5px;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 .close:hover, .close:focus-visible {
-  background-color: #29324a;
-  color: #f1ebe0;
+  background-color: var(--navy-line);
+  color: var(--text-bright);
 }
 
 .columns {
@@ -68,7 +68,7 @@ dialog:has(.modal) {
 .header {
   margin: 0 0 8px;
 
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -77,7 +77,7 @@ dialog:has(.modal) {
 
 .note {
   margin: -4px 0 8px;
-  color: #8a8173;
+  color: var(--text-dim);
   font-size: 0.75rem;
 }
 
@@ -120,11 +120,11 @@ dialog:has(.modal) {
   min-width: 12px;
   padding: 1px 6px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-bottom-width: 2px;
   border-radius: 4px;
-  background-color: #0f1421;
-  color: #f1ebe0;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.75rem;
   font-weight: 500;
@@ -134,19 +134,19 @@ dialog:has(.modal) {
 
 .separator {
   padding: 0 4px;
-  color: #8a8173;
+  color: var(--text-dim);
   font-size: 0.75rem;
 }
 
 .description {
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .footer {
   margin: 0;
   padding: 10px 20px;
 
-  border-top: 1px solid #29324a;
-  color: #8a8173;
+  border-top: 1px solid var(--navy-line);
+  color: var(--text-dim);
   font-size: 0.75rem;
 }

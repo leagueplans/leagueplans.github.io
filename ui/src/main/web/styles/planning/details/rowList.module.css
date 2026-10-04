@@ -1,9 +1,9 @@
 .container {
   overflow: hidden;
 
-  border: 1px solid #29324a;
+  border: 1px solid var(--navy-line);
   border-radius: 5px;
-  background-color: #0f1421;
+  background-color: var(--navy-well);
   font-family: var(--font-ui);
 }
 
@@ -16,7 +16,7 @@
 .empty {
   padding: 8px 10px;
 
-  color: #8a8173;
+  color: var(--text-dim);
   font-size: 0.75rem;
   font-style: italic;
 }
@@ -30,7 +30,7 @@
   align-items: center;
   padding: 4px 6px 4px 8px;
 
-  border-bottom: 1px solid #29324a;
+  border-bottom: 1px solid var(--navy-line);
   outline: none;
 }
 
@@ -43,17 +43,17 @@
 }
 
 .hasErrors {
-  background-color: #2a1618;
+  background-color: var(--red-tint);
 }
 
 .selected, .selected:hover {
   background-color: #1d2a4a;
-  box-shadow: inset 2px 0 0 #5b7cc6;
+  box-shadow: inset 2px 0 0 var(--navy-accent);
 }
 
 .grip {
   width: 10px;
-  color: #8a8173;
+  color: var(--text-dim);
   cursor: grab;
   opacity: 0;
 }
@@ -85,7 +85,7 @@
   align-items: baseline;
   gap: 5px;
 
-  color: #f1ebe0;
+  color: var(--text-bright);
   font-size: 0.8rem;
 }
 
@@ -101,51 +101,51 @@
 .amountLabel {
   padding: 0 5px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-radius: 4px;
-  background-color: #1b2438;
+  background-color: var(--navy-bar);
   line-height: 18px;
 }
 
 .amountLabel:hover {
-  border-color: #5b7cc6;
+  border-color: var(--navy-accent);
 }
 
 .gain {
-  color: #6cc478;
+  color: var(--green);
 }
 
 .loss {
-  color: #ec6a62;
+  color: var(--red);
 }
 
 .neutral {
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .met {
-  color: #6cc478;
+  color: var(--green);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.7rem;
   white-space: nowrap;
 }
 
 .detail {
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.72rem;
 }
 
 /* Replaces the detail line while an amount is being edited */
 .valid {
-  color: #6cc478;
+  color: var(--green);
 }
 
 .invalid {
-  color: #ec6a62;
+  color: var(--red);
 }
 
 .error {
-  color: #ec6a62;
+  color: var(--red);
   font-size: 0.72rem;
 }
 
@@ -159,7 +159,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
   opacity: 0.6;
 }
 
@@ -174,9 +174,9 @@
 
 /* Red only once it's about to be used, like the plan's "Delete step" */
 .deleteButton:hover, .deleteButton:focus-visible {
-  border-color: #7a3431;
-  background-color: #2a1618;
-  color: #ec6a62;
+  border-color: var(--red-border);
+  background-color: var(--red-tint);
+  color: var(--red);
 }
 
 .tooltip {

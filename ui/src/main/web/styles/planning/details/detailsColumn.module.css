@@ -44,15 +44,15 @@
   overflow: hidden;
 
   border: 0;
-  border-bottom: 1px solid #29324a;
+  border-bottom: 1px solid var(--navy-line);
   border-radius: 0;
-  background-color: #1b2438;
-  color: #d9d0c0;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
   font-family: var(--font-ui);
 }
 
 .bar:hover, .bar:focus-visible {
-  background-color: #22304d;
+  background-color: var(--navy-bar-hover);
   color: #fff;
 }
 
@@ -105,22 +105,22 @@
   padding: 8px 0;
 
   border: 0;
-  background-color: #1b2438;
-  color: #d9d0c0;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
   font-family: var(--font-ui);
 
   animation: fadeIn 200ms ease-out;
 }
 
 .strip:hover, .strip:focus-visible {
-  background-color: #22304d;
+  background-color: var(--navy-bar-hover);
   color: #fff;
 }
 
 /* Nothing's focused, so there are no details to show */
 .strip[aria-disabled="true"] {
   cursor: default;
-  background-color: #1b2438;
+  background-color: var(--navy-bar);
   color: #6f7a90;
 }
 

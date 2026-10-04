@@ -9,4 +9,26 @@
   --error:     #e5534b;
 
   --font-ui:   'IBM Plex Sans', sans-serif;
+
+  /* The navy of the planning page's plan and step details, from darkest to lightest */
+  --navy-deep:       #0b0f19; /* tooltips, menus */
+  --navy-well:       #0f1421; /* lists and text boxes set into a panel */
+  --navy-panel:      #151c2c;
+  --navy-bar:        #1b2438; /* bars, chips and hovered rows */
+  --navy-bar-hover:  #22304d;
+  --navy-line:       #29324a; /* dividers, and hovered buttons */
+  --navy-border:     #34405c;
+  --navy-accent:     #5b7cc6; /* selection and hovered chips */
+
+  /* Text on the planning page, from brightest to dimmest */
+  --text-bright:     #f1ebe0;
+  --text-soft:       #d9d0c0; /* bar and menu labels, which brighten on hover */
+  --text-muted:      #b3a896;
+  --text-dim:        #8a8173;
+
+  /* Gains, losses and problems on the planning page */
+  --green:           #6cc478;
+  --red:             #ec6a62;
+  --red-tint:        #2a1618;
+  --red-border:      #7a3431;
 }

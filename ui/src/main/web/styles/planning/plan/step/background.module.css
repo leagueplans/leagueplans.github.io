@@ -1,9 +1,9 @@
 /* Applied to a step's header. --step-muted colours the header's secondary details, such as the
  * drag handle and the timing. */
 .state {
-  background-color: #151c2c;
-  color: #e6dfd2;
-  --step-muted: #8a8173;
+  background-color: var(--navy-panel);
+  color: var(--text-bright);
+  --step-muted: var(--text-dim);
   transition: background-color 125ms ease-out;
 }
 
@@ -24,7 +24,7 @@
 .hoveredIncomplete {
   composes: state;
 
-  background-color: #1b2438;
+  background-color: var(--navy-bar);
 }
 
 .errors {
@@ -43,11 +43,11 @@
 .complete {
   composes: state;
 
-  color: #8a8173;
+  color: var(--text-dim);
 }
 
 .hoveredComplete {
   composes: complete;
 
-  background-color: #1b2438;
+  background-color: var(--navy-bar);
 }

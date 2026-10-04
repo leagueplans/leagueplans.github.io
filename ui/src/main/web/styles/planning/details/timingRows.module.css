@@ -3,9 +3,9 @@
   flex-direction: column;
   overflow: hidden;
 
-  border: 1px solid #29324a;
+  border: 1px solid var(--navy-line);
   border-radius: 6px;
-  background-color: #0f1421;
+  background-color: var(--navy-well);
   font-family: var(--font-ui);
 }
 
@@ -27,7 +27,7 @@
   border: 0;
   border-radius: 0;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 0.78rem;
   text-align: left;
@@ -40,24 +40,24 @@
 }
 
 .editable:hover, .editable:focus-visible {
-  background-color: #1b2438;
+  background-color: var(--navy-bar);
   outline: none;
 }
 
 .editable:hover .pencil, .editable:focus-visible .pencil {
-  background-color: #29324a;
-  color: #f1ebe0;
+  background-color: var(--navy-line);
+  color: var(--text-bright);
   opacity: 1;
 }
 
 .editing {
   background-color: #121a2b;
-  box-shadow: inset 2px 0 0 #5b7cc6;
+  box-shadow: inset 2px 0 0 var(--navy-accent);
 }
 
 /* Can't be edited, so they're dimmer and don't react to the mouse */
 .readOnly .value {
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 .icon {
@@ -84,13 +84,13 @@
 }
 
 .value {
-  color: #f1ebe0;
+  color: var(--text-bright);
   font-family: ui-monospace, Consolas, monospace;
   font-weight: 500;
 }
 
 .note {
-  color: #8a8173;
+  color: var(--text-dim);
   font-size: 0.75rem;
 }
 
@@ -101,7 +101,7 @@
   height: 22px;
 
   border-radius: 4px;
-  color: #b3a896;
+  color: var(--text-muted);
   opacity: 0.6;
 }
 
@@ -116,10 +116,10 @@
   box-sizing: border-box;
   padding: 0 6px;
 
-  border: 1px solid #5b7cc6;
+  border: 1px solid var(--navy-accent);
   border-radius: 4px;
-  background-color: #0b0f19;
-  color: #f1ebe0;
+  background-color: var(--navy-deep);
+  color: var(--text-bright);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.8rem;
 }
@@ -129,7 +129,7 @@
 }
 
 .input[aria-invalid="true"] {
-  border-color: #ec6a62;
+  border-color: var(--red);
 }
 
 .help {
@@ -139,7 +139,7 @@
   padding: 8px 10px 10px 32px;
 
   background-color: #121a2b;
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.4;
 }
@@ -154,24 +154,24 @@
 .example {
   padding: 1px 6px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-radius: 4px;
-  background-color: #151c2c;
-  color: #f1ebe0;
+  background-color: var(--navy-panel);
+  color: var(--text-bright);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.72rem;
 }
 
 .example:hover, .example:focus-visible {
-  border-color: #5b7cc6;
+  border-color: var(--navy-accent);
 }
 
 .valid {
-  color: #6cc478;
+  color: var(--green);
 }
 
 .invalid {
-  color: #ec6a62;
+  color: var(--red);
 }
 
 .tooltip {

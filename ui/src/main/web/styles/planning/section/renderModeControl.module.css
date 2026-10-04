@@ -5,7 +5,7 @@
 }
 
 .label {
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
@@ -46,7 +46,7 @@
 .option {
   composes: segment;
   background-color: #3b3229;
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .option:hover {
@@ -56,7 +56,7 @@
 .selected {
   composes: segment;
   background-color: #645c52;
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .tooltip {

@@ -72,5 +72,5 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-color: #34405c #151c2c;
+  scrollbar-color: var(--navy-border) var(--navy-panel);
 }

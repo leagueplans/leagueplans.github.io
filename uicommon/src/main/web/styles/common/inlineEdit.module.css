@@ -20,15 +20,15 @@
   height: 1.3rem;
   padding: 0 4px;
 
-  border: 1px solid #5b7cc6;
+  border: 1px solid var(--navy-accent);
   border-radius: 3px;
-  background-color: #0f1421;
-  color: #f1ebe0;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
   font: inherit;
 }
 
 .input[aria-invalid="true"] {
-  border-color: #ec6a62;
+  border-color: var(--red);
 }
 
 .input:focus {

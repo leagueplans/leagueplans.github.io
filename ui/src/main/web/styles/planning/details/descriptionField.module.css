@@ -9,7 +9,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: #f1ebe0;
+  color: var(--text-bright);
   font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 500;
@@ -17,11 +17,11 @@
 }
 
 .description:hover {
-  border-color: #29324a;
+  border-color: var(--navy-line);
 }
 
 .description:focus {
-  border-color: #5b7cc6;
-  background-color: #0f1421;
+  border-color: var(--navy-accent);
+  background-color: var(--navy-well);
   outline: none;
 }

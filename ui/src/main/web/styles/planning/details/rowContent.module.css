@@ -17,8 +17,8 @@
   box-sizing: border-box;
 
   border-radius: 4px;
-  background-color: #29324a;
-  color: #f1ebe0;
+  background-color: var(--navy-line);
+  color: var(--text-bright);
   font-family: var(--font-ui);
   font-size: 0.65rem;
   font-weight: 500;

@@ -3,12 +3,12 @@
   min-width: 10rem;
   padding: 4px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-radius: 6px;
   display: grid;
   grid-template-columns: repeat(2, auto);
 
-  background-color: #0b0f19;
+  background-color: var(--navy-deep);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   font-family: var(--font-ui);
 }
@@ -22,7 +22,7 @@
   + .section {
     margin-top: 4px;
     padding-top: 4px;
-    border-top: 1px solid #29324a;
+    border-top: 1px solid var(--navy-line);
   }
 }
 
@@ -38,24 +38,24 @@
   align-items: center;
 
   background-color: inherit;
-  color: #d9d0c0;
+  color: var(--text-soft);
   text-align: start;
 }
 
 .button:hover:not(:disabled), .button:focus-visible {
-  background-color: #1b2438;
-  color: #f1ebe0;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
   outline: none;
 }
 
 .button:disabled {
-  color: #8a8173;
+  color: var(--text-dim);
 }
 
 .icon {
   grid-column: 1;
   margin-right: 0.5rem;
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 .label {

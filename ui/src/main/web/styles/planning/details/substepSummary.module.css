@@ -10,7 +10,7 @@
 .title {
   margin: 0 0 3px;
 
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -18,7 +18,7 @@
 }
 
 .none {
-  color: #8a8173;
+  color: var(--text-dim);
   font-style: italic;
 }
 
@@ -52,11 +52,11 @@
 }
 
 .gain {
-  color: #6cc478;
+  color: var(--green);
 }
 
 .loss {
-  color: #ec6a62;
+  color: var(--red);
 }
 
 .pill {
@@ -70,5 +70,5 @@
 }
 
 .where {
-  color: #8a8173;
+  color: var(--text-dim);
 }

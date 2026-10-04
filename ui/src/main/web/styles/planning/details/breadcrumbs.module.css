@@ -4,7 +4,7 @@
   align-items: center;
   gap: 2px 4px;
 
-  color: #b3a896;
+  color: var(--text-muted);
   font-family: var(--font-ui);
   font-size: 0.7rem;
 }
@@ -16,19 +16,19 @@
 
   border: 0;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
   font: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .crumb:hover, .crumb:focus-visible {
-  color: #f1ebe0;
+  color: var(--text-bright);
   text-decoration: underline;
 }
 
 .separator {
-  color: #8a8173;
+  color: var(--text-dim);
 }
 
 /* Descriptions can be long, and can have line breaks */

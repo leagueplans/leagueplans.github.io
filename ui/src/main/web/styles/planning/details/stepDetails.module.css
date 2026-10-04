@@ -4,8 +4,8 @@
   gap: 10px;
   padding: 10px 12px 16px;
 
-  background-color: #151c2c;
-  color: #f1ebe0;
+  background-color: var(--navy-panel);
+  color: var(--text-bright);
 }
 
 .header {
@@ -32,7 +32,7 @@
 .sectionTitle {
   margin: 0;
 
-  color: #b3a896;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -40,7 +40,7 @@
 }
 
 .count {
-  color: #8a8173;
+  color: var(--text-dim);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.7rem;
 }
@@ -61,7 +61,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 .headerButton svg {
@@ -74,6 +74,6 @@
 }
 
 .headerButton:hover, .headerButton:focus-visible {
-  background-color: #29324a;
-  color: #f1ebe0;
+  background-color: var(--navy-line);
+  color: var(--text-bright);
 }

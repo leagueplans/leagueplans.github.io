@@ -9,21 +9,21 @@
 .location {
   padding: 0 5px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-radius: 4px;
-  background-color: #1b2438;
-  color: #d9d0c0;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
   font-family: inherit;
   font-size: inherit;
   line-height: 16px;
 }
 
 .location:hover, .location:focus-visible {
-  border-color: #5b7cc6;
-  color: #f1ebe0;
+  border-color: var(--navy-accent);
+  color: var(--text-bright);
   outline: none;
 }
 
 .arrow {
-  color: #8a8173;
+  color: var(--text-dim);
 }

@@ -24,13 +24,13 @@
   border: none;
   border-radius: 4px;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 /* Translucent, so that it lightens whichever colour the step is */
 .substepsToggle:hover, .substepsToggle:focus-visible {
   background-color: rgb(255 255 255 / 0.1);
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .title {
@@ -68,12 +68,12 @@
 
 .errorIcon {
   composes: stateIcon;
-  color: #ec6a62;
+  color: var(--red);
 }
 
 .completeIcon {
   composes: stateIcon;
-  color: #6cc478;
+  color: var(--green);
 }
 
 /* Like the amounts in the step details */
@@ -81,10 +81,10 @@
   flex: none;
   padding: 0 5px;
 
-  border: 1px solid #34405c;
+  border: 1px solid var(--navy-border);
   border-radius: 4px;
-  background-color: #1b2438;
-  color: #f1ebe0;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.7rem;
   line-height: 16px;
@@ -92,7 +92,7 @@
 
 /* Opens the repetitions in the step details */
 .repBadge:hover, .repBadge:focus-visible {
-  border-color: #5b7cc6;
+  border-color: var(--navy-accent);
   outline: none;
 }
 .description {

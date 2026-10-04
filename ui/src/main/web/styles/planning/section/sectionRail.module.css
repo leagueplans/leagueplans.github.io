@@ -36,12 +36,12 @@
   border: 1px solid transparent;
   border-radius: 6px;
   background: none;
-  color: #b3a896;
+  color: var(--text-muted);
 }
 
 .button:hover {
   background-color: #494034;
-  color: #f1ebe0;
+  color: var(--text-bright);
 }
 
 .button[aria-current="page"] {
