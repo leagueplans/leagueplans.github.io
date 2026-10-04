@@ -1,0 +1,148 @@
+/* The fades take as long as the column takes to open or close. PlanningPage.scala sets
+ * --details-animation, and DetailsColumn.scala waits for the fade out to finish. */
+.expanded {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  animation: fadeIn var(--details-animation) ease-out;
+  transition: opacity var(--details-animation) ease-out;
+}
+
+/* Fading out, before the strip replaces the details */
+.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expanded, .strip {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Styled like the collapsed strip, and the whole bar closes the details. The chevron lines up
+ * with the strip's. */
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px 0 10px;
+  /* Otherwise the title spills past the page edge while the column animates open, briefly
+   * showing a horizontal scrollbar */
+  overflow: hidden;
+
+  border: 0;
+  border-bottom: 1px solid #29324a;
+  border-radius: 0;
+  background-color: #1b2438;
+  color: #d9d0c0;
+  font-family: var(--font-ui);
+}
+
+.bar:hover, .bar:focus-visible {
+  background-color: #22304d;
+  color: #fff;
+}
+
+.title {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chevron {
+  width: 15px;
+  height: 15px;
+}
+
+/* While the column animates open, the details keep their final width and are revealed from the
+ * page edge, rather than rewrapping as the column widens */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* PlanningPage.scala sets --expanded-details-width, the column's width when open, which includes
+ * its 2px left border. The details keep that width while fading out, too. */
+.body > * {
+  flex: 1;
+  box-sizing: border-box;
+  width: calc(var(--expanded-details-width) - 2px);
+}
+
+/* Under the plan on narrow screens, so the details take the full width */
+@media (max-width: 1100px) {
+  .body > * {
+    width: 100%;
+  }
+}
+
+.strip {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+
+  border: 0;
+  background-color: #1b2438;
+  color: #d9d0c0;
+  font-family: var(--font-ui);
+
+  animation: fadeIn 200ms ease-out;
+}
+
+.strip:hover, .strip:focus-visible {
+  background-color: #22304d;
+  color: #fff;
+}
+
+/* Nothing's focused, so there are no details to show */
+.strip[aria-disabled="true"] {
+  cursor: default;
+  background-color: #1b2438;
+  color: #6f7a90;
+}
+
+.stripLabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Under the plan on narrow screens, so the strip lies flat */
+@media (max-width: 1100px) {
+  .strip {
+    flex-direction: row;
+    justify-content: center;
+    height: auto;
+  }
+
+  .stripLabel {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+}

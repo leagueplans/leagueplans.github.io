@@ -39,6 +39,10 @@ object KeyboardShortcutsModal {
           List("Ctrl", "Shift", "↑") -> "Focus the previous step, ignoring substeps",
           List("Ctrl", "→") -> "Focus the first substep",
           List("Ctrl", "←") -> "Focus the superstep"
+        ),
+        toSection(
+          "Layout",
+          List("D") -> "Show or hide the step details"
         )
       )
 

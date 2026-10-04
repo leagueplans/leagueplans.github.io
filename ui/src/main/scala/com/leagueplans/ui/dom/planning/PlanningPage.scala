@@ -3,10 +3,10 @@ package com.leagueplans.ui.dom.planning
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, PlanElement}
+import com.leagueplans.ui.dom.planning.details.DetailsColumn
+import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
-import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -17,7 +17,7 @@ import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Val
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -42,6 +42,7 @@ object PlanningPage {
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val displayedState = DisplayedState(focusContext)
+    val layout = ColumnLayout.load()
 
     val planElement =
       PlanElement(
@@ -102,16 +103,48 @@ object PlanningPage {
             timeKeeper,
             tooltip,
             modal
-          ).amend(L.cls(Styles.details)),
-        ifEmpty = createEditorFallback(forester.signal)
+          ).amend(L.cls(Styles.editor)),
+        ifEmpty = L.emptyNode
+      )
+
+    // The step details can only be expanded while a step is focused, and collapse when no step is
+    val hasFocus = focusContext.focusID.map(_.nonEmpty).distinct
+
+    val detailsColumn =
+      DetailsColumn(
+        layout,
+        editorElement,
+        hasFocus,
+        tooltip
       )
 
     L.div(
       L.cls(Styles.page),
+      // One duration for the column's slide and the details' fades, in the stylesheets and DetailsColumn
+      L.onMountCallback(
+        _.thisNode.ref.style.setProperty("--details-animation", s"${ColumnLayout.detailsAnimation.toMillis}ms")
+      ),
+      L.inContext(page =>
+        Signal.combine(layout.planWidth, layout.detailsWidth, layout.expandedDetailsWidth) --> {
+          (planWidth, detailsWidth, expandedDetailsWidth) =>
+            page.ref.style.setProperty("--plan-width", s"${planWidth}px")
+            page.ref.style.setProperty("--details-width", s"${detailsWidth}px")
+            page.ref.style.setProperty("--expanded-details-width", s"${expandedDetailsWidth}px")
+        }
+      ),
+      hasFocus --> (focused => if (!focused) layout.collapseDetails()),
+      HotkeyModifiers.detailsToggle(hasFocus, () => layout.toggleDetails()),
       L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
       visualiser.amend(L.cls(Styles.state)),
-      planElement.amend(L.cls(Styles.plan)),
-      L.child <-- editorElement
+      planElement.amend(
+        L.cls(Styles.plan),
+        Splitter(
+          () => layout.currentPlanWidth(),
+          Observer(layout.resizePlan),
+          onRelease = Observer(_ => layout.save())
+        )
+      ),
+      detailsColumn.amend(L.cls(Styles.details))
     )
   }
 
@@ -122,7 +155,7 @@ object PlanningPage {
     val state: String = js.native
     val plan: String = js.native
     val details: String = js.native
-    val editorFallback: String = js.native
+    val editor: String = js.native
   }
 
   private def toStorageFailureBanner(status: StatusTracker.Status): Option[L.Div] =
@@ -159,29 +192,4 @@ object PlanningPage {
         forester.update(focusedStep.id, step => step.deepCopy(requirements = step.requirements :+ requirement))
       )
     ))
-
-  private def createEditorFallback(forestSignal: Signal[Forest[Step.ID, Step]]): L.Div =
-    L.div(
-      L.cls(Styles.editorFallback),
-      L.p(
-        "Your plan is built from steps. You can use the 'Add step' button in the top-right to create steps."
-      ),
-      L.child.maybe <-- forestSignal.map(forest =>
-        Option.when(forest.nonEmpty)(
-          L.p(
-            "Clicking on a step will focus it. Focusing a step unlocks editing tools which let you add effects to the " +
-              "step, like adding items to the inventory, or gaining experience. This website is a work-in-progress, " +
-              "and most editing tools are currently found in right-click menus."
-          )
-        )
-      ),
-      L.child.maybe <-- forestSignal.map(forest =>
-        Option.when(forest.nonEmpty)(
-          L.p(
-            "You can flick back and forth between steps to see what your character should look like at any point in " +
-              "your plan. Steps can be easily reordered, so you can freely experiment with different plans."
-          )
-        )
-      )
-    )
 }

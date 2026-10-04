@@ -26,6 +26,14 @@ object HotkeyModifiers {
       toHistoryListener(undoController)
     )
 
+  /** D shows or hides the step details */
+  def detailsToggle(enabled: Signal[Boolean], toggle: () => Unit): Binder.Base =
+    L.documentEvents(_.onKeyUp)
+      .filterNot(shouldIgnore)
+      .filter(event => !event.ctrlKey && !event.metaKey && !event.altKey)
+      .filter(_.key.toLowerCase == "d")
+      .compose(_.withCurrentValueOf(enabled)) --> { (_, isEnabled) => if (isEnabled) toggle() }
+
   // Listens on keydown, because writing to the clipboard requires a user activation,
   // which keyup doesn't grant
   private def toClipboardListener(
