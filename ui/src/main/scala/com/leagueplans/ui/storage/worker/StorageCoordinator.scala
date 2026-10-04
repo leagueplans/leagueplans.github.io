@@ -13,13 +13,14 @@ import com.raquo.airstream.ownership.ManualOwner
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-// The coordinator accesses the OPFS itself, through the asynchronous file API.
+// Every tab running this version of the app shares one coordinator. It handles their
+// requests one at a time, tracks which tabs are subscribed to each plan, and sends
+// each saved update to the plan's other subscribers.
 //
-// It used to hand file system work to a dedicated worker instead, since sync access
-// handles are only available in dedicated workers. But shared workers can't start
-// dedicated workers in every browser, so each tab had to start one and pass messages
-// between it and the coordinator. That made the coordinator depend on the tab staying
-// open, and staying responsive, until the work finished.
+// The coordinator reads and writes the OPFS itself, through the asynchronous file API.
+// Sync access handles are only available in dedicated workers, which shared workers
+// can't start in every browser, and handing the work to a worker started by a tab
+// would make storage depend on that tab staying open.
 object StorageCoordinator {
   private type Port = MessagePortClient[ToClient, ToCoordinator]
   private type Result = Iterable[(Port, ToClient)]
