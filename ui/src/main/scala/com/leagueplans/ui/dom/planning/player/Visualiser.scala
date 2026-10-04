@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.section.{SectionContext, SectionDef, Sect
 import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, enrichSource}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -50,7 +50,10 @@ object Visualiser {
           L.div(L.cls(Styles.headerControls), headerControls)
         ),
         L.child.maybe <-- viewedSection.map(_.map(section => contents(section.key).amend(L.cls(Styles.content))))
-      )
+      ),
+      // The sections' menus are built from the focused step's state, such as a stack's quantity
+      // or whether a quest is complete, so they'd be wrong for a newly focused step
+      context.focusChanges --> (_ => context.contextMenu.close())
     )
   }
 

@@ -84,6 +84,7 @@ object PlanningPage {
           displayedState.baseline,
           createEffectObserver(focusContext.focus, forester),
           createRequirementObserver(focusContext.focus, forester),
+          focusContext.focusID.changes.mapToUnit,
           settings,
           cache,
           itemFuse,
