@@ -4,6 +4,36 @@
   padding: 0;
 }
 
+.list > li {
+  position: relative;
+}
+
 .icon {
   cursor: move;
+}
+
+.dragged {
+  opacity: 0.4;
+}
+
+/* A line in the gap the dragged item would be dropped into, coloured like the plan's drop
+ * indicator */
+.dropBefore::before, .dropAfter::after {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  height: 2px;
+
+  background-color: #7ab4f5;
+  content: "";
+  pointer-events: none;
+}
+
+.dropBefore::before {
+  top: -1px;
+}
+
+.dropAfter::after {
+  bottom: -1px;
 }

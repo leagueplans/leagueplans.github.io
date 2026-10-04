@@ -67,14 +67,36 @@ final class ContextMenu private[ContextMenu](status: Observer[Status]) {
   def close(): Unit =
     status.onNext(Status.Closed)
 
+  /** Opens a menu at a point on the page, such as below a button that shows more actions.
+    *
+    * Opening is deferred so that, when called from a click handler, the menu's listener for
+    * clicks outside it doesn't see the click that opened it. */
+  def openAt(
+    makeContents: () => L.HtmlElement,
+    pageX: Double,
+    pageY: Double,
+    config: FloatingConfig = FloatingConfig.basicContextMenu()
+  ): Unit =
+    js.timers.setTimeout(0)(
+      status.onNext(Status.Open(createMenu(makeContents, config, pageX, pageY)))
+    ): Unit
+
   private def createMenu(
     makeContents: () => L.HtmlElement,
     config: FloatingConfig,
     event: MouseEvent
   ): L.HtmlElement =
+    createMenu(makeContents, config, event.pageX, event.pageY)
+
+  private def createMenu(
+    makeContents: () => L.HtmlElement,
+    config: FloatingConfig,
+    pageX: Double,
+    pageY: Double
+  ): L.HtmlElement =
     makeContents().amend(
       L.cls(ContextMenu.Styles.menu),
-      Floating.anchorTo(event.pageX, event.pageY, config),
+      Floating.anchorTo(pageX, pageY, config),
       closeOnClickOutside,
       closeIfAnotherMenuIsOpened
     )

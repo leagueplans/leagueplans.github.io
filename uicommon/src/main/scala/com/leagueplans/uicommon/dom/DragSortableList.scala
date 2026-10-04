@@ -4,22 +4,23 @@ import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.HasID
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.unzip
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.uicommon.utils.laminar.EventPropOps.ifUnhandled
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
-import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent}
+import org.scalajs.dom.{DataTransferDropEffectKind, DataTransferEffectAllowedKind, DragEvent, Node}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 /** A list that can be reordered by dragging its items.
   *
-  * While an item is being dragged, the list shows a preview of the new order. The new order is
-  * only reported once the item is dropped, and not at all if the drag is cancelled. */
+  * While an item is being dragged, the list stays as it is and a line marks the gap the item
+  * would be dropped into. Items of different heights would make a live preview of the new order
+  * jump around under the pointer. The new order is only reported once the item is dropped, and
+  * not at all if the drag is cancelled. */
 object DragSortableList {
   def apply[T : HasID as hasID](
     id: String,
@@ -28,32 +29,44 @@ object DragSortableList {
     toElement: (hasID.ID, T, Signal[T], L.SvgElement) => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
-    val dragTracker = Var[Option[Dragging[hasID.ID, T]]](None).distinct
-    val displayedOrder =
-      Signal.combine(orderSignal, dragTracker.signal).map {
-        case (_, Some(dragging)) => dragging.previewOrder
-        case (order, None) => order
-      }
+    val dragTracker = Var[Option[Dragging]](None).distinct
 
     val children =
-      displayedOrder
+      orderSignal
         .map(_.zipWithIndex)
         .split((data, _) => data.id) { case (itemID, (data, _), zippedSignal) =>
           val (dataSignal, indexSignal) = zippedSignal.unzip
           val (icon, draggableSignal) = dragIcon
+          val isLast = Signal.combine(indexSignal, orderSignal).map((index, order) => index == order.size - 1)
 
           L.li(
             toElement(itemID, data, dataSignal, icon),
             L.draggable <-- draggableSignal,
-            onDragStart(eventFormat, itemID, indexSignal, displayedOrder, dragTracker.writer),
-            onDragInto(itemID, dragTracker, indexSignal),
-            onDragEnd(dragTracker, orderObserver)
+            L.cls(Styles.dragged) <-- Signal.combine(dragTracker.signal, indexSignal).map((dragging, index) =>
+              dragging.exists(_.from == index)
+            ),
+            L.cls(Styles.dropBefore) <-- Signal.combine(dragTracker.signal, indexSignal).map((dragging, index) =>
+              dragging.flatMap(_.visibleSlot).contains(index)
+            ),
+            L.cls(Styles.dropAfter) <-- Signal.combine(dragTracker.signal, indexSignal, isLast).map((dragging, index, last) =>
+              last && dragging.flatMap(_.visibleSlot).contains(index + 1)
+            ),
+            onDragStart(eventFormat, indexSignal, dragTracker.writer),
+            onDragOver(dragTracker, indexSignal),
+            onDragEnd(dragTracker, orderSignal, orderObserver)
           )
         }
 
     L.ol(
       L.cls(Styles.list),
-      L.children <-- children
+      L.children <-- children,
+      L.onDrop --> (_.preventDefault()),
+      // Leaving the list means there's nowhere to drop
+      L.inContext(ctx =>
+        L.onDragLeave.filter(event =>
+          !event.relatedTarget.isInstanceOf[Node] || !ctx.ref.contains(event.relatedTarget.asInstanceOf[Node])
+        ) --> (_ => dragTracker.update(_.map(_.copy(slot = None))))
+      )
     )
   }
 
@@ -61,93 +74,92 @@ object DragSortableList {
   private object Styles extends js.Object {
     val list: String = js.native
     val icon: String = js.native
+    val dragged: String = js.native
+    val dropBefore: String = js.native
+    val dropAfter: String = js.native
   }
 
-  private final case class Dragging[ID, T](
-    id: ID,
-    originalIndex: Int,
-    originalOrder: List[T],
-    previewOrder: List[T]
-  )
+  /** @param from the dragged item's position
+    * @param slot the gap the item would be dropped into: 0 is before the first item, and the
+    *             list's size is after the last
+    */
+  private final case class Dragging(from: Int, slot: Option[Int]) {
+    /** The slot, unless dropping there would leave the item where it is */
+    def visibleSlot: Option[Int] =
+      slot.filterNot(s => s == from || s == from + 1)
+  }
 
+  /** The handle an item is dragged by. Pressing it makes the item draggable until the button is
+    * released. Browsers only start a drag once the pointer has moved a few pixels, by which time
+    * it can have left the handle, so the item stays draggable when the pointer leaves. */
   private def dragIcon: (L.SvgElement, Signal[Boolean]) = {
-    val mouseOver = Var(false)
+    val pressed = Var(false)
     val icon = FontAwesome.icon(FreeSolid.faGripVertical).amend(
       L.svg.cls(Styles.icon),
-      L.onMouseOver.mapToStrict(true) --> mouseOver,
-      L.onMouseLeave.mapToStrict(false) --> mouseOver
+      L.onMouseDown.mapToStrict(true) --> pressed,
+      // A drag that starts ends with dragend instead of mouseup
+      L.documentEvents(_.onMouseUp).mapToStrict(false) --> pressed,
+      L.documentEvents(_.onDragEnd).mapToStrict(false) --> pressed
     )
-    (icon, mouseOver.signal)
+    (icon, pressed.signal)
   }
 
-  private def onDragStart[ID, T](
+  private def onDragStart(
     eventFormat: String,
-    itemID: ID,
     itemIndex: Signal[Int],
-    order: Signal[List[T]],
-    dragTracker: Observer[Option[Dragging[ID, T]]]
+    dragTracker: Observer[Option[Dragging]]
   ): L.Modifier[L.HtmlElement] =
     L.inContext(ctx =>
       L.onDragStart.compose(
         // Can't use preventDefault here, since it stops the browser from
         // actually dragging the element
-        _.filter(_.target == ctx.ref)
-          .withCurrentValueOf(itemIndex, order)
+        _.filter(_.target == ctx.ref).withCurrentValueOf(itemIndex)
       ) -->
-        dragTracker.contramap[(DragEvent, Int, List[T])] { (event, originalIndex, originalOrder) =>
+        dragTracker.contramap[(DragEvent, Int)] { (event, index) =>
           // We don't use this, but it informs other apps not to receive the drop
           event.dataTransfer.setData(eventFormat, "placeholder")
           event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
-          Some(Dragging(itemID, originalIndex, originalOrder, previewOrder = originalOrder))
+          Some(Dragging(from = index, slot = None))
         }
     )
 
-  /** Update the previewed order */
-  private def onDragInto[ID, T](
-    itemID: ID,
-    dragTracker: Var[Option[Dragging[ID, T]]],
+  /** Picks the gap above or below the item, depending on which half the pointer is over.
+    *
+    * Both dragenter and dragover must be cancelled to allow the drop. Dragenter fires each time
+    * the pointer crosses into one of the item's children, and the browser shows the no-drop
+    * cursor until the next dragover if it isn't cancelled. */
+  private def onDragOver(
+    dragTracker: Var[Option[Dragging]],
     indexSignal: Signal[Int]
-  ): L.Modifier[L.HtmlElement] = {
-    val streamMutator: EventStream[DragEvent] => EventStream[(Dragging[ID, T], Int)] =
-      _.withCurrentValueOf(dragTracker.signal, indexSignal)
-        .collect(Function.unlift {
-          case (event, Some(dragging), index) =>
-            event.preventDefault()
-            Option.when(dragging.id != itemID)((dragging, index))
-          case _ =>
-            None
-        })
-
-    val previewMutator =
-      dragTracker.writer.contramap[(Dragging[ID, T], Int)]((dragging, index) =>
-        Some(dragging.copy(previewOrder =
-          move(
-            dragging.originalOrder,
-            from = dragging.originalIndex,
-            to = index
-          )
-        ))
+  ): L.Modifier[L.HtmlElement] =
+    L.inContext { ctx =>
+      val observer = Observer[(DragEvent, Int)] { (event, index) =>
+        dragTracker.now().foreach { dragging =>
+          event.preventDefault()
+          event.dataTransfer.dropEffect = DataTransferDropEffectKind.move
+          val bounds = ctx.ref.getBoundingClientRect()
+          val slot = if (event.clientY < bounds.top + bounds.height / 2) index else index + 1
+          dragTracker.set(Some(dragging.copy(slot = Some(slot))))
+        }
+      }
+      List(
+        L.onDragEnter.compose(_.withCurrentValueOf(indexSignal)) --> observer,
+        L.onDragOver.compose(_.withCurrentValueOf(indexSignal)) --> observer
       )
+    }
 
-    List(
-      L.onDragEnter.ifUnhandled.compose(streamMutator) --> previewMutator,
-      L.onDragOver.ifUnhandled.compose(streamMutator) --> previewMutator
-    )
-  }
-
-  /** Report the previewed order if the item was dropped, then stop previewing */
-  private def onDragEnd[ID, T](
-    dragTracker: Var[Option[Dragging[ID, T]]],
+  /** Report the new order if the item was dropped somewhere that moves it */
+  private def onDragEnd[T](
+    dragTracker: Var[Option[Dragging]],
+    orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]]
   ): L.Modifier[L.HtmlElement] = {
-    // The new order is reported before the preview is cleared, so that the list doesn't
-    // briefly show the original order
     val observer = Observer.combine(
-      orderObserver.contracollect[(DragEvent, Option[Dragging[ID, T]])] {
-        case (event, Some(dragging))
+      orderObserver.contracollect[(DragEvent, Option[Dragging], List[T])] {
+        case (event, Some(dragging @ Dragging(from, _)), order)
           if event.dataTransfer.dropEffect != DataTransferDropEffectKind.none &&
-            dragging.previewOrder != dragging.originalOrder =>
-          dragging.previewOrder
+            dragging.visibleSlot.nonEmpty =>
+          move(order, from, dragging.visibleSlot.get)
       },
       dragTracker.writer.contramap[Any](_ => None)
     )
@@ -155,14 +167,15 @@ object DragSortableList {
     L.inContext(ctx =>
       L.onDragEnd
         .filterByTarget(_ == ctx.ref)
-        .handledWith(_.withCurrentValueOf(dragTracker.signal)) --> observer
+        .handledWith(_.withCurrentValueOf(dragTracker.signal, orderSignal)) --> observer
     )
   }
 
-  private def move[T](order: List[T], from: Int, to: Int): List[T] = {
+  /** Moves the item at `from` into the gap `slot`, counted before the item is taken out */
+  private def move[T](order: List[T], from: Int, slot: Int): List[T] = {
     val buffer = order.toBuffer
     val data = buffer.remove(from)
-    buffer.insert(to, data)
+    buffer.insert(if (slot > from) slot - 1 else slot, data)
     buffer.toList
   }
 }

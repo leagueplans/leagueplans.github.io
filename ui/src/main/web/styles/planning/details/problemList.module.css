@@ -19,5 +19,13 @@
 }
 
 .source {
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: 500;
+  text-align: left;
+  text-decoration: underline dotted;
 }

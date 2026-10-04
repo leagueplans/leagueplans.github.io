@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.details.{DetailsColumn, StepDetails}
+import com.leagueplans.ui.dom.planning.details.{DetailsColumn, RowSelection, StepDetails}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
-import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -45,6 +45,7 @@ object PlanningPage {
     val displayedState = DisplayedState(focusContext)
     val layout = ColumnLayout.load()
     val descriptionFocusRequests = EventBus[Unit]()
+    val rowSelection = RowSelection()
 
     val planElement =
       PlanElement(
@@ -111,7 +112,12 @@ object PlanningPage {
             forester,
             focusController,
             timeKeeper,
+            rowSelection,
+            expMultiplierAt = Signal.combine(settings, focusContext.playerBeforeCurrentFocus).map((settings, player) =>
+              skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
+            ),
             descriptionFocusRequests.events,
+            contextMenu,
             tooltip,
             modal
           ).amend(L.cls(Styles.editor)),

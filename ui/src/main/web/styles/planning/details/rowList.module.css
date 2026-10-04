@@ -1,0 +1,178 @@
+.container {
+  overflow: hidden;
+
+  border: 1px solid #29324a;
+  border-radius: 5px;
+  background-color: #0f1421;
+  font-family: var(--font-ui);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  padding: 8px 10px;
+
+  color: #8a8173;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  /* The icon column fits an item at its in-game size */
+  grid-template-columns: 10px 36px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+  padding: 4px 6px 4px 8px;
+
+  border-bottom: 1px solid #29324a;
+  outline: none;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background-color: #18203a;
+}
+
+.hasErrors {
+  background-color: #2a1618;
+}
+
+.selected, .selected:hover {
+  background-color: #1d2a4a;
+  box-shadow: inset 2px 0 0 #5b7cc6;
+}
+
+.grip {
+  width: 10px;
+  color: #8a8173;
+  cursor: grab;
+  opacity: 0;
+}
+
+.row:hover .grip, .selected .grip {
+  opacity: 1;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+}
+
+.icon img {
+  max-width: 36px;
+  max-height: 32px;
+}
+
+.text {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+
+  color: #f1ebe0;
+  font-size: 0.8rem;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.amount {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.amountLabel {
+  padding: 0 5px;
+
+  border: 1px solid #34405c;
+  border-radius: 4px;
+  background-color: #1b2438;
+  line-height: 18px;
+}
+
+.amountLabel:hover {
+  border-color: #5b7cc6;
+}
+
+.gain {
+  color: #6cc478;
+}
+
+.loss {
+  color: #ec6a62;
+}
+
+.neutral {
+  color: #f1ebe0;
+}
+
+.met {
+  color: #6cc478;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.detail {
+  color: #b3a896;
+  font-size: 0.72rem;
+}
+
+/* Replaces the detail line while an amount is being edited */
+.valid {
+  color: #6cc478;
+}
+
+.invalid {
+  color: #ec6a62;
+}
+
+.error {
+  color: #ec6a62;
+  font-size: 0.72rem;
+}
+
+.menuButton {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: #b3a896;
+  opacity: 0.6;
+}
+
+.menuButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.row:hover .menuButton, .selected .menuButton, .menuButton:focus-visible {
+  opacity: 1;
+}
+
+.menuButton:hover, .menuButton:focus-visible {
+  background-color: #29324a;
+  color: #f1ebe0;
+}

@@ -1,18 +1,25 @@
 package com.leagueplans.ui.dom.planning.details
 
-import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.editor.{EffectRenderer, NewRequirementForm, RequirementRenderer, Section}
+import com.leagueplans.common.model.{Item, Skill}
+import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
+import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
-import com.leagueplans.uicommon.dom.{FormOpener, Modal, Tooltip}
-import com.leagueplans.uicommon.utils.HasID
+import com.leagueplans.uicommon.dom.*
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.laminar.api.L
+import com.raquo.airstream.eventbus.EventBus
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
+import org.scalajs.dom.{HTMLElement, KeyValue}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -20,6 +27,7 @@ import scala.scalajs.js.annotation.JSImport
 /** Everything about the focused step: where it sits in the plan, its description, timings,
   * problems, effects and requirements */
 object StepDetails {
+  /** @param expMultiplierAt the exp multiplier for each skill at the start of the step */
   def apply(
     cache: Cache,
     itemFuse: Fuse[Item],
@@ -28,24 +36,194 @@ object StepDetails {
     forester: Forester[Step.ID, Step],
     focusController: FocusController,
     timeKeeper: TimeKeeper,
+    selection: RowSelection,
+    expMultiplierAt: Signal[Skill => Double],
     descriptionFocusRequests: EventStream[Unit],
+    contextMenu: ContextMenu,
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
-    val effectRenderer = EffectRenderer(cache, tooltip)
-    val requirementRenderer = RequirementRenderer(cache, tooltip)
+    val effectText = EffectText(cache)
+    val effects = stepSignal.map(_.directEffects.underlying)
+    val requirements = stepSignal.map(_.requirements)
+    val editRequests = EventBus[Row]()
+
+    // The menus act outside any stream, so they read the step from here
+    var current = Option.empty[Step]
+    def updateEffects(f: List[Effect] => List[Effect]): Unit =
+      current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects = EffectList(f(s.directEffects.underlying)))))
+    def updateRequirements(f: List[Requirement] => List[Requirement]): Unit =
+      current.foreach(step => forester.update(step.id, s => s.deepCopy(requirements = f(s.requirements))))
+    def update(kind: Kind)(edit: [T] => List[T] => List[T]): Unit =
+      kind match {
+        case Kind.Effects => updateEffects(edit(_))
+        case Kind.Requirements => updateRequirements(edit(_))
+      }
+
+    def run(row: Row, command: Command): Unit = {
+      val size = current.fold(0)(step =>
+        if (row.kind == Kind.Effects) step.directEffects.underlying.size else step.requirements.size
+      )
+      command match {
+        case Command.Delete =>
+          update(row.kind)([T] => (list: List[T]) => ListEdits.delete(list, row.index))
+          selection.select(Option.when(size > 1)(row.copy(index = row.index.min(size - 2))))
+        case Command.EditAmount =>
+          editRequests.emit(row)
+      }
+    }
+
+    val openMenu: Kind => (Int, Any, Double, Double) => Unit = kind => (index, value, x, y) =>
+      contextMenu.openAt(
+        () => toRowMenu(Row(kind, index), value, run, contextMenu),
+        x,
+        y
+      )
+
+    val errorsByKind =
+      errorsSignal.map(errors =>
+        errors.foldLeft((Map.empty[Int, List[String]], Map.empty[Int, List[String]])) {
+          case ((effectErrors, requirementErrors), StepError(StepError.Source.Effect(i, _), message)) =>
+            (effectErrors.updated(i, effectErrors.getOrElse(i, List.empty) :+ message), requirementErrors)
+          case ((effectErrors, requirementErrors), StepError(StepError.Source.Requirement(i, _), message)) =>
+            (effectErrors, requirementErrors.updated(i, requirementErrors.getOrElse(i, List.empty) :+ message))
+        }
+      )
 
     L.div(
       L.cls(Styles.details),
+      stepSignal --> (step => current = Some(step)),
+      // The selection belongs to the step it was made on
+      stepSignal.map(_.id).distinct.changes --> (_ => selection.select(None)),
+      L.onUnmountCallback(_ => selection.select(None)),
+      selection.commands.withCurrentValueOf(selection.selected) --> {
+        case (command, Some(row)) => run(row, command)
+        case (_, None) => ()
+      },
+      L.documentEvents(_.onKeyDown).filter(event => event.key == KeyValue.Escape && !isTyping(event.target)) -->
+        (_ => selection.select(None)),
       L.div(
         L.cls(Styles.header),
         Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
         DescriptionField(stepSignal, forester, descriptionFocusRequests),
         TimingRows(stepSignal, forester, timeKeeper, tooltip)
       ),
-      ProblemList(errorsSignal, EffectText(cache)),
-      L.child <-- toEffects(effectRenderer, stepSignal, forester),
-      L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
+      ProblemList(
+        errorsSignal,
+        effectText,
+        Observer {
+          case StepError.Source.Effect(i, _) => selection.select(Some(Row(Kind.Effects, i)))
+          case StepError.Source.Requirement(i, _) => selection.select(Some(Row(Kind.Requirements, i)))
+        }
+      ),
+      L.sectionTag(
+        L.cls(Styles.section),
+        toHeader("Effects", effects.map(_.size), maybeAction = None),
+        RowList[Effect](
+          Kind.Effects,
+          effects,
+          expMultiplierAt.map(multiplierAt => RowContent.of(_, cache, multiplierAt)),
+          RowAmounts.of,
+          RowAmounts.withAmount,
+          errors = errorsByKind.map(_._1),
+          showMet = false,
+          selection,
+          editRequests.events.collect { case Row(Kind.Effects, i) => i },
+          onReorder = Observer(reordered => updateEffects(_ => reordered)),
+          onReplace = Observer((i, effect) => updateEffects(ListEdits.replace(_, i, effect))),
+          openMenu = (i, effect, x, y) => openMenu(Kind.Effects)(i, effect, x, y),
+          emptyText = "No effects"
+        )
+      ),
+      L.sectionTag(
+        L.cls(Styles.section),
+        toHeader(
+          "Requirements",
+          requirements.map(_.size),
+          maybeAction = Some(toAddRequirementButton(itemFuse, modal, tooltip, updateRequirements))
+        ),
+        RowList[Requirement](
+          Kind.Requirements,
+          requirements,
+          Signal.fromValue(RowContent.of(_, cache, effectText)),
+          RowAmounts.of,
+          RowAmounts.withAmount,
+          errors = errorsByKind.map(_._2),
+          showMet = true,
+          selection,
+          editRequests.events.collect { case Row(Kind.Requirements, i) => i },
+          onReorder = Observer(reordered => updateRequirements(_ => reordered)),
+          onReplace = Observer((i, requirement) => updateRequirements(ListEdits.replace(_, i, requirement))),
+          openMenu = (i, requirement, x, y) => openMenu(Kind.Requirements)(i, requirement, x, y),
+          emptyText = "No requirements."
+        )
+      )
+    )
+  }
+
+  private def isTyping(target: org.scalajs.dom.EventTarget): Boolean =
+    target match {
+      case e: HTMLElement => Set("input", "textarea", "select").contains(e.tagName.toLowerCase) || e.isContentEditable
+      case _ => false
+    }
+
+  private def toHeader(title: String, count: Signal[Int], maybeAction: Option[L.Button]): L.HtmlElement =
+    L.headerTag(
+      L.cls(Styles.sectionHeader),
+      L.h3(L.cls(Styles.sectionTitle), title),
+      L.span(L.cls(Styles.count), L.text <-- count.map(_.toString)),
+      maybeAction.map(button => L.div(L.cls(Styles.headerActions), button)).getOrElse(L.emptyNode)
+    )
+
+  private def toRowMenu(
+    row: Row,
+    value: Any,
+    run: (Row, Command) => Unit,
+    contextMenu: ContextMenu
+  ): L.HtmlElement = {
+    def item(label: String)(action: => Unit): ContextMenuList.Item =
+      ContextMenuList.Item(
+        label,
+        Button(_.handled --> { _ =>
+          action
+          contextMenu.close()
+        })
+      )
+
+    val hasAmount = value match {
+      case effect: Effect => RowAmounts.of(effect).isDefined
+      case requirement: Requirement => RowAmounts.of(requirement).isDefined
+      case _ => false
+    }
+    val amountLabel = if (row.kind == Kind.Requirements) "Change level" else "Change amount"
+
+    ContextMenuList.from(
+      Option.when(hasAmount)(item(s"$amountLabel (Enter)")(run(row, Command.EditAmount))).toList,
+      List(item("Delete (Delete)")(run(row, Command.Delete)))
+    )
+  }
+
+  /** Requirements are meant to come from the sections, but until they can all be made there,
+    * the old form stays reachable from here */
+  private def toAddRequirementButton(
+    itemFuse: Fuse[Item],
+    modal: Modal,
+    tooltip: Tooltip,
+    updateRequirements: (List[Requirement] => List[Requirement]) => Unit
+  ): L.Button = {
+    val formOpener = FormOpener(
+      modal,
+      NewRequirementForm(itemFuse),
+      _.foreach(requirement => updateRequirements(_ :+ requirement))
+    )
+    Button(_.handled --> (_ => formOpener.open())).amend(
+      L.cls(Styles.headerButton),
+      L.aria.label("Add a requirement"),
+      FontAwesome.icon(FreeSolid.faPlus),
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), "Add a requirement"),
+        FloatingConfig.basicTooltip(Placement.left)
+      )
     )
   }
 
@@ -54,63 +232,11 @@ object StepDetails {
     val details: String = js.native
     val header: String = js.native
     val section: String = js.native
+    val sectionHeader: String = js.native
+    val sectionTitle: String = js.native
+    val count: String = js.native
+    val headerActions: String = js.native
+    val headerButton: String = js.native
+    val tooltip: String = js.native
   }
-
-  private def toEffects(
-    renderer: EffectRenderer,
-    stepSignal: Signal[Step],
-    forester: Forester[Step.ID, Step]
-  ): Signal[L.Div] =
-    stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
-      Section(
-        title = "Effects",
-        id = "effects",
-        stepSignal.map(_.directEffects.underlying),
-        Observer[List[Effect]](effectOrdering =>
-          forester.update(stepID, _.deepCopy(directEffects = EffectList(effectOrdering)))
-        ),
-        renderer.render,
-        None,
-        Observer[Effect](deletedEffect =>
-          forester.update(stepID, step => step.deepCopy(directEffects = step.directEffects - deletedEffect))
-        )
-      )(using HasID.identity).amend(L.cls(Styles.section))
-    )
-
-  private def toRequirements(
-    renderer: RequirementRenderer,
-    itemFuse: Fuse[Item],
-    stepSignal: Signal[Step],
-    forester: Forester[Step.ID, Step],
-    modal: Modal
-  ): Signal[L.Div] =
-    stepSignal.splitOne(_.id)((stepID, _, stepSignal) =>
-      Section(
-        title = "Requirements",
-        id = "requirements",
-        stepSignal.map(_.requirements),
-        Observer[List[Requirement]](requirementOrdering =>
-          forester.update(stepID, _.deepCopy(requirements = requirementOrdering))
-        ),
-        renderer.render,
-        Some(newRequirementObserver(itemFuse, stepID, modal, forester)),
-        Observer[Requirement](deletedRequirement =>
-          forester.update(stepID, step => step.deepCopy(requirements = step.requirements.filterNot(_ == deletedRequirement)))
-        )
-      )(using HasID.identity).amend(L.cls(Styles.section))
-    )
-
-  private def newRequirementObserver(
-    itemFuse: Fuse[Item],
-    stepID: Step.ID,
-    modal: Modal,
-    forester: Forester[Step.ID, Step]
-  ): Observer[Any] =
-    FormOpener(
-      modal,
-      NewRequirementForm(itemFuse),
-      _.foreach(newRequirement =>
-        forester.update(stepID, step => step.deepCopy(requirements = step.requirements :+ newRequirement))
-      )
-    ).toObserver
 }

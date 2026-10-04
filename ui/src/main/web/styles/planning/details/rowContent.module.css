@@ -1,0 +1,25 @@
+/* A light glow lifts the dark icons (Thieving, coal) off the navy. Skill icons are smaller and
+ * simpler, so they get a stronger one. */
+.skillIcon {
+  filter: drop-shadow(0 0 4px rgba(241, 235, 224, 0.6)) drop-shadow(0 0 1px rgba(241, 235, 224, 0.45));
+}
+
+.itemIcon {
+  filter: drop-shadow(0 0 2px rgba(241, 235, 224, 0.4)) drop-shadow(0 0 1px rgba(241, 235, 224, 0.25));
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 2px;
+  box-sizing: border-box;
+
+  border-radius: 4px;
+  background-color: #29324a;
+  color: #f1ebe0;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 500;
+}

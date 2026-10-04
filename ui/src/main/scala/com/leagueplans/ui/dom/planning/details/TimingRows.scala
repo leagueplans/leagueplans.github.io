@@ -3,17 +3,15 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.{Duration, Step}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.{Button, Tooltip}
+import com.leagueplans.uicommon.dom.{Button, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.DurationOps.safeMul
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
-import org.scalajs.dom.KeyValue
 
 import scala.concurrent.duration.Duration as ScalaDuration
 import scala.scalajs.js
@@ -203,9 +201,8 @@ object TimingRows {
     )
   }
 
-  /** A row that turns into a text box when clicked anywhere. Enter or leaving the box saves it,
-    * if it can be read; Escape cancels. While editing, a panel under the row says what the text
-    * will be read as, or why it can't be. */
+  /** A row that turns into a text box when clicked anywhere, edited as a [[TextDraft]]. While
+    * editing, a panel under the row says what the text will be read as, or why it can't be. */
   private def editableRow[T](
     icon: L.SvgElement,
     label: String,
@@ -220,19 +217,12 @@ object TimingRows {
     tooltipContents: L.HtmlElement,
     tooltip: Tooltip
   ): L.Div = {
-    val draft = Var(Option.empty[String])
-    val parsed = draft.signal.map(_.map(parse))
-    val setText = Observer[String](text => draft.set(Some(text)))
-
-    def finish(save: Boolean): Unit = {
-      if (save) draft.now().map(parse).foreach(_.foreach(onCommit.onNext))
-      draft.set(None)
-    }
+    val draft = TextDraft[T](toText, (_, text) => parse(text), onCommit)
 
     L.div(
-      L.child <-- draft.signal.map(_.isDefined).distinct.splitBoolean(
+      L.child <-- draft.isEditing.splitBoolean(
         whenFalse = _ =>
-          Button(_.handledWith(_.sample(value)) --> (current => draft.set(Some(toText(current))))).amend(
+          Button(_.handledWith(_.sample(value)) --> draft.start).amend(
             L.cls(Styles.row, Styles.editable),
             icon,
             L.span(L.cls(Styles.label), label),
@@ -247,40 +237,18 @@ object TimingRows {
             L.span(L.cls(Styles.label), label),
             L.input(
               L.cls(Styles.input),
-              L.typ("text"),
               L.inputMode(inputMode),
               L.aria.label(label),
-              L.value <-- draft.signal.map(_.getOrElse("")),
-              L.onInput.mapToValue --> setText,
-              L.aria.invalid <-- parsed.map(p => if (p.exists(_.isLeft)) "true" else "false"),
-              L.onKeyDown --> { event =>
-                event.key match {
-                  case KeyValue.Enter =>
-                    event.preventDefault()
-                    event.stopPropagation()
-                    if (draft.now().map(parse).exists(_.isRight)) finish(save = true)
-                  case KeyValue.Escape =>
-                    event.preventDefault()
-                    event.stopPropagation()
-                    finish(save = false)
-                  case _ => ()
-                }
-              },
-              // Leaving the box saves it, unless it can't be read, in which case the change is dropped
-              L.onBlur --> (_ => if (draft.now().isDefined) finish(save = true)),
-              L.onMountCallback { ctx =>
-                ctx.thisNode.ref.focus()
-                ctx.thisNode.ref.select()
-              }
+              draft.input
             )
           )
       ),
-      L.child.maybe <-- draft.signal.map(_.isDefined).distinct.map(isEditing =>
+      L.child.maybe <-- draft.isEditing.map(isEditing =>
         Option.when(isEditing)(
           L.div(
             L.cls(Styles.help),
-            help.map(_(setText)),
-            L.child.maybe <-- parsed.map(_.map {
+            help.map(_(draft.setText)),
+            L.child.maybe <-- draft.status.map(_.map {
               case Right(result) => L.span(L.cls(Styles.valid), s"✓ ${describe(result)} · Enter to save, Esc to cancel")
               case Left(error) => L.span(L.cls(Styles.invalid), error)
             })

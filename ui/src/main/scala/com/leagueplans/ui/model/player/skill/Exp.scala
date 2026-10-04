@@ -10,6 +10,10 @@ object Exp {
   def apply(d: Double): Exp =
     new Exp((d * 10).toInt) {}
 
+  /** Exp is stored in tenths, so this is exact where apply(Double) can be off by a tenth */
+  def tenths(n: Int): Exp =
+    new Exp(n) {}
+
   given Ordering[Exp] = Ordering.by(_.raw)
 
   given Encoder[Exp] = Encoder.intEncoder.contramap(_.raw)
