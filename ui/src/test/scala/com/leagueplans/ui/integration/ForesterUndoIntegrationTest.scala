@@ -17,7 +17,6 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, EitherValues, OptionValues}
 
-import scala.annotation.nowarn
 import scala.collection.mutable.ListBuffer
 import scala.util.Using
 
@@ -65,7 +64,7 @@ final class ForesterUndoIntegrationTest
       .updates
       .map(StepUpdates(_))
       .flatMapConcat(directory.applyUpdate)
-      .foreach(_ => ()): @nowarn("msg=discarded non-Unit value")
+      .foreach(_ => ())
     forester.historyOutcomes.withCurrentValueOf(forester.signal).foreach(outcomes += _)
     deferred.events.foreach(_())
 
