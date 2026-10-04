@@ -1,8 +1,10 @@
 .header {
   display: flex;
+  align-items: center;
+  gap: 2px;
 
   color: white;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
 }
 
 .focus {}
@@ -44,6 +46,11 @@
 
 .name {
   margin-right: auto;
+  min-width: 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 
   padding: 0.25rem;
   text-shadow: 1px 1px black;
@@ -79,10 +86,12 @@
 .addStepButton {
   composes: focus;
 
+  align-self: stretch;
+  white-space: nowrap;
   border-style: none;
   background-color: #2f4679;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .addStepButton:hover, .addStepButton:focus-visible {
@@ -96,9 +105,11 @@
 .deleteStepButton {
   composes: focus;
 
+  align-self: stretch;
+  white-space: nowrap;
   border-style: none;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .deleteStepButton:enabled {

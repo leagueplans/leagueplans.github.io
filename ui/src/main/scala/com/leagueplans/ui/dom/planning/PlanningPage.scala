@@ -102,19 +102,16 @@ object PlanningPage {
             timeKeeper,
             tooltip,
             modal
-          ).amend(L.cls(Styles.editor)),
+          ).amend(L.cls(Styles.details)),
         ifEmpty = createEditorFallback(forester.signal)
       )
 
     L.div(
       L.cls(Styles.page),
       L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
-      L.div(
-        L.cls(Styles.lhs),
-        visualiser.amend(L.cls(Styles.state)),
-        L.child <-- editorElement
-      ),
-      planElement.amend(L.cls(Styles.plan))
+      visualiser.amend(L.cls(Styles.state)),
+      planElement.amend(L.cls(Styles.plan)),
+      L.child <-- editorElement
     )
   }
 
@@ -122,11 +119,10 @@ object PlanningPage {
   private object Styles extends js.Object {
     val page: String = js.native
     val banner: String = js.native
-    val lhs: String = js.native
     val state: String = js.native
-    val editor: String = js.native
-    val editorFallback: String = js.native
     val plan: String = js.native
+    val details: String = js.native
+    val editorFallback: String = js.native
   }
 
   private def toStorageFailureBanner(status: StatusTracker.Status): Option[L.Div] =
