@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.details.RowSelection
 import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
 import com.raquo.airstream.core.Signal
@@ -16,13 +17,15 @@ object HotkeyModifiers {
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm,
     editDescription: Step.ID => Unit,
-    undoController: UndoController
+    undoController: UndoController,
+    rowSelection: RowSelection
   ): L.Modifier[L.Element] =
     List(
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
       toClipboardListener(focus, stepClipboard),
-      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription),
+      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription, rowSelection),
+      toRowEditListener(rowSelection),
       toHistoryListener(undoController)
     )
 
@@ -102,7 +105,8 @@ object HotkeyModifiers {
     focusSignal: Signal[Option[Step.ID]],
     newStepForm: NewStepForm,
     deleteStepForm: DeleteStepForm,
-    editDescription: Step.ID => Unit
+    editDescription: Step.ID => Unit,
+    rowSelection: RowSelection
   ): Binder.Base =
     L.documentEvents(_.onKeyUp)
       .filterNot(shouldIgnore)
@@ -110,8 +114,23 @@ object HotkeyModifiers {
       .compose(_.withCurrentValueOf(focusSignal)) --> {
         case ("n" | "N", focus) => newStepForm.open(focus)
         case ("e" | "E", Some(step)) => editDescription(step)
+        case (KeyValue.Delete | KeyValue.Backspace, _) if rowSelection.send(RowSelection.Command.Delete) => ()
         case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => deleteStepForm.open(step)
         case _ => /* Do nothing */
+      }
+
+  /** Enter edits the selected effect or requirement's amount. Enter on a button or a step keeps
+    * its usual meaning. */
+  private def toRowEditListener(rowSelection: RowSelection): Binder.Base =
+    L.documentEvents(_.onKeyDown)
+      .filterNot(shouldIgnore)
+      .filter(event => event.key == KeyValue.Enter && !event.altKey && !event.ctrlKey && !event.metaKey)
+      .filter(event =>
+        event.target == document.body ||
+          event.target == document.documentElement ||
+          isSelectableRow(event.target)
+      ) --> { event =>
+        if (rowSelection.send(RowSelection.Command.EditAmount)) event.preventDefault()
       }
 
   // Listens on keydown, so that holding the keys repeats the undo or redo, as it does in text
@@ -130,6 +149,12 @@ object HotkeyModifiers {
           case _ => /* Do nothing */
         }
       }
+
+  private def isSelectableRow(target: org.scalajs.dom.EventTarget): Boolean =
+    target match {
+      case e: Element => e.hasAttribute(RowSelection.rowAttribute)
+      case _ => false
+    }
 
   private val ignoredTags = Set("input", "textarea", "select")
   private val ignoredIDs = Set.empty[String]

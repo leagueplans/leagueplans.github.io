@@ -1,15 +1,18 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.dom.planning.details.RowAmounts.Tone
-import com.leagueplans.uicommon.dom.{Button, DragSortableList, InlineEdit}
+import com.leagueplans.uicommon.dom.{Button, DragSortableList, InlineEdit, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.HasID
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
-import org.scalajs.dom.{HTMLElement, window}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -23,7 +26,7 @@ object RowList {
     * @param showMet whether rows without problems say they're met, as requirements do
     * @param editRequests asks the row at a position to start editing its amount
     * @param onReplace told about a row's new value after its amount is edited
-    * @param openMenu opens a row's menu of actions at a point on the page
+    * @param onDelete told about the position of a row whose delete button was clicked
     */
   def apply[T](
     kind: RowSelection.Kind,
@@ -37,8 +40,9 @@ object RowList {
     editRequests: EventStream[Int],
     onReorder: Observer[List[T]],
     onReplace: Observer[(Int, T)],
-    openMenu: (Int, T, Double, Double) => Unit,
-    emptyText: String
+    onDelete: Observer[Int],
+    emptyText: String,
+    tooltip: Tooltip
   ): L.Div = {
     // Equal values get separate rows, told apart by how many equal values come before them
     val keyed = items.map(numberOccurrences)
@@ -54,7 +58,7 @@ object RowList {
           val index = keyed.map(_.indexOf(key)).distinct
           toRow(
             kind, keyedValue.map(_._1), index, dragIcon, content, amount, withAmount, errors, showMet,
-            selection, editRequests, onReplace, openMenu
+            selection, editRequests, onReplace, onDelete, tooltip
           )
         }
       ).amend(L.cls(Styles.rows)),
@@ -83,7 +87,8 @@ object RowList {
     selection: RowSelection,
     editRequests: EventStream[Int],
     onReplace: Observer[(Int, T)],
-    openMenu: (Int, T, Double, Double) => Unit
+    onDelete: Observer[Int],
+    tooltip: Tooltip
   ): L.Modifier[L.HtmlElement] = {
     val rowContent = Signal.combine(value, content).map((v, describe) => describe(v))
     val rowErrors = Signal.combine(index, errors).map((i, all) => all.getOrElse(i, List.empty)).distinct
@@ -97,14 +102,13 @@ object RowList {
 
     List(
       L.cls(Styles.row),
+      // Focusable so that clicking a row takes keyboard focus from the plan, where Enter would
+      // otherwise toggle the step's focus
+      L.tabIndex(-1),
+      L.htmlAttr(RowSelection.rowAttribute, StringAsIsCodec)(""),
       L.cls(Styles.selected) <-- isSelected,
       L.cls(Styles.hasErrors) <-- rowErrors.map(_.nonEmpty),
       L.onClick.compose(_.withCurrentValueOf(index)) --> ((_, i) => selection.select(Some(RowSelection.Row(kind, i)))),
-      L.onContextMenu.compose(_.withCurrentValueOf(Signal.combine(index, value))) --> { (event, i, v) =>
-        event.preventDefault()
-        selection.select(Some(RowSelection.Row(kind, i)))
-        openMenu(i, v, event.pageX, event.pageY)
-      },
       dragIcon.amend(L.svg.cls(Styles.grip)),
       L.span(L.cls(Styles.icon), L.child <-- rowContent.map(_.icon())),
       L.div(
@@ -145,14 +149,14 @@ object RowList {
         },
         L.children <-- rowErrors.map(_.map(message => L.div(L.cls(Styles.error), message)))
       ),
-      Button(_.handledWith(_.withCurrentValueOf(Signal.combine(index, value))) --> { (event, i, v) =>
-        selection.select(Some(RowSelection.Row(kind, i)))
-        val rect = event.currentTarget.asInstanceOf[HTMLElement].getBoundingClientRect()
-        openMenu(i, v, rect.left + window.scrollX, rect.bottom + window.scrollY)
-      }).amend(
-        L.cls(Styles.menuButton),
-        L.aria.label("More actions"),
-        moreIcon
+      Button(_.handledWith(_.sample(index)) --> onDelete).amend(
+        L.cls(Styles.deleteButton),
+        L.aria.label("Delete"),
+        FontAwesome.icon(FreeSolid.faTrashCan),
+        tooltip.register(
+          L.span(L.cls(Styles.tooltip), "Delete (Delete)"),
+          FloatingConfig.basicTooltip(Placement.left)
+        )
       ),
       commits.events.withCurrentValueOf(index).map((v, i) => (i, v)) --> onReplace
     )
@@ -169,16 +173,6 @@ object RowList {
         }
       ),
       amount.label
-    )
-
-  private def moreIcon: L.SvgElement =
-    L.svg.svg(
-      L.svg.viewBox("0 0 16 16"),
-      L.svg.fill("currentColor"),
-      L.svg.svgAttr("aria-hidden", StringAsIsCodec, namespace = None)("true"),
-      L.svg.circle(L.svg.cx("3"), L.svg.cy("8"), L.svg.r("1.5")),
-      L.svg.circle(L.svg.cx("8"), L.svg.cy("8"), L.svg.r("1.5")),
-      L.svg.circle(L.svg.cx("13"), L.svg.cy("8"), L.svg.r("1.5"))
     )
 
   @js.native @JSImport("/styles/planning/details/rowList.module.css", JSImport.Default)
@@ -204,6 +198,7 @@ object RowList {
     val valid: String = js.native
     val invalid: String = js.native
     val error: String = js.native
-    val menuButton: String = js.native
+    val deleteButton: String = js.native
+    val tooltip: String = js.native
   }
 }

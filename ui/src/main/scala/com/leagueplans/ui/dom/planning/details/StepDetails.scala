@@ -48,7 +48,7 @@ object StepDetails {
     val requirements = stepSignal.map(_.requirements)
     val editRequests = EventBus[Row]()
 
-    // The menus act outside any stream, so they read the step from here
+    // The row actions act outside any stream, so they read the step from here
     var current = Option.empty[Step]
     def updateEffects(f: List[Effect] => List[Effect]): Unit =
       current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects = EffectList(f(s.directEffects.underlying)))))
@@ -72,13 +72,6 @@ object StepDetails {
           editRequests.emit(row)
       }
     }
-
-    val openMenu: Kind => (Int, Any, Double, Double) => Unit = kind => (index, value, x, y) =>
-      contextMenu.openAt(
-        () => toRowMenu(Row(kind, index), value, run, contextMenu),
-        x,
-        y
-      )
 
     val errorsByKind =
       errorsSignal.map(errors =>
@@ -131,8 +124,9 @@ object StepDetails {
           editRequests.events.collect { case Row(Kind.Effects, i) => i },
           onReorder = Observer(reordered => updateEffects(_ => reordered)),
           onReplace = Observer((i, effect) => updateEffects(ListEdits.replace(_, i, effect))),
-          openMenu = (i, effect, x, y) => openMenu(Kind.Effects)(i, effect, x, y),
-          emptyText = "No effects"
+          onDelete = Observer(i => run(Row(Kind.Effects, i), Command.Delete)),
+          emptyText = "No effects",
+          tooltip
         )
       ),
       L.sectionTag(
@@ -154,8 +148,9 @@ object StepDetails {
           editRequests.events.collect { case Row(Kind.Requirements, i) => i },
           onReorder = Observer(reordered => updateRequirements(_ => reordered)),
           onReplace = Observer((i, requirement) => updateRequirements(ListEdits.replace(_, i, requirement))),
-          openMenu = (i, requirement, x, y) => openMenu(Kind.Requirements)(i, requirement, x, y),
-          emptyText = "No requirements."
+          onDelete = Observer(i => run(Row(Kind.Requirements, i), Command.Delete)),
+          emptyText = "No requirements.",
+          tooltip
         )
       )
     )
@@ -174,34 +169,6 @@ object StepDetails {
       L.span(L.cls(Styles.count), L.text <-- count.map(_.toString)),
       maybeAction.map(button => L.div(L.cls(Styles.headerActions), button)).getOrElse(L.emptyNode)
     )
-
-  private def toRowMenu(
-    row: Row,
-    value: Any,
-    run: (Row, Command) => Unit,
-    contextMenu: ContextMenu
-  ): L.HtmlElement = {
-    def item(label: String)(action: => Unit): ContextMenuList.Item =
-      ContextMenuList.Item(
-        label,
-        Button(_.handled --> { _ =>
-          action
-          contextMenu.close()
-        })
-      )
-
-    val hasAmount = value match {
-      case effect: Effect => RowAmounts.of(effect).isDefined
-      case requirement: Requirement => RowAmounts.of(requirement).isDefined
-      case _ => false
-    }
-    val amountLabel = if (row.kind == Kind.Requirements) "Change level" else "Change amount"
-
-    ContextMenuList.from(
-      Option.when(hasAmount)(item(s"$amountLabel (Enter)")(run(row, Command.EditAmount))).toList,
-      List(item("Delete (Delete)")(run(row, Command.Delete)))
-    )
-  }
 
   /** Requirements are meant to come from the sections, but until they can all be made there,
     * the old form stays reachable from here */

@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.details.RowSelection
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
@@ -22,6 +23,7 @@ object PlanElement {
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     editDescription: () => Unit,
+    rowSelection: RowSelection,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
@@ -61,7 +63,8 @@ object PlanElement {
         newStepForm,
         deleteStepForm,
         editDescription = _ => editDescription(),
-        undoController
+        undoController,
+        rowSelection
       )
     )
   }

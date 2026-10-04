@@ -61,6 +61,7 @@ object PlanningPage {
           // Waits for the details to render, in case they were collapsed
           js.timers.setTimeout(0)(descriptionFocusRequests.emit(())): Unit
         },
+        rowSelection,
         timeKeeper,
         tooltip,
         contextMenu,

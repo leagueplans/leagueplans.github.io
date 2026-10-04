@@ -149,7 +149,7 @@
   font-size: 0.72rem;
 }
 
-.menuButton {
+.deleteButton {
   display: grid;
   place-items: center;
   width: 22px;
@@ -163,16 +163,23 @@
   opacity: 0.6;
 }
 
-.menuButton svg {
-  width: 14px;
-  height: 14px;
+.deleteButton svg {
+  width: 12px;
+  height: 12px;
 }
 
-.row:hover .menuButton, .selected .menuButton, .menuButton:focus-visible {
+.row:hover .deleteButton, .selected .deleteButton, .deleteButton:focus-visible {
   opacity: 1;
 }
 
-.menuButton:hover, .menuButton:focus-visible {
-  background-color: #29324a;
-  color: #f1ebe0;
+/* Red only once it's about to be used, like the plan's "Delete step" */
+.deleteButton:hover, .deleteButton:focus-visible {
+  border-color: #7a3431;
+  background-color: #2a1618;
+  color: #ec6a62;
+}
+
+.tooltip {
+  width: max-content;
+  text-align: center;
 }

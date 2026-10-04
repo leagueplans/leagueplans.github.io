@@ -5,6 +5,9 @@ import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
 
 object RowSelection {
+  /** Marks the rows that can be selected, so that keyboard shortcuts can tell them apart */
+  val rowAttribute: String = "data-selectable-row"
+
   enum Kind {
     case Effects, Requirements
   }

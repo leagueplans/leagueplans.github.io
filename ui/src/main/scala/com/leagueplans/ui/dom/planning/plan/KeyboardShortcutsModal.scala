@@ -1,7 +1,8 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.uicommon.dom.Modal
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.leagueplans.uicommon.dom.{Button, Modal}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledAs
+import com.raquo.laminar.api.{L, nodeOptionToModifier, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -11,38 +12,66 @@ object KeyboardShortcutsModal {
     val content =
       L.div(
         L.cls(Styles.modal),
-        L.p(L.cls(Styles.title), "Keyboard shortcuts"),
-        toSection(
-          "Step modification",
-          List("N") -> "Add a new step",
-          List("E") -> "Edit the focused step's description",
-          List("Delete") -> "Delete the focused step",
-          List("Ctrl", "C") -> "Copy the focused step",
-          List("Ctrl", "X") -> "Cut the focused step",
-          List("Ctrl", "V") -> "Paste as the last substep of the focused step",
-          List("Ctrl", "Z") -> "Undo the last change, when not typing in a text box",
-          List("Ctrl", "Shift", "Z") -> "Redo the last undone change",
-          List("Ctrl", "Y") -> "Redo the last undone change"
+        L.aria.labelledBy(titleID),
+        L.div(
+          L.cls(Styles.titleBar),
+          L.h2(L.cls(Styles.title), L.idAttr(titleID), "Keyboard shortcuts"),
+          Button(_.handledAs(()) --> (_ => modal.close())).amend(
+            L.cls(Styles.close),
+            L.aria.label("Close"),
+            closeIcon()
+          )
         ),
-        toSection(
-          "Step movement",
-          List("Alt", "↑") -> "Move the focused step up",
-          List("Alt", "↓") -> "Move the focused step down",
-          List("Alt", "→") -> "Make the focused step a substep of the step above",
-          List("Alt", "←") -> "Move the focused step out of its superstep"
+        L.div(
+          L.cls(Styles.columns),
+          L.div(
+            L.cls(Styles.column),
+            toSection(
+              "Steps",
+              note = None,
+              List("N") -> "Add a step",
+              List("E") -> "Edit the description",
+              List("Delete") -> "Delete the step",
+              List("Ctrl", "+", "C", "/", "X", "/", "V") -> "Copy, cut or paste (pastes as the last substep)",
+              List("Ctrl", "+", "Z") -> "Undo",
+              List("Ctrl", "+", "Shift", "+", "Z", "or", "Ctrl", "+", "Y") -> "Redo"
+            ),
+            toSection(
+              "Moving steps",
+              note = None,
+              List("Alt", "+", "↑", "/", "↓") -> "Move up or down",
+              List("Alt", "+", "→") -> "Make it a substep of the step above",
+              List("Alt", "+", "←") -> "Move it out of its superstep"
+            )
+          ),
+          L.div(
+            L.cls(Styles.column),
+            toSection(
+              "Moving between steps",
+              note = None,
+              List("Ctrl", "+", "↑", "/", "↓") -> "Previous or next step",
+              List("Ctrl", "+", "Shift", "+", "↑", "/", "↓") -> "Previous or next, skipping substeps",
+              List("Ctrl", "+", "→") -> "First substep",
+              List("Ctrl", "+", "←") -> "Superstep"
+            ),
+            toSection(
+              "Effects and requirements",
+              note = Some("When one is selected in the step details"),
+              List("Enter") -> "Change its amount",
+              List("Delete") -> "Delete it",
+              List("Esc") -> "Deselect it, so the keys act on the step again"
+            ),
+            toSection(
+              "Layout",
+              note = None,
+              List("D") -> "Show or hide the step details"
+            )
+          )
         ),
-        toSection(
-          "Step navigation",
-          List("Ctrl", "↓") -> "Focus the next step",
-          List("Ctrl", "↑") -> "Focus the previous step",
-          List("Ctrl", "Shift", "↓") -> "Focus the next step, ignoring substeps",
-          List("Ctrl", "Shift", "↑") -> "Focus the previous step, ignoring substeps",
-          List("Ctrl", "→") -> "Focus the first substep",
-          List("Ctrl", "←") -> "Focus the superstep"
-        ),
-        toSection(
-          "Layout",
-          List("D") -> "Show or hide the step details"
+        L.p(
+          L.cls(Styles.footer),
+          "Shortcuts act on the focused step, and are ignored while you're typing in a text box. " +
+            "On a Mac, use Cmd instead of Ctrl to copy, cut, paste, undo and redo."
         )
       )
 
@@ -52,23 +81,44 @@ object KeyboardShortcutsModal {
   @js.native @JSImport("/styles/planning/plan/keyboardShortcutsModal.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val modal: String = js.native
+    val titleBar: String = js.native
     val title: String = js.native
+    val close: String = js.native
 
-    val section: String = js.native
+    val columns: String = js.native
+    val column: String = js.native
+
     val header: String = js.native
+    val note: String = js.native
     val shortcuts: String = js.native
 
     val shortcut: String = js.native
     val key: String = js.native
     val combination: String = js.native
-    val combinator: String = js.native
+    val alternative: String = js.native
+    val separator: String = js.native
     val description: String = js.native
+
+    val footer: String = js.native
   }
 
-  private def toSection(header: String, shortcuts: (List[String], String)*): L.HtmlElement =
+  private val titleID = "keyboard-shortcuts-title"
+
+  /** Words between keys that aren't keys themselves */
+  private val separators = Set("+", "/")
+
+  /** Splits keys like `Ctrl + Y or Ctrl + Shift + Z` into the combinations that do the same thing */
+  private def toAlternatives(keys: List[String]): List[List[String]] =
+    keys.foldRight(List(List.empty[String])) {
+      case ("or", acc) => List.empty :: acc
+      case (token, head :: tail) => (token :: head) :: tail
+      case (token, Nil) => List(List(token))
+    }
+
+  private def toSection(header: String, note: Option[String], shortcuts: (List[String], String)*): L.HtmlElement =
     L.sectionTag(
-      L.cls(Styles.section),
-      L.h1(L.cls(Styles.header), header),
+      L.h3(L.cls(Styles.header), header),
+      note.map(text => L.p(L.cls(Styles.note), text)),
       L.ol(
         L.cls(Styles.shortcuts),
         shortcuts.map((keys, description) => L.li(toShortcut(keys, description)))
@@ -78,26 +128,35 @@ object KeyboardShortcutsModal {
   private def toShortcut(keys: List[String], description: String): L.Modifier[L.LI] =
     List(
       L.cls(Styles.shortcut),
-      toKeys(keys),
-      L.p(L.cls(Styles.description), description)
+      L.kbd(
+        L.cls(Styles.combination),
+        toAlternatives(keys).zipWithIndex.map((alternative, index) =>
+          List(
+            Option.when(index > 0)(L.span(L.cls(Styles.separator), "or")),
+            Some(L.span(
+              L.cls(Styles.alternative),
+              alternative.map(token =>
+                if (separators.contains(token)) L.span(L.cls(Styles.separator), token)
+                else L.kbd(L.cls(Styles.key), token)
+              )
+            ))
+          ).flatten
+        )
+      ),
+      L.span(L.cls(Styles.description), description)
     )
 
-  private def toKeys(keys: List[String]): L.Node =
-    keys match {
-      case head :: tail =>
-        val zero = L.kbd(L.cls(Styles.combination), toKey(head))
-        tail.foldLeft(zero)((acc, key) =>
-          acc.amend(combinator(), toKey(key))
-        )
-      case Nil =>
-        L.emptyNode
-    }
-
-  private def toKey(key: String): L.HtmlElement =
-    L.kbd(L.cls(Styles.key), key)
-
-  private def combinator(): L.Span =
-    L.span(L.cls(Styles.combinator), "+")
+  private def closeIcon(): L.SvgElement =
+    L.svg.svg(
+      L.svg.width("14"),
+      L.svg.height("14"),
+      L.svg.viewBox("0 0 16 16"),
+      L.svg.fill("none"),
+      L.svg.stroke("currentColor"),
+      L.svg.strokeWidth("2"),
+      L.svg.strokeLineCap("round"),
+      L.svg.path(L.svg.d("M3 3l10 10M13 3L3 13"))
+    )
 }
 
 final class KeyboardShortcutsModal(content: L.HtmlElement, modal: Modal) {
