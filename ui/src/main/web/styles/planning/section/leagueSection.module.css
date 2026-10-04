@@ -1,15 +1,19 @@
-.tabContent {
+.section {
   display: flex;
   justify-content: space-around;
+  gap: 1rem;
+  height: 100%;
 }
 
-.questPanel {
+.statsPanel {
   min-width: 25%;
   max-width: 27%;
   box-sizing: border-box;
+
+  color: white;
 }
 
-.diaryPanel {
+.tasksPanel {
   width: 70%;
   max-width: 44rem;
   box-sizing: border-box;

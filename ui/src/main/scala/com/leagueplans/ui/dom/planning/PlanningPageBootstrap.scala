@@ -40,6 +40,7 @@ object PlanningPageBootstrap {
     val settings = Var(initialPlan.settings)
 
     PlanningPage(
+      subscription.planID,
       initialPlan.name,
       settings.signal,
       forester,

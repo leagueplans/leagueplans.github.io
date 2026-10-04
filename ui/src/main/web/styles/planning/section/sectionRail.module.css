@@ -1,0 +1,83 @@
+.rail {
+  flex: none;
+  width: 62px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-block: 6px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  background-color: #1d1813;
+  border-right: 1px solid black;
+  font-family: var(--font-ui);
+}
+
+.separator {
+  width: 30px;
+  margin: 4px 0;
+
+  border: 0;
+  border-top: 1px solid #494034;
+}
+
+.button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 38px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: #b3a896;
+}
+
+.button:hover {
+  background-color: #494034;
+  color: #f1ebe0;
+}
+
+.button[aria-current="page"] {
+  background-color: #645c52;
+  border-color: #7d7263;
+  color: #ff981f;
+}
+
+/* Sections that aren't built yet */
+.planned {
+  cursor: default;
+}
+
+.planned .icon {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.planned:hover {
+  background: none;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.icon > img {
+  max-width: 22px;
+  max-height: 22px;
+  object-fit: contain;
+}
+
+.icon > svg {
+  width: 21px;
+  height: 21px;
+}

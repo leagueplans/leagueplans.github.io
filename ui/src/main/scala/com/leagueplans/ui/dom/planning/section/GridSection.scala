@@ -1,29 +1,22 @@
-package com.leagueplans.ui.dom.planning.player.view
+package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.player.grid.GridPanel
-import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.player.{Cache, Player}
-import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object GridTab {
-  def apply(
-    playerSignal: Signal[Player],
-    cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-  ): L.Div =
+object GridSection {
+  def apply(ctx: SectionContext): L.Div =
     L.div(
-      L.cls(Styles.tabContent),
+      L.cls(Styles.section),
       createExplainer(),
-      GridPanel(playerSignal, cache, effectObserverSignal).amend(L.cls(Styles.panel))
+      GridPanel(ctx.displayedPlayer, ctx.cache, ctx.effectObserver).amend(L.cls(Styles.panel))
     )
 
-  @js.native @JSImport("/styles/planning/player/view/gridTab.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/section/gridSection.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val tabContent: String = js.native
+    val section: String = js.native
     val explainer: String = js.native
     val explainerContent: String = js.native
     val panel: String = js.native

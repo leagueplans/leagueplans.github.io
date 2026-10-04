@@ -1,4 +1,4 @@
-package com.leagueplans.ui.dom.planning.editor
+package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.RenderMode
 import com.leagueplans.ui.dom.planning.forest.Forester
@@ -14,7 +14,8 @@ import com.raquo.laminar.api.{L, StringValueMapper, enrichSource, seqToModifier,
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object RenderModeSection {
+/** Chooses which of the focused step's player states the sections show */
+object RenderModeControl {
   def apply(
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
@@ -29,23 +30,29 @@ object RenderModeSection {
         if (inLoop)
           Some("After all reps")
         else if (hasSubsteps)
-          Some("After substeps")
+          Some("After its substeps")
         else
           None
       }.distinct
 
-    SectionV2("Render mode")(
-      L.cls(Styles.container),
-      RadioGroup(
-        groupName = "view-mode",
-        options = List(
-          RadioGroup.Opt(RenderMode.Before, "before"),
-          RadioGroup.Opt(RenderMode.AfterEffects, "after-effects"),
-          RadioGroup.Opt(RenderMode.AfterAllReps, "after-all-reps")
-        ),
-        externalSignal = renderMode.signal,
-        externalConsumer = renderMode.writer,
-        renderOption(_, _, _, _, afterAllRepsLabel, tooltip)
+    L.div(
+      L.cls(Styles.control),
+      L.role("group"),
+      L.aria.label("Show your character"),
+      L.span(L.cls(Styles.label), "Your character"),
+      L.div(
+        L.cls(Styles.options),
+        RadioGroup(
+          groupName = "view-mode",
+          options = List(
+            RadioGroup.Opt(RenderMode.Before, "before"),
+            RadioGroup.Opt(RenderMode.AfterEffects, "after-effects"),
+            RadioGroup.Opt(RenderMode.AfterAllReps, "after-all-reps")
+          ),
+          externalSignal = renderMode.signal,
+          externalConsumer = renderMode.writer,
+          renderOption(_, _, _, _, afterAllRepsLabel, tooltip)
+        )
       ),
       afterAllRepsLabel --> renderMode.updater[Option[String]]((mode, label) =>
         if (label.isEmpty && mode == RenderMode.AfterAllReps)
@@ -73,7 +80,7 @@ object RenderModeSection {
             L.text <-- afterAllRepsLabel.map(_.getOrElse("")),
             tooltip.register(
               L.span(L.cls(Styles.tooltip), modeTooltip(mode)),
-              FloatingConfig.basicTooltip(Placement.right)
+              FloatingConfig.basicTooltip(Placement.bottom)
             )
           )
         )
@@ -86,7 +93,7 @@ object RenderModeSection {
             modeLabel(mode),
             tooltip.register(
               L.span(L.cls(Styles.tooltip), modeTooltip(mode)),
-              FloatingConfig.basicTooltip(Placement.right)
+              FloatingConfig.basicTooltip(Placement.bottom)
             )
           )
         )
@@ -94,24 +101,26 @@ object RenderModeSection {
 
   private def modeLabel(mode: RenderMode): String =
     mode match {
-      case RenderMode.Before       => "Before"
-      case RenderMode.AfterEffects => "After effects"
+      case RenderMode.Before       => "Before this step"
+      case RenderMode.AfterEffects => "After this step"
       case RenderMode.AfterAllReps => "" // Unreachable
     }
 
   private def modeTooltip(mode: RenderMode): String =
     mode match {
       case RenderMode.Before =>
-        "Character state before this step's effects"
+        "Your character just before this step"
       case RenderMode.AfterEffects =>
-        "Character state after this step's effects, ignoring substeps and repetitions"
+        "Your character after this step's own effects, before its substeps and any repetitions"
       case RenderMode.AfterAllReps =>
-        "Character state after this step's final repetition, including all enclosing loops and substeps"
+        "Your character once this step, its substeps and all its repetitions are done, including any loops it's in"
     }
 
-  @js.native @JSImport("/styles/planning/editor/renderModeSection.module.css", JSImport.Default)
+  @js.native @JSImport("/styles/planning/section/renderModeControl.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val container: String = js.native
+    val control: String = js.native
+    val label: String = js.native
+    val options: String = js.native
     val radio: String = js.native
     val option: String = js.native
     val selected: String = js.native

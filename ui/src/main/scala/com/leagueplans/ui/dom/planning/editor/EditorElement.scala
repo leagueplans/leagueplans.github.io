@@ -1,7 +1,6 @@
 package com.leagueplans.ui.dom.planning.editor
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.DisplayedState
 import com.leagueplans.ui.dom.planning.editor.description.StepDescription
 import com.leagueplans.ui.dom.planning.editor.repetitions.Repetitions
 import com.leagueplans.ui.dom.planning.editor.time.TimeTracking
@@ -29,7 +28,6 @@ object EditorElement {
     stepSignal: Signal[Step],
     warningsSignal: Signal[List[String]],
     forester: Forester[Step.ID, Step],
-    displayedState: DisplayedState,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     modal: Modal
@@ -44,7 +42,6 @@ object EditorElement {
       L.div(
         L.cls(Styles.sections),
         Repetitions(stepSignal, forester, tooltip, modal).amend(L.cls(Styles.repetitions)),
-        RenderModeSection(stepSignal, forester, displayedState.renderMode, tooltip).amend(L.cls(Styles.viewToggle)),
         TimeTracking(stepSignal, forester, timeKeeper, tooltip, modal).amend(L.cls(Styles.timeTracking)),
         L.child <-- toEffects(effectRenderer, stepSignal, forester),
         L.child <-- toRequirements(requirementRenderer, itemFuse, stepSignal, forester, modal)
@@ -60,7 +57,6 @@ object EditorElement {
     val warningTooltip: String = js.native
     val sections: String = js.native
     val repetitions: String = js.native
-    val viewToggle: String = js.native
     val timeTracking: String = js.native
     val section: String = js.native
   }

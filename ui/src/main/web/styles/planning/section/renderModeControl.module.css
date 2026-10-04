@@ -1,0 +1,65 @@
+.control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  color: #b3a896;
+  font-size: 0.75rem;
+}
+
+.options {
+  display: inline-flex;
+  overflow: hidden;
+
+  border: 1px solid #1d1813;
+  border-radius: 6px;
+}
+
+.radio {
+  appearance: none;
+  position: fixed;
+}
+
+.segment {
+  display: block;
+  padding: 4px 10px;
+
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-wrap-mode: nowrap;
+
+  transition: background-color 175ms ease-out, color 175ms ease-out;
+}
+
+.segment + .radio + .segment,
+.segment + .segment {
+  border-left: 1px solid #1d1813;
+}
+
+.radio:focus-visible + .segment {
+  outline: 2px solid rgba(192, 240, 197, 0.8);
+  outline-offset: -2px;
+}
+
+.option {
+  composes: segment;
+  background-color: #3b3229;
+  color: #f1ebe0;
+}
+
+.option:hover {
+  background-color: #494034;
+}
+
+.selected {
+  composes: segment;
+  background-color: #645c52;
+  color: #f1ebe0;
+}
+
+.tooltip {
+  min-width: 17rem;
+  text-align: center;
+}

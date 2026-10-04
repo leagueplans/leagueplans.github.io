@@ -1,0 +1,11 @@
+.section {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
+
+.panel {
+  width: 100%;
+  max-width: 44rem;
+  box-sizing: border-box;
+}

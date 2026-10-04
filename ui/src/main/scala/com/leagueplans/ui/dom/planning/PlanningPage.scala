@@ -5,13 +5,14 @@ import com.leagueplans.ui.dom.planning.editor.EditorElement
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
-import com.leagueplans.ui.dom.planning.section.{SectionContext, Sections}
+import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.storage.client.PlanSubscription
+import com.leagueplans.ui.storage.model.PlanID
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
@@ -23,6 +24,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object PlanningPage {
   def apply(
+    planID: PlanID,
     name: String,
     settings: Signal[Plan.Settings],
     forester: Forester[Step.ID, Step],
@@ -57,6 +59,12 @@ object PlanningPage {
         toastPublisher
       )
 
+    val renderModeControl =
+      focusContext.focus.splitOption(
+        project = (_, stepSignal) => RenderModeControl(stepSignal, forester, displayedState.renderMode, tooltip),
+        ifEmpty = L.emptyNode
+      )
+
     val visualiser =
       Visualiser(
         Sections.all,
@@ -73,7 +81,11 @@ object PlanningPage {
           contextMenu,
           modal,
           toastPublisher
-        )
+        ),
+        SelectedSection.load(planID),
+        Observer(SelectedSection.save(planID, _)),
+        L.child <-- renderModeControl,
+        tooltip
       )
 
     val editorElement =
@@ -87,7 +99,6 @@ object PlanningPage {
               stepsWithErrors.getOrElse(step.id, List.empty)
             ),
             forester,
-            displayedState,
             timeKeeper,
             tooltip,
             modal
