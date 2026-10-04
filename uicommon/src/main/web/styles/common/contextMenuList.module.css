@@ -1,11 +1,16 @@
+/* Matches the planning page's navy panels and the tooltips */
 .menu {
-  border-radius: 0.6rem;
-  padding: 0.3rem 0;
+  min-width: 10rem;
+  padding: 4px;
 
+  border: 1px solid #34405c;
+  border-radius: 6px;
   display: grid;
   grid-template-columns: repeat(2, auto);
 
-  background-color: #f9f9f9;
+  background-color: #0b0f19;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-ui);
 }
 
 .section {
@@ -15,31 +20,42 @@
   grid-template-columns: subgrid;
 
   + .section {
-    border-top: 1px solid #c1bcbc;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #29324a;
   }
 }
 
 .button {
   grid-column: 1 / 3;
 
-  padding: 0.4rem 1rem;
+  padding: 6px 10px;
   border: none;
+  border-radius: 4px;
 
   display: grid;
   grid-template-columns: subgrid;
+  align-items: center;
 
   background-color: inherit;
-  color: #434343;
+  color: #d9d0c0;
   text-align: start;
 }
 
-.button:hover {
-  background-color: #d9d9d8;
+.button:hover:not(:disabled), .button:focus-visible {
+  background-color: #1b2438;
+  color: #f1ebe0;
+  outline: none;
+}
+
+.button:disabled {
+  color: #8a8173;
 }
 
 .icon {
   grid-column: 1;
   margin-right: 0.5rem;
+  color: #b3a896;
 }
 
 .label {
