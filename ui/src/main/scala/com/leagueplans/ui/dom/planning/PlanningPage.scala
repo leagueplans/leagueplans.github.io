@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.details.{DetailsColumn, RowSelection, StepDetails}
+import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.player.Visualiser
@@ -46,6 +47,7 @@ object PlanningPage {
     val layout = ColumnLayout.load()
     val descriptionFocusRequests = EventBus[Unit]()
     val rowSelection = RowSelection()
+    val dragSession = DragSession()
 
     val planElement =
       PlanElement(
@@ -62,6 +64,7 @@ object PlanningPage {
           js.timers.setTimeout(0)(descriptionFocusRequests.emit(())): Unit
         },
         rowSelection,
+        dragSession,
         timeKeeper,
         tooltip,
         contextMenu,
@@ -115,6 +118,7 @@ object PlanningPage {
             focusController,
             timeKeeper,
             rowSelection,
+            dragSession,
             expMultiplierAt = Signal.combine(settings, focusContext.playerBeforeCurrentFocus).map((settings, player) =>
               skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
             ),
@@ -154,6 +158,7 @@ object PlanningPage {
         }
       ),
       hasFocus --> (focused => if (!focused) layout.collapseDetails()),
+      dragSession.binder,
       HotkeyModifiers.detailsToggle(hasFocus, () => layout.toggleDetails()),
       L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
       visualiser.amend(L.cls(Styles.state)),

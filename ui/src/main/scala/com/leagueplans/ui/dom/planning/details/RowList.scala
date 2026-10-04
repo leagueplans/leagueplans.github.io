@@ -13,6 +13,7 @@ import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, enrichSource, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
+import org.scalajs.dom.DragEvent
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -27,6 +28,7 @@ object RowList {
     * @param editRequests asks the row at a position to start editing its amount
     * @param onReplace told about a row's new value after its amount is edited
     * @param onDelete told about the position of a row whose delete button was clicked
+    * @param onDragStarted told about a row, and its position, as it starts being dragged
     */
   def apply[T](
     kind: RowSelection.Kind,
@@ -41,6 +43,7 @@ object RowList {
     onReorder: Observer[List[T]],
     onReplace: Observer[(Int, T)],
     onDelete: Observer[Int],
+    onDragStarted: Observer[(DragEvent, T, Int)],
     emptyText: String,
     tooltip: Tooltip
   ): L.Div = {
@@ -60,7 +63,8 @@ object RowList {
             kind, keyedValue.map(_._1), index, dragIcon, content, amount, withAmount, errors, showMet,
             selection, editRequests, onReplace, onDelete, tooltip
           )
-        }
+        },
+        onDragStarted.contramap((event, keyedValue, index) => (event, keyedValue._1, index))
       ).amend(L.cls(Styles.rows)),
       L.child.maybe <-- items.map(_.isEmpty).distinct.map(isEmpty =>
         Option.when(isEmpty)(L.p(L.cls(Styles.empty), emptyText))

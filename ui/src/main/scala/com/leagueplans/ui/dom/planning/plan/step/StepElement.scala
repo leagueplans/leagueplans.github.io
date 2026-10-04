@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDragListeners, StepDraggingStatus}
+import com.leagueplans.ui.dom.planning.drag.DragSession
+import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -27,7 +27,6 @@ object StepElement {
     step: Signal[Step],
     positionOffset: Signal[Int],
     substepsSignal: Signal[List[L.HtmlElement]],
-    forester: Forester[Step.ID, Step],
     isFocused: Signal[Boolean],
     substepFocused: EventStream[Unit],
     focusController: FocusController,
@@ -39,7 +38,8 @@ object StepElement {
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
-    stepClipboard: StepClipboard
+    stepClipboard: StepClipboard,
+    dragSession: DragSession
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -83,13 +83,14 @@ object StepElement {
           case InvertibleAnimationController.Status.Closed => true
         } --> (collapsed => collapsedSteps.set(stepID, collapsed)),
         toHoverListeners(isHovering),
-        StepDragListeners(
+        PlanDropZone.stepMarker(stepID),
+        StepDragSource(
           stepID,
           hasSubsteps = substepsSignal.map(_.nonEmpty),
           draggingStatus.writer,
           header,
           closeSubsteps = animationController.close,
-          forester,
+          dragSession,
           tooltip
         ),
         StepContextMenu(
@@ -139,6 +140,7 @@ object StepElement {
       timeKeeper,
       tooltip
     ).amend(
+      PlanDropZone.headerMarker,
       L.cls <-- isDragging.splitBoolean(
         whenTrue = _ => Styles.headerWhileDragging,
         whenFalse = _ => Styles.headerWhileNotDragging

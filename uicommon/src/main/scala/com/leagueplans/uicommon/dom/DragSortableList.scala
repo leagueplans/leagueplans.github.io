@@ -22,11 +22,15 @@ import scala.scalajs.js.annotation.JSImport
   * jump around under the pointer. The new order is only reported once the item is dropped, and
   * not at all if the drag is cancelled. */
 object DragSortableList {
+  /** @param onDragStarted told about each item, and its position, as it starts being dragged, so
+    *                      that it can also be dropped somewhere outside the list
+    */
   def apply[T : HasID as hasID](
     id: String,
     orderSignal: Signal[List[T]],
     orderObserver: Observer[List[T]],
-    toElement: (hasID.ID, T, Signal[T], L.SvgElement) => L.Modifier[L.HtmlElement]
+    toElement: (hasID.ID, T, Signal[T], L.SvgElement) => L.Modifier[L.HtmlElement],
+    onDragStarted: Observer[(DragEvent, T, Int)] = Observer.empty
   ): ReactiveHtmlElement[OList] = {
     val eventFormat = s"application/listitem;id=$id"
     val dragTracker = Var[Option[Dragging]](None).distinct
@@ -51,7 +55,7 @@ object DragSortableList {
             L.cls(Styles.dropAfter) <-- Signal.combine(dragTracker.signal, indexSignal, isLast).map((dragging, index, last) =>
               last && dragging.flatMap(_.visibleSlot).contains(index + 1)
             ),
-            onDragStart(eventFormat, indexSignal, dragTracker.writer),
+            onDragStart(eventFormat, dataSignal, indexSignal, dragTracker.writer, onDragStarted),
             onDragOver(dragTracker, indexSignal),
             onDragEnd(dragTracker, orderSignal, orderObserver)
           )
@@ -104,23 +108,25 @@ object DragSortableList {
     (icon, pressed.signal)
   }
 
-  private def onDragStart(
+  private def onDragStart[T](
     eventFormat: String,
+    item: Signal[T],
     itemIndex: Signal[Int],
-    dragTracker: Observer[Option[Dragging]]
+    dragTracker: Observer[Option[Dragging]],
+    onDragStarted: Observer[(DragEvent, T, Int)]
   ): L.Modifier[L.HtmlElement] =
     L.inContext(ctx =>
       L.onDragStart.compose(
         // Can't use preventDefault here, since it stops the browser from
         // actually dragging the element
-        _.filter(_.target == ctx.ref).withCurrentValueOf(itemIndex)
-      ) -->
-        dragTracker.contramap[(DragEvent, Int)] { (event, index) =>
-          // We don't use this, but it informs other apps not to receive the drop
-          event.dataTransfer.setData(eventFormat, "placeholder")
-          event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
-          Some(Dragging(from = index, slot = None))
-        }
+        _.filter(_.target == ctx.ref).withCurrentValueOf(item, itemIndex)
+      ) --> { (event, data, index) =>
+        // We don't use this, but it informs other apps not to receive the drop
+        event.dataTransfer.setData(eventFormat, "placeholder")
+        event.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
+        dragTracker.onNext(Some(Dragging(from = index, slot = None)))
+        onDragStarted.onNext((event, data, index))
+      }
     )
 
   /** Picks the gap above or below the item, depending on which half the pointer is over.

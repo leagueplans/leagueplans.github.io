@@ -44,5 +44,24 @@ final class RequirementTest extends CodecSpec {
           Array[Byte](0b1100, 0b1101) ++ toolEnc
       )
     }
+
+    "addTo" - {
+      val agility50 = Requirement.SkillLevel(Skill.Agility, Level(50))
+      val axe = Requirement.Tool(Item.ID(1351), Depository.Kind.Inventory)
+
+      "appends a new requirement" in {
+        Requirement.addTo(List(axe), agility50) shouldBe List(axe, agility50)
+      }
+
+      "doesn't add a requirement twice" in {
+        Requirement.addTo(List(axe, agility50), axe) shouldBe List(axe, agility50)
+      }
+
+      "keeps the higher level when a skill is already required" in {
+        val agility30 = Requirement.SkillLevel(Skill.Agility, Level(30))
+        Requirement.addTo(List(agility30, axe), agility50) shouldBe List(agility50, axe)
+        Requirement.addTo(List(agility50, axe), agility30) shouldBe List(agility50, axe)
+      }
+    }
   }
 }

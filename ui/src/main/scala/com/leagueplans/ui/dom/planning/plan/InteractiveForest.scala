@@ -1,8 +1,9 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
-import com.leagueplans.ui.dom.planning.plan.step.drag.{StepDraggingStatus, StepDropLocationIndicator}
+import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -29,7 +30,8 @@ object InteractiveForest {
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
     stepMover: StepMover,
-    stepClipboard: StepClipboard
+    stepClipboard: StepClipboard,
+    dragSession: DragSession
   ): ReactiveHtmlElement[OList] = {
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
@@ -57,7 +59,6 @@ object InteractiveForest {
               case None => Signal.fromValue(0)
             },
             substepsSignal.map(_.map((substep, _) => substep)),
-            forester,
             focusContext.signalFor(stepID),
             substepFocused = newFocusAncestors.filter(_.contains(stepID)).mapToUnit,
             focusController,
@@ -69,14 +70,18 @@ object InteractiveForest {
             timeKeeper,
             tooltip,
             contextMenu,
-            stepClipboard
+            stepClipboard,
+            dragSession
           )
       )
 
     L.ol(
       L.cls(Styles.forest),
       L.children <-- toSteps(forester, dom),
+      PlanDropZone(forester, dragSession, draggingStatus.writer),
       L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
+      // Drags can end anywhere on the page, such as in the step details, where they started
+      dragSession.current.changes.filter(_.isEmpty).mapTo(StepDraggingStatus.NotDragging) --> draggingStatus,
       completedStepBinder,
       forester.updates --> (update => dom.eval(update)),
       refocusMovedSteps(stepMover, dom)

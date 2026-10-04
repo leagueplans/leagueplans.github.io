@@ -2,6 +2,8 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
+import com.leagueplans.ui.dom.planning.drag.DragSession
+import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
 import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
@@ -37,6 +39,7 @@ object StepDetails {
     focusController: FocusController,
     timeKeeper: TimeKeeper,
     selection: RowSelection,
+    dragSession: DragSession,
     expMultiplierAt: Signal[Skill => Double],
     playerBefore: Signal[Player],
     playerAfterAll: Signal[Player],
@@ -127,6 +130,9 @@ object StepDetails {
           onReorder = Observer(reordered => updateEffects(_ => reordered)),
           onReplace = Observer((i, effect) => updateEffects(ListEdits.replace(_, i, effect))),
           onDelete = Observer(i => run(Row(Kind.Effects, i), Command.Delete)),
+          onDragStarted = Observer((event, effect, i) =>
+            current.foreach(step => dragSession.start(Dragged.DraggedEffect(step.id, i, effect), event))
+          ),
           emptyText = "No effects",
           tooltip
         )
@@ -151,6 +157,9 @@ object StepDetails {
           onReorder = Observer(reordered => updateRequirements(_ => reordered)),
           onReplace = Observer((i, requirement) => updateRequirements(ListEdits.replace(_, i, requirement))),
           onDelete = Observer(i => run(Row(Kind.Requirements, i), Command.Delete)),
+          onDragStarted = Observer((event, requirement, i) =>
+            current.foreach(step => dragSession.start(Dragged.DraggedRequirement(step.id, i, requirement), event))
+          ),
           emptyText = "No requirements.",
           tooltip
         )
