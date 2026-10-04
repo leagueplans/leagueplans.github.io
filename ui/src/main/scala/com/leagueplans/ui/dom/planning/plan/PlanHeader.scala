@@ -21,7 +21,7 @@ object PlanHeader {
     focus: Signal[Option[Step.ID]],
     tooltip: Tooltip,
     modal: Modal,
-    newStepForm: NewStepForm,
+    newStepDraft: NewStepDraft,
     deleteStepForm: DeleteStepForm,
     undoController: UndoController
   ): L.Div =
@@ -36,7 +36,7 @@ object PlanHeader {
         undoController.redo()
       ),
       L.span(L.cls(Styles.separator)),
-      toAddStepButton(focus, newStepForm, tooltip),
+      toAddStepButton(focus, newStepDraft, tooltip),
       L.child <-- toDeleteStepButton(focus, deleteStepForm, tooltip)
     )
 
@@ -118,10 +118,10 @@ object PlanHeader {
   /** Shrinks to its icon when the plan is narrow */
   private def toAddStepButton(
     focus: Signal[Option[Step.ID]],
-    newStepForm: NewStepForm,
+    newStepDraft: NewStepDraft,
     tooltip: Tooltip
   ): L.Button =
-    Button(_.handledWith(_.sample(focus)) --> newStepForm.open).amend(
+    Button(_.handledWith(_.sample(focus)) --> newStepDraft.open).amend(
       L.cls(Styles.addStepButton),
       L.aria.label("Add step"),
       FontAwesome.icon(FreeSolid.faPlus).amend(L.svg.cls(Styles.textButtonIcon)),

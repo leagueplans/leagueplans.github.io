@@ -14,7 +14,7 @@ object HotkeyModifiers {
     focusController: FocusController,
     stepMover: StepMover,
     stepClipboard: StepClipboard,
-    newStepForm: NewStepForm,
+    newStepDraft: NewStepDraft,
     deleteStepForm: DeleteStepForm,
     editDescription: Step.ID => Unit,
     undoController: UndoController,
@@ -24,7 +24,7 @@ object HotkeyModifiers {
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
       toClipboardListener(focus, stepClipboard),
-      toStepModifierListeners(focus, newStepForm, deleteStepForm, editDescription, rowSelection),
+      toStepModifierListeners(focus, newStepDraft, deleteStepForm, editDescription, rowSelection),
       toRowEditListener(rowSelection),
       toHistoryListener(undoController)
     )
@@ -103,7 +103,7 @@ object HotkeyModifiers {
 
   private def toStepModifierListeners(
     focusSignal: Signal[Option[Step.ID]],
-    newStepForm: NewStepForm,
+    newStepDraft: NewStepDraft,
     deleteStepForm: DeleteStepForm,
     editDescription: Step.ID => Unit,
     rowSelection: RowSelection
@@ -112,7 +112,7 @@ object HotkeyModifiers {
       .filterNot(shouldIgnore)
       .map(_.key)
       .compose(_.withCurrentValueOf(focusSignal)) --> {
-        case ("n" | "N", focus) => newStepForm.open(focus)
+        case ("n" | "N", focus) => newStepDraft.open(focus)
         case ("e" | "E", Some(step)) => editDescription(step)
         case (KeyValue.Delete | KeyValue.Backspace, _) if rowSelection.send(RowSelection.Command.Delete) => ()
         case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => deleteStepForm.open(step)

@@ -1,0 +1,52 @@
+/* Sits in the plan where the new step will go. The left padding lines the box up with the
+ * descriptions of the steps around it. */
+.row {
+  padding: 5px 6px 6px 22px;
+
+  border-top: 1px solid #222b40;
+  background-color: #1d2a4a;
+  box-shadow: inset 0 0 0 1px var(--navy-accent);
+}
+
+/* A text area, so that Shift+Enter can start a new line. NewStepDraft.scala grows it to fit. */
+.field {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 8px;
+  overflow: hidden;
+  resize: none;
+  line-height: 1.35;
+
+  border: 0;
+  border-radius: 4px;
+  outline: none;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.field::placeholder {
+  color: var(--text-dim);
+}
+
+.hint {
+  margin-top: 5px;
+
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 18px;
+}
+
+/* Like the keys in the keyboard shortcuts dialog */
+.key {
+  padding: 0 4px;
+
+  border: 1px solid var(--navy-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font: 500 0.65rem/14px ui-monospace, Consolas, monospace;
+}

@@ -33,7 +33,8 @@ object InteractiveForest {
     stepMover: StepMover,
     stepClipboard: StepClipboard,
     dragSession: DragSession,
-    editInDetails: EditRequest => Unit
+    editInDetails: EditRequest => Unit,
+    newStepDraft: NewStepDraft
   ): ReactiveHtmlElement[OList] = {
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
@@ -74,13 +75,17 @@ object InteractiveForest {
             contextMenu,
             stepClipboard,
             dragSession,
-            editInDetails
+            editInDetails,
+            newStepDraft
           )
       )
 
     L.ol(
       L.cls(Styles.forest),
-      L.children <-- toSteps(forester, dom),
+      L.children <-- Signal.combine(
+        toSteps(forester, dom),
+        newStepDraft.rowIn(None).map(_.map((index, row) => (index, L.li(L.cls(Styles.rootStep), row))))
+      ).map(NewStepDraft.insertRow),
       PlanDropZone(forester, dragSession, draggingStatus.writer),
       L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
       // Drags can end anywhere on the page, such as in the step details, where they started

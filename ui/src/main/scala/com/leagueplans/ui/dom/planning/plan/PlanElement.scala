@@ -32,7 +32,7 @@ object PlanElement {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val newStepForm = NewStepForm(forester, modal)
+    val newStepDraft = NewStepDraft(forester)
     val deleteStepForm = DeleteStepForm(forester, focusController, tooltip, modal)
     val stepClipboard = StepClipboard(forester, toastPublisher)
     val stepMover = StepMover(forester)
@@ -41,7 +41,7 @@ object PlanElement {
     L.div(
       L.cls(Styles.plan),
       undoController.modifier,
-      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepForm, deleteStepForm, undoController).amend(
+      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepDraft, deleteStepForm, undoController).amend(
         L.cls(Styles.header)
       ),
       InteractiveForest(
@@ -57,14 +57,15 @@ object PlanElement {
         stepMover,
         stepClipboard,
         dragSession,
-        editInDetails
+        editInDetails,
+        newStepDraft
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(
         focusContext.focusID,
         focusController,
         stepMover,
         stepClipboard,
-        newStepForm,
+        newStepDraft,
         deleteStepForm,
         editDescription = _ => editInDetails(EditRequest.Description),
         undoController,

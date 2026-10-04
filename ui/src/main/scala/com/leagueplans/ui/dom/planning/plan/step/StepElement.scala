@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.plan.step
 import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
-import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, StepClipboard}
+import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, NewStepDraft, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
@@ -41,7 +41,8 @@ object StepElement {
     contextMenu: ContextMenu,
     stepClipboard: StepClipboard,
     dragSession: DragSession,
-    editInDetails: EditRequest => Unit
+    editInDetails: EditRequest => Unit,
+    newStepDraft: NewStepDraft
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
     val isHovering = Var(false)
@@ -79,13 +80,15 @@ object StepElement {
         L.draggable <-- isDraggable,
         header,
         L.div(L.cls(Styles.substepsSidebar)),
-        toSubsteps(substepsSignal, isDraggingSignal, animationController),
+        toSubsteps(substepsSignal, newStepDraft.rowIn(Some(stepID)), isDraggingSignal, animationController),
         tooltip.register(
           L.span(L.cls(Styles.tooltip), "Click to focus or unfocus"),
           FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
         ),
         toFocusListeners(stepID, isFocused, focusController),
         substepFocused --> (_ => animationController.open()),
+        // A new step being typed in among the substeps must be visible
+        newStepDraft.position.changes.filter(_.exists(_.parent.contains(stepID))) --> (_ => animationController.open()),
         animationController.statusSignal.changes.collect {
           case InvertibleAnimationController.Status.Open => false
           case InvertibleAnimationController.Status.Closed => true
@@ -167,14 +170,15 @@ object StepElement {
 
   private def toSubsteps(
     substepsSignal: Signal[List[L.HtmlElement]],
+    newStepRow: Signal[Option[(Int, L.Div)]],
     isDragging: Signal[Boolean],
     animationController: InvertibleAnimationController
   ): L.Div = {
+    val substepItems = substepsSignal.split(identity)((child, _, _) => L.li(L.cls(Styles.substep), child))
     val list = L.ol(
       L.cls(Styles.substepList),
-      L.children <-- substepsSignal.split(identity)((child, _, _) =>
-        L.li(L.cls(Styles.substep), child)
-      )
+      L.children <-- Signal.combine(substepItems, newStepRow.map(_.map((index, row) => (index, L.li(row)))))
+        .map(NewStepDraft.insertRow)
     )
 
     HeightMask(list, animationController).amend(
