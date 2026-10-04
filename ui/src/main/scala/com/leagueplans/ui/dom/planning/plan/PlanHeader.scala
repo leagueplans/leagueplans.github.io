@@ -22,7 +22,7 @@ object PlanHeader {
     tooltip: Tooltip,
     modal: Modal,
     newStepDraft: NewStepDraft,
-    deleteStepForm: DeleteStepForm,
+    stepDeleter: StepDeleter,
     undoController: UndoController
   ): L.Div =
     L.div(
@@ -37,7 +37,7 @@ object PlanHeader {
       ),
       L.span(L.cls(Styles.separator)),
       toAddStepButton(focus, newStepDraft, tooltip),
-      L.child <-- toDeleteStepButton(focus, deleteStepForm, tooltip)
+      L.child <-- toDeleteStepButton(focus, stepDeleter, tooltip)
     )
 
   @js.native @JSImport("/styles/planning/plan/planHeader.module.css", JSImport.Default)
@@ -134,7 +134,7 @@ object PlanHeader {
 
   private def toDeleteStepButton(
     focus: Signal[Option[Step.ID]],
-    deleteStepForm: DeleteStepForm,
+    stepDeleter: StepDeleter,
     tooltip: Tooltip
   ): Signal[L.Button] = {
     // Named in full, even when the plan is narrow, so it can't be mistaken for deleting the plan
@@ -145,7 +145,7 @@ object PlanHeader {
 
     focus.splitOption(
       project = (_, step) =>
-        Button(_.handledWith(_.sample(step)) --> deleteStepForm.open).amend(
+        Button(_.handledWith(_.sample(step)) --> stepDeleter.delete).amend(
           L.cls(Styles.deleteStepButton),
           description
         ),

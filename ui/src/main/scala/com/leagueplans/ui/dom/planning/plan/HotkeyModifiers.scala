@@ -15,7 +15,7 @@ object HotkeyModifiers {
     stepMover: StepMover,
     stepClipboard: StepClipboard,
     newStepDraft: NewStepDraft,
-    deleteStepForm: DeleteStepForm,
+    stepDeleter: StepDeleter,
     editDescription: Step.ID => Unit,
     undoController: UndoController,
     rowSelection: RowSelection
@@ -24,7 +24,7 @@ object HotkeyModifiers {
       toFocusChangeListener(focusController),
       toStepMovementListener(focus, stepMover),
       toClipboardListener(focus, stepClipboard),
-      toStepModifierListeners(focus, newStepDraft, deleteStepForm, editDescription, rowSelection),
+      toStepModifierListeners(focus, newStepDraft, stepDeleter, editDescription, rowSelection),
       toRowEditListener(rowSelection),
       toHistoryListener(undoController)
     )
@@ -104,7 +104,7 @@ object HotkeyModifiers {
   private def toStepModifierListeners(
     focusSignal: Signal[Option[Step.ID]],
     newStepDraft: NewStepDraft,
-    deleteStepForm: DeleteStepForm,
+    stepDeleter: StepDeleter,
     editDescription: Step.ID => Unit,
     rowSelection: RowSelection
   ): Binder.Base =
@@ -115,7 +115,7 @@ object HotkeyModifiers {
         case ("n" | "N", focus) => newStepDraft.open(focus)
         case ("e" | "E", Some(step)) => editDescription(step)
         case (KeyValue.Delete | KeyValue.Backspace, _) if rowSelection.send(RowSelection.Command.Delete) => ()
-        case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => deleteStepForm.open(step)
+        case (KeyValue.Delete | KeyValue.Backspace, Some(step)) => stepDeleter.delete(step)
         case _ => /* Do nothing */
       }
 

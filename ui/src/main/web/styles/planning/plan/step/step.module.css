@@ -12,8 +12,6 @@
   border-width: 1px 0 0 0;
   border-top-color: #222b40;
   background-color: var(--navy-panel);
-  /* For the delete form's preview of a step, which isn't inside the plan */
-  font-family: var(--font-ui);
 
   content-visibility: auto;
 }
