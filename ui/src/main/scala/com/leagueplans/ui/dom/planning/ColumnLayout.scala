@@ -1,10 +1,8 @@
 package com.leagueplans.ui.dom.planning
 
+import com.leagueplans.ui.storage.local.LocalStorage
 import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
-import org.scalajs.dom.window.localStorage
-
-import scala.util.control.NonFatal
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
@@ -23,7 +21,7 @@ object ColumnLayout {
   /** Loads the widths last used in this browser. They apply to every plan. */
   def load(): ColumnLayout = {
     val stored =
-      attempt(Option(localStorage.getItem(key))).flatten.flatMap(_.split(',') match {
+      LocalStorage.get(key).flatMap(_.split(',') match {
         case Array(plan, details) =>
           for {
             p <- plan.toIntOption
@@ -36,11 +34,6 @@ object ColumnLayout {
 
   private def clamp(width: Int, range: Range): Int =
     width.max(range.min).min(range.max)
-
-  // Browser storage can be unavailable, for example in private windows or when site data is
-  // blocked. Remembering the layout is only a convenience, so failures are ignored.
-  private def attempt[T](f: => T): Option[T] =
-    try Some(f) catch { case NonFatal(_) => None }
 }
 
 /** The widths of the plan and step details columns, and whether the step details are collapsed.
@@ -95,5 +88,5 @@ final class ColumnLayout private (initial: (plan: Int, details: Int)) {
     if (!current.collapsed) update(collapsed = true)
 
   def save(): Unit =
-    attempt(localStorage.setItem(key, s"${current.plan},${current.details}")): Unit
+    LocalStorage.set(key, s"${current.plan},${current.details}")
 }

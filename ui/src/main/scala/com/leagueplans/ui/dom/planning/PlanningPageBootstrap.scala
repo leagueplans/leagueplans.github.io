@@ -8,6 +8,7 @@ import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
+import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.ui.storage.model.StepUpdates
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.leagueplans.uicommon.facades.fusejs.FuseOptions
@@ -38,16 +39,17 @@ object PlanningPageBootstrap {
     val forester = Forester(initialPlan.steps, Observer(updates => subscription.save(StepUpdates(updates))))
     val (focusedStep, focusController) = FocusController(forester)
     val settings = Var(initialPlan.settings)
+    val planStorage = PlanLocalStorage(subscription.planID)
 
     PlanningPage(
-      subscription.planID,
+      planStorage,
       initialPlan.name,
       settings.signal,
       forester,
       FocusContext(focusedStep, forester.signal, projectionClient.projection),
       timeKeeper,
       focusController,
-      CollapsedSteps(subscription.planID, initialPlan.steps.nodes.keySet),
+      CollapsedSteps(planStorage, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,
       subscription.status,
       cache,

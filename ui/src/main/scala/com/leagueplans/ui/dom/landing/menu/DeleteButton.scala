@@ -1,8 +1,7 @@
 package com.leagueplans.ui.dom.landing.menu
 
-import com.leagueplans.ui.dom.planning.plan.CollapsedSteps
-import com.leagueplans.ui.dom.planning.section.SelectedSection
 import com.leagueplans.ui.storage.client.StorageClient
+import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.ui.storage.model.PlanID
 import com.leagueplans.ui.storage.model.errors.DeletionError
 import com.leagueplans.uicommon.dom.*
@@ -59,9 +58,6 @@ object DeleteButton {
         "Couldn't delete plan",
         Some(error.message)
       ),
-      onSuccess = _ => {
-        CollapsedSteps.forget(id)
-        SelectedSection.forget(id)
-      }
+      onSuccess = _ => PlanLocalStorage.forget(id)
     )
 }

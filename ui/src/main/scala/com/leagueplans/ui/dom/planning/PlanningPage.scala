@@ -13,7 +13,7 @@ import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.ui.storage.client.PlanSubscription
-import com.leagueplans.ui.storage.model.PlanID
+import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
@@ -26,7 +26,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object PlanningPage {
   def apply(
-    planID: PlanID,
+    planStorage: PlanLocalStorage,
     name: String,
     settings: Signal[Plan.Settings],
     forester: Forester[Step.ID, Step],
@@ -96,8 +96,8 @@ object PlanningPage {
           modal,
           toastPublisher
         ),
-        SelectedSection.load(planID),
-        Observer(SelectedSection.save(planID, _)),
+        SelectedSection.load(planStorage),
+        Observer(SelectedSection.save(planStorage, _)),
         L.child <-- renderModeControl,
         tooltip
       )
