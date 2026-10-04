@@ -103,8 +103,12 @@ object StepHeader {
       L.cls(Styles.dragIcon),
       FontAwesome.icon(FreeSolid.faGripVertical),
       L.onMountAnimate(bounceIn.play),
-      L.onMouseEnter.mapToStrict(true) --> draggableObserver,
-      L.onMouseLeave.mapToStrict(false) --> draggableObserver,
+      // Browsers only start a drag once the pointer has moved a few pixels, by which time it can
+      // have left the handle, so the step stays draggable until the button is released
+      L.onMouseDown.mapToStrict(true) --> draggableObserver,
+      // A drag that starts ends with dragend instead of mouseup
+      L.documentEvents(_.onMouseUp).mapToStrict(false) --> draggableObserver,
+      L.documentEvents(_.onDragEnd).mapToStrict(false) --> draggableObserver,
       tooltip.register(
         L.span(L.cls(Styles.tooltip), "Drag to move this step"),
         FloatingConfig.basicTooltip(placement = Placement.left)
