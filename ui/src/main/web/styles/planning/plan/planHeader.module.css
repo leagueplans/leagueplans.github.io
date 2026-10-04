@@ -1,142 +1,146 @@
+/* Styled like the step details' bar */
 .header {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 6px 0 4px;
 
-  color: white;
-  font-size: 1.05rem;
+  background-color: #1b2438;
+  color: #d9d0c0;
+
+  /* The buttons shrink when the plan is too narrow for them */
+  container-type: inline-size;
 }
 
-.focus {}
+.iconButton {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
 
-.focus:enabled:focus-visible {
-  outline-style: dashed;
-  outline-color: white;
-  outline-width: 0.1rem;
-  outline-offset: -0.1rem;
-}
-
-.showShortcutsIcon {
-  color: white;
-  font-size: 1rem;
-}
-
-.showShortcutsButton {
-  composes: focus;
-
-  border: none;
+  border: 0;
+  border-radius: 4px;
   background: none;
+  color: #b3a896;
 }
 
-.showShortcutsButton:hover, .showShortcutsButton:focus-visible {
-  background-color: rgba(255, 255, 255, 0.4);
+.iconButton:enabled:hover, .iconButton:enabled:focus-visible {
+  background-color: #29324a;
+  color: #f1ebe0;
 }
 
-.showShortcutsButton:active {
-  background-color: rgba(255, 255, 255, 0.2);
+.iconButton:disabled {
+  opacity: 0.4;
 }
 
-.planIcon {
-  margin-left: auto;
-
-  height: 1.5rem;
-  padding: 0.25rem;
-  align-self: center;
+.icon {
+  display: block;
+  width: 15px;
+  height: 15px;
 }
 
 .name {
-  margin-right: auto;
+  flex: 1;
   min-width: 0;
+  padding: 0 4px;
 
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 
-  padding: 0.25rem;
-  text-shadow: 1px 1px black;
-  text-align: center;
+  color: #f1ebe0;
+  font-size: 0.875rem;
+  /* The heaviest weight the page loads. Heavier weights are faked by the browser, and blur. */
+  font-weight: 500;
 }
 
-.historyIcon {
-  display: block;
-  width: 1.25rem;
-  height: 1.25rem;
-  color: white;
+.separator {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background-color: #29324a;
 }
 
-.historyButton {
-  composes: focus;
+.textButton {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px 0 7px;
 
-  border: none;
-  background: none;
+  border: 1px solid #34405c;
+  border-radius: 4px;
+  background-color: #151c2c;
+  color: #f1ebe0;
+  font-family: inherit;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
-.historyButton:enabled:hover, .historyButton:enabled:focus-visible {
-  background-color: rgba(255, 255, 255, 0.4);
+.textButton:enabled:hover, .textButton:enabled:focus-visible {
+  border-color: #4a5a80;
+  background-color: #22304d;
 }
 
-.historyButton:enabled:active {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.historyButton:disabled {
+.textButton:disabled {
   opacity: 0.4;
 }
 
-.addStepButton {
-  composes: focus;
-
-  align-self: stretch;
-  white-space: nowrap;
-  border-style: none;
-  background-color: #2f4679;
-  color: white;
-  font-size: 0.8rem;
+.textButtonIcon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  color: #b3a896;
 }
 
-.addStepButton:hover, .addStepButton:focus-visible {
-  background-color: #51ad8a;
+.textButton:enabled:hover .textButtonIcon, .textButton:enabled:focus-visible .textButtonIcon {
+  color: inherit;
 }
 
-.addStepButton:active {
-  background-color: #3d8d6f;
-}
-
+/* Red only once it's about to be used, so it doesn't draw the eye the rest of the time */
 .deleteStepButton {
-  composes: focus;
-
-  align-self: stretch;
-  white-space: nowrap;
-  border-style: none;
-  color: white;
-  font-size: 0.8rem;
-}
-
-.deleteStepButton:enabled {
-  background-color: #7d1717;
-}
-
-.deleteStepButton:disabled {
-  background-color: #6f6f6f;
+  composes: textButton;
 }
 
 .deleteStepButton:enabled:hover, .deleteStepButton:enabled:focus-visible {
-  background-color: #cd0404;
-}
-
-.deleteStepButton:enabled:active {
-  background-color: #a90404;
-}
-
-.buttonText {
-  text-shadow:
-    -1px 0 black,
-    0 1px black,
-    1px 0 black,
-    0 -1px black;
+  border-color: #7a3431;
+  background-color: #2a1618;
+  color: #ec6a62;
 }
 
 .disabledDeleteStepButtonExplainer {
   width: max-content;
   text-align: center;
+}
+
+.addStepButton {
+  composes: textButton;
+}
+
+.addStepLabel {}
+
+.deleteStepIcon {}
+
+.tooltip {
+  width: max-content;
+  text-align: center;
+}
+
+/* Too narrow for every button's words, and some of the plan's name. "Delete step" keeps its words,
+ * so that it can't be mistaken for deleting the plan. */
+@container (max-width: 360px) {
+  .separator, .addStepLabel, .deleteStepIcon {
+    display: none;
+  }
+
+  .addStepButton {
+    width: 26px;
+    padding: 0;
+    justify-content: center;
+  }
 }
