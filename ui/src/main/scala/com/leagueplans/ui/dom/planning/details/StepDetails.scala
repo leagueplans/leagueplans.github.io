@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.*
@@ -38,6 +38,8 @@ object StepDetails {
     timeKeeper: TimeKeeper,
     selection: RowSelection,
     expMultiplierAt: Signal[Skill => Double],
+    playerBefore: Signal[Player],
+    playerAfterAll: Signal[Player],
     descriptionFocusRequests: EventStream[Unit],
     contextMenu: ContextMenu,
     tooltip: Tooltip,
@@ -152,7 +154,8 @@ object StepDetails {
           emptyText = "No requirements.",
           tooltip
         )
-      )
+      ),
+      SubstepSummaryElement(stepSignal, forester.signal, playerBefore, playerAfterAll, cache)
     )
   }
 

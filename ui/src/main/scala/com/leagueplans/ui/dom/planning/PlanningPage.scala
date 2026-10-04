@@ -117,6 +117,8 @@ object PlanningPage {
             expMultiplierAt = Signal.combine(settings, focusContext.playerBeforeCurrentFocus).map((settings, player) =>
               skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
             ),
+            focusContext.playerBeforeCurrentFocus,
+            focusContext.playerAfterAllRepsOfCurrentFocus,
             descriptionFocusRequests.events,
             contextMenu,
             tooltip,

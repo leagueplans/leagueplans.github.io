@@ -1,0 +1,74 @@
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+}
+
+.title {
+  margin: 0 0 3px;
+
+  color: #b3a896;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.none {
+  color: #8a8173;
+  font-style: italic;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 18px;
+}
+
+/* Item icons come in a box sized for the inventory, which would push them off the skill icons' line */
+.icon > div {
+  width: 20px;
+  height: 18px;
+}
+
+.icon img, img.icon {
+  max-width: 20px;
+  max-height: 18px;
+  object-fit: contain;
+}
+
+.number {
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.gain {
+  color: #6cc478;
+}
+
+.loss {
+  color: #ec6a62;
+}
+
+.pill {
+  padding: 0 6px;
+
+  border: 1px solid #2f5a36;
+  border-radius: 999px;
+  background-color: #1f3a24;
+  color: #bfe8c5;
+  font-size: 0.7rem;
+}
+
+.where {
+  color: #8a8173;
+}
