@@ -9,16 +9,18 @@
   gap: 0.5rem;
 }
 
+/* The worn and inventory panels share the column's width */
 .section > .worn {
   grid-column: 1;
   grid-row: 1;
-  justify-self: center;
+  width: auto;
 }
 
 .section > .inventory {
   grid-column: 1;
   grid-row: 2;
   align-self: start;
+  width: auto;
 }
 
 /* The bank fills the rest of the section, whatever its contents */

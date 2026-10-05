@@ -1,78 +1,55 @@
-.pane {
-  position: relative;
+.icon {
+  height: 1.2rem;
+  padding-right: 0.3rem;
 }
 
-.background {
-  vertical-align: bottom;
+/* The slots' in-game places, with the game's spacing */
+.layout {
+  position: relative;
+  align-self: center;
+  width: 148px;
+  height: 194px;
+  margin: 0.15rem 0 0.3rem;
 }
 
 .slot {
   position: absolute;
 }
 
-.headSlot {
-  composes: slot;
-  top: 11px;
-  left: 84px;
+.headSlot   { composes: slot; top: 0;     left: 56px; }
+.capeSlot   { composes: slot; top: 39px;  left: 15px; }
+.neckSlot   { composes: slot; top: 39px;  left: 56px; }
+.ammoSlot   { composes: slot; top: 39px;  left: 97px; }
+.weaponSlot { composes: slot; top: 78px;  left: 0; }
+.bodySlot   { composes: slot; top: 78px;  left: 56px; }
+.shieldSlot { composes: slot; top: 78px;  left: 112px; }
+.legsSlot   { composes: slot; top: 118px; left: 56px; }
+.handsSlot  { composes: slot; top: 158px; left: 0; }
+.feetSlot   { composes: slot; top: 158px; left: 56px; }
+.ringSlot   { composes: slot; top: 158px; left: 112px; }
+
+/* The bars joining the slots, shaded like the game's: dark on the far edge, lit on the near one */
+.bar {
+  position: absolute;
 }
 
-.capeSlot {
-  composes: slot;
-  top: 50px;
-  left: 43px;
+.vertical {
+  composes: bar;
+  width: 6px;
+  background: linear-gradient(to right, #0d0d0b, #2d2b28 25%, #2d2b28 75%, #4d4d49);
 }
 
-.neckSlot {
-  composes: slot;
-  top: 50px;
-  left: 84px;
+.horizontal {
+  composes: bar;
+  height: 6px;
+  background: linear-gradient(to bottom, #555551, #36332c 25%, #25241f 75%, #0d0d0b);
 }
 
-.ammoSlot {
-  composes: slot;
-  top: 50px;
-  left: 125px;
-}
-
-.weaponSlot {
-  composes: slot;
-  top: 89px;
-  left: 28px;
-}
-
-.shieldSlot {
-  composes: slot;
-  top: 89px;
-  left: 140px;
-}
-
-.bodySlot {
-  composes: slot;
-  top: 89px;
-  left: 84px;
-}
-
-.legsSlot {
-  composes: slot;
-  top: 129px;
-  left: 84px;
-}
-
-.handsSlot {
-  composes: slot;
-  top: 169px;
-  left: 28px;
-}
-
-.feetSlot {
-  composes: slot;
-  top: 169px;
-  left: 84px;
-}
-
-.ringSlot {
-  composes: slot;
-  top: 169px;
-  left: 140px;
-}
-
+/* From the head down to the feet */
+.spine     { composes: vertical;   left: 71px;  top: 18px; height: 158px; }
+/* From the weapon down to the gloves, and the shield down to the ring */
+.weaponBar { composes: vertical;   left: 15px;  top: 96px; height: 80px; }
+.shieldBar { composes: vertical;   left: 127px; top: 96px; height: 80px; }
+/* From the cape across to the ammo, and the weapon across to the shield */
+.neckBar   { composes: horizontal; top: 54px;   left: 33px; width: 82px; }
+.bodyBar   { composes: horizontal; top: 92px;   left: 18px; width: 112px; }

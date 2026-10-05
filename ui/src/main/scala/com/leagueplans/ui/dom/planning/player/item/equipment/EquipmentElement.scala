@@ -7,11 +7,14 @@ import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.L
+import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
+/** Worn items, in a panel styled like the inventory's. The slots keep their in-game places, joined
+  * by the game's bars.
+  */
 object EquipmentElement {
   def apply(
     playerSignal: Signal[Player],
@@ -21,36 +24,59 @@ object EquipmentElement {
     tooltip: Tooltip
   ): L.Div =
     L.div(
-      L.cls(Styles.pane),
+      L.cls(DepositoryStyles.depository, PanelStyles.panel),
       // Dropping anywhere on the panel wears the item in its own slot
       itemDrag.target(ItemTransfer.Target.Worn),
-      L.img(
-        L.cls(Styles.background),
-        L.src(background)
-      ),
+      header,
       L.inContext(panel =>
-        L.children <-- playerSignal.map(player =>
-          EquipmentSlot.values.toList.map(slot =>
-            EquipmentSlotElement(
-              slot,
-              cache.itemise(player.get(slot)),
-              itemCards,
-              itemDrag,
-              panel,
-              tooltip
-            ).amend(L.cls(toStyle(slot)))
+        L.div(
+          L.cls(Styles.layout),
+          // The slots cover the bars, so the bars only show between slots
+          L.div(L.cls(Styles.spine)),
+          L.div(L.cls(Styles.weaponBar)),
+          L.div(L.cls(Styles.shieldBar)),
+          L.div(L.cls(Styles.neckBar)),
+          L.div(L.cls(Styles.bodyBar)),
+          L.children <-- playerSignal.map(player =>
+            EquipmentSlot.values.toList.map(slot =>
+              EquipmentSlotElement(
+                slot,
+                cache.itemise(player.get(slot)),
+                itemCards,
+                itemDrag,
+                panel,
+                tooltip
+              ).amend(L.cls(toStyle(slot)))
+            )
           )
         )
       )
     )
 
-  @js.native @JSImport("/images/equipment/pane.png", JSImport.Default)
-  private val background: String = js.native
+  private def header: L.Element =
+    L.headerTag(
+      L.cls(DepositoryStyles.header, PanelStyles.header),
+      L.img(
+        L.cls(Styles.icon, DepositoryStyles.icon),
+        L.src(icon),
+        L.alt("Equipment icon")
+      ),
+      "Equipment"
+    )
+
+  @js.native @JSImport("/images/equipment-icon.png", JSImport.Default)
+  private val icon: String = js.native
 
   @js.native @JSImport("/styles/planning/player/item/equipment/equipmentElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val pane: String = js.native
-    val background: String = js.native
+    val icon: String = js.native
+    val layout: String = js.native
+
+    val spine: String = js.native
+    val weaponBar: String = js.native
+    val shieldBar: String = js.native
+    val neckBar: String = js.native
+    val bodyBar: String = js.native
 
     val headSlot: String = js.native
     val capeSlot: String = js.native
@@ -63,6 +89,19 @@ object EquipmentElement {
     val handsSlot: String = js.native
     val feetSlot: String = js.native
     val ringSlot: String = js.native
+  }
+
+  @js.native @JSImport("/styles/planning/shared/player/item/depositoryElement.module.css", JSImport.Default)
+  private object DepositoryStyles extends js.Object {
+    val depository: String = js.native
+    val header: String = js.native
+    val icon: String = js.native
+  }
+
+  @js.native @JSImport("/styles/planning/shared/player/panel.module.css", JSImport.Default)
+  private object PanelStyles extends js.Object {
+    val panel: String = js.native
+    val header: String = js.native
   }
 
   private def toStyle(slot: EquipmentSlot): String =
