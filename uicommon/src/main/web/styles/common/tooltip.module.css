@@ -4,6 +4,10 @@
 
 /* Matches the planning page's navy panels */
 .tooltip {
+  /* Absolutely positioned elements shrink to fit the space beside their anchor, so tooltips
+   * near the page's edge would otherwise wrap after every word or two */
+  width: max-content;
+  max-width: 20rem;
   padding: 6px 9px;
 
   border: 1px solid var(--navy-border);
