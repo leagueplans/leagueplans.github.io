@@ -1,13 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
-import com.leagueplans.common.model.EquipmentType
 import com.leagueplans.common.model.Item.Bankable
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.dom.planning.player.item.inventory.forms.RemoveItemForm
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
-import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
-import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import com.leagueplans.ui.model.player.item.{Depository, EquipPlan, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
@@ -89,66 +87,14 @@ object InventoryItemContextMenu {
     effectObserver: Observer[Seq[MoveItem]],
     contextMenu: ContextMenu,
   ): Option[ContextMenuList.Item] =
-    (stack.noted, stack.item.equipmentType) match {
-      case (false, Some(tpe)) =>
-        val equipEffect: MoveItem = MoveItem(
-          stack.item.id,
-          ItemQuantity.Exact(stack.quantity),
-          inventory,
-          notedInSource = false,
-          EquipmentSlot.from(tpe),
-          noteInTarget = false
-        )
-
-        val unequipEffects = toConflicts(tpe).flatMap((slot, conflictTypes) =>
-          player.get(slot).contents.flatMap { case ((currentlyEquipped, _), equippedStackSize) =>
-            val sameStackableItem = stack.item.id == currentlyEquipped && stack.item.stackable
-            val conflictedType = cache.items(currentlyEquipped).equipmentType.exists(conflictTypes.contains)
-            Option.when[MoveItem](!sameStackableItem && conflictedType)(
-              MoveItem(
-                currentlyEquipped,
-                ItemQuantity.Exact(equippedStackSize),
-                slot,
-                notedInSource = false,
-                inventory,
-                noteInTarget = false
-              )
-            )
-          }
-        )
-
-        val observer = Observer[Unit](_ =>
-          // One update, so that equipping undoes in one go
-          effectObserver.onNext(unequipEffects.toList :+ equipEffect)
-        )
-
-        Some(ContextMenuList.Item(
-          FontAwesome.icon(FreeSolid.faShirt),
-          "Equip",
-          button(observer, contextMenu)
-        ))
-
-      case _ =>
-        None
-    }
-
-  private def toConflicts(equipmentType: EquipmentType): Set[(EquipmentSlot, Set[EquipmentType])] =
-    equipmentType match {
-      case EquipmentType.Weapon =>
-        Set(EquipmentSlot.Weapon -> Set(EquipmentType.Weapon, EquipmentType.TwoHanded))
-      case EquipmentType.Shield =>
-        Set(
-          EquipmentSlot.Weapon -> Set(EquipmentType.TwoHanded),
-          EquipmentSlot.Shield -> Set(EquipmentType.Shield)
-        )
-      case EquipmentType.TwoHanded =>
-        Set(
-          EquipmentSlot.Weapon -> Set(EquipmentType.Weapon, EquipmentType.TwoHanded),
-          EquipmentSlot.Shield -> Set(EquipmentType.Shield)
-        )
-      case other =>
-        Set(EquipmentSlot.from(other) -> Set(other))
-    }
+    Option.when(!stack.noted)(EquipPlan(stack.item, inventory, player, cache.items)).flatten.map(moves =>
+      ContextMenuList.Item(
+        FontAwesome.icon(FreeSolid.faShirt),
+        "Equip",
+        // One update, so that equipping undoes in one go
+        button(effectObserver.contramap[Unit](_ => moves), contextMenu)
+      )
+    )
 
   private def removeButton(
     stack: ItemStack,
