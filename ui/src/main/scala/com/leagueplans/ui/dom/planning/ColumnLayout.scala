@@ -9,10 +9,11 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 object ColumnLayout {
   val planWidths: Range = 240 to 640
   val detailsWidths: Range = 260 to 620
-  /** The width of the step details column while it's collapsed */
+  /** The width of the step details column while it's collapsed. PlanningPage.scala gives it to the
+    * stylesheets as --collapsed-details-width. */
   val collapsedWidth: Int = 36
-  /** How long the step details column takes to open or close, and the details to fade in or out.
-    * PlanningPage.scala gives it to the stylesheets as --details-animation. */
+  /** How long the step details take to slide and fade in or out. PlanningPage.scala gives it to
+    * the stylesheets as --details-animation. */
   val detailsAnimation: FiniteDuration = 260.millis
 
   private val key = "planning-columns"
@@ -61,15 +62,12 @@ final class ColumnLayout private (initial: (plan: Int, details: Int)) {
     collapsedVar.set(collapsed)
   }
 
-  val planWidth: Signal[Int] = planWidthVar.signal
-  val detailsCollapsed: Signal[Boolean] = collapsedVar.signal
+  // Each update sets every Var, so only changes are passed on. A repeat of the collapsed state
+  // would start the details' fade-out again, flashing them open on every frame of a resize.
+  val planWidth: Signal[Int] = planWidthVar.signal.distinct
+  val detailsCollapsed: Signal[Boolean] = collapsedVar.signal.distinct
   /** The width the details column has while it's expanded, even while it's collapsed */
-  val expandedDetailsWidth: Signal[Int] = detailsWidthVar.signal
-  /** The width the details column takes up, which is narrower while it's collapsed */
-  val detailsWidth: Signal[Int] =
-    Signal.combine(detailsWidthVar.signal, collapsedVar.signal).map((width, collapsed) =>
-      if (collapsed) collapsedWidth else width
-    )
+  val expandedDetailsWidth: Signal[Int] = detailsWidthVar.signal.distinct
 
   def isDetailsCollapsed: Boolean = current.collapsed
   def currentPlanWidth(): Int = current.plan

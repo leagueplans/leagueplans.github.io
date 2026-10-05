@@ -1,26 +1,16 @@
-/* The banner's row collapses when there's no banner. PlanningPage.scala sets the widths. */
+/* The banner's row collapses when there's no banner. PlanningPage.scala sets the plan's width.
+ *
+ * The step details column takes the width of what it holds: the details, at their own width, or
+ * the collapsed strip. So it changes width once, when one replaces the other, rather than on
+ * every frame of an animation, which would lay the sections out again each frame. The details
+ * slide and fade instead, which the browser can do without laying anything out. */
 .page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--plan-width, 565px) var(--details-width, 36px);
+  grid-template-columns: minmax(0, 1fr) var(--plan-width, 565px) auto;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     "banner banner banner"
     "state  plan   details";
-
-  /* Opening and closing the step details slides them in and out. PlanningPage.scala sets the
-   * duration, which the details' fades share. */
-  transition: grid-template-columns var(--details-animation) ease-in-out;
-}
-
-/* Resizing a column follows the pointer directly */
-.page:has([role="separator"]:active) {
-  transition: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page {
-    transition: none;
-  }
 }
 
 /* Too narrow for three columns, so the step details sit under the plan */
@@ -63,6 +53,8 @@
   grid-area: details;
   min-width: 0;
   min-height: 0;
+  /* The details slide in from past the page edge, which mustn't add a scrollbar */
+  overflow: clip;
 
   border-left: 2px solid black;
   background-color: var(--bg-base);

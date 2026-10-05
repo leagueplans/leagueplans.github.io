@@ -145,16 +145,15 @@ object PlanningPage {
 
     L.div(
       L.cls(Styles.page),
-      // One duration for the column's slide and the details' fades, in the stylesheets and DetailsColumn
-      L.onMountCallback(
-        _.thisNode.ref.style.setProperty("--details-animation", s"${ColumnLayout.detailsAnimation.toMillis}ms")
-      ),
+      // One duration for the details' slides and fades, in the stylesheets and DetailsColumn
+      L.onMountCallback { ctx =>
+        ctx.thisNode.ref.style.setProperty("--details-animation", s"${ColumnLayout.detailsAnimation.toMillis}ms")
+        ctx.thisNode.ref.style.setProperty("--collapsed-details-width", s"${ColumnLayout.collapsedWidth}px")
+      },
       L.inContext(page =>
-        Signal.combine(layout.planWidth, layout.detailsWidth, layout.expandedDetailsWidth) --> {
-          (planWidth, detailsWidth, expandedDetailsWidth) =>
-            page.ref.style.setProperty("--plan-width", s"${planWidth}px")
-            page.ref.style.setProperty("--details-width", s"${detailsWidth}px")
-            page.ref.style.setProperty("--expanded-details-width", s"${expandedDetailsWidth}px")
+        Signal.combine(layout.planWidth, layout.expandedDetailsWidth) --> { (planWidth, expandedDetailsWidth) =>
+          page.ref.style.setProperty("--plan-width", s"${planWidth}px")
+          page.ref.style.setProperty("--expanded-details-width", s"${expandedDetailsWidth}px")
         }
       ),
       hasFocus --> (focused => if (!focused) layout.collapseDetails()),
