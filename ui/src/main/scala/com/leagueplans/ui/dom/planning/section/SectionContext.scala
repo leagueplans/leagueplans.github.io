@@ -1,12 +1,10 @@
 package com.leagueplans.ui.dom.planning.section
 
-import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 
 /** What a section needs from the planning page.
@@ -38,7 +36,6 @@ final case class SectionContext(
   focusChanges: EventStream[Unit],
   settings: Signal[Plan.Settings],
   cache: Cache,
-  itemFuse: Fuse[Item],
   tooltip: Tooltip,
   contextMenu: ContextMenu,
   popover: Popover,

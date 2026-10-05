@@ -31,6 +31,7 @@ object ItemsSection {
         ctx.popover,
         ctx.playerAtInsertion,
         ctx.effectObserver,
+        ctx.requirementObserver,
         ctx.cache,
         ctx.undoToasts,
         ctx.tooltip,

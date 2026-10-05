@@ -3,8 +3,9 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.model.plan.{Effect, ItemQuantity}
+import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemStack}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, textToTextNode}
@@ -25,10 +26,12 @@ object AddItemCard {
     item: Item,
     draft: Draft,
     effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    requirementObserver: Signal[Option[Observer[Requirement]]],
     undoToasts: UndoToasts,
+    tooltip: Tooltip,
     close: () => Unit
   ): L.Div = {
-    val amount = draft.amount.signal.map(_.trim.toIntOption.filter(_ > 0))
+    val amount = draft.amount.signal.map(ItemCard.parseAmount)
 
     L.div(
       L.cls(Card.Styles.card),
@@ -76,26 +79,30 @@ object AddItemCard {
         ),
         L.div(
           L.cls(Card.Styles.row),
-          L.button(
-            L.cls(Card.Styles.button),
-            L.tpe("button"),
-            L.text <-- amount.map(n => s"Add ${n.map(n => ItemActions.describe(item, ItemQuantity.Exact(n))).getOrElse(item.name)}"),
-            L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) => observer.isEmpty || amount.isEmpty),
-            ItemCard.noFocusTitle(effectObserver),
-            L.onClick.compose(
-              _.sample(effectObserver, amount, draft.target.signal, draft.noted.signal).collect {
-                case (Some(observer), Some(n), target, noted) => (observer, n, target, noted)
+          Card.withTooltip(
+            L.button(
+              L.cls(Card.Styles.button),
+              L.tpe("button"),
+              L.text <-- amount.map(n => s"Add ${n.map(n => ItemActions.describe(item, ItemQuantity.Exact(n))).getOrElse(item.name)}"),
+              L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) => observer.isEmpty || amount.isEmpty),
+              L.onClick.compose(
+                _.sample(effectObserver, amount, draft.target.signal, draft.noted.signal).collect {
+                  case (Some(observer), Some(n), target, noted) => (observer, n, target, noted)
+                }
+              ) --> { (observer, n, target, noted) =>
+                val action = ItemActions.add(item, n, target, noted && target == Depository.Kind.Inventory)
+                observer.onNext(action.effects)
+                close()
+                undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
               }
-            ) --> { (observer, n, target, noted) =>
-              val action = ItemActions.add(item, n, target, noted && target == Depository.Kind.Inventory)
-              observer.onNext(action.effects)
-              close()
-              undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
-            }
+            ),
+            ItemCard.noFocusTip(effectObserver),
+            tooltip
           )
-        )
+        ),
+        L.child.maybe <-- draft.amount.signal.map(ItemCard.amountProblem(_).map(ItemCard.warning))
       ),
-      L.p(L.cls(Card.Styles.note), "The amount and destination are kept for the next item.")
+      L.div(L.cls(Card.Styles.row), ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close))
     )
   }
 

@@ -11,14 +11,11 @@ import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.ui.storage.model.StepUpdates
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
-import com.leagueplans.uicommon.facades.fusejs.FuseOptions
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Observer
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
 
-import scala.scalajs.js
 
 object PlanningPageBootstrap {
   def apply(
@@ -35,7 +32,6 @@ object PlanningPageBootstrap {
     val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings)
     val timeKeeper = TimeKeeper(initialPlan.steps)
 
-    val itemFuse = Fuse(cache.items.values.toList, new FuseOptions { keys = js.defined(js.Array("name")) })
 
     val forester = Forester(initialPlan.steps, Observer(updates => subscription.save(StepUpdates(updates))))
     val (focusedStep, focusController) = FocusController(forester)
@@ -55,7 +51,6 @@ object PlanningPageBootstrap {
       subscription.status,
       projectionClient.projectionsStatus,
       cache,
-      itemFuse,
       tooltip,
       contextMenu,
       popover,

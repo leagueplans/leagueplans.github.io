@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.details
 
-import com.leagueplans.common.model.{Item, Skill}
+import com.leagueplans.common.model.Skill
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
@@ -18,7 +18,6 @@ import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
@@ -33,7 +32,6 @@ object StepDetails {
   /** @param expMultiplierAt the exp multiplier for each skill at the start of the step */
   def apply(
     cache: Cache,
-    itemFuse: Fuse[Item],
     stepSignal: Signal[Step],
     errorsSignal: Signal[List[StepError]],
     forester: Forester[Step.ID, Step],
@@ -140,7 +138,7 @@ object StepDetails {
           Kind.Requirements,
           errorsByKind.map(_._2),
           selection,
-          maybeAction = Some(toAddRequirementButton(itemFuse, modal, tooltip, updateRequirements))
+          maybeAction = Some(toAddRequirementButton(modal, tooltip, updateRequirements))
         ),
         RowList[Requirement](
           Kind.Requirements,
@@ -231,25 +229,25 @@ object StepDetails {
       maybeAction.map(button => L.div(L.cls(Styles.headerActions), button)).getOrElse(L.emptyNode)
     )
 
-  /** Requirements are meant to come from the sections, but until they can all be made there,
-    * the old form stays reachable from here */
+  /** Requirements are meant to come from the sections. Tools now come from item cards, but until
+    * skill levels can be required from the Skills section, the old form for them stays reachable
+    * from here */
   private def toAddRequirementButton(
-    itemFuse: Fuse[Item],
     modal: Modal,
     tooltip: Tooltip,
     updateRequirements: (List[Requirement] => List[Requirement]) => Unit
   ): L.Button = {
     val formOpener = FormOpener(
       modal,
-      NewRequirementForm(itemFuse),
+      NewRequirementForm(),
       _.foreach(requirement => updateRequirements(_ :+ requirement))
     )
     Button(_.handled --> (_ => formOpener.open())).amend(
       L.cls(Styles.headerButton),
-      L.aria.label("Add a requirement"),
+      L.aria.label("Add a skill level requirement"),
       FontAwesome.icon(FreeSolid.faPlus),
       tooltip.register(
-        L.span(L.cls(Styles.tooltip), "Add a requirement"),
+        L.span(L.cls(Styles.tooltip), "Add a skill level requirement. Require items from their cards in the Items section."),
         FloatingConfig.basicTooltip(Placement.left)
       )
     )

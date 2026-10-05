@@ -1,6 +1,5 @@
 package com.leagueplans.ui.dom.planning
 
-import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.details.{DetailsColumn, EditRequest, RowSelection, StepDetails}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
@@ -16,7 +15,6 @@ import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.uicommon.dom.*
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Val
@@ -39,7 +37,6 @@ object PlanningPage {
     storageStatus: Signal[StatusTracker.Status],
     projectionStatus: Signal[StatusTracker.Status],
     cache: Cache,
-    itemFuse: Fuse[Item],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     popover: Popover,
@@ -93,7 +90,6 @@ object PlanningPage {
           focusContext.focusID.changes.mapToUnit,
           settings,
           cache,
-          itemFuse,
           tooltip,
           contextMenu,
           popover,
@@ -114,7 +110,6 @@ object PlanningPage {
         project = (_, stepSignal) =>
           StepDetails(
             cache,
-            itemFuse,
             stepSignal,
             // The problems lag behind the step while they're recalculated, so any that no longer
             // match it are left out until they catch up
@@ -221,7 +216,7 @@ object PlanningPage {
   ): Signal[Option[Observer[Requirement]]] =
     focusedStepSignal.map(_.map(focusedStep =>
       Observer[Requirement](requirement =>
-        forester.update(focusedStep.id, step => step.deepCopy(requirements = step.requirements :+ requirement))
+        forester.update(focusedStep.id, step => step.deepCopy(requirements = Requirement.addTo(step.requirements, requirement)))
       )
     ))
 }

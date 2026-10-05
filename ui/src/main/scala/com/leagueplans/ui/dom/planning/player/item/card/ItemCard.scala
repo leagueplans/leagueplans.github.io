@@ -4,18 +4,21 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
-import com.leagueplans.ui.model.plan.{Effect, ItemQuantity}
+import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
 import com.leagueplans.ui.model.player.item.{ItemActions, ItemIdentity, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
+
+import scala.util.Try
 
 /** The card that opens on a held stack. One Amount box drives every button that takes an amount,
   * and those buttons repeat it in their labels, such as "Bank 25".
@@ -28,13 +31,15 @@ object ItemCard {
     holding: Holding,
     playerAtInsertion: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    requirementObserver: Signal[Option[Observer[Requirement]]],
     cache: Cache,
     undoToasts: UndoToasts,
+    tooltip: Tooltip,
     close: () => Unit
   ): L.Div = {
     val held = playerAtInsertion.map(ItemActions.held(holding, _)).distinct
     val amountText = Var("")
-    val amount = amountText.signal.map(_.trim.toIntOption.filter(_ > 0))
+    val amount = amountText.signal.map(parseAmount)
     val isHeldPlace = holding.place == Kind.Inventory || holding.place == Kind.Bank
     val overHeld = Signal.combine(amount, held).map((amount, held) => isHeldPlace && amount.exists(_ > held))
 
@@ -44,33 +49,39 @@ object ItemCard {
       undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
     }
 
-    def amountButton(label: String, ghost: Boolean, limitedByHeld: Boolean)(toAction: Int => Action): L.Button =
-      L.button(
-        L.cls(if (ghost) Card.Styles.ghost else Card.Styles.button),
-        L.tpe("button"),
-        label,
-        " ",
-        L.span(L.cls(Card.Styles.amount), L.text <-- amount.map(_.map(format).getOrElse("?"))),
-        L.disabled <-- Signal.combine(effectObserver, amount, overHeld).map((observer, amount, over) =>
-          observer.isEmpty || amount.isEmpty || (limitedByHeld && over)
+    def amountButton(label: String, ghost: Boolean, limitedByHeld: Boolean, tip: String = "")(toAction: Int => Action): L.Span =
+      Card.withTooltip(
+        L.button(
+          L.cls(if (ghost) Card.Styles.ghost else Card.Styles.button),
+          L.tpe("button"),
+          label,
+          " ",
+          L.span(L.cls(Card.Styles.amount), L.text <-- amount.map(_.map(format).getOrElse("?"))),
+          L.disabled <-- Signal.combine(effectObserver, amount, overHeld).map((observer, amount, over) =>
+            observer.isEmpty || amount.isEmpty || (limitedByHeld && over)
+          ),
+          L.onClick.compose(_.sample(effectObserver, amount).collect { case (Some(observer), Some(n)) => (observer, n) }) -->
+            ((observer, n) => run(observer, toAction(n)))
         ),
-        noFocusTitle(effectObserver),
-        L.onClick.compose(_.sample(effectObserver, amount).collect { case (Some(observer), Some(n)) => (observer, n) }) -->
-          ((observer, n) => run(observer, toAction(n)))
+        noFocusTip(effectObserver, tip),
+        tooltip
       )
 
-    def wholeButton(label: String)(toAction: Player => Option[Action]): L.Button =
-      L.button(
-        L.cls(Card.Styles.button),
-        L.tpe("button"),
-        label,
-        L.disabled <-- effectObserver.map(_.isEmpty),
-        noFocusTitle(effectObserver),
-        L.onClick.compose(_.sample(effectObserver, playerAtInsertion).collect { case (Some(observer), player) => (observer, player) }) -->
-          ((observer, player) => toAction(player).foreach(run(observer, _)))
+    def wholeButton(label: String)(toAction: Player => Option[Action]): L.Span =
+      Card.withTooltip(
+        L.button(
+          L.cls(Card.Styles.button),
+          L.tpe("button"),
+          label,
+          L.disabled <-- effectObserver.map(_.isEmpty),
+          L.onClick.compose(_.sample(effectObserver, playerAtInsertion).collect { case (Some(observer), player) => (observer, player) }) -->
+            ((observer, player) => toAction(player).foreach(run(observer, _)))
+        ),
+        noFocusTip(effectObserver),
+        tooltip
       )
 
-    val wholeActions: List[L.Button] =
+    val wholeActions: List[L.Span] =
       holding.place match {
         case Kind.Inventory if ItemActions.canWear(holding) =>
           List(wholeButton(ItemActions.wearLabel(holding.item))(ItemActions.wear(holding, _, cache.items)))
@@ -85,28 +96,35 @@ object ItemCard {
           List.empty
       }
 
-    val amountActions: List[L.Button] =
-      (holding.place match {
+    // The buttons that can't take more than the stack holds, by label
+    val limitedActions: List[(String, Int => Action)] =
+      holding.place match {
         case Kind.Inventory =>
-          List(
-            Option.when(ItemActions.canBank(holding))(
-              amountButton("Bank", ghost = false, limitedByHeld = true)(n => ItemActions.bank(holding, ItemQuantity.Exact(n)))
-            ),
-            Some(amountButton("Remove", ghost = true, limitedByHeld = true)(ItemActions.remove(holding, _)))
-          )
+          Option.when(ItemActions.canBank(holding))("Bank" -> ((n: Int) => ItemActions.bank(holding, ItemQuantity.Exact(n)))).toList :+
+            ("Remove" -> (ItemActions.remove(holding, _)))
         case Kind.Bank =>
           List(
-            Some(amountButton("Withdraw", ghost = false, limitedByHeld = true)(n => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = false))),
+            Some("Withdraw" -> ((n: Int) => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = false))),
             Option.when(ItemActions.canWithdrawNoted(holding))(
-              amountButton("Withdraw noted", ghost = false, limitedByHeld = true)(n => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = true))
+              "Withdraw noted" -> ((n: Int) => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = true))
             ),
-            Some(amountButton("Remove", ghost = true, limitedByHeld = true)(ItemActions.remove(holding, _)))
-          )
+            Some("Remove" -> (ItemActions.remove(holding, _)))
+          ).flatten
         case _: EquipmentSlot =>
           List.empty
-      }).flatten :+ amountButton("Add", ghost = true, limitedByHeld = false)(ItemActions.addMore(holding, _)).amend(
-        noFocusTitle(effectObserver, s"Adds new copies to the ${if (holding.place == Kind.Bank) "bank" else "inventory"}")
-      )
+      }
+
+    val amountActions: List[L.Span] =
+      limitedActions.map((label, toAction) =>
+        amountButton(label, ghost = label == "Remove", limitedByHeld = true)(toAction)
+      ) :+ amountButton(
+        "Add",
+        ghost = true,
+        limitedByHeld = false,
+        tip = s"Adds new copies to the ${if (holding.place == Kind.Bank) "bank" else "inventory"}"
+      )(ItemActions.addMore(holding, _))
+
+    val limitedLabels = limitedActions.map(_._1)
 
     L.div(
       L.cls(Card.Styles.card),
@@ -118,7 +136,7 @@ object ItemCard {
         L.children <-- playerAtInsertion.map(player => facts(holding.item, player))
       ),
       noFocusNotice(effectObserver),
-      L.when(wholeActions.nonEmpty)(L.div(L.cls(Card.Styles.row), wholeActions)),
+      L.div(L.cls(Card.Styles.row), wholeActions :+ requireButton(holding.item, requirementObserver, undoToasts, tooltip, close)),
       L.div(
         L.cls(Card.Styles.well),
         L.div(
@@ -135,10 +153,10 @@ object ItemCard {
           L.child <-- held.map(quickAmounts(isHeldPlace, _, amountText.writer))
         ),
         L.div(L.cls(Card.Styles.row), amountActions),
-        L.child.maybe <-- Signal.combine(overHeld, held).map((over, held) =>
-          Option.when(over)(
-            L.p(L.cls(Card.Styles.warning), s"Only ${format(held)} held here, so only Add can use this amount.")
-          )
+        L.child.maybe <-- Signal.combine(amountText.signal, overHeld, held).map((text, over, held) =>
+          amountProblem(text)
+            .orElse(Option.when(over)(overHeldWarning(held, limitedLabels)))
+            .map(warning)
         )
       )
     )
@@ -154,13 +172,71 @@ object ItemCard {
       )
     )
 
-  /** Gives a button that's disabled while no step is focused the reason as its title */
-  def noFocusTitle(observer: Signal[Option[?]], otherwise: String = ""): L.Modifier[L.HtmlElement] =
-    L.title <-- observer.map(observer => if (observer.isEmpty) noFocusReason else otherwise)
+  /** The tooltip for a button that's disabled while no step is focused: why, or else `otherwise` */
+  def noFocusTip(observer: Signal[Option[?]], otherwise: String = ""): Signal[String] =
+    observer.map(observer => if (observer.isEmpty) noFocusReason else otherwise)
+
+  /** An amount typed into a card, if it's one the actions can take */
+  def parseAmount(text: String): Option[Int] =
+    text.trim.toIntOption.filter(_ > 0)
+
+  /** Why the actions can't take an amount typed into a card, if they can't */
+  def amountProblem(text: String): Option[String] =
+    text.trim match {
+      case "" => None
+      case trimmed =>
+        Try(BigInt(trimmed)).toOption match {
+          case Some(n) if n > Int.MaxValue =>
+            Some(s"The most an action can move is ${format(Int.MaxValue)}, the most a stack can hold.")
+          case Some(n) if n > 0 =>
+            None
+          case _ =>
+            Some("Amounts are whole numbers, from 1.")
+        }
+    }
+
+  def warning(text: String): L.HtmlElement =
+    L.p(L.cls(Card.Styles.warning), text)
+
+  /** Such as "There are only 5 here, so Bank and Remove can move at most 5." */
+  private def overHeldWarning(held: Int, labels: List[String]): String = {
+    val actions = labels match {
+      case Nil => "the actions"
+      case init :+ last if init.nonEmpty => s"${init.mkString(", ")} and $last"
+      case only => only.mkString
+    }
+    s"There ${if (held == 1) "is" else "are"} only ${format(held)} here, so $actions can move at most ${format(held)}."
+  }
+
+  /** Makes the focused step need the item at its start, in the inventory or worn */
+  def requireButton(
+    item: Item,
+    requirementObserver: Signal[Option[Observer[Requirement]]],
+    undoToasts: UndoToasts,
+    tooltip: Tooltip,
+    close: () => Unit
+  ): L.Span = {
+    val where = if (item.equipmentType.nonEmpty) "in the inventory or worn" else "in the inventory"
+    Card.withTooltip(
+      L.button(
+        L.cls(Card.Styles.ghost),
+        L.tpe("button"),
+        "Make required",
+        L.disabled <-- requirementObserver.map(_.isEmpty),
+        L.onClick.compose(_.sample(requirementObserver).collectSome) --> { observer =>
+          observer.onNext(Requirement.held(item))
+          close()
+          undoToasts.report(s"Required ${item.name}", Some("A requirement of the focused step"), duration = UndoToasts.brief)
+        }
+      ),
+      noFocusTip(requirementObserver, s"The focused step will need this $where when it starts"),
+      tooltip
+    )
+  }
 
   private val inputID = "item-card-amount"
 
-  /** The icon, name, variants and identifying details shared by the item cards */
+  /** The icon, name, variants and examine text shared by the item cards */
   def header(item: Item, noted: Boolean, iconStack: ItemStack, close: () => Unit): L.Div = {
     val identity = ItemIdentity(item)
     L.div(

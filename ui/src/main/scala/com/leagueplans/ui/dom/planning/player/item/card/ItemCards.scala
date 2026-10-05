@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.card
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, Requirement}
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.{Popover, Tooltip}
@@ -22,6 +22,7 @@ final class ItemCards(
   popover: Popover,
   playerAtInsertion: Signal[Player],
   effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+  requirementObserver: Signal[Option[Observer[Requirement]]],
   cache: Cache,
   undoToasts: UndoToasts,
   tooltip: Tooltip,
@@ -62,7 +63,7 @@ final class ItemCards(
           if (isOpen) popover.close()
           else popover.open(
             node.ref,
-            AddItemCard(item, addDraft, effectObserver, undoToasts, () => popover.close()),
+            AddItemCard(item, addDraft, effectObserver, requirementObserver, undoToasts, tooltip, () => popover.close()),
             boundary(),
             below = true
           )
@@ -74,7 +75,7 @@ final class ItemCards(
     tooltip.close()
     popover.open(
       anchor,
-      ItemCard(holding, playerAtInsertion, effectObserver, cache, undoToasts, () => popover.close()),
+      ItemCard(holding, playerAtInsertion, effectObserver, requirementObserver, cache, undoToasts, tooltip, () => popover.close()),
       boundary()
     )
   }
