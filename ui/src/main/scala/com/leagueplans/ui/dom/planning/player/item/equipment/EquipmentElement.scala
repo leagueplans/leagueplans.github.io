@@ -28,26 +28,23 @@ object EquipmentElement {
       // Dropping anywhere on the panel wears the item in its own slot
       itemDrag.target(ItemTransfer.Target.Worn),
       header,
-      L.inContext(panel =>
-        L.div(
-          L.cls(Styles.layout),
-          // The slots cover the bars, so the bars only show between slots
-          L.div(L.cls(Styles.spine)),
-          L.div(L.cls(Styles.weaponBar)),
-          L.div(L.cls(Styles.shieldBar)),
-          L.div(L.cls(Styles.neckBar)),
-          L.div(L.cls(Styles.bodyBar)),
-          L.children <-- playerSignal.map(player =>
-            EquipmentSlot.values.toList.map(slot =>
-              EquipmentSlotElement(
-                slot,
-                cache.itemise(player.get(slot)),
-                itemCards,
-                itemDrag,
-                panel,
-                tooltip
-              ).amend(L.cls(toStyle(slot)))
-            )
+      L.div(
+        L.cls(Styles.layout),
+        // The slots cover the bars, so the bars only show between slots
+        L.div(L.cls(Styles.spine)),
+        L.div(L.cls(Styles.weaponBar)),
+        L.div(L.cls(Styles.shieldBar)),
+        L.div(L.cls(Styles.neckBar)),
+        L.div(L.cls(Styles.bodyBar)),
+        L.children <-- playerSignal.map(player =>
+          EquipmentSlot.values.toList.map(slot =>
+            EquipmentSlotElement(
+              slot,
+              cache.itemise(player.get(slot)),
+              itemCards,
+              itemDrag,
+              tooltip
+            ).amend(L.cls(toStyle(slot)))
           )
         )
       )

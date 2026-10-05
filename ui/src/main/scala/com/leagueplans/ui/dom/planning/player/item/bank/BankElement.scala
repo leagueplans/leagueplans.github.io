@@ -47,30 +47,28 @@ object BankElement {
         "Bank"
       ),
       searchBar(query, playerSignal, cache),
-      L.inContext(panel =>
-        L.div(
-          L.cls(Styles.scroller),
-          DepositoryStacks(
-            matchingStacks,
-            columnCount = 8,
-            rowCount = 100,
-            overflowRowCount = 10,
-            toStackElement(itemCards, itemDrag, panel, tooltip),
-            tooltip,
-            fillWidth = true
-          ),
-          L.child.maybe <-- Signal.combine(stacks, matchingStacks, query.signal).map((all, matching, query) =>
-            Option.when(matching.isEmpty)(
-              L.p(
-                L.cls(Styles.emptyState),
-                if (all.nonEmpty && !ItemQuery.isEmpty(query)) "Nothing in the bank matches." else "The bank is empty."
-              )
+      L.div(
+        L.cls(Styles.scroller),
+        DepositoryStacks(
+          matchingStacks,
+          columnCount = 8,
+          rowCount = 100,
+          overflowRowCount = 10,
+          toStackElement(itemCards, itemDrag, tooltip),
+          tooltip,
+          fillWidth = true
+        ),
+        L.child.maybe <-- Signal.combine(stacks, matchingStacks, query.signal).map((all, matching, query) =>
+          Option.when(matching.isEmpty)(
+            L.p(
+              L.cls(Styles.emptyState),
+              if (all.nonEmpty && !ItemQuery.isEmpty(query)) "Nothing in the bank matches." else "The bank is empty."
             )
-          ),
-          // The same search finds items to add
-          L.child.maybe <-- query.signal.map(ItemQuery.isEmpty).distinct.map(isEmpty =>
-            Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards))
           )
+        ),
+        // The same search finds items to add
+        L.child.maybe <-- query.signal.map(ItemQuery.isEmpty).distinct.map(isEmpty =>
+          Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards))
         )
       ),
       footer(stacks.map(_.size))
@@ -133,13 +131,15 @@ object BankElement {
   private def toStackElement(
     itemCards: ItemCards,
     itemDrag: ItemDrag,
-    panel: L.HtmlElement,
     tooltip: Tooltip
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2),
+      // Beside the stack, since the bank's top often sits at the top of the page, where a tooltip
+      // above the panel would be cut off. Stack tooltips let the pointer through, so they never
+      // stand in the way of the stacks they cover.
+      tooltipConfig = FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
       hideTooltip = itemCards.isOpenOn
     ).amend(
       itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Bank)),

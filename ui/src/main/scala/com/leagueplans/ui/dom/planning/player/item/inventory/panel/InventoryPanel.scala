@@ -32,16 +32,14 @@ object InventoryPanel {
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
       itemDrag.target(ItemTransfer.Target.Inventory),
       InventoryHeader(),
-      L.inContext(panel =>
-        DepositoryStacks(
-          stacks,
-          columnCount = 4,
-          rowCount = 7,
-          overflowRowCount = 20,
-          toStackElement(query, itemCards, itemDrag, panel, tooltip),
-          tooltip
-        ).amend(L.cls(Styles.contents))
-      ),
+      DepositoryStacks(
+        stacks,
+        columnCount = 4,
+        rowCount = 7,
+        overflowRowCount = 20,
+        toStackElement(query, itemCards, itemDrag, tooltip),
+        tooltip
+      ).amend(L.cls(Styles.contents)),
       InventoryFooter(stacks, toasts, tooltip)
     )
   }
@@ -66,13 +64,13 @@ object InventoryPanel {
     query: Signal[String],
     itemCards: ItemCards,
     itemDrag: ItemDrag,
-    panel: L.HtmlElement,
     tooltip: Tooltip
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2),
+      // Beside the stack, as the bank's are
+      tooltipConfig = FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
       hideTooltip = itemCards.isOpenOn
     ).amend(
       L.cls(Styles.unmatched) <-- query.map(query =>

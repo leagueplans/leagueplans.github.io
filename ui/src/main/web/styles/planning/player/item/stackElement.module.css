@@ -8,10 +8,12 @@
   left: 0;
 }
 
+/* The pointer passes through, so moving onto the tooltip moves onto whatever it covers, and the
+ * tooltip closes. Its details are in the stack's card, so there's nothing to select in it. */
 .tooltip {
-  width: max-content;
   max-width: 16rem;
   text-align: center;
+  pointer-events: none;
 }
 
 .tooltipHeader {}

@@ -22,7 +22,6 @@ object EquipmentSlotElement {
     stacks: List[ItemStack],
     itemCards: ItemCards,
     itemDrag: ItemDrag,
-    itemTooltipAnchor: L.HtmlElement,
     tooltip: Tooltip
   ): L.Div =
     L.div(
@@ -40,7 +39,7 @@ object EquipmentSlotElement {
           StackElement(
             stack,
             tooltip,
-            tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2),
+            tooltipConfig = FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
             hideTooltip = itemCards.isOpenOn
           ).amend(
             L.cls(Styles.contents),
@@ -56,7 +55,7 @@ object EquipmentSlotElement {
                 L.cls(Styles.warningTooltip),
                 "Multiple items are occupying this slot"
               ),
-              FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2)
+              FloatingConfig.basicTooltip(Placement.bottom, offset = 6)
             )
           )
       }
