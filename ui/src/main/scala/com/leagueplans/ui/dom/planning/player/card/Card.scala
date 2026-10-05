@@ -36,6 +36,8 @@ object Card {
     val ghost: String = js.native
     val amount: String = js.native
     val link: String = js.native
+    val foot: String = js.native
+    val wikiLink: String = js.native
     val warning: String = js.native
     val tooltipped: String = js.native
   }

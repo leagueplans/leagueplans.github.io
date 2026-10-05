@@ -1,6 +1,6 @@
 package com.leagueplans.ui.model.player.item
 
-import com.leagueplans.common.model.{EquipmentType, Item}
+import com.leagueplans.common.model.Item
 
 /** Item names stay unique by adding variants in brackets, such as "Coins (Mage Training Arena)"
   * or "Abyssal bracelet ((5))". Variants often share an icon and examine text, so they're shown
@@ -36,15 +36,4 @@ object ItemIdentity {
       }
     found.toList
   }
-
-  /** A short summary of how an item can be handled, such as "stackable · noteable · head slot" */
-  def properties(item: Item): List[String] =
-    List(
-      Option.when(item.stackable)("stackable"),
-      Option.when(item.noteable)("noteable"),
-      item.equipmentType.map {
-        case EquipmentType.TwoHanded => "two-handed"
-        case other => s"${other.toString.toLowerCase} slot"
-      }
-    ).flatten
 }

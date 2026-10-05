@@ -302,6 +302,42 @@
   cursor: not-allowed;
 }
 
+/* The card's last row, for links away from the card */
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+
+  border-top: 1px solid var(--navy-border);
+}
+
+/* Opens the item's wiki page, with the wiki's own icon */
+.wikiLink {
+  padding: 3px 8px 3px 4px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.wikiLink img {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.wikiLink:hover, .wikiLink:focus-visible {
+  background-color: var(--navy-line);
+  color: var(--text-bright);
+  outline: none;
+}
+
 .warning {
   color: var(--warning);
   font-size: 0.75rem;

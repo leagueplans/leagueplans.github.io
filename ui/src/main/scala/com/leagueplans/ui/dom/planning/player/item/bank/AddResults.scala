@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item.bank
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
-import com.leagueplans.ui.dom.planning.player.item.card.{ItemCard, ItemCards}
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.model.player.item.{Depository, ItemIdentity, ItemMatcher, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
@@ -15,7 +15,7 @@ import scala.scalajs.js.annotation.JSImport
 
 /** Beneath the bank's own matches, the bank search lists every item that matches, including
   * ones already held, so that it doubles as the way to add items. Results show enough to tell
-  * variants apart: the variant as a chip, examine text, properties, game ID and held counts.
+  * variants apart: the variant as a chip, examine text and held counts.
   */
 object AddResults {
   private val limit = 30
@@ -59,10 +59,7 @@ object AddResults {
           identity.base,
           identity.variants.map(variant => L.span(L.cls(Card.Styles.chip), variant))
         ),
-        L.span(
-          L.cls(Styles.details),
-          (Option.when(item.examine.nonEmpty)(item.examine).toList :+ ItemCard.details(item)).filter(_.nonEmpty).mkString(" · ")
-        )
+        L.span(L.cls(Styles.details), item.examine)
       ),
       L.span(L.cls(Styles.held), L.text <-- playerSignal.map(held(item, _))),
       L.span(L.cls(Styles.plus), "+"),

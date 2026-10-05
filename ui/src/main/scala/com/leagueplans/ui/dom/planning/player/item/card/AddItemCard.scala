@@ -102,7 +102,8 @@ object AddItemCard {
         ),
         L.child.maybe <-- draft.amount.signal.map(ItemCard.amountProblem(_).map(ItemCard.warning))
       ),
-      L.div(L.cls(Card.Styles.row), ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close))
+      L.div(L.cls(Card.Styles.row), ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close)),
+      ItemCard.footer(item)
     )
   }
 

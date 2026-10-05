@@ -8,7 +8,7 @@ import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
-import com.leagueplans.ui.model.player.item.{ItemActions, ItemIdentity, ItemStack}
+import com.leagueplans.ui.model.player.item.{ItemActions, ItemIdentity, ItemStack, ItemWikiPage}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
@@ -18,6 +18,8 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 import scala.util.Try
 
 /** The card that opens on a held stack. One Amount box drives every button that takes an amount,
@@ -158,7 +160,8 @@ object ItemCard {
             .orElse(Option.when(over)(overHeldWarning(held, limitedLabels)))
             .map(warning)
         )
-      )
+      ),
+      footer(holding.item)
     )
   }
 
@@ -250,16 +253,28 @@ object ItemCard {
           identity.variants.map(variant => L.span(L.cls(Card.Styles.chip), variant)),
           L.when(noted)(L.span(L.cls(Card.Styles.chip), "noted"))
         ),
-        L.when(item.examine.nonEmpty)(L.p(L.cls(Card.Styles.note), item.examine)),
-        L.p(L.cls(Card.Styles.note), details(item))
+        L.when(item.examine.nonEmpty)(L.p(L.cls(Card.Styles.note), item.examine))
       ),
       Card.closeButton(close)
     )
   }
 
-  /** Properties and game ID, such as "stackable · noteable · ID 882" */
-  def details(item: Item): String =
-    (ItemIdentity.properties(item) ++ item.gameID.map(id => s"ID $id")).mkString(" · ")
+  /** The foot of the item cards, with a link to the item's wiki page */
+  def footer(item: Item): L.Div =
+    L.div(
+      L.cls(Card.Styles.foot),
+      L.a(
+        L.cls(Card.Styles.wikiLink),
+        L.href(ItemWikiPage.url(item)),
+        L.target("_blank"),
+        L.rel("noopener noreferrer"),
+        L.img(L.src(wikiIcon), L.alt("")),
+        "Open on the wiki"
+      )
+    )
+
+  @js.native @JSImport("/images/wiki-icon.png", JSImport.Default)
+  private val wikiIcon: String = js.native
 
   private def facts(item: Item, player: Player): List[L.Span] = {
     def count(kind: Kind): Int =
