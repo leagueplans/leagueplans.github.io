@@ -126,10 +126,10 @@ object OutputResolver {
     mappings: Map[InfoboxKey, Item.ID]
   ): Vector[Item] =
     baseline
-      .flatMap((key, data) => mappings.get(key).map(toItem(_, data)))
+      .flatMap((key, data) => mappings.get(key).map(toItem(_, key, data)))
       .sorted
 
-  private def toItem(id: Item.ID, data: ItemData): Item =
+  private def toItem(id: Item.ID, key: InfoboxKey, data: ItemData): Item =
     Item(
       id = id,
       gameID = data.gameID,
@@ -140,7 +140,8 @@ object OutputResolver {
       bankable = data.bankable,
       stackable = data.stackable,
       noteable = data.noteable,
-      equipmentType = data.equipmentType
+      equipmentType = data.equipmentType,
+      infobox = key
     )
 
   /** The icons that changed, for every item whose new icons are being accepted: new

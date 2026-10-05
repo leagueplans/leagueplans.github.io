@@ -54,7 +54,9 @@ final case class Item(
   bankable: Item.Bankable,
   stackable: Boolean,
   noteable: Boolean,
-  equipmentType: Option[EquipmentType]
+  equipmentType: Option[EquipmentType],
+  /** The wiki infobox the item was scraped from */
+  infobox: InfoboxKey
 ) {
   def imageFor(quantity: Int): Item.Image.Path = {
     val (_, path) =

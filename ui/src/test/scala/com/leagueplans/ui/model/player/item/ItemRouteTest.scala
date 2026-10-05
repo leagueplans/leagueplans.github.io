@@ -1,7 +1,7 @@
 package com.leagueplans.ui.model.player.item
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{EquipmentType, Item}
+import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.ItemRoute.Place
@@ -19,7 +19,8 @@ final class ItemRouteTest extends AnyFreeSpec with Matchers {
       bankable,
       stackable = false,
       noteable,
-      equipmentType
+      equipmentType,
+      infobox = InfoboxKey(1, List.empty)
     )
 
   private val inventory = Place(Kind.Inventory, noted = false)
