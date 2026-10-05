@@ -150,8 +150,33 @@
   font-size: 0.75rem;
 }
 
+/* Labelled controls, with the labels in a column of their own so the controls line up */
+.form {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+}
+
+/* A row of a form's controls, or one that spans both columns, such as a warning */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.form > .wide {
+  grid-column: 1 / -1;
+}
+
+.form > .warning {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .number {
-  width: 6rem;
+  width: 4.5rem;
   padding: 3px 6px;
   box-sizing: border-box;
 
@@ -176,17 +201,6 @@
 .number::-webkit-inner-spin-button, .number::-webkit-outer-spin-button {
   appearance: none;
   margin: 0;
-}
-
-.select {
-  padding: 2px 4px;
-
-  border: 1px solid var(--navy-border);
-  border-radius: 4px;
-  background-color: var(--navy-deep);
-  color: var(--text-bright);
-  font-family: inherit;
-  font-size: 0.8rem;
 }
 
 /* Quick values for an input, such as 1 / 5 / 10 / All */
@@ -217,6 +231,12 @@
   background-color: var(--navy-bar-hover);
   color: var(--text-bright);
   outline: none;
+}
+
+/* The chosen option of a toggle, such as the add card's Inventory / Bank */
+.segment[aria-pressed="true"] {
+  background-color: #2f4679;
+  color: var(--text-bright);
 }
 
 .button {
@@ -305,10 +325,16 @@
 /* The card's last row, for links away from the card */
 .foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
   padding-top: 6px;
 
   border-top: 1px solid var(--navy-border);
+}
+
+/* The wiki link keeps to the right, whatever comes before it */
+.foot > :last-child {
+  margin-left: auto;
 }
 
 /* Opens the item's wiki page, with the wiki's own icon */

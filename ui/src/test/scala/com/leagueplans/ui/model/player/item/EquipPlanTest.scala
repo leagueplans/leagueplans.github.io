@@ -73,6 +73,13 @@ final class EquipPlanTest extends AnyFreeSpec with Matchers {
         Some(List(wear(arrows, Max, from = Kind.Bank, slot = EquipmentSlot.Ammo)))
     }
 
+    "wears the given quantity of a stackable item, up to what's held" in {
+      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), items, Exact(10)) shouldBe
+        Some(List(wear(arrows, Exact(10), from = Kind.Bank, slot = EquipmentSlot.Ammo)))
+      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 5)), items, Exact(10)) shouldBe
+        Some(List(wear(arrows, Exact(5), from = Kind.Bank, slot = EquipmentSlot.Ammo)))
+    }
+
     "moves the slot's current item to the inventory first" in {
       EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)), items) shouldBe
         Some(List(takeOff(scimitar, Exact(1), EquipmentSlot.Weapon), wear(sword, Exact(1), slot = EquipmentSlot.Weapon)))

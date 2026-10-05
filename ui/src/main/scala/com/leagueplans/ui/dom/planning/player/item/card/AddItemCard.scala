@@ -4,11 +4,11 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
-import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemStack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemEffects, ItemStack}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 
 /** The card for adding an item found by the bank search. Items go to the inventory unless
   * another place is chosen.
@@ -32,38 +32,39 @@ object AddItemCard {
     close: () => Unit
   ): L.Div = {
     val amount = draft.amount.signal.map(ItemCard.parseAmount)
+    // Max only works where each item takes a slot of its own
+    val unavailable =
+      Signal.combine(amount, draft.target.signal, draft.noted.signal).map {
+        case (Some(ItemQuantity.Max), target, noted) if !ItemEffects.canFill(item, noted && item.noteable, target) =>
+          Some(ItemCard.fillReason)
+        case _ =>
+          None
+      }
 
     L.div(
       L.cls(Card.Styles.card),
       ItemCard.header(item, noted = false, ItemStack(item, noted = false, quantity = 1), close),
       ItemCard.noFocusNotice(effectObserver),
+      // Labels in one column and controls in the other, so the controls line up
       L.div(
-        L.cls(Card.Styles.well),
-        L.div(
-          L.cls(Card.Styles.row),
-          L.label(L.cls(Card.Styles.label), L.forId(amountID), "Amount"),
-          L.input(
-            L.cls(Card.Styles.number),
-            L.idAttr(amountID),
-            L.tpe("number"),
-            L.minAttr("1"),
-            L.stepAttr("1"),
-            L.controlled(L.value <-- draft.amount.signal, L.onInput.mapToValue --> draft.amount.writer)
-          )
-        ),
-        L.div(
-          L.cls(Card.Styles.row),
-          L.label(L.cls(Card.Styles.label), L.forId(targetID), "Into"),
-          L.select(
-            L.cls(Card.Styles.select),
-            L.idAttr(targetID),
-            L.option(L.value("inventory"), "Inventory"),
-            L.option(L.value("bank"), "Bank"),
-            L.controlled(
-              L.value <-- draft.target.signal.map(target => if (target == Depository.Kind.Bank) "bank" else "inventory"),
-              L.onChange.mapToValue.map(value =>
-                if (value == "bank") Depository.Kind.Bank else Depository.Kind.Inventory
-              ) --> draft.target.writer
+        L.cls(Card.Styles.well, Card.Styles.form),
+        ItemCard.amountLabel(amountID),
+        ItemCard.amountControls(amountID, draft.amount),
+        L.span(L.cls(Card.Styles.label), "Into"),
+        L.span(
+          L.cls(Card.Styles.controls),
+          L.span(
+            L.cls(Card.Styles.segments),
+            L.role("group"),
+            L.aria.label("Where to add the item"),
+            List(Depository.Kind.Inventory -> "Inventory", Depository.Kind.Bank -> "Bank").map((target, label) =>
+              L.button(
+                L.cls(Card.Styles.segment),
+                L.tpe("button"),
+                label,
+                L.aria.pressed <-- draft.target.signal.map(_ == target).map(_.toString),
+                L.onClick.mapTo(target) --> draft.target.writer
+              )
             )
           ),
           L.when(item.noteable)(
@@ -77,14 +78,21 @@ object AddItemCard {
             )
           )
         ),
-        L.div(
-          L.cls(Card.Styles.row),
+        // Under the controls, past the labels
+        L.span(),
+        L.span(
+          L.cls(Card.Styles.controls),
           Card.withTooltip(
             L.button(
               L.cls(Card.Styles.button),
               L.tpe("button"),
-              L.text <-- amount.map(n => s"Add ${n.map(n => ItemActions.describe(item, ItemQuantity.Exact(n))).getOrElse(item.name)}"),
-              L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) => observer.isEmpty || amount.isEmpty),
+              L.text <-- amount.map {
+                case Some(ItemQuantity.Max) => "Add until full"
+                case n => s"Add ${n.map(ItemActions.describe(item, _)).getOrElse(item.name)}"
+              },
+              L.disabled <-- Signal.combine(effectObserver, amount, unavailable).map((observer, amount, unavailable) =>
+                observer.isEmpty || amount.isEmpty || unavailable.nonEmpty
+              ),
               L.onClick.compose(
                 _.sample(effectObserver, amount, draft.target.signal, draft.noted.signal).collect {
                   case (Some(observer), Some(n), target, noted) => (observer, n, target, noted)
@@ -96,17 +104,17 @@ object AddItemCard {
                 undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
               }
             ),
-            ItemCard.noFocusTip(effectObserver),
+            Signal.combine(ItemCard.noFocusTip(effectObserver), unavailable).map((noFocus, unavailable) =>
+              if (noFocus.nonEmpty) noFocus else unavailable.getOrElse("")
+            ),
             tooltip
           )
         ),
         L.child.maybe <-- draft.amount.signal.map(ItemCard.amountProblem(_).map(ItemCard.warning))
       ),
-      L.div(L.cls(Card.Styles.row), ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close)),
-      ItemCard.footer(item)
+      ItemCard.footer(item, leading = ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close))
     )
   }
 
   private val amountID = "add-item-card-amount"
-  private val targetID = "add-item-card-target"
 }

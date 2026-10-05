@@ -91,7 +91,9 @@ object ItemTransfer {
           else if (source.noted)
             Left(Rejection.NotedWear)
           else
-            toRight(ItemActions.wear(source, player, items), Rejection.NothingToMove)
+            // From the bank, stackable items follow the withdraw quantity, as other withdrawals do
+            val quantity = if (source.place == Kind.Bank) resolve(settings.quantity, held) else ItemQuantity.Max
+            toRight(ItemActions.wear(source, player, items, quantity), Rejection.NothingToMove)
       }
   }
 

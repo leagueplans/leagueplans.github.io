@@ -3,7 +3,7 @@ package com.leagueplans.ui.model.player.item
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
-import com.leagueplans.ui.model.plan.ItemChange
+import com.leagueplans.ui.model.plan.{ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.ItemQuantity.Exact
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -74,22 +74,42 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       action.report shouldBe "Withdrew 25 × Logs as notes"
     }
 
+    "withdraws all, worked out where the effect applies" in {
+      val action = ItemActions.withdraw(Holding(logs, noted = false, Kind.Bank), ItemQuantity.Max, noted = false)
+      action.effects shouldBe List(MoveItem(logs.id, ItemQuantity.Max, Kind.Bank, notedInSource = false, Kind.Inventory, noteInTarget = false))
+      action.report shouldBe "Withdrew all Logs"
+    }
+
+    "removes the most of a stack by emptying it" in {
+      ItemActions.remove(Holding(logs, noted = false, Kind.Bank), ItemQuantity.Max).effects shouldBe
+        List(AddItem(logs.id, ItemChange.Empty, Kind.Bank, false))
+    }
+
     "removes from where the stack is held" in {
-      ItemActions.remove(Holding(logs, noted = true, Kind.Inventory), 5).effects shouldBe
+      ItemActions.remove(Holding(logs, noted = true, Kind.Inventory), Exact(5)).effects shouldBe
         List(AddItem(logs.id, ItemChange.By(-5), Kind.Inventory, true))
     }
 
-    "adds more copies to the bank for a banked stack, and to the inventory otherwise" in {
-      ItemActions.addMore(Holding(logs, noted = false, Kind.Bank), 10).effects shouldBe
-        List(AddItem(logs.id, ItemChange.By(10), Kind.Bank, false))
-      ItemActions.addMore(Holding(logs, noted = true, Kind.Inventory), 10).effects shouldBe
+    "always adds more copies to the inventory" in {
+      ItemActions.addMore(Holding(logs, noted = false, Kind.Bank), Exact(10)).effects shouldBe
+        List(AddItem(logs.id, ItemChange.By(10), Kind.Inventory, false))
+      ItemActions.addMore(Holding(logs, noted = true, Kind.Inventory), Exact(10)).effects shouldBe
         List(AddItem(logs.id, ItemChange.By(10), Kind.Inventory, true))
-      ItemActions.addMore(Holding(helm, noted = false, EquipmentSlot.Head), 1).effects shouldBe
+      ItemActions.addMore(Holding(helm, noted = false, EquipmentSlot.Head), Exact(1)).effects shouldBe
         List(AddItem(helm.id, ItemChange.By(1), Kind.Inventory, false))
     }
 
+    "fills only where each item takes a slot of its own" in {
+      ItemEffects.canFill(logs, noted = false, Kind.Inventory) shouldBe true
+      ItemEffects.canFill(logs, noted = true, Kind.Inventory) shouldBe false
+      ItemEffects.canFill(logs, noted = false, Kind.Bank) shouldBe false
+      val fill = ItemActions.add(logs, ItemQuantity.Max, Kind.Inventory, noted = false)
+      fill.effects shouldBe List(AddItem(logs.id, ItemChange.Fill, Kind.Inventory, false))
+      fill.report shouldBe "Added Logs until the inventory was full"
+    }
+
     "never adds notes of an item that can't be noted" in {
-      ItemActions.add(book, 1, Kind.Inventory, noted = true).effects shouldBe
+      ItemActions.add(book, Exact(1), Kind.Inventory, noted = true).effects shouldBe
         List(AddItem(book.id, ItemChange.By(1), Kind.Inventory, false))
     }
 
@@ -133,6 +153,7 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
     "describes quantities with thousands separators" in {
       ItemActions.describe(logs, Exact(1)) shouldBe "Logs"
       ItemActions.describe(logs, Exact(12500)) shouldBe "12,500 × Logs"
+      ItemActions.describe(logs, ItemQuantity.Max) shouldBe "all Logs"
     }
   }
 }

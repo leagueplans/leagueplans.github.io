@@ -40,6 +40,13 @@ object ItemActions {
       case _ => "Wear"
     }
 
+  /** An exact amount becomes a signed change, and Max becomes the change given for it */
+  private def changeOf(quantity: ItemQuantity, all: ItemChange, signed: Int => Int): ItemChange =
+    quantity match {
+      case ItemQuantity.Exact(n) => ItemChange.By(signed(n))
+      case ItemQuantity.Max => all
+    }
+
   def bank(holding: Holding, quantity: ItemQuantity): Action =
     Action(
       List(MoveItem(holding.item.id, quantity, holding.place, holding.noted, Kind.Bank, noteInTarget = false)),
@@ -56,30 +63,38 @@ object ItemActions {
     )
   }
 
-  def remove(holding: Holding, quantity: Int): Action =
+  def remove(holding: Holding, quantity: ItemQuantity): Action =
     Action(
-      List(AddItem(holding.item.id, ItemChange.By(-quantity), holding.place, holding.noted)),
-      s"Removed ${describe(holding.item, ItemQuantity.Exact(quantity))}",
-      s"Remove ${describe(holding.item, ItemQuantity.Exact(quantity))}"
+      List(AddItem(holding.item.id, changeOf(quantity, ItemChange.Empty, -_), holding.place, holding.noted)),
+      s"Removed ${describe(holding.item, quantity)}",
+      s"Remove ${describe(holding.item, quantity)}"
     )
 
-  /** New copies go to the bank for a banked stack, and to the inventory otherwise */
-  def addMore(holding: Holding, quantity: Int): Action = {
-    val target = if (holding.place == Kind.Bank) Kind.Bank else Kind.Inventory
-    add(holding.item, quantity, target, holding.noted && target == Kind.Inventory)
+  /** New copies of a stack's item always go to the inventory, noted if the stack is */
+  def addMore(holding: Holding, quantity: ItemQuantity): Action =
+    add(holding.item, quantity, Kind.Inventory, holding.noted)
+
+  /** With Max, adds as many as fit in the place */
+  def add(item: Item, quantity: ItemQuantity, target: Depository.Kind, noted: Boolean): Action = {
+    val effect = AddItem(item.id, changeOf(quantity, ItemChange.Fill, identity), target, noted && item.noteable)
+    val place = target.name.toLowerCase
+    quantity match {
+      case ItemQuantity.Max =>
+        Action(List(effect), s"Added ${item.name} until the $place was full", s"Add ${item.name} until the $place is full")
+      case ItemQuantity.Exact(_) =>
+        val what = s"${describe(item, quantity)} to the $place"
+        Action(List(effect), s"Added $what", s"Add $what")
+    }
   }
 
-  def add(item: Item, quantity: Int, target: Depository.Kind, noted: Boolean): Action = {
-    val what = s"${describe(item, ItemQuantity.Exact(quantity))} to the ${target.name.toLowerCase}"
-    Action(
-      List(AddItem(item.id, ItemChange.By(quantity), target, noted && item.noteable)),
-      s"Added $what",
-      s"Add $what"
-    )
-  }
-
-  def wear(holding: Holding, player: Player, items: Item.ID => Item): Option[Action] =
-    EquipPlan(holding.item, holding.place, player, items).map { moves =>
+  /** @param quantity how many of a stackable item to wear, such as the bank's withdraw quantity */
+  def wear(
+    holding: Holding,
+    player: Player,
+    items: Item.ID => Item,
+    quantity: ItemQuantity = ItemQuantity.Max
+  ): Option[Action] =
+    EquipPlan(holding.item, holding.place, player, items, quantity).map { moves =>
       val displaced = moves.init.map(move => items(move.item).name).mkString(" and ")
       val verb = wearLabel(holding.item)
       Action(

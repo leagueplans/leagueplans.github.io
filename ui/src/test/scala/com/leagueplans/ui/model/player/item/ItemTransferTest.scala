@@ -143,6 +143,15 @@ final class ItemTransferTest extends AnyFreeSpec with Matchers {
         ))
     }
 
+    "wears the withdraw quantity of a stackable item from the bank" in {
+      val arrows = item(6, stackable = true, noteable = false, equipmentType = Some(EquipmentType.Ammo))
+      val arrowItems = items + (arrows.id -> arrows)
+      ItemTransfer
+        .plan(Holding(arrows, noted = false, Kind.Bank), Target.Worn, player(((Kind.Bank, arrows, false), 250)), arrowItems, Settings(Quantity.Ten, withdrawNoted = false))
+        .map(_.effects) shouldBe
+        Right(List(MoveItem(arrows.id, Exact(10), Kind.Bank, notedInSource = false, EquipmentSlot.Ammo, noteInTarget = false)))
+    }
+
     "refuses to wear noted items, or items without a slot" in {
       effects(Holding(scimitar, noted = true, Kind.Inventory), Target.Worn, player(((Kind.Inventory, scimitar, true), 1))) shouldBe
         Left(Rejection.NotedWear)

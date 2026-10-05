@@ -29,13 +29,15 @@ object Card {
     val well: String = js.native
     val label: String = js.native
     val number: String = js.native
-    val select: String = js.native
     val segments: String = js.native
     val segment: String = js.native
     val button: String = js.native
     val ghost: String = js.native
     val amount: String = js.native
     val link: String = js.native
+    val form: String = js.native
+    val controls: String = js.native
+    val wide: String = js.native
     val foot: String = js.native
     val wikiLink: String = js.native
     val warning: String = js.native
