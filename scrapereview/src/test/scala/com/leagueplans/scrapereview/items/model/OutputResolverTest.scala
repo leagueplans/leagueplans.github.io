@@ -1,7 +1,7 @@
 package com.leagueplans.scrapereview.items.model
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{InfoboxKey, Item, ItemChangeset, ItemData}
+import com.leagueplans.common.model.{AcceptedItems, InfoboxKey, Item, ItemChangeset, ItemData}
 import com.leagueplans.scrapereview.items.model.ReviewDecisions.Removal
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -57,6 +57,11 @@ final class OutputResolverTest extends AnyFreeSpec with Matchers {
           Vector((10, "Bucket"), (11, "Spade"))
         resolution.items.head.images.head._2.raw shouldBe "10/1.png"
       }
+
+      "saves each accepted item with its ID" in {
+        resolve(ItemChangeset.empty).accepted shouldBe
+          AcceptedItems(nextID = 12, Vector((key(1), Item.ID(10), bucket), (key(2), Item.ID(11), spade)))
+      }
     }
 
     "when an item was added" - {
@@ -65,6 +70,14 @@ final class OutputResolverTest extends AnyFreeSpec with Matchers {
 
       "gives it the next free ID" in {
         resolve(changeset).idMap.mappings.get(key(3)) shouldBe Some(Item.ID(12))
+      }
+
+      "saves it with its ID and the raised high water mark" in {
+        resolve(changeset).accepted shouldBe
+          AcceptedItems(
+            nextID = 13,
+            Vector((key(1), Item.ID(10), bucket), (key(2), Item.ID(11), spade), (key(3), Item.ID(12), shears))
+          )
       }
 
       "raises the high water mark" in {

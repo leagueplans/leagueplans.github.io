@@ -1,6 +1,6 @@
 package com.leagueplans.scrapereview.items
 
-import com.leagueplans.common.model.{Item, ItemChangeset, ItemData}
+import com.leagueplans.common.model.{Item, ItemChangeset}
 import com.leagueplans.scrapereview.filesystem.PickedDirectory
 import com.leagueplans.scrapereview.items.model.OutputResolver
 import io.circe.syntax.EncoderOps
@@ -11,8 +11,7 @@ import scala.concurrent.Future
 object OutputApplier {
   private val dumpImages = List("tmp", "dump", "dynamic", "assets", "images", "items")
   private val appImages = List("ui", "src", "main", "web", "dynamic", "assets", "images", "items")
-  private val idMapPath = List("data", "id-map.json")
-  private val baselinePath = List("data", "items.json")
+  private val acceptedPath = List("data", "items.json")
   private val itemsPath = List("ui", "src", "main", "web", "data", "items.json")
   private val migrationPath = List("tmp", "migration-mapping.txt")
 
@@ -24,9 +23,9 @@ object OutputApplier {
     * dump, a file the browser will not read — and until the JSON is rewritten it still
     * describes the state the assets were in before any of this started.
     *
-    * The ID map goes last. Retiring an item takes its key out of the map, and both the
-    * migration lines and the icons to delete are worked out from which keys the map still
-    * holds. So they are written before it, and until it is written a retry recomputes
+    * The accepted items go last. Retiring an item takes it and its ID out of them, and both
+    * the migration lines and the icons to delete are worked out from which IDs they still
+    * hold. So those are written before them, and until they are written a retry recomputes
     * exactly what the failed attempt would have written.
     *
     * `report` hears what is being written as it happens. The first Apply after a long gap
@@ -52,9 +51,8 @@ object OutputApplier {
       }
       _ = report("Writing data files…")
       _ <- writeMigrations(root, resolution.migrations)
-      _ <- root.writeText(resolution.baseline.asJson.noSpaces, baselinePath*)
       _ <- root.writeText(resolution.items.asJson.noSpaces, itemsPath*)
-      _ <- root.writeText(resolution.idMap.asJson.noSpaces, idMapPath*)
+      _ <- root.writeText(resolution.accepted.asJson.noSpaces, acceptedPath*)
       _ <- ReviewInputs.markApplied(root)
     } yield ()
   }

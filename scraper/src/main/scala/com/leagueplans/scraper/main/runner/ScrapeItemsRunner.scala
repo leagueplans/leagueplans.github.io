@@ -1,6 +1,6 @@
 package com.leagueplans.scraper.main.runner
 
-import com.leagueplans.common.model.{InfoboxKey, ItemData}
+import com.leagueplans.common.model.{AcceptedItems, InfoboxKey, ItemData}
 import com.leagueplans.scraper.dumper.items.ItemDumper
 import com.leagueplans.scraper.main.CommandLineArgs
 import com.leagueplans.scraper.wiki.http.WikiClient
@@ -33,8 +33,8 @@ object ScrapeItemsRunner {
         case true =>
           for {
             contents <- Try(Files.readString(path))
-            data <- decode[Vector[(InfoboxKey, ItemData)]](contents).toTry
-          } yield data.toMap
+            accepted <- decode[AcceptedItems](contents).toTry
+          } yield accepted.data.toMap
 
         case false => Success(Map.empty)
       }

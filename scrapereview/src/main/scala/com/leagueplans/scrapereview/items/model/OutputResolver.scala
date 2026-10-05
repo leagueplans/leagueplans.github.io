@@ -1,7 +1,7 @@
 package com.leagueplans.scrapereview.items.model
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{InfoboxKey, Item, ItemChangeset, ItemData}
+import com.leagueplans.common.model.{AcceptedItems, InfoboxKey, Item, ItemChangeset, ItemData}
 import com.leagueplans.scrapereview.items.model.ReviewDecisions.Removal
 
 object OutputResolver {
@@ -19,7 +19,18 @@ object OutputResolver {
     imagesToCopy: List[ImageCopy],
     imagesToDelete: List[Item.ID],
     migrations: List[Migration]
-  )
+  ) {
+    /** The accepted data and its IDs, as they're saved together. Every accepted item has an ID,
+      * since an item is only accepted along with the ID it's given.
+      */
+    def accepted: AcceptedItems =
+      AcceptedItems(
+        idMap.nextID,
+        baseline.map((key, data) =>
+          (key, idMap.get(key).getOrElse(throw IllegalStateException(s"No ID for accepted item $key")), data)
+        )
+      )
+  }
 
   /** Works out everything the review implies, without touching the file system.
     *

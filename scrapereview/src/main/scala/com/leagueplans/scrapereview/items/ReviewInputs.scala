@@ -1,7 +1,7 @@
 package com.leagueplans.scrapereview.items
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{InfoboxKey, ItemChangeset, ItemData}
+import com.leagueplans.common.model.{AcceptedItems, InfoboxKey, ItemChangeset, ItemData}
 import com.leagueplans.scrapereview.filesystem.PickedDirectory
 import com.leagueplans.scrapereview.items.model.IDMap
 import io.circe.Decoder
@@ -13,11 +13,10 @@ import scala.concurrent.Future
 object ReviewInputs {
   private val changesetPath = List("tmp", "dump", "data", "changeset.json")
   private val appliedPath = List("tmp", "dump", "data", "changeset.applied.json")
-  private val idMapPath = List("data", "id-map.json")
-  private val baselinePath = List("data", "items.json")
+  private val acceptedPath = List("data", "items.json")
 
   /** Names the file that failed rather than letting a decoding error surface on its own,
-    * since "expected a string" says nothing about which of three files was wrong.
+    * since "expected a string" says nothing about which of two files was wrong.
     */
   final case class LoadFailure(path: String, cause: String) extends Exception(s"$path: $cause")
 
@@ -25,10 +24,9 @@ object ReviewInputs {
     for {
       _ <- refuseIfApplied(root)
       changeset <- read[ItemChangeset](root, changesetPath)
-      idMap <- read[IDMap](root, idMapPath)
-      baseline <- read[Vector[(InfoboxKey, ItemData)]](root, baselinePath)
+      accepted <- read[AcceptedItems](root, acceptedPath)
       // Sorted here as well as by the scraper, for changesets written before it sorted.
-    } yield ReviewInputs(changeset.sorted, idMap, baseline)
+    } yield ReviewInputs(changeset.sorted, IDMap.from(accepted), accepted.data)
 
   /** Retires the changeset once everything it implies has been written.
     *
