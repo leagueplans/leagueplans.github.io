@@ -7,7 +7,7 @@ import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.PlanSubscription
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.eventbus.EventBus
@@ -22,12 +22,14 @@ object Bootstrap {
     val statusTracker = StatusTracker.empty
     val (tooltipContainer, tooltipController) = Tooltip()
     val (contextMenu, contextMenuController) = ContextMenu()
+    val (popover, popoverController) = Popover()
     val (toastHub, toastPublisher) = ToastHub(tooltipController)
 
     val popovers = L.div(
       L.cls(Styles.popovers),
       tooltipContainer.amend(L.cls(Styles.tooltip)),
       contextMenu.amend(L.cls(Styles.contextMenu)),
+      popover.amend(L.cls(Styles.popover)),
       toastHub.amend(L.cls(Styles.toastHub))
     )
 
@@ -44,7 +46,7 @@ object Bootstrap {
       L.div(
         L.cls(Styles.page),
         L.child <-- toPageSignal(
-          statusTracker, tooltipController, contextMenuController, modalController, toastPublisher
+          statusTracker, tooltipController, contextMenuController, popoverController, modalController, toastPublisher
         ).map(_.amend(L.cls(Styles.pageContent))),
         footer
       )
@@ -58,6 +60,7 @@ object Bootstrap {
     val popovers: String = js.native
     val tooltip: String = js.native
     val contextMenu: String = js.native
+    val popover: String = js.native
     val toastHub: String = js.native
     val modal: String = js.native
 
@@ -70,6 +73,7 @@ object Bootstrap {
     statusTracker: StatusTracker,
     tooltipController: Tooltip,
     contextMenu: ContextMenu,
+    popover: Popover,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): Signal[L.Div] = {
@@ -84,6 +88,7 @@ object Bootstrap {
         cache,
         tooltipController,
         contextMenu,
+        popover,
         modal,
         toastPublisher
       )

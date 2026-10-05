@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.plan
 import com.leagueplans.ui.dom.planning.details.{EditRequest, RowSelection}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.dom.planning.plan.history.UndoController
+import com.leagueplans.ui.dom.planning.plan.history.{UndoController, UndoToasts}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -33,7 +33,7 @@ object PlanElement {
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
     val newStepDraft = NewStepDraft(forester)
-    val stepDeleter = StepDeleter(forester, focusController, toastPublisher)
+    val stepDeleter = StepDeleter(forester, focusController, UndoToasts(forester, toastPublisher))
     val stepClipboard = StepClipboard(forester, toastPublisher)
     val stepMover = StepMover(forester)
     val undoController = UndoController(forester, focusController, toastPublisher)

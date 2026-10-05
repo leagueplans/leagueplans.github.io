@@ -1,11 +1,12 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.common.model.Item
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.inventory.panel.InventoryPanel
 import com.leagueplans.ui.dom.planning.player.item.inventory.sidebar.InventorySidebar
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.dom.{Modal, ToastHub, Tooltip}
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
@@ -20,8 +21,8 @@ object InventoryElement {
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    itemCards: ItemCards,
     tooltip: Tooltip,
-    contextMenu: ContextMenu,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -29,10 +30,8 @@ object InventoryElement {
       playerSignal,
       query,
       cache,
-      effectObserverSignal,
-      tooltip,
-      contextMenu,
-      modal
+      itemCards,
+      tooltip
     )
     val sidebar = InventorySidebar(
       playerSignal,

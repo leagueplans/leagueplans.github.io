@@ -5,22 +5,30 @@ import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, textToTextNode}
+import org.scalajs.dom.Element
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object StackElement {
+  /** @param hideTooltip whether to hide the stack's tooltip, given the stack's element, such as
+    *                    while the stack's card is open
+    */
   def apply(
     stack: ItemStack,
     tooltip: Tooltip,
-    tooltipConfig: FloatingConfig
+    tooltipConfig: FloatingConfig,
+    hideTooltip: Element => Signal[Boolean]
   ): L.Div =
     L.div(
       L.cls(Styles.stack),
       StackIcon(stack),
       StackQuantityElement(stack.quantity).amend(L.cls(Styles.stackSize)),
-      tooltip.register(toTooltipContents(stack.item, stack.quantity), tooltipConfig)
+      L.inContext(node =>
+        tooltip.register(toTooltipContents(stack.item, stack.quantity), tooltipConfig, hideTooltip(node.ref))
+      )
     )
 
   @js.native @JSImport("/styles/planning/player/item/stackElement.module.css", JSImport.Default)

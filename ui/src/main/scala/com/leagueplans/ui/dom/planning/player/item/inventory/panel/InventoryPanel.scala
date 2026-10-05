@@ -1,15 +1,15 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringSeqValueMapper}
-import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -20,10 +20,8 @@ object InventoryPanel {
     playerSignal: Signal[Player],
     query: Signal[String],
     cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
-    tooltip: Tooltip,
-    contextMenu: ContextMenu,
-    modal: Modal
+    itemCards: ItemCards,
+    tooltip: Tooltip
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
 
@@ -36,7 +34,7 @@ object InventoryPanel {
           columnCount = 4,
           rowCount = 7,
           overflowRowCount = 20,
-          toStackElement(playerSignal, query, cache, effectObserverSignal, panel, tooltip, contextMenu, modal),
+          toStackElement(query, itemCards, panel, tooltip),
           tooltip
         ).amend(L.cls(Styles.contents))
       )
@@ -60,42 +58,20 @@ object InventoryPanel {
   }
 
   private def toStackElement(
-    playerSignal: Signal[Player],
     query: Signal[String],
-    cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    itemCards: ItemCards,
     panel: L.HtmlElement,
-    tooltip: Tooltip,
-    contextMenu: ContextMenu,
-    modal: Modal
+    tooltip: Tooltip
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2)
+      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2),
+      hideTooltip = itemCards.isOpenOn
     ).amend(
       L.cls(Styles.unmatched) <-- query.map(query =>
         !ItemQuery.isEmpty(query) && !ItemQuery.matches(stack.item, query)
       ),
-      bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenu, modal)
+      itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Inventory))
     )
-
-  private def bindItemContextMenu(
-    stack: ItemStack,
-    cache: Cache,
-    playerSignal: Signal[Player],
-    effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
-    contextMenu: ContextMenu,
-    modal: Modal
-  ): Binder.Base =
-    contextMenu.registerConditionally(
-      Signal
-        .combine(effectObserverSignal, playerSignal)
-        .map {
-          case (Some(effectObserver), player) =>
-            Some(() => InventoryItemContextMenu(stack, player, cache, effectObserver, contextMenu, modal))
-          case (None, _) =>
-            None
-        }
-    )()
 }

@@ -1,0 +1,308 @@
+/* The cards that open over the sections, such as an item's card. Popover draws their frame. */
+.card {
+  width: 19rem;
+  padding: 10px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  font-size: 0.82rem;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.icon {
+  flex: none;
+  width: 40px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #1d1813;
+  border-radius: 4px;
+  background-color: #3b3229;
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* A variant, such as the "Poison+" of "Bronze arrow (Poison+)" */
+.chip {
+  padding: 0 5px;
+
+  border: 1px solid #7d6a3a;
+  border-radius: 3px;
+  background-color: #5a4a2c;
+  color: #e7d3a8;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Why the actions beneath are disabled, such as when no step is focused */
+.notice {
+  margin: 0;
+  padding: 6px 8px;
+
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  border: 1px solid var(--navy-accent);
+  border-radius: 6px;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.notice svg {
+  flex: none;
+  color: #8fb0ef;
+}
+
+.close {
+  flex: none;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.close:hover, .close:focus-visible {
+  background-color: var(--navy-line);
+  color: var(--text-bright);
+  outline: none;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.facts b {
+  color: var(--text-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A block of controls that share one input, such as the actions that use an amount */
+.well {
+  padding: 8px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 6px;
+  background-color: var(--navy-well);
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.number {
+  width: 6rem;
+  padding: 3px 6px;
+  box-sizing: border-box;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  background-color: var(--navy-deep);
+  color: var(--text-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.number:focus-visible {
+  outline: 1px solid var(--navy-accent);
+}
+
+/* The quick values beside it do the stepping, so the browser's spinner only adds clutter */
+.number {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.number::-webkit-inner-spin-button, .number::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.select {
+  padding: 2px 4px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  background-color: var(--navy-deep);
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+/* Quick values for an input, such as 1 / 5 / 10 / All */
+.segments {
+  display: inline-flex;
+  overflow: hidden;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+}
+
+.segment {
+  padding: 2px 8px;
+
+  border: 0;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.segment + .segment {
+  border-left: 1px solid var(--navy-border);
+}
+
+.segment:hover, .segment:focus-visible {
+  background-color: var(--navy-bar-hover);
+  color: var(--text-bright);
+  outline: none;
+}
+
+.button {
+  padding: 3px 9px;
+
+  border: 1px solid #1b2a4d;
+  border-radius: 4px;
+  background-color: #2f4679;
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.button:enabled {
+  cursor: pointer;
+}
+
+.button:enabled:hover, .button:enabled:focus-visible {
+  background-color: var(--navy-accent);
+  outline: none;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Wraps a button whose tooltip must show while it's disabled. See Card.withTooltip. */
+.tooltipped {
+  display: inline-flex;
+}
+
+.tooltipped > button:disabled {
+  pointer-events: none;
+}
+
+.tooltipped:has(> button:disabled) {
+  cursor: not-allowed;
+}
+
+/* Secondary actions, such as removing items */
+.ghost {
+  composes: button;
+
+  border-color: var(--navy-border);
+  background-color: transparent;
+}
+
+.ghost:enabled:hover, .ghost:enabled:focus-visible {
+  background-color: var(--navy-line);
+}
+
+/* Numbers repeated in buttons' labels, such as the 25 of "Bank 25" */
+.amount {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.link {
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: #8fb0ef;
+  font-family: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:enabled {
+  cursor: pointer;
+}
+
+.link:enabled:hover, .link:enabled:focus-visible {
+  color: var(--text-bright);
+  outline: none;
+}
+
+.link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.warning {
+  color: var(--warning);
+  font-size: 0.75rem;
+}

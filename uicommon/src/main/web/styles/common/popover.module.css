@@ -1,0 +1,16 @@
+.container {}
+
+/* Matches the planning page's navy panels, the tooltips and the menus */
+.card {
+  box-sizing: border-box;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 6px;
+
+  background-color: var(--navy-deep);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+}

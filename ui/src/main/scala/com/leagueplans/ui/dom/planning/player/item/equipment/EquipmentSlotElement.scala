@@ -1,17 +1,16 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
 import com.leagueplans.ui.dom.planning.player.item.StackElement
-import com.leagueplans.ui.model.plan.Effect.MoveItem
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
+import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.ItemStack
-import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, textToInserter}
-import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -20,10 +19,9 @@ object EquipmentSlotElement {
   def apply(
     slot: EquipmentSlot,
     stacks: List[ItemStack],
-    effectObserverSignal: Signal[Option[Observer[MoveItem]]],
+    itemCards: ItemCards,
     itemTooltipAnchor: L.HtmlElement,
-    tooltip: Tooltip,
-    contextMenu: ContextMenu
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.slot),
@@ -38,10 +36,11 @@ object EquipmentSlotElement {
           StackElement(
             stack,
             tooltip,
-            tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2)
+            tooltipConfig = FloatingConfig.basicAnchoredTooltip(itemTooltipAnchor, Placement.bottom, offset = 2),
+            hideTooltip = itemCards.isOpenOn
           ).amend(
             L.cls(Styles.contents),
-            bindContextMenu(stack, slot, effectObserverSignal, contextMenu)
+            itemCards.trigger(Holding(stack.item, stack.noted, slot))
           )
         case _ =>
           L.div(
@@ -111,16 +110,4 @@ object EquipmentSlotElement {
         case EquipmentSlot.Feet => Backgrounds.feet
         case EquipmentSlot.Ring => Backgrounds.ring
       }
-
-  private def bindContextMenu(
-    stack: ItemStack,
-    slot: EquipmentSlot,
-    effectObserverSignal: Signal[Option[Observer[MoveItem]]],
-    contextMenu: ContextMenu
-  ): Binder.Base =
-    contextMenu.registerConditionally(
-      effectObserverSignal.map(_.map(effectObserver => () =>
-        EquippedItemContextMenu(stack, slot, effectObserver, contextMenu)
-      ))
-    )()
 }

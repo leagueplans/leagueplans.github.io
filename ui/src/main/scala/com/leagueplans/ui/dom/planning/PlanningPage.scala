@@ -5,6 +5,7 @@ import com.leagueplans.ui.dom.planning.details.{DetailsColumn, EditRequest, RowS
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
+import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
@@ -40,6 +41,7 @@ object PlanningPage {
     itemFuse: Fuse[Item],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
+    popover: Popover,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -93,8 +95,10 @@ object PlanningPage {
           itemFuse,
           tooltip,
           contextMenu,
+          popover,
           modal,
-          toastPublisher
+          toastPublisher,
+          UndoToasts(forester, toastPublisher)
         ),
         SelectedSection.load(planStorage),
         Observer(SelectedSection.save(planStorage, _)),

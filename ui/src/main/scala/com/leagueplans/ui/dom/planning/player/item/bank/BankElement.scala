@@ -1,17 +1,16 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
-import com.leagueplans.common.model.Item
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
+import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, textToTextNode}
-import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -22,10 +21,8 @@ object BankElement {
     playerSignal: Signal[Player],
     query: Var[String],
     cache: Cache,
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-    tooltip: Tooltip,
-    contextMenu: ContextMenu,
-    modal: Modal
+    itemCards: ItemCards,
+    tooltip: Tooltip
   ): L.Div = {
     val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
     val stacks = bankSignal.map(cache.itemise)
@@ -54,7 +51,7 @@ object BankElement {
             columnCount = 8,
             rowCount = 100,
             overflowRowCount = 10,
-            toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenu, modal),
+            toStackElement(itemCards, panel, tooltip),
             tooltip,
             fillWidth = true
           ),
@@ -126,34 +123,14 @@ object BankElement {
   }
 
   private def toStackElement(
-    bankSignal: Signal[Depository],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
+    itemCards: ItemCards,
     panel: L.HtmlElement,
-    tooltip: Tooltip,
-    contextMenu: ContextMenu,
-    modal: Modal
+    tooltip: Tooltip
   )(stack: ItemStack): L.Div =
     StackElement(
       stack,
       tooltip,
-      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2)
-    ).amend(bindContextMenu(stack.item, bankSignal, effectObserverSignal, contextMenu, modal))
-
-  private def bindContextMenu(
-    item: Item,
-    bankSignal: Signal[Depository],
-    effectObserverSignal: Signal[Option[Observer[Effect]]],
-    contextMenu: ContextMenu,
-    modal: Modal
-  ): Binder.Base =
-    contextMenu.registerConditionally(
-      Signal
-        .combine(bankSignal, effectObserverSignal)
-        .map((bank, maybeEffectObserver) =>
-          maybeEffectObserver.map(effectObserver => () => {
-            val heldQuantity = bank.contents.getOrElse((item.id, false), 0)
-            BankItemContextMenu(item, heldQuantity, effectObserver, contextMenu, modal)
-          })
-        )
-    )()
+      tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2),
+      hideTooltip = itemCards.isOpenOn
+    ).amend(itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Bank)))
 }

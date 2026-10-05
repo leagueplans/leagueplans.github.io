@@ -1,0 +1,71 @@
+package com.leagueplans.ui.dom.planning.player.item.card
+
+import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
+import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.player.item.ItemActions.Holding
+import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.{Popover, Tooltip}
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
+import org.scalajs.dom.{Element, KeyboardEvent}
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
+/** Opens item cards from the stacks in the Items section.
+  *
+  * @param boundary the element cards prefer to stay within, so that they don't cover the plan
+  */
+final class ItemCards(
+  popover: Popover,
+  playerAtInsertion: Signal[Player],
+  effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+  cache: Cache,
+  undoToasts: UndoToasts,
+  tooltip: Tooltip,
+  boundary: () => Option[Element]
+) {
+  /** Clicking the stack, or right-clicking it, opens its card. Clicking it again closes it. */
+  def trigger(holding: Holding): L.Modifier[L.HtmlElement] =
+    L.inContext(node =>
+      List(
+        L.tabIndex(0),
+        L.role("button"),
+        L.aria.label(s"${holding.item.name}: open its card"),
+        L.cls(ItemCards.Styles.trigger),
+        L.cls(ItemCards.Styles.selected) <-- popover.isAnchoredTo(node.ref),
+        popover.closesWithAnchor,
+        // Shift-clicks are left for quick moves
+        L.onClick.filter(!_.shiftKey).compose(_.sample(popover.isAnchoredTo(node.ref))) --> (isOpen =>
+          if (isOpen) popover.close() else open(holding, node.ref)
+        ),
+        L.onContextMenu.handled --> (_ => open(holding, node.ref)),
+        L.onKeyDown.filter(isActivation).preventDefault --> (_ => open(holding, node.ref))
+      )
+    )
+
+  /** Whether a card is open on the element */
+  def isOpenOn(element: Element): Signal[Boolean] =
+    popover.isAnchoredTo(element)
+
+  def open(holding: Holding, anchor: Element): Unit = {
+    tooltip.close()
+    popover.open(
+      anchor,
+      ItemCard(holding, playerAtInsertion, effectObserver, cache, undoToasts, () => popover.close()),
+      boundary()
+    )
+  }
+
+  private def isActivation(event: KeyboardEvent): Boolean =
+    event.key == "Enter" || event.key == " "
+}
+
+object ItemCards {
+  @js.native @JSImport("/styles/planning/player/item/card/itemCards.module.css", JSImport.Default)
+  private object Styles extends js.Object {
+    val trigger: String = js.native
+    val selected: String = js.native
+  }
+}

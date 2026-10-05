@@ -10,7 +10,7 @@ import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.ui.storage.model.StepUpdates
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.leagueplans.uicommon.facades.fusejs.FuseOptions
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.Observer
@@ -28,6 +28,7 @@ object PlanningPageBootstrap {
     cache: Cache,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
+    popover: Popover,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
@@ -56,6 +57,7 @@ object PlanningPageBootstrap {
       itemFuse,
       tooltip,
       contextMenu,
+      popover,
       modal,
       toastPublisher
     ).amend(

@@ -1,10 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
-import com.raquo.airstream.core.{Observer, Signal}
+import com.leagueplans.uicommon.dom.Tooltip
+import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
 
 import scala.scalajs.js
@@ -14,9 +14,8 @@ object EquipmentElement {
   def apply(
     playerSignal: Signal[Player],
     cache: Cache,
-    effectObserver: Signal[Option[Observer[Effect]]],
-    tooltip: Tooltip,
-    contextMenu: ContextMenu
+    itemCards: ItemCards,
+    tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.pane),
@@ -30,10 +29,9 @@ object EquipmentElement {
             EquipmentSlotElement(
               slot,
               cache.itemise(player.get(slot)),
-              effectObserver,
+              itemCards,
               panel,
-              tooltip,
-              contextMenu
+              tooltip
             ).amend(L.cls(toStyle(slot)))
           )
         )

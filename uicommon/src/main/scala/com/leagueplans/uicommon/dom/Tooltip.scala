@@ -100,7 +100,14 @@ final class Tooltip private[Tooltip] (
   commandSink: Observer[Tooltip.Command],
   hoveringOverTooltipWithContents: Signal[Option[Tooltip.Key]]
 ) {
-  def register(contents: L.HtmlElement, config: FloatingConfig): L.Modifier[L.HtmlElement] = {
+  /** @param suppressed while true, the tooltip doesn't show, such as when it would only repeat
+    *                   a card that's open on the same element
+    */
+  def register(
+    contents: L.HtmlElement,
+    config: FloatingConfig,
+    suppressed: Signal[Boolean] = Signal.fromValue(false)
+  ): L.Modifier[L.HtmlElement] = {
     contents.amend(
       L.cls(Tooltip.Styles.tooltip),
       L.when(config.fadeIn)(Tooltip.fadeIn)
@@ -111,7 +118,7 @@ final class Tooltip private[Tooltip] (
         contents.amend(Floating.anchorTo(anchor.ref, config))
         List(
           L.cls(Tooltip.Styles.hasTooltip),
-          L.inContext(element => configureTooltipVisibility(element, contents))
+          L.inContext(element => configureTooltipVisibility(element, contents, suppressed))
         )
 
       case None =>
@@ -119,7 +126,7 @@ final class Tooltip private[Tooltip] (
           L.cls(Tooltip.Styles.hasTooltip),
           L.inContext { anchor =>
             contents.amend(Floating.anchorTo(anchor.ref, config))
-            configureTooltipVisibility(anchor, contents)
+            configureTooltipVisibility(anchor, contents, suppressed)
           }
         )
     }
@@ -129,13 +136,17 @@ final class Tooltip private[Tooltip] (
     commandSink.onNext(Tooltip.Command.ForceClose)
 
   // Allow a brief delay before both showing the tooltip, and before hiding it after the cursor moves away
-  private def configureTooltipVisibility(element: L.Element, tooltip: ChildNode.Base): L.Modifier[L.Element] = {
+  private def configureTooltipVisibility(
+    element: L.Element,
+    tooltip: ChildNode.Base,
+    suppressed: Signal[Boolean]
+  ): L.Modifier[L.Element] = {
     val isHoveringOverElement = Var(false)
     val isHoveringOverTooltip = hoveringOverTooltipWithContents.map(_.contains(element))
     val toggleTooltipCommands =
       Signal
-        .combine(isHoveringOverElement, isHoveringOverTooltip)
-        .map(_ || _)
+        .combine(isHoveringOverElement, isHoveringOverTooltip, suppressed)
+        .map((overElement, overTooltip, suppressed) => (overElement || overTooltip) && !suppressed)
         .distinct
         .map {
           case false => Tooltip.Command.Close(key = element)

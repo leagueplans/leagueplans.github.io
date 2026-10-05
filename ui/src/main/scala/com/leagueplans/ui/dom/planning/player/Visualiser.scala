@@ -51,9 +51,12 @@ object Visualiser {
         ),
         L.child.maybe <-- viewedSection.map(_.map(section => contents(section.key).amend(L.cls(Styles.content))))
       ),
-      // The sections' menus are built from the focused step's state, such as a stack's quantity
-      // or whether a quest is complete, so they'd be wrong for a newly focused step
-      context.focusChanges --> (_ => context.contextMenu.close())
+      // The sections' menus and cards are built from the focused step's state, such as a stack's
+      // quantity or whether a quest is complete, so they'd be wrong for a newly focused step
+      context.focusChanges --> { _ =>
+        context.contextMenu.close()
+        context.popover.close()
+      }
     )
   }
 

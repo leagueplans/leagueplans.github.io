@@ -19,6 +19,12 @@
   z-index: 2;
 }
 
+/* Below the menus and tooltips that can open from a card, and before the toasts */
+.popover {
+  position: absolute;
+  z-index: 1;
+}
+
 .toastHub {
   position: fixed;
   z-index: 1;

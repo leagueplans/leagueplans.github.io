@@ -1,9 +1,10 @@
 package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.common.model.Item
+import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
+import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 
@@ -19,6 +20,10 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
   * @param focusChanges fires when a different step is focused. Sections use it to clear drafts
   *                     built from the old step's state, such as an open menu showing a stack's
   *                     quantity. Drafts that don't depend on the step, such as search text, stay.
+  * @param popover shows a card anchored to something in the section, such as an item's card.
+  *                Cards are built from the focused step's state, so they close when the focus
+  *                changes.
+  * @param undoToasts reports a change made from the section, with a button to undo it
   */
 final case class SectionContext(
   displayedPlayer: Signal[Player],
@@ -32,6 +37,8 @@ final case class SectionContext(
   itemFuse: Fuse[Item],
   tooltip: Tooltip,
   contextMenu: ContextMenu,
+  popover: Popover,
   modal: Modal,
-  toasts: ToastHub.Publisher
+  toasts: ToastHub.Publisher,
+  undoToasts: UndoToasts
 )
