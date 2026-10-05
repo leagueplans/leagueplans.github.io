@@ -16,6 +16,7 @@ import scala.scalajs.js.annotation.JSImport
 object InventoryElement {
   def apply(
     playerSignal: Signal[Player],
+    query: Signal[String],
     cache: Cache,
     itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
@@ -26,6 +27,7 @@ object InventoryElement {
   ): L.Div = {
     val panel = InventoryPanel(
       playerSignal,
+      query,
       cache,
       effectObserverSignal,
       tooltip,

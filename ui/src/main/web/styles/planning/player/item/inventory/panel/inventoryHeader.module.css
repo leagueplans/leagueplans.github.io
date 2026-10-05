@@ -4,3 +4,13 @@
   height: 1.2rem;
   padding-right: 0.3rem;
 }
+
+.used {
+  margin-left: 0.4rem;
+
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: normal;
+  text-shadow: none;
+}

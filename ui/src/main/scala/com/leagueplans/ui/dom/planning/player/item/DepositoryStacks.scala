@@ -7,7 +7,7 @@ import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
 
@@ -21,14 +21,15 @@ object DepositoryStacks {
     rowCount: Int,
     overflowRowCount: Int,
     toElement: ItemStack => L.Modifier[L.HtmlElement],
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    fillWidth: Boolean = false
   ): L.Div = {
     val maxContents = columnCount * rowCount
 
     L.div(
       L.cls(Styles.content),
-      mainStacks(stacksSignal, maxContents, columnCount, rowCount, toElement),
-      L.child.maybe <-- maybeOverflowStacks(stacksSignal, maxContents, columnCount, overflowRowCount, toElement),
+      mainStacks(stacksSignal, maxContents, columnCount, rowCount, toElement, fillWidth),
+      L.child.maybe <-- maybeOverflowStacks(stacksSignal, maxContents, columnCount, overflowRowCount, toElement, fillWidth),
       L.child.maybe <-- maybeOverflowWarning(stacksSignal, maxContents, columnCount, overflowRowCount, tooltip)
     )
   }
@@ -51,15 +52,15 @@ object DepositoryStacks {
     maxContents: Int,
     columnCount: Int,
     rowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement]
+    toElement: ItemStack => L.Modifier[L.HtmlElement],
+    fillWidth: Boolean
   ): ReactiveHtmlElement[OList] =
     StackList(
       stacksSignal.map(_.take(maxContents)),
       toElement
     ).amend(
       L.cls(Styles.stacks),
-      templateVector("columns", columnCount),
-      templateVector("rows", rowCount)
+      gridTemplate(columnCount, rowCount, fillWidth)
     )
 
   private def maybeOverflowStacks(
@@ -67,7 +68,8 @@ object DepositoryStacks {
     maxContents: Int,
     columnCount: Int,
     overflowRowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement]
+    toElement: ItemStack => L.Modifier[L.HtmlElement],
+    fillWidth: Boolean
   ): Signal[Option[ReactiveHtmlElement[OList]]] =
     stacksSignal.splitOne {
       case stacks if maxContents + (columnCount * overflowRowCount) < stacks.size => 0
@@ -80,11 +82,21 @@ object DepositoryStacks {
           toElement
         ).amend(
           L.cls(Styles.overflowStacks),
-          templateVector("columns", columnCount),
-          templateVector("rows", rowCount)
+          gridTemplate(columnCount, rowCount, fillWidth)
         )
       )
     )
+
+  /** Stacks that fill the width wrap onto as many rows as they need. The column count is then only
+    * used to work out how many stacks to show. */
+  private def gridTemplate(columnCount: Int, rowCount: Int, fillWidth: Boolean): L.Modifier[L.HtmlElement] =
+    if (fillWidth)
+      List(
+        L.styleProp[String]("grid-template-columns")(s"repeat(auto-fill, ${L.style.px(36)})"),
+        L.styleProp[String]("grid-auto-rows")(L.style.px(36))
+      )
+    else
+      List(templateVector("columns", columnCount), templateVector("rows", rowCount))
 
   private def templateVector(s: "rows" | "columns", length: Int) =
     L.styleProp[String](s"grid-template-$s")(

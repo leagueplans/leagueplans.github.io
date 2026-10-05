@@ -1,55 +1,88 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
+import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
 import com.leagueplans.ui.model.plan.Effect
-import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import com.raquo.airstream.state.Var
+import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, textToTextNode}
 import com.raquo.laminar.modifiers.Binder
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object BankElement {
+  /** @param query the bank search, which also dims the inventory's stacks that don't match */
   def apply(
-    bankSignal: Signal[Depository],
+    playerSignal: Signal[Player],
+    query: Var[String],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect]]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal
-  ): L.Div =
+  ): L.Div = {
+    val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
+    val stacks = bankSignal.map(cache.itemise)
+    val matchingStacks =
+      Signal.combine(stacks, query.signal).map((stacks, query) =>
+        if (ItemQuery.isEmpty(query)) stacks else stacks.filter(stack => ItemQuery.matches(stack.item, query))
+      )
+
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
       L.headerTag(
         L.cls(DepositoryStyles.header, PanelStyles.header),
         L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Bank icon")),
-        "Bank"
+        "Bank",
+        L.span(
+          L.cls(Styles.stackCount),
+          L.text <-- stacks.map(_.size).map(count => if (count == 1) "1 stack" else s"$count stacks")
+        )
       ),
+      searchBar(query, playerSignal, cache),
       L.inContext(panel =>
-        DepositoryStacks(
-          bankSignal.map(cache.itemise),
-          columnCount = 8,
-          rowCount = 100,
-          overflowRowCount = 10,
-          toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenu, modal),
-          tooltip
-        ).amend(L.cls(Styles.contents))
+        L.div(
+          L.cls(Styles.scroller),
+          DepositoryStacks(
+            matchingStacks,
+            columnCount = 8,
+            rowCount = 100,
+            overflowRowCount = 10,
+            toStackElement(bankSignal, effectObserverSignal, panel, tooltip, contextMenu, modal),
+            tooltip,
+            fillWidth = true
+          ),
+          L.child.maybe <-- Signal.combine(stacks, matchingStacks, query.signal).map((all, matching, query) =>
+            Option.when(matching.isEmpty)(
+              L.p(
+                L.cls(Styles.emptyState),
+                if (all.nonEmpty && !ItemQuery.isEmpty(query)) "Nothing in the bank matches." else "The bank is empty."
+              )
+            )
+          )
+        )
       )
     )
+  }
 
   @js.native @JSImport("/images/bank-icon.png", JSImport.Default)
   private val icon: String = js.native
 
   @js.native @JSImport("/styles/planning/player/item/bank/bankElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val contents: String = js.native
     val icon: String = js.native
+    val stackCount: String = js.native
+    val search: String = js.native
+    val searchInput: String = js.native
+    val searchCounts: String = js.native
+    val scroller: String = js.native
+    val emptyState: String = js.native
   }
 
   @js.native @JSImport("/styles/planning/shared/player/item/depositoryElement.module.css", JSImport.Default)
@@ -63,6 +96,33 @@ object BankElement {
   private object PanelStyles extends js.Object {
     val panel: String = js.native
     val header: String = js.native
+  }
+
+  private def searchBar(query: Var[String], playerSignal: Signal[Player], cache: Cache): L.Div =
+    L.div(
+      L.cls(Styles.search),
+      L.input(
+        L.cls(Styles.searchInput),
+        L.tpe("search"),
+        L.placeholder("Search the bank"),
+        L.aria.label("Search the bank"),
+        L.autoComplete("off"),
+        L.controlled(L.value <-- query.signal, L.onInput.mapToValue --> query.writer)
+      ),
+      L.child.maybe <-- Signal.combine(playerSignal, query.signal).map((player, query) =>
+        Option.when(!ItemQuery.isEmpty(query))(
+          L.span(L.cls(Styles.searchCounts), counts(player, query, cache))
+        )
+      )
+    )
+
+  private def counts(player: Player, query: String, cache: Cache): String = {
+    def matching(kind: Depository.Kind): Int =
+      cache.itemise(player.get(kind)).count(stack => ItemQuery.matches(stack.item, query))
+
+    val inventory = matching(Depository.Kind.Inventory)
+    val bank = s"${matching(Depository.Kind.Bank)} in bank"
+    if (inventory == 0) bank else s"$bank · $inventory in inventory"
   }
 
   private def toStackElement(

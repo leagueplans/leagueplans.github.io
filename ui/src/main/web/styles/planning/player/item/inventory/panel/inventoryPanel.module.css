@@ -1,3 +1,7 @@
 .contents {
   max-height: 350px;
 }
+
+.unmatched {
+  opacity: 0.3;
+}

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
-import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, StackElement}
+import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -15,32 +15,38 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object InventoryPanel {
+  /** @param query the bank search. Stacks that don't match it fade out. */
   def apply(
     playerSignal: Signal[Player],
+    query: Signal[String],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal
-  ): L.Div =
+  ): L.Div = {
+    val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
+
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
-      InventoryHeader(),
+      InventoryHeader(used = stacks.map(_.size)),
       L.inContext(panel =>
         DepositoryStacks(
-          playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory))),
+          stacks,
           columnCount = 4,
           rowCount = 7,
           overflowRowCount = 20,
-          toStackElement(playerSignal, cache, effectObserverSignal, panel, tooltip, contextMenu, modal),
+          toStackElement(playerSignal, query, cache, effectObserverSignal, panel, tooltip, contextMenu, modal),
           tooltip
         ).amend(L.cls(Styles.contents))
       )
     )
+  }
 
   @js.native @JSImport("/styles/planning/player/item/inventory/panel/inventoryPanel.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val contents: String = js.native
+    val unmatched: String = js.native
   }
 
   @js.native @JSImport("/styles/planning/shared/player/item/depositoryElement.module.css", JSImport.Default)
@@ -55,6 +61,7 @@ object InventoryPanel {
 
   private def toStackElement(
     playerSignal: Signal[Player],
+    query: Signal[String],
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     panel: L.HtmlElement,
@@ -66,7 +73,12 @@ object InventoryPanel {
       stack,
       tooltip,
       tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2)
-    ).amend(bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenu, modal))
+    ).amend(
+      L.cls(Styles.unmatched) <-- query.map(query =>
+        !ItemQuery.isEmpty(query) && !ItemQuery.matches(stack.item, query)
+      ),
+      bindItemContextMenu(stack, cache, playerSignal, effectObserverSignal, contextMenu, modal)
+    )
 
   private def bindItemContextMenu(
     stack: ItemStack,
