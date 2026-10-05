@@ -16,9 +16,13 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object BankElement {
-  /** @param query the bank search, which also dims the inventory's stacks that don't match */
+  /** @param playerAtInsertion the state new effects apply to, for the add results' held counts
+    * @param query the bank search, which also dims the inventory's stacks that don't match, and
+    *              finds items to add
+    */
   def apply(
     playerSignal: Signal[Player],
+    playerAtInsertion: Signal[Player],
     query: Var[String],
     cache: Cache,
     itemCards: ItemCards,
@@ -62,6 +66,10 @@ object BankElement {
                 if (all.nonEmpty && !ItemQuery.isEmpty(query)) "Nothing in the bank matches." else "The bank is empty."
               )
             )
+          ),
+          // The same search finds items to add
+          L.child.maybe <-- query.signal.map(ItemQuery.isEmpty).distinct.map(isEmpty =>
+            Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards))
           )
         )
       )
@@ -101,8 +109,8 @@ object BankElement {
       L.input(
         L.cls(Styles.searchInput),
         L.tpe("search"),
-        L.placeholder("Search the bank"),
-        L.aria.label("Search the bank"),
+        L.placeholder("Search the bank, or find any item to add"),
+        L.aria.label("Search the bank, or find any item to add"),
         L.autoComplete("off"),
         L.controlled(L.value <-- query.signal, L.onInput.mapToValue --> query.writer)
       ),

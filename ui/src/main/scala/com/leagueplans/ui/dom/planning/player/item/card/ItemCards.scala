@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.item.card
 
+import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
@@ -48,6 +49,26 @@ final class ItemCards(
   /** Whether a card is open on the element */
   def isOpenOn(element: Element): Signal[Boolean] =
     popover.isAnchoredTo(element)
+
+  private val addDraft = AddItemCard.Draft()
+
+  /** For the bank search's results: clicking one opens a card that adds the item */
+  def addTrigger(item: Item): L.Modifier[L.HtmlElement] =
+    L.inContext(node =>
+      List(
+        L.cls(ItemCards.Styles.selected) <-- popover.isAnchoredTo(node.ref),
+        popover.closesWithAnchor,
+        L.onClick.compose(_.sample(popover.isAnchoredTo(node.ref))) --> (isOpen =>
+          if (isOpen) popover.close()
+          else popover.open(
+            node.ref,
+            AddItemCard(item, addDraft, effectObserver, undoToasts, () => popover.close()),
+            boundary(),
+            below = true
+          )
+        )
+      )
+    )
 
   def open(holding: Holding, anchor: Element): Unit = {
     tooltip.close()

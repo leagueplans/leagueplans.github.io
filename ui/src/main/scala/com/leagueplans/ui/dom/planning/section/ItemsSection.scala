@@ -47,7 +47,6 @@ object ItemsSection {
         ctx.displayedPlayer,
         bankQuery.signal,
         ctx.cache,
-        ctx.itemFuse,
         ctx.effectObserver,
         itemCards,
         ctx.tooltip,
@@ -56,6 +55,7 @@ object ItemsSection {
       ).amend(L.cls(Styles.inventory)),
       BankElement(
         ctx.displayedPlayer,
+        ctx.playerAtInsertion,
         bankQuery,
         ctx.cache,
         itemCards,

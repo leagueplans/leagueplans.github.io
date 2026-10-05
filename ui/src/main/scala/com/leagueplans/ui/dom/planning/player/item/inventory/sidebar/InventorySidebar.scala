@@ -1,11 +1,9 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.sidebar
 
-import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.{Modal, ToastHub, Tooltip}
-import com.leagueplans.uicommon.wrappers.fusejs.Fuse
+import com.leagueplans.uicommon.dom.{Modal, ToastHub}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.L
 
@@ -16,14 +14,10 @@ object InventorySidebar {
   def apply(
     playerSignal: Signal[Player],
     cache: Cache,
-    itemFuse: Fuse[Item],
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
-    tooltip: Tooltip,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val addItemButton = AddItemButton(itemFuse, effectObserverSignal, tooltip, modal)
-
     val bankAllButton = BankAllButton(effectObserverSignal)
 
     val bankTagsButton =
@@ -35,7 +29,6 @@ object InventorySidebar {
 
     L.div(
       L.cls(Styles.sidebar),
-      addItemButton.amend(L.cls(Styles.addItemButton)),
       bankAllButton.amend(L.cls(Styles.bankAllButton)),
       bankTagsButton.amend(L.cls(Styles.exportBankTagsButton))
     )
@@ -44,7 +37,6 @@ object InventorySidebar {
   @js.native @JSImport("/styles/planning/player/item/inventory/sidebar/inventorySidebar.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val sidebar: String = js.native
-    val addItemButton: String = js.native
     val bankAllButton: String = js.native
     val exportBankTagsButton: String = js.native
   }
