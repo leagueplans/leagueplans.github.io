@@ -28,7 +28,8 @@ object BankElement {
     cache: Cache,
     itemCards: ItemCards,
     itemDrag: ItemDrag,
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    footer: Signal[Int] => L.Div
   ): L.Div = {
     val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
     val stacks = bankSignal.map(cache.itemise)
@@ -43,11 +44,7 @@ object BankElement {
       L.headerTag(
         L.cls(DepositoryStyles.header, PanelStyles.header),
         L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Bank icon")),
-        "Bank",
-        L.span(
-          L.cls(Styles.stackCount),
-          L.text <-- stacks.map(_.size).map(count => if (count == 1) "1 stack" else s"$count stacks")
-        )
+        "Bank"
       ),
       searchBar(query, playerSignal, cache),
       L.inContext(panel =>
@@ -75,7 +72,8 @@ object BankElement {
             Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards))
           )
         )
-      )
+      ),
+      footer(stacks.map(_.size))
     )
   }
 
@@ -85,7 +83,6 @@ object BankElement {
   @js.native @JSImport("/styles/planning/player/item/bank/bankElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val icon: String = js.native
-    val stackCount: String = js.native
     val search: String = js.native
     val searchInput: String = js.native
     val searchCounts: String = js.native

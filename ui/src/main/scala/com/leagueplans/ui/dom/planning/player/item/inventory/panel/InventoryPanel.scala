@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery,
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack, ItemTransfer}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.dom.{ToastHub, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
@@ -23,14 +23,15 @@ object InventoryPanel {
     cache: Cache,
     itemCards: ItemCards,
     itemDrag: ItemDrag,
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    toasts: ToastHub.Publisher
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
 
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
       itemDrag.target(ItemTransfer.Target.Inventory),
-      InventoryHeader(used = stacks.map(_.size)),
+      InventoryHeader(),
       L.inContext(panel =>
         DepositoryStacks(
           stacks,
@@ -40,7 +41,8 @@ object InventoryPanel {
           toStackElement(query, itemCards, itemDrag, panel, tooltip),
           tooltip
         ).amend(L.cls(Styles.contents))
-      )
+      ),
+      InventoryFooter(stacks, toasts, tooltip)
     )
   }
 

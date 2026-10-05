@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import com.leagueplans.common.model.{EquipmentType, Item}
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -103,6 +103,28 @@ object ItemActions {
       case _ =>
         None
     }
+
+  /** Banks everything in the inventory when the step applies, leaving items that can't be banked,
+    * or None if there's nothing to bank here */
+  def depositInventory(player: Player, items: Item.ID => Item): Option[Action] =
+    deposit(DepositSource.Inventory, player, items, "the inventory")
+
+  /** Banks every worn item that can be banked when the step applies, or None if there's nothing
+    * to bank here */
+  def depositWorn(player: Player, items: Item.ID => Item): Option[Action] =
+    deposit(DepositSource.Equipment, player, items, "worn items")
+
+  private def deposit(source: DepositSource, player: Player, items: Item.ID => Item, what: String): Option[Action] = {
+    val stacks = ItemEffects.deposits(source, player, items).size
+    Option.when(stacks > 0)(
+      Action(
+        List(DepositAll(source)),
+        s"Deposited $what",
+        s"Deposit $what",
+        Some(if (stacks == 1) "1 stack at this step" else s"$stacks stacks at this step")
+      )
+    )
+  }
 
   def describe(item: Item, quantity: ItemQuantity): String =
     quantity match {

@@ -1,10 +1,11 @@
 package com.leagueplans.ui.dom.planning.section
 
-import com.leagueplans.ui.dom.planning.player.item.bank.BankElement
+import com.leagueplans.ui.dom.planning.player.item.bank.{BankElement, BankFooter}
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.equipment.EquipmentElement
-import com.leagueplans.ui.dom.planning.player.item.inventory.InventoryElement
+import com.leagueplans.ui.dom.planning.player.item.inventory.panel.InventoryPanel
+import com.leagueplans.ui.model.player.item.ItemActions
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.L
 import org.scalajs.dom.Element
@@ -49,6 +50,8 @@ object ItemsSection {
         ctx.popover
       )
 
+    val depositInventory = ItemActions.depositInventory(_, ctx.cache.items)
+
     L.div(
       L.cls(Styles.section),
       L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
@@ -59,15 +62,13 @@ object ItemsSection {
         itemDrag,
         ctx.tooltip
       ).amend(L.cls(Styles.worn)),
-      InventoryElement(
+      InventoryPanel(
         ctx.displayedPlayer,
         bankQuery.signal,
         ctx.cache,
-        ctx.effectObserver,
         itemCards,
         itemDrag,
         ctx.tooltip,
-        ctx.modal,
         ctx.toasts
       ).amend(L.cls(Styles.inventory)),
       BankElement(
@@ -77,7 +78,17 @@ object ItemsSection {
         ctx.cache,
         itemCards,
         itemDrag,
-        ctx.tooltip
+        ctx.tooltip,
+        slotsUsed => BankFooter(
+          slotsUsed,
+          itemDrag.settings,
+          ctx.playerAtInsertion,
+          ctx.effectObserver,
+          depositInventory,
+          ItemActions.depositWorn(_, ctx.cache.items),
+          ctx.undoToasts,
+          ctx.tooltip
+        )
       ).amend(L.cls(Styles.bank))
     )
   }

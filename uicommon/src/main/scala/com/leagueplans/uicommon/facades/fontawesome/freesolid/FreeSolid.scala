@@ -96,6 +96,9 @@ object FreeSolid {
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faShirt")
   object faShirt extends IconDefinition
 
+  @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTag")
+  object faTag extends IconDefinition
+
   @js.native @JSImport("@fortawesome/free-solid-svg-icons/faTrash")
   object faTrash extends IconDefinition
 

@@ -1,0 +1,136 @@
+.footer {
+  margin: 8px 0.25rem 0.1rem;
+  padding-top: 8px;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+
+  border-top: 1px solid #1d1813;
+  font-family: var(--font-ui);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.used {
+  color: var(--text-bright);
+  font-size: 0.75rem;
+}
+
+/* Styled like the game's bank buttons */
+.segments {
+  display: inline-flex;
+  overflow: hidden;
+
+  border: 1px solid #1d1813;
+  border-radius: 6px;
+}
+
+.segment {
+  padding: 3px 9px;
+
+  border: 0;
+  background-color: #3b3229;
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.segment + .segment, .segment + .xInput, .xInput + .segment {
+  border-left: 1px solid #1d1813;
+}
+
+.segment:hover, .segment:focus-visible {
+  background-color: #4a3f33;
+  outline: none;
+}
+
+.segment[aria-pressed="true"] {
+  background-color: #2f4679;
+}
+
+/* Styled like the bank search */
+.xInput {
+  width: 4rem;
+  padding: 3px 6px;
+
+  border: 0;
+  background-color: #2f2820;
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 0.75rem;
+  text-align: center;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.xInput::-webkit-inner-spin-button, .xInput::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.xInput::placeholder {
+  color: var(--text-dim);
+}
+
+.xInput:focus-visible {
+  outline: 1px solid var(--navy-accent);
+  outline-offset: -1px;
+}
+
+.tooltip {
+  display: block;
+  width: max-content;
+  max-width: 16rem;
+  text-align: center;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.deposit {
+  width: 38px;
+  height: 32px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #1d1813;
+  border-radius: 4px;
+  background-color: #2f2820;
+  color: var(--text-muted);
+}
+
+/* The game's icons, at their own size */
+.deposit img {
+  display: block;
+}
+
+.deposit:enabled {
+  cursor: pointer;
+}
+
+.deposit:enabled:hover, .deposit:enabled:focus-visible {
+  background-color: #4a3f33;
+  color: var(--text-bright);
+  outline: none;
+}
+
+.deposit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

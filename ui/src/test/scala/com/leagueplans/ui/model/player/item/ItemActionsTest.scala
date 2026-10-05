@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemChange
 import com.leagueplans.ui.model.plan.ItemQuantity.Exact
 import com.leagueplans.ui.model.player.item.Depository.Kind
@@ -107,6 +107,27 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       ItemActions.canWear(Holding(scimitar, noted = false, Kind.Bank)) shouldBe false
       ItemActions.canWithdrawNoted(Holding(book, noted = false, Kind.Bank)) shouldBe false
       ItemActions.wearLabel(helm) shouldBe "Wear"
+    }
+
+    "deposits the inventory, noted stacks as unnoted, leaving what can't be banked" in {
+      val holding = player.copy(depositories =
+        player.depositories + (Kind.Inventory -> Depository(Map((logs.id, true) -> 20, (book.id, false) -> 1), Kind.Inventory))
+      )
+      val action = ItemActions.depositInventory(holding, items)
+      action.map(_.effects) shouldBe Some(List(DepositAll(DepositSource.Inventory)))
+      action.flatMap(_.detail) shouldBe Some("1 stack at this step")
+      ItemEffects.deposits(DepositSource.Inventory, holding, items) shouldBe
+        List(MoveItem(logs.id, Exact(20), Kind.Inventory, notedInSource = true, Kind.Bank, noteInTarget = false))
+    }
+
+    "deposits worn items" in {
+      ItemActions.depositWorn(player, items).map(_.effects) shouldBe Some(List(DepositAll(DepositSource.Equipment)))
+      ItemEffects.deposits(DepositSource.Equipment, player, items) shouldBe
+        List(MoveItem(sword.id, Exact(1), EquipmentSlot.Weapon, notedInSource = false, Kind.Bank, noteInTarget = false))
+    }
+
+    "has nothing to deposit from empty places" in {
+      ItemActions.depositWorn(player.copy(depositories = Map.empty), items) shouldBe None
     }
 
     "describes quantities with thousands separators" in {
