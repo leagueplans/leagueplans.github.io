@@ -6,10 +6,10 @@ import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 
-/** Works out the moves that wear an item. The slot comes from the item data, and whatever the
-  * item displaces goes to the inventory: the slot's current item, the shield for a two-handed
-  * weapon, or a two-handed weapon for a shield. Add the moves together, so that equipping is one
-  * change to undo.
+/** Works out the moves that wear an item. The slot comes from the item data. Whatever the item
+  * displaces goes back where the item came from, the bank or else the inventory: the slot's
+  * current item, the shield for a two-handed weapon, or a two-handed weapon for a shield. Add the
+  * moves together, so that equipping is one change to undo.
   */
 object EquipPlan {
   /** @param source where the item is taken from, unnoted
@@ -23,7 +23,8 @@ object EquipPlan {
       val slot = EquipmentSlot.from(equipmentType)
       // Stackable items, like arrows, are worn as a whole stack. Anything else is worn one at a time.
       val quantity = if (item.stackable) ItemQuantity.Max else ItemQuantity.Exact(1)
-      displaced(item, equipmentType, player, items) :+
+      val returnTo = if (source == Depository.Kind.Bank) Depository.Kind.Bank else Depository.Kind.Inventory
+      displaced(item, equipmentType, returnTo, player, items) :+
         MoveItem(item.id, quantity, source, notedInSource = false, slot, noteInTarget = false)
     }
 
@@ -40,6 +41,7 @@ object EquipPlan {
   private def displaced(
     item: Item,
     equipmentType: EquipmentType,
+    returnTo: Depository.Kind,
     player: Player,
     items: Item.ID => Item
   ): List[MoveItem] =
@@ -49,7 +51,7 @@ object EquipPlan {
           // Wearing more of a stackable item that's already worn adds to the worn stack
           if !(worn == item.id && item.stackable) &&
             items(worn).equipmentType.exists(conflictingTypes.contains) =>
-          MoveItem(worn, unequipped(items(worn)), slot, notedInSource = false, Depository.Kind.Inventory, noteInTarget = false)
+          MoveItem(worn, unequipped(items(worn)), slot, notedInSource = false, returnTo, noteInTarget = false)
       }
     )
 

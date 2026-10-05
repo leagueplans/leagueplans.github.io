@@ -53,6 +53,7 @@ object PlanningPageBootstrap {
       CollapsedSteps(planStorage, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,
       subscription.status,
+      projectionClient.projectionsStatus,
       cache,
       itemFuse,
       tooltip,

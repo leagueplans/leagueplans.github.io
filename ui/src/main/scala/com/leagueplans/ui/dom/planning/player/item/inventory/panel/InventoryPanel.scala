@@ -1,9 +1,10 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
-import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack, ItemTransfer}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -21,12 +22,14 @@ object InventoryPanel {
     query: Signal[String],
     cache: Cache,
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     tooltip: Tooltip
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
 
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
+      itemDrag.target(ItemTransfer.Target.Inventory),
       InventoryHeader(used = stacks.map(_.size)),
       L.inContext(panel =>
         DepositoryStacks(
@@ -34,7 +37,7 @@ object InventoryPanel {
           columnCount = 4,
           rowCount = 7,
           overflowRowCount = 20,
-          toStackElement(query, itemCards, panel, tooltip),
+          toStackElement(query, itemCards, itemDrag, panel, tooltip),
           tooltip
         ).amend(L.cls(Styles.contents))
       )
@@ -60,6 +63,7 @@ object InventoryPanel {
   private def toStackElement(
     query: Signal[String],
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     panel: L.HtmlElement,
     tooltip: Tooltip
   )(stack: ItemStack): L.Div =
@@ -72,6 +76,7 @@ object InventoryPanel {
       L.cls(Styles.unmatched) <-- query.map(query =>
         !ItemQuery.isEmpty(query) && !ItemQuery.matches(stack.item, query)
       ),
-      itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Inventory))
+      itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Inventory)),
+      itemDrag.source(Holding(stack.item, stack.noted, Depository.Kind.Inventory))
     )
 }

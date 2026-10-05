@@ -12,7 +12,9 @@ object StackIcon {
     val itemImage = L.img(
       L.cls(Styles.item),
       L.src(iconPath(stack.item, stack.quantity)),
-      L.alt(s"${stack.item.name} icon")
+      L.alt(s"${stack.item.name} icon"),
+      // Otherwise dragging a stack would drag the image's address instead
+      L.draggable(false)
     )
 
     L.div(
@@ -39,7 +41,7 @@ object StackIcon {
   private def accountForNoting(itemImage: L.Image, noted: Boolean): List[L.Node] =
     if (noted)
       List(
-        L.img(L.cls(Styles.item), L.src(note)),
+        L.img(L.cls(Styles.item), L.src(note), L.draggable(false)),
         L.div(
           L.cls(Styles.icon, Styles.noteIcon),
           itemImage.amend(L.cls(Styles.noted))

@@ -1,10 +1,11 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
+import com.leagueplans.ui.model.player.item.{Depository, ItemStack, ItemTransfer}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
@@ -26,6 +27,7 @@ object BankElement {
     query: Var[String],
     cache: Cache,
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     tooltip: Tooltip
   ): L.Div = {
     val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
@@ -37,6 +39,7 @@ object BankElement {
 
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
+      itemDrag.target(ItemTransfer.Target.Bank),
       L.headerTag(
         L.cls(DepositoryStyles.header, PanelStyles.header),
         L.img(L.cls(Styles.icon, DepositoryStyles.icon), L.src(icon), L.alt("Bank icon")),
@@ -55,7 +58,7 @@ object BankElement {
             columnCount = 8,
             rowCount = 100,
             overflowRowCount = 10,
-            toStackElement(itemCards, panel, tooltip),
+            toStackElement(itemCards, itemDrag, panel, tooltip),
             tooltip,
             fillWidth = true
           ),
@@ -132,6 +135,7 @@ object BankElement {
 
   private def toStackElement(
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     panel: L.HtmlElement,
     tooltip: Tooltip
   )(stack: ItemStack): L.Div =
@@ -140,5 +144,8 @@ object BankElement {
       tooltip,
       tooltipConfig = FloatingConfig.basicAnchoredTooltip(anchor = panel, Placement.bottom, offset = 2),
       hideTooltip = itemCards.isOpenOn
-    ).amend(itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Bank)))
+    ).amend(
+      itemCards.trigger(Holding(stack.item, stack.noted, Depository.Kind.Bank)),
+      itemDrag.source(Holding(stack.item, stack.noted, Depository.Kind.Bank))
+    )
 }

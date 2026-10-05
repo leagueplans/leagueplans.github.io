@@ -64,12 +64,12 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
     }
 
     "banks noted items as unnoted" in {
-      ItemActions.bank(Holding(logs, noted = true, Kind.Inventory), 20).effects shouldBe
+      ItemActions.bank(Holding(logs, noted = true, Kind.Inventory), Exact(20)).effects shouldBe
         List(MoveItem(logs.id, Exact(20), Kind.Inventory, notedInSource = true, Kind.Bank, noteInTarget = false))
     }
 
     "withdraws from the bank, noted if asked" in {
-      val action = ItemActions.withdraw(Holding(logs, noted = false, Kind.Bank), 25, noted = true)
+      val action = ItemActions.withdraw(Holding(logs, noted = false, Kind.Bank), Exact(25), noted = true)
       action.effects shouldBe List(MoveItem(logs.id, Exact(25), Kind.Bank, notedInSource = false, Kind.Inventory, noteInTarget = true))
       action.report shouldBe "Withdrew 25 × Logs as notes"
     }
@@ -110,8 +110,8 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
     }
 
     "describes quantities with thousands separators" in {
-      ItemActions.describe(logs, 1) shouldBe "Logs"
-      ItemActions.describe(logs, 12500) shouldBe "12,500 × Logs"
+      ItemActions.describe(logs, Exact(1)) shouldBe "Logs"
+      ItemActions.describe(logs, Exact(12500)) shouldBe "12,500 × Logs"
     }
   }
 }

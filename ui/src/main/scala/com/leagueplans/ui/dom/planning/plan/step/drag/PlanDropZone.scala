@@ -101,6 +101,10 @@ object PlanDropZone {
         case _: Dragged.DraggedStepContent =>
           val header = Option(stepElement.querySelector(s":scope > [data-$headerAttribute]")).getOrElse(stepElement)
           DropTarget(measure(header), RelativePosition.Into)
+
+        // Unreachable: DropRules rules out dropping items on steps
+        case _: Dragged.DraggedItem =>
+          DropTarget(measure(stepElement), RelativePosition.Into)
       }
       (stepID, target)
     }
@@ -161,6 +165,10 @@ object PlanDropZone {
             batch.update(moved.target)
           }
         )
+
+      // DropRules rules out dropping items on steps
+      case _: Dragged.DraggedItem =>
+        ()
     }
 
   private def resolveStepDrop(

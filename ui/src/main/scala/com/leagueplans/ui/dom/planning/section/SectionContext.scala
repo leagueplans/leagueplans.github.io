@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.common.model.Item
+import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement}
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -24,6 +25,9 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
   *                Cards are built from the focused step's state, so they close when the focus
   *                changes.
   * @param undoToasts reports a change made from the section, with a button to undo it
+  * @param dragSession what's being dragged on the page
+  * @param isRecalculating whether the player states are being recalculated, so the states on show
+  *                        are about to change
   */
 final case class SectionContext(
   displayedPlayer: Signal[Player],
@@ -40,5 +44,7 @@ final case class SectionContext(
   popover: Popover,
   modal: Modal,
   toasts: ToastHub.Publisher,
-  undoToasts: UndoToasts
+  undoToasts: UndoToasts,
+  dragSession: DragSession,
+  isRecalculating: Signal[Boolean]
 )

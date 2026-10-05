@@ -42,6 +42,12 @@ object KeyboardShortcutsModal {
               List("Alt", "+", "↑", "/", "↓") -> "Move up or down",
               List("Alt", "+", "→") -> "Make it a substep of the step above",
               List("Alt", "+", "←") -> "Move it out of its superstep"
+            ),
+            toSection(
+              "Moving items",
+              note = Some("In the Items section"),
+              List("Shift", "+", "Click") ->
+                "Move the whole stack: from the inventory or equipment to the bank, or from the bank to the inventory"
             )
           ),
           L.div(

@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.drag
 
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
-import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged.{DraggedStep, DraggedStepContent}
+import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged.{DraggedItem, DraggedStep, DraggedStepContent}
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 
@@ -16,5 +16,7 @@ object DropRules {
       case DraggedStep(id) => id != onto && !forest.ancestors(onto).contains(id)
       // Dropping an effect or requirement back on its own step would do nothing
       case content: DraggedStepContent => content.from != onto
+      // Items are moved between the Items section's panels, not onto steps
+      case _: DraggedItem => false
     }
 }

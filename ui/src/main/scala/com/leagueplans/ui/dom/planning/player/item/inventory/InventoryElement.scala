@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory
 
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.inventory.panel.InventoryPanel
 import com.leagueplans.ui.dom.planning.player.item.inventory.sidebar.InventorySidebar
 import com.leagueplans.ui.model.plan.Effect
@@ -19,6 +20,7 @@ object InventoryElement {
     cache: Cache,
     effectObserverSignal: Signal[Option[Observer[Effect | Seq[Effect]]]],
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     tooltip: Tooltip,
     modal: Modal,
     toastPublisher: ToastHub.Publisher
@@ -28,6 +30,7 @@ object InventoryElement {
       query,
       cache,
       itemCards,
+      itemDrag,
       tooltip
     )
     val sidebar = InventorySidebar(

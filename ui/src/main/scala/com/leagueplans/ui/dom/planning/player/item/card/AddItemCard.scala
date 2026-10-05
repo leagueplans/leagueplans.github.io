@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ItemQuantity}
 import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemStack}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
@@ -79,7 +79,7 @@ object AddItemCard {
           L.button(
             L.cls(Card.Styles.button),
             L.tpe("button"),
-            L.text <-- amount.map(n => s"Add ${n.map(ItemActions.describe(item, _)).getOrElse(item.name)}"),
+            L.text <-- amount.map(n => s"Add ${n.map(n => ItemActions.describe(item, ItemQuantity.Exact(n))).getOrElse(item.name)}"),
             L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) => observer.isEmpty || amount.isEmpty),
             ItemCard.noFocusTitle(effectObserver),
             L.onClick.compose(

@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.equipment
 
 import com.leagueplans.ui.dom.planning.player.item.StackElement
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.ItemStack
@@ -20,11 +21,14 @@ object EquipmentSlotElement {
     slot: EquipmentSlot,
     stacks: List[ItemStack],
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     itemTooltipAnchor: L.HtmlElement,
     tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.slot),
+      L.cls(ItemDrag.Styles.slotTarget) <-- itemDrag.slotHighlights.map(_.get(slot).contains(ItemDrag.SlotHighlight.Target)),
+      L.cls(ItemDrag.Styles.slotDisplaced) <-- itemDrag.slotHighlights.map(_.get(slot).contains(ItemDrag.SlotHighlight.Displaced)),
       L.img(
         L.cls(Styles.background),
         L.src(toBackground(slot, stacks.isEmpty)),
@@ -40,7 +44,8 @@ object EquipmentSlotElement {
             hideTooltip = itemCards.isOpenOn
           ).amend(
             L.cls(Styles.contents),
-            itemCards.trigger(Holding(stack.item, stack.noted, slot))
+            itemCards.trigger(Holding(stack.item, stack.noted, slot)),
+            itemDrag.source(Holding(stack.item, stack.noted, slot))
           )
         case _ =>
           L.div(

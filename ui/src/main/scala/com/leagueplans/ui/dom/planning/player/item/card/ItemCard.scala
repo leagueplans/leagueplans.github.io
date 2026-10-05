@@ -4,7 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ItemQuantity}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
@@ -90,15 +90,15 @@ object ItemCard {
         case Kind.Inventory =>
           List(
             Option.when(ItemActions.canBank(holding))(
-              amountButton("Bank", ghost = false, limitedByHeld = true)(ItemActions.bank(holding, _))
+              amountButton("Bank", ghost = false, limitedByHeld = true)(n => ItemActions.bank(holding, ItemQuantity.Exact(n)))
             ),
             Some(amountButton("Remove", ghost = true, limitedByHeld = true)(ItemActions.remove(holding, _)))
           )
         case Kind.Bank =>
           List(
-            Some(amountButton("Withdraw", ghost = false, limitedByHeld = true)(ItemActions.withdraw(holding, _, noted = false))),
+            Some(amountButton("Withdraw", ghost = false, limitedByHeld = true)(n => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = false))),
             Option.when(ItemActions.canWithdrawNoted(holding))(
-              amountButton("Withdraw noted", ghost = false, limitedByHeld = true)(ItemActions.withdraw(holding, _, noted = true))
+              amountButton("Withdraw noted", ghost = false, limitedByHeld = true)(n => ItemActions.withdraw(holding, ItemQuantity.Exact(n), noted = true))
             ),
             Some(amountButton("Remove", ghost = true, limitedByHeld = true)(ItemActions.remove(holding, _)))
           )

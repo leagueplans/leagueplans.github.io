@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.player.item.bank.BankElement
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.equipment.EquipmentElement
 import com.leagueplans.ui.dom.planning.player.item.inventory.InventoryElement
 import com.raquo.airstream.state.Var
@@ -14,8 +15,10 @@ import scala.scalajs.js.annotation.JSImport
 /** Worn items and the inventory sit on the left at their in-game sizes, and the bank takes the
   * rest of the space, scrolling on its own. Clicking any stack opens its card.
   *
-  * Drafts: the bank search doesn't depend on the focused step, so it's kept when the focus
-  * changes. An open card does, so it closes.
+  * Stacks can be dragged between the panels, and shift-clicked to move a whole stack.
+  *
+  * Drafts: the bank search and the bank's transfer settings don't depend on the focused step, so
+  * they're kept when the focus changes. An open card does, so it closes.
   */
 object ItemsSection {
   def apply(ctx: SectionContext): L.Div = {
@@ -34,6 +37,18 @@ object ItemsSection {
         boundary = () => section
       )
 
+    val itemDrag =
+      ItemDrag(
+        ctx.dragSession,
+        ctx.playerAtInsertion,
+        ctx.effectObserver,
+        ctx.isRecalculating,
+        ctx.cache.items,
+        ctx.undoToasts,
+        ctx.tooltip,
+        ctx.popover
+      )
+
     L.div(
       L.cls(Styles.section),
       L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
@@ -41,6 +56,7 @@ object ItemsSection {
         ctx.displayedPlayer,
         ctx.cache,
         itemCards,
+        itemDrag,
         ctx.tooltip
       ).amend(L.cls(Styles.worn)),
       InventoryElement(
@@ -49,6 +65,7 @@ object ItemsSection {
         ctx.cache,
         ctx.effectObserver,
         itemCards,
+        itemDrag,
         ctx.tooltip,
         ctx.modal,
         ctx.toasts
@@ -59,6 +76,7 @@ object ItemsSection {
         bankQuery,
         ctx.cache,
         itemCards,
+        itemDrag,
         ctx.tooltip
       ).amend(L.cls(Styles.bank))
     )

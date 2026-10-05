@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.drag
 
 import com.leagueplans.ui.model.plan.{Effect, Requirement, Step}
+import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.raquo.airstream.state.{StrictSignal, Var}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor}
 import com.raquo.laminar.modifiers.Binder
@@ -23,6 +24,9 @@ object DragSession {
 
     final case class DraggedEffect(from: Step.ID, index: Int, effect: Effect) extends DraggedStepContent
     final case class DraggedRequirement(from: Step.ID, index: Int, requirement: Requirement) extends DraggedStepContent
+
+    /** A stack dragged between the Items section's panels */
+    final case class DraggedItem(holding: Holding) extends Dragged
   }
 
   // Drags need some data to start in every browser. A type of our own keeps other pages and

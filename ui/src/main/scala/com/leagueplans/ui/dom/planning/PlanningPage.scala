@@ -37,6 +37,7 @@ object PlanningPage {
     collapsedSteps: CollapsedSteps,
     stepsWithErrors: Signal[Map[Step.ID, List[StepError]]],
     storageStatus: Signal[StatusTracker.Status],
+    projectionStatus: Signal[StatusTracker.Status],
     cache: Cache,
     itemFuse: Fuse[Item],
     tooltip: Tooltip,
@@ -98,7 +99,9 @@ object PlanningPage {
           popover,
           modal,
           toastPublisher,
-          UndoToasts(forester, toastPublisher)
+          UndoToasts(forester, toastPublisher),
+          dragSession,
+          projectionStatus.map(_ == StatusTracker.Status.Busy).distinct
         ),
         SelectedSection.load(planStorage),
         Observer(SelectedSection.save(planStorage, _)),

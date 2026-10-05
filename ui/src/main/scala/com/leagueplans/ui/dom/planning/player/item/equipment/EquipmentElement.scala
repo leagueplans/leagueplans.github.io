@@ -1,6 +1,8 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
+import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
+import com.leagueplans.ui.model.player.item.ItemTransfer
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.Tooltip
@@ -15,10 +17,13 @@ object EquipmentElement {
     playerSignal: Signal[Player],
     cache: Cache,
     itemCards: ItemCards,
+    itemDrag: ItemDrag,
     tooltip: Tooltip
   ): L.Div =
     L.div(
       L.cls(Styles.pane),
+      // Dropping anywhere on the panel wears the item in its own slot
+      itemDrag.target(ItemTransfer.Target.Worn),
       L.img(
         L.cls(Styles.background),
         L.src(background)
@@ -30,6 +35,7 @@ object EquipmentElement {
               slot,
               cache.itemise(player.get(slot)),
               itemCards,
+              itemDrag,
               panel,
               tooltip
             ).amend(L.cls(toStyle(slot)))
