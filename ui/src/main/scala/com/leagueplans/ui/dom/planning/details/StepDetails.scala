@@ -106,17 +106,9 @@ object StepDetails {
         DescriptionField(stepSignal, forester, fieldEditRequests.filter(_ == EditRequest.Description).mapToUnit),
         TimingRows(stepSignal, forester, timeKeeper, fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit, tooltip)
       ),
-      ProblemList(
-        errorsSignal,
-        effectText,
-        Observer {
-          case StepError.Source.Effect(i, _) => selection.select(Some(Row(Kind.Effects, i)))
-          case StepError.Source.Requirement(i, _) => selection.select(Some(Row(Kind.Requirements, i)))
-        }
-      ),
       L.sectionTag(
         L.cls(Styles.section),
-        toHeader("Effects", effects.map(_.size), maybeAction = None),
+        toHeader("Effects", effects.map(_.size), Kind.Effects, errorsByKind.map(_._1), selection, maybeAction = None),
         RowList[Effect](
           Kind.Effects,
           effects,
@@ -142,6 +134,9 @@ object StepDetails {
         toHeader(
           "Requirements",
           requirements.map(_.size),
+          Kind.Requirements,
+          errorsByKind.map(_._2),
+          selection,
           maybeAction = Some(toAddRequirementButton(itemFuse, modal, tooltip, updateRequirements))
         ),
         RowList[Requirement](
@@ -174,11 +169,37 @@ object StepDetails {
       case _ => false
     }
 
-  private def toHeader(title: String, count: Signal[Int], maybeAction: Option[L.Button]): L.HtmlElement =
+  /** @param errors the problems with each row, by its index. Their count shows beside the
+    *               section's, and selects the next row with a problem, so that a long list can be
+    *               worked through. */
+  private def toHeader(
+    title: String,
+    count: Signal[Int],
+    kind: Kind,
+    errors: Signal[Map[Int, List[String]]],
+    selection: RowSelection,
+    maybeAction: Option[L.Button]
+  ): L.HtmlElement =
     L.headerTag(
       L.cls(Styles.sectionHeader),
       L.h3(L.cls(Styles.sectionTitle), title),
       L.span(L.cls(Styles.count), L.text <-- count.map(_.toString)),
+      L.child.maybe <-- errors.map(_.values.map(_.size).sum).distinct.map(problems =>
+        Option.when(problems > 0)(
+          Button(
+            _.handled.compose(_.sample(errors, selection.selected)) --> { (errors, selected) =>
+              val rows = errors.keys.toList.sorted
+              val after = selected.collect { case Row(`kind`, i) => i }
+              val next = after.flatMap(i => rows.find(_ > i)).getOrElse(rows.head)
+              selection.select(Some(Row(kind, next)))
+            }
+          ).amend(
+            L.cls(Styles.problemCount),
+            L.aria.label(s"${if (problems == 1) "1 problem" else s"$problems problems"}. Select the next row with a problem."),
+            if (problems == 1) "1 problem" else s"$problems problems"
+          )
+        )
+      ),
       maybeAction.map(button => L.div(L.cls(Styles.headerActions), button)).getOrElse(L.emptyNode)
     )
 
@@ -214,6 +235,7 @@ object StepDetails {
     val sectionHeader: String = js.native
     val sectionTitle: String = js.native
     val count: String = js.native
+    val problemCount: String = js.native
     val headerActions: String = js.native
     val headerButton: String = js.native
     val tooltip: String = js.native

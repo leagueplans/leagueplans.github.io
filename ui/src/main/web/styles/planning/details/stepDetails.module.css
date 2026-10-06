@@ -77,3 +77,21 @@
   background-color: var(--navy-line);
   color: var(--text-bright);
 }
+
+/* The section's problems, which select the next row with one */
+.problemCount {
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: var(--red);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.problemCount:hover, .problemCount:focus-visible {
+  text-decoration-style: solid;
+}

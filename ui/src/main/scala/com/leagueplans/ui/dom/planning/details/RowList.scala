@@ -111,6 +111,11 @@ object RowList {
       L.tabIndex(-1),
       L.htmlAttr(RowSelection.rowAttribute, StringAsIsCodec)(""),
       L.cls(Styles.selected) <-- isSelected,
+      // Selecting a row from elsewhere, such as from its section's problem count, brings it into view
+      L.inContext(row => isSelected.changes.filter(identity) --> { _ =>
+        row.ref.asInstanceOf[js.Dynamic].scrollIntoView(js.Dynamic.literal(block = "nearest"))
+        ()
+      }),
       L.cls(Styles.hasErrors) <-- rowErrors.map(_.nonEmpty),
       L.onClick.compose(_.withCurrentValueOf(index)) --> ((_, i) => selection.select(Some(RowSelection.Row(kind, i)))),
       dragIcon.amend(L.svg.cls(Styles.grip)),
