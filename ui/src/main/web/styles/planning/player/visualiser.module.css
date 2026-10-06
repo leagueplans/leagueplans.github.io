@@ -32,7 +32,10 @@
   text-shadow: 1px 1px black;
 }
 
+/* Tall enough for the render mode control, which only shows while a step is focused, so that the
+ * header doesn't grow when a step is focused */
 .headerControls {
+  min-height: 25px;
   margin-left: auto;
   display: flex;
   align-items: center;
