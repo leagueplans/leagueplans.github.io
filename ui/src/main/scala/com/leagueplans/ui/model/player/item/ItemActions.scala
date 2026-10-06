@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, BuyBankSpace, DepositAll, DepositSource, MoveItem, SetBankPin}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -191,6 +191,30 @@ object ItemActions {
       case _ =>
         None
     }
+
+  /** Sets a bank PIN, or None if one's already set */
+  def setBankPin(player: Player): Option[Action] =
+    Option.when(!player.bankSpace.unlocks.contains(BankSpace.Unlock.Pin))(
+      Action(List(SetBankPin), "Set a bank PIN", "Set a bank PIN", Some(s"+${BankSpace.unlockSlots} bank slots"))
+    )
+
+  /** Buys the next block of bank space, or None once they're all bought. Its detail says where the
+    * coins come from, or that there aren't enough, which the plan also shows as a problem. */
+  def buyBankSpace(player: Player): Option[Action] = {
+    val block = player.bankSpace.blocksBought + 1
+    BankSpace.price(block).map { price =>
+      val paidFrom = ItemEffects.coinsFor(block, player) match {
+        case Some(place) => s"paid from the ${place.name.toLowerCase}"
+        case None => "but neither the inventory nor the bank holds enough coins"
+      }
+      Action(
+        List(BuyBankSpace(block)),
+        s"Bought bank space block $block",
+        s"Buy block $block for ${price.withCommas} coins",
+        Some(s"+${BankSpace.blockSlots} bank slots, $paidFrom")
+      )
+    }
+  }
 
   /** Banks everything in the inventory when the step applies, leaving items that can't be banked,
     * or None if there's nothing to bank here */

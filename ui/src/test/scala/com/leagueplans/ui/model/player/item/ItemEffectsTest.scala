@@ -3,7 +3,7 @@ package com.leagueplans.ui.model.player.item
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.ItemChange
-import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, BuyBankSpace, DepositAll, DepositSource, MoveItem, SetBankPin}
 import com.leagueplans.ui.model.plan.ItemQuantity.Max
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -37,7 +37,8 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
   private val coins = item(2, stackable = true)
   private val book = item(3, bankable = Item.Bankable.No)
   private val scimitar = item(4, equipmentType = Some(EquipmentType.Weapon))
-  private val items = List(lobster, coins, book, scimitar).map(i => i.id -> i).toMap
+  private val gold = item(BankSpace.coins, stackable = true)
+  private val items = List(lobster, coins, book, scimitar, gold).map(i => i.id -> i).toMap
 
   private def player(contents: ((Kind, Item, Boolean), Int)*): Player =
     Player(
@@ -124,6 +125,40 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
     "has room for one unstackable item in an empty equipment slot, and none in a full one" in {
       ItemEffects.room(scimitar, noted = false, EquipmentSlot.Weapon, player(), items) shouldBe Some(1)
       ItemEffects.room(scimitar, noted = false, EquipmentSlot.Weapon, player(((EquipmentSlot.Weapon, scimitar, false), 1)), items) shouldBe Some(0)
+    }
+
+    "sets a bank PIN, unlocking its space" in {
+      ItemEffects(player(), SetBankPin, items).bankSpace.unlocks shouldBe Set(BankSpace.Unlock.Pin)
+    }
+
+    "pays for bank space from the inventory if it holds enough" in {
+      val after = ItemEffects(player(((Kind.Inventory, gold, false), 3000000), ((Kind.Bank, gold, false), 5000000)), BuyBankSpace(2), items)
+      held(after, Kind.Inventory, gold) shouldBe 1000000
+      held(after, Kind.Bank, gold) shouldBe 5000000
+      after.bankSpace.blocksBought shouldBe 1
+    }
+
+    "pays for bank space from the bank if only it holds enough, never from both" in {
+      val split = player(((Kind.Inventory, gold, false), 600000), ((Kind.Bank, gold, false), 600000))
+      val fromBank = ItemEffects(player(((Kind.Inventory, gold, false), 600000), ((Kind.Bank, gold, false), 1000000)), BuyBankSpace(1), items)
+      held(fromBank, Kind.Inventory, gold) shouldBe 600000
+      held(fromBank, Kind.Bank, gold) shouldBe 0
+
+      // Neither holds enough alone: the slots are still gained, and the plan shows the problem
+      val unpaid = ItemEffects(split, BuyBankSpace(1), items)
+      unpaid.get(Kind.Inventory) shouldBe split.get(Kind.Inventory)
+      unpaid.get(Kind.Bank) shouldBe split.get(Kind.Bank)
+      unpaid.bankSpace.blocksBought shouldBe 1
+    }
+
+    "buys nothing for a block that's already bought" in {
+      val bought = player(((Kind.Bank, gold, false), 5000000)).copy(bankSpace = BankSpace(Set.empty, blocksBought = 2))
+      ItemEffects(bought, BuyBankSpace(2), items) shouldBe bought
+    }
+
+    "buys nothing for a block that doesn't exist" in {
+      ItemEffects(player(((Kind.Inventory, gold, false), 1000000)), BuyBankSpace(10), items) shouldBe
+        player(((Kind.Inventory, gold, false), 1000000))
     }
 
     "has room in the bank for a new stack only while the player's bank space has a free slot" in {

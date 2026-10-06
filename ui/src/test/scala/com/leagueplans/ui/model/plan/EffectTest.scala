@@ -63,6 +63,16 @@ final class EffectTest extends CodecSpec {
         )
       )
 
+      "SetBankPin" in test(
+        Effect.SetBankPin,
+        Array[Byte](0, 0b1001) ++ message(0b1100, Array.empty)
+      )
+
+      "BuyBankSpace" in test(
+        Effect.BuyBankSpace(3),
+        Array[Byte](0, 0b1010) ++ message(0b1100, Array[Byte](0) ++ Encoder.encode(3).getBytes)
+      )
+
       // The ordering of the fields as they appear in the binary format does not
       // need to be deterministic. When encoding, we first convert to a Map from
       // the field number to an encoding of the related field. In Scala, Maps of

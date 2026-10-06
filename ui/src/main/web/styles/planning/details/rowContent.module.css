@@ -23,3 +23,9 @@
   font-size: 0.65rem;
   font-weight: 500;
 }
+
+/* Our own drawings, which have no size of their own, at the skill icons' size */
+.drawnIcon {
+  width: auto;
+  height: 25px;
+}

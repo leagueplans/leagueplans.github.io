@@ -26,15 +26,15 @@ object RowAmounts {
       case Effect.AddItem(_, ItemChange.Fill, _, _) =>
         Some(Amount("+max", "max", Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) if n < 0 =>
-        Some(Amount(s"−${formatCount(-n)}", (-n).toString, Tone.Loss, counted = true))
+        Some(Amount(s"−${(-n).withCommas}", (-n).toString, Tone.Loss, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) =>
-        Some(Amount(s"+${formatCount(n)}", n.toString, Tone.Gain, counted = true))
+        Some(Amount(s"+${n.withCommas}", n.toString, Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.Empty, _, _) =>
-        Some(Amount("−max", "max", Tone.Loss, counted = true))
+        Some(Amount("−all", "all", Tone.Loss, counted = true))
       case Effect.MoveItem(_, quantity, _, _, _, _) =>
         Some(Amount(label(quantity), editText(quantity), Tone.Neutral, counted = true))
-      case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask |
-               Effect.CompleteLeagueTask | Effect.CompleteGridTile | Effect.DepositAll) =>
+      case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask | Effect.CompleteLeagueTask |
+               Effect.CompleteGridTile | Effect.DepositAll | Effect.BuyBankSpace) | Effect.SetBankPin =>
         None
     }
 
@@ -63,7 +63,7 @@ object RowAmounts {
 
   private def label(quantity: ItemQuantity): String =
     quantity match {
-      case ItemQuantity.Exact(n) => formatCount(n)
+      case ItemQuantity.Exact(n) => n.withCommas
       case ItemQuantity.Max => "max"
     }
 
@@ -75,7 +75,7 @@ object RowAmounts {
 
   private def parseQuantity(text: String): Either[String, ItemQuantity] =
     ItemQuantity.parse(text).left.map {
-      case ItemQuantity.Problem.AboveMax => s"A stack can hold at most ${formatCount(Int.MaxValue)}"
+      case ItemQuantity.Problem.AboveMax => s"A stack can hold at most ${Int.MaxValue.withCommas}"
       case _ => "Type an amount of at least 1, such as 250 or 1.5k, or max"
     }
 
@@ -100,16 +100,13 @@ object RowAmounts {
     if (exp.raw % 10 == 0) whole else s"$whole.${exp.raw % 10}"
   }
 
-  private def formatCount(n: Int): String =
-    n.withCommas
-
   private def cleaned(text: String): String =
     text.trim.replace(",", "").stripPrefix("+")
 
   private def parseExp(text: String): Either[String, Exp] =
     toDecimal(cleaned(text)) match {
       case Some(exp) if exp <= 0 => Left("Gain more than 0 exp")
-      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${formatCount(maxExp)} exp")
+      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} exp")
       case Some(exp) if !(exp * 10).isWhole => Left("Exp can have at most one decimal place")
       case Some(exp) => Right(Exp.tenths((exp * 10).toIntExact))
       case None => Left("Type an amount of exp, such as 1250 or 37.5")

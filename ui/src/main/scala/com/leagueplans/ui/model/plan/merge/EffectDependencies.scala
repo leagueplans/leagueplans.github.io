@@ -3,7 +3,7 @@ package com.leagueplans.ui.model.plan.merge
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.*
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 
 /** What an effect depends on and changes, so that a step can tell when two of its effects can
@@ -65,7 +65,13 @@ private[merge] object EffectDependencies {
         val held = source.places.map(Resource.Stack(None, None, _)).toSet
         Access(held, source.places.flatMap(space).toSet + Resource.Stack(None, Some(false), Kind.Bank), held)
 
-      case _: (GainExp | UnlockSkill | CompleteQuest | CompleteDiaryTask | CompleteLeagueTask | CompleteGridTile) =>
+      // The coins come from the inventory or the bank, depending on which holds enough, and
+      // taking the inventory's last coins frees a slot. The bank's space isn't tracked.
+      case BuyBankSpace(_) =>
+        val coins = Set(Kind.Inventory, Kind.Bank).map(place => Resource.Stack(Some(BankSpace.coins), Some(false), place))
+        Access(coins, space(Kind.Inventory), coins)
+
+      case _: (GainExp | UnlockSkill | CompleteQuest | CompleteDiaryTask | CompleteLeagueTask | CompleteGridTile) | SetBankPin =>
         none
     }
 

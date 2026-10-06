@@ -11,6 +11,7 @@ object SubstepSummary {
     /** @param levels the levels before and after, if the level changed */
     case ExpGained(skill: Skill, exp: Exp, levels: Option[(from: Level, to: Level)])
     case ItemsChanged(item: Item.ID, noted: Boolean, depository: Depository.Kind, by: Int)
+    case BankSlotsGained(slots: Int)
     case SkillsUnlocked(skills: List[Skill])
     case Completed(what: String, count: Int)
     case LeaguePointsGained(points: Int)
@@ -22,6 +23,7 @@ object SubstepSummary {
   def between(before: Player, after: Player, itemName: Item.ID => String, isMiniquest: Int => Boolean): List[Change] =
     expChanges(before, after) ++
       itemChanges(before, after, itemName) ++
+      bankSlots(before, after) ++
       unlocks(before, after) ++
       completions(before, after, isMiniquest) ++
       leaguePoints(before, after)
@@ -45,6 +47,11 @@ object SubstepSummary {
       }
     }.sortBy((item, noted, kind, _) => (itemName(item), item: Int, noted, kind))
       .map(Change.ItemsChanged.apply)
+
+  private def bankSlots(before: Player, after: Player): List[Change] = {
+    val gained = after.capacity(Depository.Kind.Bank) - before.capacity(Depository.Kind.Bank)
+    Option.when(gained != 0)(Change.BankSlotsGained(gained)).toList
+  }
 
   private def unlocks(before: Player, after: Player): List[Change] = {
     val unlocked = Skill.ordered.toList.filter(skill =>

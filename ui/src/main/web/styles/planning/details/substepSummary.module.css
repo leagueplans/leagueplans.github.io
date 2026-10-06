@@ -73,3 +73,9 @@
 .where {
   color: var(--text-dim);
 }
+
+/* A drawn icon, which has no size of its own */
+.icon > img {
+  width: auto;
+  height: 18px;
+}

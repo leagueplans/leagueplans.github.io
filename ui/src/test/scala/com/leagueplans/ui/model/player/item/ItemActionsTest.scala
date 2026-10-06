@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, BuyBankSpace, DepositAll, DepositSource, MoveItem, SetBankPin}
 import com.leagueplans.ui.model.plan.{ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.ItemQuantity.Exact
 import com.leagueplans.ui.model.player.item.Depository.Kind
@@ -177,6 +177,26 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       ItemActions.describe(logs, Exact(1)) shouldBe "Logs"
       ItemActions.describe(logs, Exact(12500)) shouldBe "12,500 × Logs"
       ItemActions.describe(logs, ItemQuantity.Max) shouldBe "all Logs"
+    }
+
+    "sets a bank PIN only once" in {
+      ItemActions.setBankPin(player).map(_.effects) shouldBe Some(List(SetBankPin))
+      ItemActions.setBankPin(player.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), 0))) shouldBe None
+    }
+
+    "buys the next block of bank space, saying where the coins come from" in {
+      val withCoins = player.copy(
+        depositories = player.depositories + (Kind.Bank -> Depository(Map((BankSpace.coins, false) -> 3000000), Kind.Bank)),
+        bankSpace = BankSpace(Set.empty, blocksBought = 1)
+      )
+      val action = ItemActions.buyBankSpace(withCoins).getOrElse(fail("Expected an action"))
+      action.effects shouldBe List(BuyBankSpace(2))
+      action.preview shouldBe "Buy block 2 for 2,000,000 coins"
+      action.detail shouldBe Some("+50 bank slots, paid from the bank")
+
+      ItemActions.buyBankSpace(player).flatMap(_.detail) shouldBe
+        Some("+50 bank slots, but neither the inventory nor the bank holds enough coins")
+      ItemActions.buyBankSpace(player.copy(bankSpace = BankSpace(Set.empty, blocksBought = 9))) shouldBe None
     }
   }
 }

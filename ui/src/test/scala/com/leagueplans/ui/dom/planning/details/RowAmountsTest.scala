@@ -30,7 +30,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
 
     "shows Max as max" in {
       RowAmounts.of(moveLogs.copy(quantity = ItemQuantity.Max)) shouldBe Some(Amount("max", "max", Tone.Neutral, counted = true))
-      RowAmounts.of(removeLogs.copy(change = ItemChange.Empty)) shouldBe Some(Amount("−max", "max", Tone.Loss, counted = true))
+      RowAmounts.of(removeLogs.copy(change = ItemChange.Empty)) shouldBe Some(Amount("−all", "all", Tone.Loss, counted = true))
       RowAmounts.of(addLogs.copy(change = ItemChange.Fill)) shouldBe Some(Amount("+max", "max", Tone.Gain, counted = true))
     }
 

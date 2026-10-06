@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.{ItemRoute, ItemStack}
+import com.leagueplans.ui.model.player.item.{BankSpace, ItemRoute, ItemStack}
 import com.leagueplans.uicommon.dom.ContextMenu
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Observer
@@ -102,6 +102,23 @@ object RowContent {
       case Effect.CompleteGridTile(id) =>
         val tile = cache.gridTiles(id)
         RowContent(glyph(s"${tile.row},${tile.column}"), tile.description, "Grid tile")
+
+      case Effect.SetBankPin =>
+        RowContent(
+          () => L.img(L.cls(Styles.drawnIcon), L.src(pinIcon), L.alt("")),
+          "Set a bank PIN",
+          s"+${BankSpace.unlockSlots} bank slots"
+        )
+
+      case Effect.BuyBankSpace(block) =>
+        val detail = BankSpace.price(block).fold("There's no such block")(price =>
+          s"+${BankSpace.blockSlots} bank slots for ${price.withCommas} coins"
+        )
+        RowContent(
+          () => bankIcon().amend(L.cls(Styles.drawnIcon)),
+          s"Buy bank space: block $block of ${BankSpace.blockPrices.size}",
+          detail
+        )
     }
 
   def of(requirement: Requirement, cache: Cache, effectText: EffectText): RowContent[Requirement] =
@@ -157,6 +174,16 @@ object RowContent {
   private def glyph(text: String): () => L.Node =
     () => L.span(L.cls(Styles.glyph), text)
 
+  /** The bank's symbol, which has no size of its own */
+  def bankIcon(): L.Image =
+    L.img(L.src(bankIconSrc), L.alt(""))
+
+  @js.native @JSImport("/images/bank-icon.svg", JSImport.Default)
+  private val bankIconSrc: String = js.native
+
+  @js.native @JSImport("/images/bank-pin-icon.svg", JSImport.Default)
+  private val pinIcon: String = js.native
+
   @js.native @JSImport("/images/bank-deposit-inventory.png", JSImport.Default)
   private val depositInventoryIcon: String = js.native
 
@@ -177,5 +204,6 @@ object RowContent {
     val skillIcon: String = js.native
     val itemIcon: String = js.native
     val glyph: String = js.native
+    val drawnIcon: String = js.native
   }
 }

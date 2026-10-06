@@ -46,7 +46,7 @@ object EffectResolver {
             )
           )
 
-        case itemEffect: (Effect.AddItem | Effect.MoveItem | Effect.DepositAll) =>
+        case itemEffect: (Effect.AddItem | Effect.MoveItem | Effect.DepositAll | Effect.SetBankPin.type | Effect.BuyBankSpace) =>
           ItemEffects(player, itemEffect, cache.items)
 
         case Effect.CompleteQuest(questID) =>

@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.plan.merge
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, BuyBankSpace, DepositAll, MoveItem, SetBankPin}
 import com.leagueplans.ui.model.plan.merge.MergeRules.Merged
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.ItemEffects
@@ -106,7 +106,7 @@ object StepEffects {
 
   private def applyIfItem(player: Player, effect: Effect, items: Item.ID => Item): Player =
     effect match {
-      case e: (AddItem | MoveItem | DepositAll) => ItemEffects(player, e, items)
+      case e: (AddItem | MoveItem | DepositAll | SetBankPin.type | BuyBankSpace) => ItemEffects(player, e, items)
       case _ => player
     }
 }

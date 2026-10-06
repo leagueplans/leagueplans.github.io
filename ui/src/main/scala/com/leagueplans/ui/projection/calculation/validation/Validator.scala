@@ -43,6 +43,43 @@ object Validator {
       }
     }
 
+  /** A bank PIN's space is only unlocked once */
+  val bankPinUnset: Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
+        Either.cond(
+          !player.bankSpace.unlocks.contains(BankSpace.Unlock.Pin),
+          right = (),
+          left = "A bank PIN is already set"
+        )
+    }
+
+  /** Blocks of bank space are bought in order, each once */
+  def nextBankBlock(block: Int): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
+        val bought = player.bankSpace.blocksBought
+        if (BankSpace.price(block).isEmpty) Left(s"There are only ${BankSpace.blockPrices.size} blocks of bank space to buy")
+        else if (block <= bought) Left(s"Block $block of bank space is already bought")
+        else if (block > bought + 1) Left(s"Block ${bought + 1} of bank space has to be bought before block $block")
+        else Right(())
+      }
+    }
+
+  /** A block of bank space is paid for in full from the inventory or the bank */
+  def coinsForBankBlock(block: Int): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
+        BankSpace.price(block) match {
+          case Some(price) if ItemEffects.coinsFor(block, player).isEmpty =>
+            def held(kind: Depository.Kind): Long = player.get(kind).count(BankSpace.coins, noted = false).toLong
+            val costs = s"Block $block costs ${price.withCommas} coins"
+            if (held(Depository.Kind.Inventory) + held(Depository.Kind.Bank) < price) Left(s"$costs, but you cannot afford that")
+            else Left(s"$costs, and the cost cannot be split between the inventory and the bank")
+          case _ => Right(())
+        }
+    }
+
   /** A place holds enough of an item for an exact removal or move */
   def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {

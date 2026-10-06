@@ -1,0 +1,11 @@
+/* An action's button, with what it does beneath it */
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.explanation {
+  margin: 0;
+}

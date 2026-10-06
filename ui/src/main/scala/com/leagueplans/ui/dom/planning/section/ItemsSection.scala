@@ -90,7 +90,7 @@ object ItemsSection {
           (slotsUsed, capacity) => BankFooter(
             slotsUsed,
             capacity,
-            BankSpaceCard.trigger(ctx.popover, ctx.displayedPlayer, ctx.account, () => section),
+            BankSpaceCard.trigger(ctx.popover, ctx.displayedPlayer, ctx.account, runner, ctx.tooltip, () => section),
             itemDrag.settings,
             runner,
             depositInventory,

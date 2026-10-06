@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.details.SubstepSummary.Change
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.skill.{Exp, Level, Stats}
 import com.leagueplans.ui.model.player.{GridStatus, Player}
@@ -49,6 +49,17 @@ final class SubstepSummaryTest extends AnyFreeSpec with Matchers {
         Change.ItemsChanged(logs, noted = false, Depository.Kind.Inventory, -5),
         Change.ItemsChanged(logs, noted = false, Depository.Kind.Bank, 30),
         Change.ItemsChanged(logs, noted = true, Depository.Kind.Bank, 2)
+      )
+    }
+
+    "counts the bank slots gained from a PIN and blocks of space, after the items" in {
+      val after = start.copy(
+        depositories = holding(Depository.Kind.Bank, (coins, false) -> 100),
+        bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), blocksBought = 2)
+      )
+      between(start, after) shouldBe List(
+        Change.ItemsChanged(coins, noted = false, Depository.Kind.Bank, 100),
+        Change.BankSlotsGained(120)
       )
     }
 

@@ -74,7 +74,7 @@ object BankElement {
     )
   }
 
-  @js.native @JSImport("/images/bank-icon.png", JSImport.Default)
+  @js.native @JSImport("/images/bank-icon.svg", JSImport.Default)
   private val icon: String = js.native
 
   @js.native @JSImport("/styles/planning/player/item/bank/bankElement.module.css", JSImport.Default)

@@ -121,6 +121,29 @@ final class ValidatorTest extends AnyFreeSpec with Matchers {
       Validator.depositorySize(Kind.Bank)(full.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), blocksBought = 1)), None, bigCache) shouldBe Right(())
     }
 
+    "says when bank space can't be unlocked or bought" in {
+      val withPin = player().copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), blocksBought = 2))
+      error(Validator.bankPinUnset, withPin) shouldBe "A bank PIN is already set"
+      Validator.bankPinUnset(player(), None, cache) shouldBe Right(())
+
+      Validator.nextBankBlock(3)(withPin, None, cache) shouldBe Right(())
+      error(Validator.nextBankBlock(2), withPin) shouldBe "Block 2 of bank space is already bought"
+      error(Validator.nextBankBlock(5), withPin) shouldBe "Block 3 of bank space has to be bought before block 5"
+      error(Validator.nextBankBlock(10), withPin) shouldBe "There are only 9 blocks of bank space to buy"
+    }
+
+    "says when neither the inventory nor the bank holds enough coins for bank space" in {
+      val gold = item(BankSpace.coins, "Coins", stackable = true, noteable = false)
+      val goldCache = cache.copy(items = cache.items + (gold.id -> gold))
+      def coins(inventory: Int, bank: Int): Player = player(((Kind.Inventory, gold, false), inventory), ((Kind.Bank, gold, false), bank))
+
+      Validator.coinsForBankBlock(1)(coins(600000, 600000), None, goldCache).left.toOption shouldBe
+        Some("Block 1 costs 1,000,000 coins, and the cost cannot be split between the inventory and the bank")
+      Validator.coinsForBankBlock(1)(coins(600000, 300000), None, goldCache).left.toOption shouldBe
+        Some("Block 1 costs 1,000,000 coins, but you cannot afford that")
+      Validator.coinsForBankBlock(1)(coins(0, 1000000), None, goldCache) shouldBe Right(())
+    }
+
     "gives the reason an item can't be moved somewhere" in {
       def route(move: MoveItem) = error(Validator.possibleRoute(move), player())
       route(MoveItem(present.id, Exact(1), Kind.Inventory, false, Kind.Bank, false)) shouldBe "A big present can't be banked"

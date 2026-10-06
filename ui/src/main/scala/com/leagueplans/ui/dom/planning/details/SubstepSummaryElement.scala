@@ -74,6 +74,14 @@ object SubstepSummaryElement {
           L.span(L.cls(Styles.where), depository.name.toLowerCase)
         )
 
+      case Change.BankSlotsGained(slots) =>
+        L.div(
+          L.cls(Styles.line),
+          L.span(L.cls(Styles.icon), RowContent.bankIcon()),
+          "Bank slots",
+          L.span(L.cls(Styles.number, Styles.gain), s"+${slots.withCommas}")
+        )
+
       case Change.SkillsUnlocked(skills) =>
         L.div(L.cls(Styles.line), s"Unlocks ${skills.mkString(", ")}")
 

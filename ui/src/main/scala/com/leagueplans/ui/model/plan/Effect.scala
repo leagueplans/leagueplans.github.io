@@ -32,6 +32,14 @@ enum Effect {
   /** Banks everything the inventory, or every equipment slot, holds when the effect applies, apart from
     * items that can't be banked */
   case DepositAll(source: Effect.DepositSource)
+
+  /** Sets a bank PIN, which unlocks 20 more bank slots */
+  case SetBankPin
+
+  /** Buys a block of 50 bank slots from a banker. There are nine, bought in order and numbered
+    * from 1, each for a set price in coins. The coins come from the inventory if it holds enough,
+    * and otherwise from the bank, never from both. */
+  case BuyBankSpace(block: Int)
 }
 
 object Effect {

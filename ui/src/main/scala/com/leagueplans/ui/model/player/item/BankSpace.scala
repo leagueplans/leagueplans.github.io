@@ -1,6 +1,7 @@
 package com.leagueplans.ui.model.player.item
 
 import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.common.model.Item
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
@@ -52,6 +53,12 @@ object BankSpace {
   /** What each block costs in coins, in the order they're bought */
   val blockPrices: Vector[Int] =
     Vector(1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000)
+
+  /** What a block costs, numbering them from 1, if there is such a block */
+  def price(block: Int): Option[Int] =
+    blockPrices.lift(block - 1)
+
+  val coins: Item.ID = Item.ID(2651) // Coins
 
   val none: BankSpace = BankSpace(Set.empty, blocksBought = 0)
 

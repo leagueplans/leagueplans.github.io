@@ -5,7 +5,7 @@ import com.leagueplans.common.model.{InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.league.LeagueStatus
@@ -20,7 +20,7 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
   private val arrows = Item.ID(3)
 
   private val items: Map[Item.ID, Item] =
-    List(logs -> false, lobster -> false, arrows -> true).map((id, stackable) =>
+    List(logs -> false, lobster -> false, arrows -> true, BankSpace.coins -> true).map((id, stackable) =>
       id -> Item(
         id,
         gameID = None,
@@ -135,6 +135,14 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
         merged(equip, bankSome, unequip) shouldBe List(equip, bankSome, unequip)
       }
 
+      "buying bank space, which takes coins from the inventory or the bank, and may free a slot" in {
+        val coins = BankSpace.coins
+        merged(withdraw(Exact(5), coins), Effect.BuyBankSpace(1), withdraw(Exact(3), coins)) shouldBe
+          List(withdraw(Exact(5), coins), Effect.BuyBankSpace(1), withdraw(Exact(3), coins))
+        merged(withdraw(Exact(2)), Effect.BuyBankSpace(1), withdraw(Exact(3))) shouldBe
+          List(withdraw(Exact(2)), Effect.BuyBankSpace(1), withdraw(Exact(3)))
+      }
+
       "a removal that frees the space the later one takes" in {
         merged(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3))) shouldBe
           List(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3)))
@@ -159,6 +167,7 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
     "merges past effects that don't touch what the later one does" in {
       merged(withdraw(Exact(2)), withdraw(Exact(4), lobster), Effect.CompleteQuest(1), withdraw(Exact(3))) shouldBe
         List(withdraw(Exact(5)), withdraw(Exact(4), lobster), Effect.CompleteQuest(1))
+      merged(withdraw(Exact(2)), Effect.SetBankPin, withdraw(Exact(3))) shouldBe List(withdraw(Exact(5)), Effect.SetBankPin)
     }
     "drops what a merge leaves that comes to nothing at the step" - {
       val equip = move(arrows, Max, Kind.Bank, EquipmentSlot.Ammo)

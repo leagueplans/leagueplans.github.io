@@ -2,15 +2,19 @@ package com.leagueplans.ui.model.player.item
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{ItemChange, ItemQuantity}
-import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
+import com.leagueplans.ui.model.plan.Effect.{AddItem, BuyBankSpace, DepositAll, DepositSource, MoveItem, SetBankPin}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 
-/** What the item effects do to a player. Kept apart from the rest of the effects so that the
-  * step details can work out what a `Max` comes to without the whole effect resolver.
+/** What the item effects do to a player, including those that change the bank's space. Kept apart
+  * from the rest of the effects so that the step details can work out what a `Max` comes to
+  * without the whole effect resolver.
   */
 object ItemEffects {
+  /** The effects that change what's held, or where it can go */
+  type Change = AddItem | MoveItem | DepositAll | SetBankPin.type | BuyBankSpace
+
   /** How many of an item an effect adds, moves or removes, when applied to this player. A removal
     * counts the items it takes away. */
   def count(effect: AddItem | MoveItem, player: Player, items: Item.ID => Item): Int =
@@ -29,7 +33,7 @@ object ItemEffects {
         player.get(source).count(item, notedInSource)
     }
 
-  def apply(player: Player, effect: AddItem | MoveItem | DepositAll, items: Item.ID => Item): Player =
+  def apply(player: Player, effect: Change, items: Item.ID => Item): Player =
     effect match {
       case add: AddItem =>
         val n = count(add, player, items)
@@ -42,7 +46,28 @@ object ItemEffects {
         )
       case DepositAll(source) =>
         deposits(source, player, items).foldLeft(player)(apply(_, _, items))
+      case SetBankPin =>
+        player.copy(bankSpace = player.bankSpace.copy(unlocks = player.bankSpace.unlocks + BankSpace.Unlock.Pin))
+      // The slots are gained even if the coins can't be found, or the blocks before it weren't
+      // bought, so that the rest of the plan isn't thrown off by one mistake, which the plan
+      // shows as a problem. A block that's already bought can't be bought again.
+      case BuyBankSpace(block) if block <= player.bankSpace.blocksBought =>
+        player
+      case BuyBankSpace(block) =>
+        BankSpace.price(block).fold(player) { price =>
+          val paid = coinsFor(block, player).fold(player)(place =>
+            change(player, place, BankSpace.coins, noted = false, -price)
+          )
+          paid.copy(bankSpace = paid.bankSpace.copy(blocksBought = paid.bankSpace.blocksBought + 1))
+        }
     }
+
+  /** Where the coins for a block of bank space come from: the inventory if it holds enough, and
+    * otherwise the bank if it does. The banker won't take some from each. */
+  def coinsFor(block: Int, player: Player): Option[Kind] =
+    BankSpace.price(block).flatMap(price =>
+      List(Kind.Inventory, Kind.Bank).find(player.get(_).count(BankSpace.coins, noted = false) >= price)
+    )
 
   /** The moves a deposit makes: every bankable stack in the place, into the bank, unnoted */
   def deposits(source: DepositSource, player: Player, items: Item.ID => Item): List[MoveItem] =

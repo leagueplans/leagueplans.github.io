@@ -185,7 +185,7 @@ object StepDetails {
               // Equal effects share a row's content, so each shows what the first comes to
               val updated = if (counts.contains(e)) counts else counts + (e -> ItemEffects.count(e, player, cache.items))
               (ItemEffects(player, e, cache.items), updated)
-            case e: Effect.DepositAll =>
+            case e: (Effect.DepositAll | Effect.SetBankPin.type | Effect.BuyBankSpace) =>
               (ItemEffects(player, e, cache.items), counts)
             case _ =>
               (player, counts)

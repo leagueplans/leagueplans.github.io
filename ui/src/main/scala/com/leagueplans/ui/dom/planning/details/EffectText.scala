@@ -44,6 +44,12 @@ final class EffectText(cache: Cache) {
 
       case Effect.CompleteGridTile(tile) =>
         s"Grid tile: ${cache.gridTiles(tile).description}"
+
+      case Effect.SetBankPin =>
+        "Set a bank PIN"
+
+      case Effect.BuyBankSpace(block) =>
+        s"Buy bank space, block $block"
     }
 
   def describe(requirement: Requirement): String =
