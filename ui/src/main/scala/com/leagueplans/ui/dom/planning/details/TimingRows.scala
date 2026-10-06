@@ -7,6 +7,7 @@ import com.leagueplans.uicommon.dom.{Button, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.DurationOps.safeMul
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
@@ -52,7 +53,7 @@ object TimingRows {
       case None => Left("Type a whole number of repetitions")
       case Some(n) if n < 1 => Left("A step must happen at least once")
       case Some(n) if n > maxRepetitions =>
-        Left(s"High repetition counts slow the planner down (max ${String.format("%,d", maxRepetitions)})")
+        Left(s"High repetition counts slow the planner down (max ${maxRepetitions.withCommas})")
       case Some(n) => Right(n)
     }
 

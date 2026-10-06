@@ -2,6 +2,7 @@ package com.leagueplans.ui.model.player.skill
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
 object Exp {
   def apply(i: Int): Exp =
@@ -36,6 +37,6 @@ sealed abstract case class Exp(raw: Int) {
   override def toString: String = {
     val unit = raw / 10
     val tenth = raw % 10
-    s"${String.format("%,d", unit)}.$tenth"
+    s"${unit.withCommas}.$tenth"
   }
 }

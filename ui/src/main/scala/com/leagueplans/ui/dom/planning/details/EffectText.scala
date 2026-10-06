@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, Requirement}
 import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
 /** Short plain-text descriptions of effects and requirements, for places with no room for icons */
 final class EffectText(cache: Cache) {
@@ -13,10 +14,10 @@ final class EffectText(cache: Cache) {
 
       case Effect.AddItem(item, quantity, target, note) =>
         val sign = if (quantity < 0) "−" else "+"
-        s"$sign${String.format("%,d", quantity.abs)} ${itemName(item, note)} (${target.name.toLowerCase})"
+        s"$sign${quantity.abs.withCommas} ${itemName(item, note)} (${target.name.toLowerCase})"
 
       case Effect.MoveItem(item, quantity, source, notedInSource, target, _) =>
-        s"Move ${String.format("%,d", quantity)} ${itemName(item, notedInSource)}: ${source.name} → ${target.name}"
+        s"Move ${quantity.withCommas} ${itemName(item, notedInSource)}: ${source.name} → ${target.name}"
 
       case Effect.UnlockSkill(skill) =>
         s"Unlock $skill"

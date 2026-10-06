@@ -5,6 +5,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 
@@ -68,7 +69,7 @@ object SubstepSummaryElement {
           if (noted) s"$name (noted)" else name,
           L.span(
             L.cls(Styles.number, if (by > 0) Styles.gain else Styles.loss),
-            s"${if (by > 0) "+" else "−"}${String.format("%,d", by.abs)}"
+            s"${if (by > 0) "+" else "−"}${by.abs.withCommas}"
           ),
           L.span(L.cls(Styles.where), depository.name.toLowerCase)
         )
@@ -80,7 +81,7 @@ object SubstepSummaryElement {
         L.div(L.cls(Styles.line), what, L.span(L.cls(Styles.number), s"+$count"))
 
       case Change.LeaguePointsGained(points) =>
-        L.div(L.cls(Styles.line), "League points", L.span(L.cls(Styles.number), f"+$points%,d"))
+        L.div(L.cls(Styles.line), "League points", L.span(L.cls(Styles.number), s"+${points.withCommas}"))
     }
 
   @js.native @JSImport("/styles/planning/details/substepSummary.module.css", JSImport.Default)

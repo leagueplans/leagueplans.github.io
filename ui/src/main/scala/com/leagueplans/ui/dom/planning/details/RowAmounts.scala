@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.model.plan.{Effect, Requirement}
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
 /** The amounts on effect and requirement rows that can be edited in place */
 object RowAmounts {
@@ -24,9 +25,9 @@ object RowAmounts {
       case Effect.AddItem(_, quantity, _, _) =>
         val tone = if (quantity < 0) Tone.Loss else Tone.Gain
         val sign = if (quantity < 0) "−" else "+"
-        Some(Amount(s"$sign${formatCount(quantity.abs)}", quantity.abs.toString, tone))
+        Some(Amount(s"$sign${quantity.abs.withCommas}", quantity.abs.toString, tone))
       case Effect.MoveItem(_, quantity, _, _, _, _) =>
-        Some(Amount(formatCount(quantity), quantity.toString, Tone.Neutral))
+        Some(Amount(quantity.withCommas, quantity.toString, Tone.Neutral))
       case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask |
                Effect.CompleteLeagueTask | Effect.CompleteGridTile) =>
         None
@@ -58,12 +59,9 @@ object RowAmounts {
     }
 
   def formatExp(exp: Exp): String = {
-    val whole = String.format("%,d", exp.raw / 10)
+    val whole = (exp.raw / 10).withCommas
     if (exp.raw % 10 == 0) whole else s"$whole.${exp.raw % 10}"
   }
-
-  private def formatCount(n: Int): String =
-    String.format("%,d", n)
 
   private def cleaned(text: String): String =
     text.trim.replace(",", "").stripPrefix("+")
@@ -71,7 +69,7 @@ object RowAmounts {
   private def parseExp(text: String): Either[String, Exp] =
     toDecimal(cleaned(text)) match {
       case Some(exp) if exp <= 0 => Left("Gain more than 0 exp")
-      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${formatCount(maxExp)} exp")
+      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} exp")
       case Some(exp) if !(exp * 10).isWhole => Left("Exp can have at most one decimal place")
       case Some(exp) => Right(Exp.tenths((exp * 10).toIntExact))
       case None => Left("Type an amount of exp, such as 1250 or 37.5")

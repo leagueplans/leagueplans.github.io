@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.laminar.api.{L, textToTextNode}
 
@@ -40,7 +41,7 @@ object StackElement {
       L.when(quantity > 1)(
         L.p(
           L.cls(Styles.tooltipCount),
-          s"Count: ${String.format("%,d", quantity)}"
+          s"Count: ${quantity.withCommas}"
         )
       )
     )
