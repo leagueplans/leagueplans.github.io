@@ -29,7 +29,9 @@ import scala.scalajs.js.annotation.JSImport
 /** Everything about the focused step: where it sits in the plan, its description, timings,
   * problems, effects and requirements */
 object StepDetails {
-  /** @param expMultiplierAt the exp multiplier for each skill at the start of the step */
+  /** @param expMultiplierAt the exp multiplier for each skill at the start of the step
+    * @param settledPlayerBefore the player before the step, once the worker has worked it out for it
+    */
   def apply(
     cache: Cache,
     stepSignal: Signal[Step],
@@ -41,6 +43,7 @@ object StepDetails {
     dragSession: DragSession,
     expMultiplierAt: Signal[Skill => Double],
     playerBefore: Signal[Player],
+    settledPlayerBefore: Signal[Option[Player]],
     playerAfterAll: Signal[Player],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
@@ -52,10 +55,15 @@ object StepDetails {
     val requirements = stepSignal.map(_.requirements)
     val editRequests = EventBus[Row]()
 
-    // The row actions act outside any stream, so they read the step from here
+    // The row actions act outside any stream, so they read the step, and the player before it,
+    // from here
     var current = Option.empty[Step]
+    var currentPlayerBefore = Option.empty[Player]
+    // Deleting, reordering or editing an effect can let others merge
     def updateEffects(f: List[Effect] => List[Effect]): Unit =
-      current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects = EffectList(f(s.directEffects.underlying)))))
+      current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects =
+        ItemEffects.reconcileStep(EffectList(f(s.directEffects.underlying)), currentPlayerBefore, cache.items)
+      )))
     def updateRequirements(f: List[Requirement] => List[Requirement]): Unit =
       current.foreach(step => forester.update(step.id, s => s.deepCopy(requirements = f(s.requirements))))
     def update(kind: Kind)(edit: [T] => List[T] => List[T]): Unit =
@@ -90,6 +98,7 @@ object StepDetails {
     L.div(
       L.cls(Styles.details),
       stepSignal --> (step => current = Some(step)),
+      settledPlayerBefore --> (player => currentPlayerBefore = player),
       // The selection belongs to the step it was made on
       stepSignal.map(_.id).distinct.changes --> (_ => selection.select(None)),
       L.onUnmountCallback(_ => selection.select(None)),

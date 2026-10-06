@@ -113,7 +113,7 @@ final class Projector(settings: Plan.Settings, effectResolver: EffectResolver) {
               case Some(playerBeforeLastRep) =>
                 foldLeftAsync(focusSubtree, playerBeforeLastRep, signal)(resolvePlayer)
                   .map(_.map(playerAfterAllReps =>
-                    Projection(playerBeforeFocus, playerAfterEffects, playerAfterAllReps)
+                    Projection(playerBeforeFocus, playerAfterEffects, playerAfterAllReps, focusID)
                   ))
             }
         }

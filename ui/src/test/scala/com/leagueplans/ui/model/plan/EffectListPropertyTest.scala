@@ -139,7 +139,7 @@ final class EffectListPropertyTest extends AnyFreeSpec with Matchers with ScalaC
       forAll(playerGen, Gen.choose(1, 7).flatMap(Gen.listOfN(_, effectGen))) { (player, effects) =>
         run(player, effects).foreach { expected =>
           checked += 1
-          val merged = effects.foldLeft(EffectList.empty)(_.plus(_, keepLatestChoice = false)).underlying
+          val merged = effects.foldLeft(EffectList.empty)(_.plus(_, items, keepLatestChoice = false)).underlying
           withClue(s"Merged $effects into $merged, from ${contents(player)}:") {
             run(player, merged).map(contents) shouldBe Some(contents(expected))
           }

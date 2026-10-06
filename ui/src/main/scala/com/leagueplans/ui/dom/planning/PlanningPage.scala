@@ -49,6 +49,9 @@ object PlanningPage {
     val fieldEditRequests = EventBus[EditRequest]()
     val rowSelection = RowSelection()
     val dragSession = DragSession()
+    // Merging a step's effects drops leftovers that come to nothing against the player before it, so
+    // it mustn't be another step's
+    val settledPlayerBefore = focusContext.playerBeforeFocusIfCurrent
 
     val planElement =
       PlanElement(
@@ -66,6 +69,8 @@ object PlanningPage {
         },
         rowSelection,
         dragSession,
+        cache.items,
+        settledPlayerBefore,
         timeKeeper,
         tooltip,
         contextMenu,
@@ -87,7 +92,7 @@ object PlanningPage {
           displayedState.playerAtInsertion,
           displayedState.baseline,
           focusContext.focusID,
-          createEffectObserver(focusContext.focus, focusContext.playerBeforeCurrentFocus, cache, forester),
+          createEffectObserver(focusContext.focus, settledPlayerBefore, cache, forester),
           createRequirementObserver(focusContext.focus, forester),
           focusContext.focusID.changes.mapToUnit,
           settings,
@@ -127,6 +132,7 @@ object PlanningPage {
               skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
             ),
             focusContext.playerBeforeCurrentFocus,
+            settledPlayerBefore,
             focusContext.playerAfterAllRepsOfCurrentFocus,
             fieldEditRequests.events,
             contextMenu,
@@ -198,7 +204,7 @@ object PlanningPage {
   /** Adds effects to the focused step, merging them with its effects */
   private def createEffectObserver(
     focusedStepSignal: Signal[Option[Step]],
-    playerAtStart: Signal[Player],
+    playerAtStart: Signal[Option[Player]],
     cache: Cache,
     forester: Forester[Step.ID, Step]
   ): Signal[Option[Observer[Effect | Seq[Effect]]]] =

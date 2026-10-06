@@ -61,20 +61,31 @@ object ItemEffects {
     * after equipping it, say, leaves a move of everything that's equipped, which is nothing if
     * nothing was equipped when the step started.
     *
-    * @param playerAtStart the player before the step's effects apply
+    * @param playerAtStart the player before the step's effects apply, if it's known. Without it,
+    *                      nothing is dropped.
     */
-  def addToStep(effects: EffectList, effect: Effect, playerAtStart: Player, items: Item.ID => Item): EffectList = {
-    val merged = effects + effect
-    if (merged.underlying == effects.underlying :+ effect)
-      merged
-    else {
-      val created = merged.underlying.filterNot(effects.underlying.contains)
-      val (_, kept) = merged.underlying.foldLeft((playerAtStart, List.empty[Effect])) { case ((player, kept), e) =>
-        val keep = !created.contains(e) || !comesToNothing(e, player, items)
-        (applyIfItem(player, e, items), if (keep) kept :+ e else kept)
-      }
-      EffectList(kept)
+  def addToStep(effects: EffectList, effect: Effect, playerAtStart: Option[Player], items: Item.ID => Item): EffectList = {
+    val entries = effects.addMarkingMerges(effect, items)
+    playerAtStart.fold(EffectList(entries.map(_.effect)))(withoutMergedNoOps(entries, _, items))
+  }
+
+  /** Merges a step's effects again after one is deleted, reordered or edited, dropping what the
+    * merges leave that comes to nothing at this step, as `addToStep` does
+    *
+    * @param playerAtStart the player before the step's effects apply, if it's known
+    */
+  def reconcileStep(effects: EffectList, playerAtStart: Option[Player], items: Item.ID => Item): EffectList = {
+    val entries = effects.reconciledMarkingMerges(items)
+    playerAtStart.fold(EffectList(entries.map(_.effect)))(withoutMergedNoOps(entries, _, items))
+  }
+
+  /** Drops the effects that came from merging and come to nothing where they apply */
+  private def withoutMergedNoOps(entries: List[EffectList.Entry], playerAtStart: Player, items: Item.ID => Item): EffectList = {
+    val (_, kept) = entries.foldLeft((playerAtStart, List.empty[Effect])) { case ((player, kept), entry) =>
+      val keep = !entry.merged || !comesToNothing(entry.effect, player, items)
+      (applyIfItem(player, entry.effect, items), if (keep) kept :+ entry.effect else kept)
     }
+    EffectList(kept)
   }
 
   /** Whether an effect that's worked out where it applies changes nothing */

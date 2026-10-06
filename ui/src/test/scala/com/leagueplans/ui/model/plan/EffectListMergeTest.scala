@@ -1,6 +1,7 @@
 package com.leagueplans.ui.model.plan
 
-import com.leagueplans.common.model.Item
+import cats.data.NonEmptyList
+import com.leagueplans.common.model.{InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
 import com.leagueplans.ui.model.player.item.Depository
@@ -14,6 +15,22 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
   private val lobster = Item.ID(2)
   private val arrows = Item.ID(3)
 
+  private val items: Map[Item.ID, Item] =
+    List(logs -> false, lobster -> false, arrows -> true).map((id, stackable) =>
+      id -> Item(
+        id,
+        gameID = None,
+        s"Item $id",
+        examine = "",
+        NonEmptyList.one((Item.Image.Bin(1), Item.Image.Path("1/1.png"))),
+        Item.Bankable.Yes(stacks = true),
+        stackable,
+        noteable = !stackable,
+        equipmentType = None,
+        infobox = InfoboxKey(1, List.empty)
+      )
+    ).toMap
+
   private def move(item: Item.ID, quantity: ItemQuantity, source: Depository.Kind, target: Depository.Kind): MoveItem =
     MoveItem(item, quantity, source, notedInSource = false, target, noteInTarget = false)
 
@@ -22,7 +39,7 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
   private def add(change: ItemChange, item: Item.ID = logs): AddItem = AddItem(item, change, Kind.Inventory, note = false)
 
   private def merged(effects: Effect*): List[Effect] =
-    effects.foldLeft(EffectList.empty)(_ + _).underlying
+    effects.foldLeft(EffectList.empty)(_.add(_, items)).underlying
 
   "EffectList" - {
     "adds up exact amounts of the same move" in {
@@ -58,6 +75,14 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
         List(equip, DepositAll(DepositSource.Inventory))
       merged(DepositAll(DepositSource.Inventory), Effect.CompleteQuest(1), DepositAll(DepositSource.Inventory)) shouldBe
         List(DepositAll(DepositSource.Inventory), Effect.CompleteQuest(1))
+    }
+
+    "lets filling a place take the place of earlier changes to it, for items that take a slot each" in {
+      merged(add(ItemChange.By(-2)), add(ItemChange.Fill)) shouldBe List(add(ItemChange.Fill))
+      merged(add(ItemChange.Empty), add(ItemChange.Fill)) shouldBe List(add(ItemChange.Fill))
+      // Filling with a stackable item adds nothing, so the removal still stands
+      merged(add(ItemChange.By(-2), arrows), add(ItemChange.Fill, arrows)) shouldBe
+        List(add(ItemChange.By(-2), arrows), add(ItemChange.Fill, arrows))
     }
 
     "keeps the later choice between an exact amount and the most" in {
@@ -98,6 +123,21 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
         merged(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3))) shouldBe
           List(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3)))
       }
+    }
+
+    "keeps different directions apart, as in banking all but two" in {
+      merged(bank(Max), withdraw(Exact(2))) shouldBe List(bank(Max), withdraw(Exact(2)))
+      merged(add(ItemChange.Fill), add(ItemChange.By(-2))) shouldBe List(add(ItemChange.Fill), add(ItemChange.By(-2)))
+    }
+
+    "when reconciled, merges effects that can now meet, without keeping later choices" in {
+      val removeLobsters = add(ItemChange.By(-3), lobster)
+      EffectList(List(withdraw(Exact(2)), withdraw(Exact(3)))).reconciled(items).underlying shouldBe List(withdraw(Exact(5)))
+      // Deleting what separated a fill from an exact addition doesn't replace the fill
+      EffectList(List(add(ItemChange.Fill), add(ItemChange.By(2)))).reconciled(items).underlying shouldBe
+        List(add(ItemChange.Fill), add(ItemChange.By(2)))
+      EffectList(List(withdraw(Exact(2)), removeLobsters, withdraw(Exact(3)))).reconciled(items).underlying shouldBe
+        List(withdraw(Exact(2)), removeLobsters, withdraw(Exact(3)))
     }
 
     "merges past effects that don't touch what the later one does" in {

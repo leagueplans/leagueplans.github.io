@@ -2,9 +2,10 @@ package com.leagueplans.ui.model.plan
 
 import com.leagueplans.codec.decoding.CollectionDecoder
 import com.leagueplans.codec.encoding.CollectionEncoder
+import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{Depository, ItemEffects}
 import com.leagueplans.ui.model.player.skill.Exp
 
 object EffectList {
@@ -20,6 +21,38 @@ object EffectList {
       .iterableOnceDecoder[List, Effect]
       .map(EffectList.apply)
 
+  /** An effect, and whether it came from merging others */
+  final case class Entry(effect: Effect, merged: Boolean)
+
+  /** Adds an entry to the end of the others, merging it with the nearest earlier effect it can,
+    * looking back only as far as the new effect could move without changing the step's result */
+  private def insert(entries: List[Entry], entry: Entry, items: Item.ID => Item, keepLatestChoice: Boolean): List[Entry] = {
+    val effects = entries.map(_.effect)
+    def canReach(i: Int): Boolean =
+      effects.drop(i + 1).forall(EffectDependencies.canMoveBefore(entry.effect, _))
+
+    effects.zipWithIndex.reverse
+      .takeWhile((_, i) => canReach(i))
+      .collectFirst(Function.unlift((existing, i) => merge(existing, entry.effect, items, keepLatestChoice).map((_, i))))
+      match {
+        case None =>
+          entries :+ entry
+        // The new effect stays at the end if the earlier one could move forward to meet it. It may
+        // have freed space that what came between needed, say.
+        case Some((Merged.Later, i)) if effects.drop(i + 1).forall(EffectDependencies.canMoveBefore(_, effects(i))) =>
+          // The new effect may stand in for more of the earlier effects
+          insert(entries.patch(i, Nil, 1), entry.copy(merged = true), items, keepLatestChoice)
+        case Some((Merged.Later, i)) =>
+          insert(entries.take(i), entry.copy(merged = true), items, keepLatestChoice) ++ entries.drop(i + 1)
+        case Some((Merged.Into(merged), i)) =>
+          // What's merged takes the earlier effect's place, where it may merge again. An earlier
+          // effect that stands unchanged keeps its own mark.
+          val before = entries.take(i)
+          val mergedEntry = merged.map(effect => Entry(effect, merged = effect != effects(i) || entries(i).merged))
+          mergedEntry.fold(before)(insert(before, _, items, keepLatestChoice)) ++ entries.drop(i + 1)
+      }
+  }
+
   private enum Merged {
     /** The later effect stands in for both, so it stays where it was added */
     case Later
@@ -28,7 +61,7 @@ object EffectList {
   }
 
   /** Merges an effect with an earlier one that it sits next to, or None if they stay apart */
-  private def merge(earlier: Effect, later: Effect, keepLatestChoice: Boolean): Option[Merged] =
+  private def merge(earlier: Effect, later: Effect, items: Item.ID => Item, keepLatestChoice: Boolean): Option[Merged] =
     (earlier, later) match {
       case (e: GainExp, l: GainExp) if e.skill == l.skill =>
         Some(Merged.Into(Some(e.copy(baseExp = e.baseExp + l.baseExp)).filter(_.baseExp != Exp(0))))
@@ -37,13 +70,14 @@ object EffectList {
         (e.change, l.change) match {
           case (ItemChange.By(a), ItemChange.By(b)) =>
             Some(Merged.Into(Option.when(a + b != 0)(e.copy(change = ItemChange.By(a + b)))))
-          // Emptying a place leaves none, whatever it held before
+          // Emptying a place leaves none, and filling one leaves it full, whatever it held before.
+          // Only items that take a slot each can fill a place: a fill of anything else adds nothing.
           case (_, ItemChange.Empty) =>
+            Some(Merged.Later)
+          case (_, ItemChange.Fill) if ItemEffects.canFill(items(l.item), l.note, l.target) =>
             Some(Merged.Later)
           case (ItemChange.Fill, ItemChange.Fill) =>
             Some(Merged.Later)
-          // Filling depends on whether the item stacks, which a step's effects can't tell, so it
-          // only takes an exact addition's place as the later choice
           case (ItemChange.By(n), ItemChange.Fill) if n > 0 && keepLatestChoice =>
             Some(Merged.Later)
           case (ItemChange.Fill, ItemChange.By(n)) if n > 0 && keepLatestChoice =>
@@ -86,6 +120,7 @@ object EffectList {
         None
     }
 
+
   private def sameWay(a: MoveItem, b: MoveItem): Boolean =
     a.source == b.source && a.notedInSource == b.notedInSource && a.target == b.target && a.noteInTarget == b.noteInTarget
 
@@ -109,8 +144,28 @@ object EffectList {
   * the step does, which `EffectDependencies` decides.
   */
 final case class EffectList(underlying: List[Effect]) extends AnyVal {
-  def +(effect: Effect): EffectList =
-    plus(effect, keepLatestChoice = true)
+  /** Adds an effect to the end, merging it where it can.
+    *
+    * @param items the item data, which tells whether an item can fill a place
+    */
+  def add(effect: Effect, items: Item.ID => Item): EffectList =
+    EffectList(addMarkingMerges(effect, items).map(_.effect))
+
+  /** As `add`, saying which of the effects came from merging */
+  def addMarkingMerges(effect: Effect, items: Item.ID => Item): List[EffectList.Entry] =
+    EffectList.insert(unmerged, EffectList.Entry(effect, merged = false), items, keepLatestChoice = true)
+
+  /** Merges the effects again, as after deleting, reordering or editing one. Only merges that leave
+    * the step's result alone are made: keeping the later choice between an exact amount and the
+    * most is for when an effect is added, and would otherwise replace effects nobody touched. */
+  def reconciled(items: Item.ID => Item): EffectList =
+    EffectList(reconciledMarkingMerges(items).map(_.effect))
+
+  /** As `reconciled`, saying which of the effects came from merging */
+  def reconciledMarkingMerges(items: Item.ID => Item): List[EffectList.Entry] =
+    underlying.foldLeft(List.empty[EffectList.Entry])((entries, effect) =>
+      EffectList.insert(entries, EffectList.Entry(effect, merged = false), items, keepLatestChoice = false)
+    )
 
   def -(effect: Effect): EffectList =
     EffectList(underlying.filterNot(_ == effect))
@@ -119,32 +174,9 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
     *                         an earlier exact amount, which changes what the step does. Tests turn
     *                         it off to check that every other merge leaves the step's result alone.
     */
-  private[plan] def plus(effect: Effect, keepLatestChoice: Boolean): EffectList = {
-    // The nearest earlier effect that the new one can merge with, looking back only as far as the
-    // new effect could move
-    underlying.zipWithIndex.reverse
-      .takeWhile((_, i) => canReach(effect, i))
-      .collectFirst(Function.unlift((existing, i) => EffectList.merge(existing, effect, keepLatestChoice).map((_, i))))
-      match {
-        case None =>
-          EffectList(underlying :+ effect)
-        // The new effect stays at the end if the earlier one could move forward to meet it. It may
-        // have freed space that what came between needed, say.
-        case Some((EffectList.Merged.Later, i)) if underlying.drop(i + 1).forall(EffectDependencies.canMoveBefore(_, underlying(i))) =>
-          // The new effect may stand in for more of the earlier effects
-          EffectList(underlying.patch(i, Nil, 1)).plus(effect, keepLatestChoice)
-        case Some((EffectList.Merged.Later, i)) =>
-          val before = EffectList(underlying.take(i))
-          EffectList(before.plus(effect, keepLatestChoice).underlying ++ underlying.drop(i + 1))
-        case Some((EffectList.Merged.Into(merged), i)) =>
-          // What's merged takes the earlier effect's place, where it may merge again
-          val before = EffectList(underlying.take(i))
-          val after = underlying.drop(i + 1)
-          EffectList(merged.fold(before)(before.plus(_, keepLatestChoice)).underlying ++ after)
-      }
-  }
+  private[plan] def plus(effect: Effect, items: Item.ID => Item, keepLatestChoice: Boolean): EffectList =
+    EffectList(EffectList.insert(unmerged, EffectList.Entry(effect, merged = false), items, keepLatestChoice).map(_.effect))
 
-  /** Whether an effect added at the end can move back to just after the effect at this index */
-  private def canReach(effect: Effect, i: Int): Boolean =
-    underlying.drop(i + 1).forall(EffectDependencies.canMoveBefore(effect, _))
+  private def unmerged: List[EffectList.Entry] =
+    underlying.map(EffectList.Entry(_, merged = false))
 }

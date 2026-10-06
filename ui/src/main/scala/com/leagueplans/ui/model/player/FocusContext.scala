@@ -25,6 +25,13 @@ final class FocusContext(
   val playerBeforeCurrentFocus: Signal[Player] =
     projection.map(_.playerBeforeStep)
 
+  /** The player before the focused step, once the worker has worked it out for that step. Edits to
+    * the step itself don't change it, so it holds while they're recalculated. */
+  val playerBeforeFocusIfCurrent: Signal[Option[Player]] =
+    Signal.combine(focusID, projection).map((focus, projection) =>
+      Option.when(focus.nonEmpty && projection.focusID == focus)(projection.playerBeforeStep)
+    )
+
   val playerAfterEffectsOfCurrentFocus: Signal[Player] =
     projection.map(_.playerAfterEffects)
 

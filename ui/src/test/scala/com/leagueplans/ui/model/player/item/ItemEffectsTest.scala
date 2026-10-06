@@ -125,7 +125,7 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
       val equip = MoveItem(coins.id, Max, Kind.Bank, false, EquipmentSlot.Ammo, false)
       val unequip = MoveItem(coins.id, Max, EquipmentSlot.Ammo, false, Kind.Bank, false)
       def added(start: Player, effects: Effect*) =
-        effects.foldLeft(EffectList.empty)(ItemEffects.addToStep(_, _, start, items)).underlying
+        effects.foldLeft(EffectList.empty)(ItemEffects.addToStep(_, _, Some(start), items)).underlying
 
       // Nothing was equipped, so taking off everything equipped does nothing
       added(player(((Kind.Bank, coins, false), 100)), equip, unequip) shouldBe empty
@@ -136,7 +136,17 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
 
     "keeps an effect that comes to nothing when it's added on its own" in {
       val unequip = MoveItem(coins.id, Max, EquipmentSlot.Ammo, false, Kind.Bank, false)
-      ItemEffects.addToStep(EffectList.empty, unequip, player(), items).underlying shouldBe List(unequip)
+      ItemEffects.addToStep(EffectList.empty, unequip, Some(player()), items).underlying shouldBe List(unequip)
+    }
+
+    "drops what a reconcile's merges leave that comes to nothing, but not what was already there" in {
+      val equip = MoveItem(coins.id, Max, Kind.Bank, false, EquipmentSlot.Ammo, false)
+      val unequip = MoveItem(coins.id, Max, EquipmentSlot.Ammo, false, Kind.Bank, false)
+      val start = player(((Kind.Bank, coins, false), 100))
+      // As after deleting what separated the equip from the unequip
+      ItemEffects.reconcileStep(EffectList(List(equip, unequip)), Some(start), items).underlying shouldBe empty
+      ItemEffects.reconcileStep(EffectList(List(unequip)), Some(start), items).underlying shouldBe List(unequip)
+      ItemEffects.reconcileStep(EffectList(List(equip, unequip)), None, items).underlying shouldBe List(unequip)
     }
 
     "has room for one unstackable item in an empty equipment slot, and none in a full one" in {

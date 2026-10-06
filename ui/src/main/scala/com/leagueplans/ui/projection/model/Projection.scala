@@ -2,7 +2,7 @@ package com.leagueplans.ui.projection.model
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.model.plan.Plan
+import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.Player
 
 object Projection {
@@ -13,12 +13,19 @@ object Projection {
     Projection(
       playerBeforeStep = settings.initialPlayer,
       playerAfterEffects = settings.initialPlayer,
-      playerAfterAllReps = settings.initialPlayer
+      playerAfterAllReps = settings.initialPlayer,
+      focusID = None
     )
 }
 
+/** The players around the focused step
+  *
+  * @param focusID the step these were worked out for. Until the worker catches up with a change
+  *                of focus, the players on show belong to the step that was focused before.
+  */
 final case class Projection(
   playerBeforeStep: Player,
   playerAfterEffects: Player,
-  playerAfterAllReps: Player
+  playerAfterAllReps: Player,
+  focusID: Option[Step.ID]
 )
