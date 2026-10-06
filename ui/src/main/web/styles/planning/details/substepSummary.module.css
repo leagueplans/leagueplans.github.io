@@ -35,8 +35,9 @@
   height: 18px;
 }
 
-/* Item icons come in a box sized for the inventory, which would push them off the skill icons' line */
-.icon > div {
+/* Item icons come in boxes sized for the inventory, which would push them off the skill icons'
+ * line. A note's item sits in a box of its own, over the note. */
+.icon div {
   width: 20px;
   height: 18px;
 }
