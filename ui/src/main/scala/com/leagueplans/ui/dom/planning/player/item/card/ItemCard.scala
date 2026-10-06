@@ -3,8 +3,9 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
-import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.plan.{ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
@@ -36,8 +37,7 @@ object ItemCard {
   def apply(
     holding: Holding,
     initialAmount: String,
-    playerAtInsertion: Signal[Player],
-    effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    runner: ItemActionRunner,
     requirementObserver: Signal[Option[Observer[Requirement]]],
     cache: Cache,
     undoToasts: UndoToasts,
@@ -47,10 +47,9 @@ object ItemCard {
     val amountText = Var(initialAmount)
     val amount = amountText.signal.map(parseAmount)
 
-    def run(observer: Observer[Effect | Seq[Effect]], action: Action): Unit = {
-      observer.onNext(action.effects)
+    def run(run: Action => Unit, action: Action): Unit = {
+      run(action)
       close()
-      undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
     }
 
     /** @param allLabel the button's label when the amount is Max, if not "<label> all"
@@ -80,14 +79,14 @@ object ItemCard {
             case Some(ItemQuantity.Exact(n)) => List(L.textToTextNode(s"$label "), L.span(L.cls(Card.Styles.amount), n.withCommas))
             case None => List(L.textToTextNode(s"$label "), L.span(L.cls(Card.Styles.amount), "?"))
           },
-          L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) =>
-            observer.isEmpty || amount.forall(unavailable(_).nonEmpty)
+          L.disabled <-- Signal.combine(runner.canRun, amount).map((canRun, amount) =>
+            !canRun || amount.forall(unavailable(_).nonEmpty)
           ),
           L.onClick.compose(
-            _.sample(effectObserver, amount, playerAtInsertion).collect { case (Some(observer), Some(n), player) => (observer, n, player) }
-          ) --> ((observer, n, player) => toAction(n, player).foreach(run(observer, _)))
+            _.sample(runner.run, amount, runner.playerAtInsertion).collect { case (Some(runAction), Some(n), player) => (runAction, n, player) }
+          ) --> ((runAction, n, player) => toAction(n, player).foreach(run(runAction, _)))
         ),
-        Signal.combine(noFocusTip(effectObserver), amount).map((noFocus, amount) =>
+        Signal.combine(noFocusTip(runner.run), amount).map((noFocus, amount) =>
           if (noFocus.nonEmpty) noFocus else amount.flatMap(unavailable).getOrElse("")
         ),
         tooltip
@@ -99,11 +98,11 @@ object ItemCard {
           L.cls(Card.Styles.button),
           L.tpe("button"),
           label,
-          L.disabled <-- effectObserver.map(_.isEmpty),
-          L.onClick.compose(_.sample(effectObserver, playerAtInsertion).collect { case (Some(observer), player) => (observer, player) }) -->
-            ((observer, player) => toAction(player).foreach(run(observer, _)))
+          L.disabled <-- runner.canRun.map(!_),
+          L.onClick.compose(_.sample(runner.run, runner.playerAtInsertion).collect { case (Some(runAction), player) => (runAction, player) }) -->
+            ((runAction, player) => toAction(player).foreach(run(runAction, _)))
         ),
-        noFocusTip(effectObserver),
+        noFocusTip(runner.run),
         tooltip
       )
 
@@ -168,8 +167,8 @@ object ItemCard {
     L.div(
       L.cls(Card.Styles.card),
       header(holding.item, holding.noted, ItemStack(holding.item, holding.noted, 1), close),
-      facts(holding.item, playerAtInsertion),
-      noFocusNotice(effectObserver),
+      facts(holding.item, runner.playerAtInsertion),
+      noFocusNotice(runner.run),
       L.when(wholeActions.nonEmpty)(L.div(L.cls(Card.Styles.row), wholeActions)),
       L.when(amountActions.nonEmpty)(
         // Laid out as the add card is, with the labels in a column of their own

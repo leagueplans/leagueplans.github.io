@@ -2,11 +2,12 @@ package com.leagueplans.ui.dom.planning.player.item.card
 
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
-import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
+import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.ItemTransfer
-import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.uicommon.dom.{Popover, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
@@ -24,8 +25,7 @@ import scala.scalajs.js.annotation.JSImport
   */
 final class ItemCards(
   popover: Popover,
-  playerAtInsertion: Signal[Player],
-  effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+  runner: ItemActionRunner,
   requirementObserver: Signal[Option[Observer[Requirement]]],
   cache: Cache,
   transferSettings: StrictSignal[ItemTransfer.Settings],
@@ -68,7 +68,7 @@ final class ItemCards(
           if (isOpen) popover.close()
           else popover.open(
             node.ref,
-            AddItemCard(item, addDraft, playerAtInsertion, effectObserver, requirementObserver, undoToasts, tooltip, () => popover.close()),
+            AddItemCard(item, addDraft, runner, requirementObserver, undoToasts, tooltip, () => popover.close()),
             boundary(),
             below = true
           )
@@ -80,7 +80,7 @@ final class ItemCards(
     tooltip.close()
     popover.open(
       anchor,
-      ItemCard(holding, initialAmount(holding), playerAtInsertion, effectObserver, requirementObserver, cache, undoToasts, tooltip, () => popover.close()),
+      ItemCard(holding, initialAmount(holding), runner, requirementObserver, cache, undoToasts, tooltip, () => popover.close()),
       boundary()
     )
   }

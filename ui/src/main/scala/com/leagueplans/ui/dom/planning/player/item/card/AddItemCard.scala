@@ -3,8 +3,8 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
-import com.leagueplans.ui.model.player.Player
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
+import com.leagueplans.ui.model.plan.{ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemEffects, ItemStack}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
@@ -26,8 +26,7 @@ object AddItemCard {
   def apply(
     item: Item,
     draft: Draft,
-    playerAtInsertion: Signal[Player],
-    effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    runner: ItemActionRunner,
     requirementObserver: Signal[Option[Observer[Requirement]]],
     undoToasts: UndoToasts,
     tooltip: Tooltip,
@@ -46,8 +45,8 @@ object AddItemCard {
     L.div(
       L.cls(Card.Styles.card),
       ItemCard.header(item, noted = false, ItemStack(item, noted = false, quantity = 1), close),
-      ItemCard.facts(item, playerAtInsertion),
-      ItemCard.noFocusNotice(effectObserver),
+      ItemCard.facts(item, runner.playerAtInsertion),
+      ItemCard.noFocusNotice(runner.run),
       // Labels in one column and controls in the other, so the controls line up
       L.div(
         L.cls(Card.Styles.well, Card.Styles.form),
@@ -92,21 +91,19 @@ object AddItemCard {
                 case Some(ItemQuantity.Max) => "Add until full"
                 case n => s"Add ${n.map(ItemActions.describe(item, _)).getOrElse(item.name)}"
               },
-              L.disabled <-- Signal.combine(effectObserver, amount, unavailable).map((observer, amount, unavailable) =>
-                observer.isEmpty || amount.isEmpty || unavailable.nonEmpty
+              L.disabled <-- Signal.combine(runner.canRun, amount, unavailable).map((canRun, amount, unavailable) =>
+                !canRun || amount.isEmpty || unavailable.nonEmpty
               ),
               L.onClick.compose(
-                _.sample(effectObserver, amount, draft.target.signal, draft.noted.signal).collect {
-                  case (Some(observer), Some(n), target, noted) => (observer, n, target, noted)
+                _.sample(runner.run, amount, draft.target.signal, draft.noted.signal).collect {
+                  case (Some(run), Some(n), target, noted) => (run, n, target, noted)
                 }
-              ) --> { (observer, n, target, noted) =>
-                val action = ItemActions.add(item, n, target, noted && target == Depository.Kind.Inventory)
-                observer.onNext(action.effects)
+              ) --> { (run, n, target, noted) =>
+                run(ItemActions.add(item, n, target, noted && target == Depository.Kind.Inventory))
                 close()
-                undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
               }
             ),
-            Signal.combine(ItemCard.noFocusTip(effectObserver), unavailable).map((noFocus, unavailable) =>
+            Signal.combine(ItemCard.noFocusTip(runner.run), unavailable).map((noFocus, unavailable) =>
               if (noFocus.nonEmpty) noFocus else unavailable.getOrElse("")
             ),
             tooltip

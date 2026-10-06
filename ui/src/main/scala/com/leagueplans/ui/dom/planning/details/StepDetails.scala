@@ -1,14 +1,14 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.Skill
+import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
 import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
-import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
-import com.leagueplans.ui.model.plan.merge.StepEffects
+import com.leagueplans.ui.model.plan.{Effect, Requirement, Step}
 import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -31,7 +31,7 @@ import scala.scalajs.js.annotation.JSImport
   * problems, effects and requirements */
 object StepDetails {
   /** @param expMultiplierAt the exp multiplier for each skill at the start of the step
-    * @param settledPlayerBefore the player before the step, once the worker has worked it out for it
+    * @param stepEditor changes the step's effects and requirements
     */
   def apply(
     cache: Cache,
@@ -44,7 +44,7 @@ object StepDetails {
     dragSession: DragSession,
     expMultiplierAt: Signal[Skill => Double],
     playerBefore: Signal[Player],
-    settledPlayerBefore: Signal[Option[Player]],
+    stepEditor: StepEditor,
     playerAfterAll: Signal[Player],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
@@ -56,17 +56,13 @@ object StepDetails {
     val requirements = stepSignal.map(_.requirements)
     val editRequests = EventBus[Row]()
 
-    // The row actions act outside any stream, so they read the step, and the player before it,
-    // from here
+    // The row actions act outside any stream, so they read the step from here
     var current = Option.empty[Step]
-    var currentPlayerBefore = Option.empty[Player]
     // Deleting, reordering or editing an effect can let others merge
     def updateEffects(f: List[Effect] => List[Effect]): Unit =
-      current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects =
-        StepEffects.reconcile(EffectList(f(s.directEffects.underlying)), currentPlayerBefore, cache.items)
-      )))
+      current.foreach(step => stepEditor.editEffects(step.id)(f))
     def updateRequirements(f: List[Requirement] => List[Requirement]): Unit =
-      current.foreach(step => forester.update(step.id, s => s.deepCopy(requirements = f(s.requirements))))
+      current.foreach(step => stepEditor.editRequirements(step.id)(f))
     def update(kind: Kind)(edit: [T] => List[T] => List[T]): Unit =
       kind match {
         case Kind.Effects => updateEffects(edit(_))
@@ -99,7 +95,6 @@ object StepDetails {
     L.div(
       L.cls(Styles.details),
       stepSignal --> (step => current = Some(step)),
-      settledPlayerBefore --> (player => currentPlayerBefore = player),
       // The selection belongs to the step it was made on
       stepSignal.map(_.id).distinct.changes --> (_ => selection.select(None)),
       L.onUnmountCallback(_ => selection.select(None)),

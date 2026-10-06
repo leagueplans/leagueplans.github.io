@@ -7,9 +7,8 @@ import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, Ho
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
-import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
-import com.leagueplans.ui.model.plan.merge.StepEffects
-import com.leagueplans.ui.model.player.{Cache, FocusContext, Player}
+import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan, Step}
+import com.leagueplans.ui.model.player.{Cache, FocusContext}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
@@ -49,9 +48,7 @@ object PlanningPage {
     val fieldEditRequests = EventBus[EditRequest]()
     val rowSelection = RowSelection()
     val dragSession = DragSession()
-    // Merging a step's effects drops leftovers that come to nothing against the player before it, so
-    // it mustn't be another step's
-    val settledPlayerBefore = focusContext.playerBeforeFocusIfCurrent
+    val stepEditor = StepEditor(forester, focusContext, cache.items)
 
     val planElement =
       PlanElement(
@@ -69,8 +66,7 @@ object PlanningPage {
         },
         rowSelection,
         dragSession,
-        cache.items,
-        settledPlayerBefore,
+        stepEditor,
         timeKeeper,
         tooltip,
         contextMenu,
@@ -92,8 +88,8 @@ object PlanningPage {
           displayedState.playerAtInsertion,
           displayedState.baseline,
           focusContext.focusID,
-          createEffectObserver(focusContext.focus, settledPlayerBefore, cache, forester),
-          createRequirementObserver(focusContext.focus, forester),
+          stepEditor.effectObserver,
+          stepEditor.requirementObserver,
           focusContext.focusID.changes.mapToUnit,
           settings,
           cache,
@@ -132,7 +128,7 @@ object PlanningPage {
               skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
             ),
             focusContext.playerBeforeCurrentFocus,
-            settledPlayerBefore,
+            stepEditor,
             focusContext.playerAfterAllRepsOfCurrentFocus,
             fieldEditRequests.events,
             contextMenu,
@@ -168,6 +164,7 @@ object PlanningPage {
       ),
       hasFocus --> (focused => if (!focused) layout.collapseDetails()),
       dragSession.binder,
+      stepEditor.binder,
       HotkeyModifiers.detailsToggle(hasFocus, () => layout.toggleDetails()),
       L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
       visualiser.amend(L.cls(Styles.state)),
@@ -199,35 +196,4 @@ object PlanningPage {
       case problem: StatusTracker.Status.Problem => Some(StorageFailureBanner.lostConnection(problem.reason))
       case StatusTracker.Status.Idle | StatusTracker.Status.Busy => None
     }
-
-  /** Adds effects to the focused step. Several effects can be added together in one update. */
-  /** Adds effects to the focused step, merging them with its effects */
-  private def createEffectObserver(
-    focusedStepSignal: Signal[Option[Step]],
-    playerAtStart: Signal[Option[Player]],
-    cache: Cache,
-    forester: Forester[Step.ID, Step]
-  ): Signal[Option[Observer[Effect | Seq[Effect]]]] =
-    Signal.combine(focusedStepSignal, playerAtStart).map((focusedStep, player) => focusedStep.map(focusedStep =>
-      Observer[Effect | Seq[Effect]] { effectOrEffects =>
-        val effects = effectOrEffects match {
-          case effect: Effect => List(effect)
-          case effects: Seq[Effect @unchecked] => effects
-        }
-        forester.update(focusedStep.id, step =>
-          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(StepEffects.add(_, _, player, cache.items)))
-        )
-      }
-    ))
-
-  /** Adds a requirement to the focused step */
-  private def createRequirementObserver(
-    focusedStepSignal: Signal[Option[Step]],
-    forester: Forester[Step.ID, Step]
-  ): Signal[Option[Observer[Requirement]]] =
-    focusedStepSignal.map(_.map(focusedStep =>
-      Observer[Requirement](requirement =>
-        forester.update(focusedStep.id, step => step.deepCopy(requirements = Requirement.addTo(step.requirements, requirement)))
-      )
-    ))
 }

@@ -3,16 +3,15 @@ package com.leagueplans.ui.dom.planning.player.item.drag
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged.DraggedItem
-import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.MoveItem
-import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
 import com.leagueplans.ui.model.player.item.ItemTransfer
 import com.leagueplans.ui.model.player.item.ItemTransfer.{Rejection, Settings, Target}
 import com.leagueplans.uicommon.dom.{Popover, Tooltip}
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
 import org.scalajs.dom.{DataTransferDropEffectKind, DragEvent, Element, Node}
@@ -27,11 +26,9 @@ import scala.scalajs.js.annotation.JSImport
   */
 final class ItemDrag(
   session: DragSession,
-  playerAtInsertion: Signal[Player],
-  effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+  runner: ItemActionRunner,
   isRecalculating: Signal[Boolean],
   items: Item.ID => Item,
-  undoToasts: UndoToasts,
   tooltip: Tooltip,
   popover: Popover
 ) {
@@ -39,7 +36,7 @@ final class ItemDrag(
   val settings: Var[Settings] = Var(Settings.default)
 
   val enabled: Signal[Boolean] =
-    Signal.combine(effectObserver, isRecalculating).map((observer, busy) => observer.nonEmpty && !busy).distinct
+    Signal.combine(runner.canRun, isRecalculating).map(_ && !_).distinct
 
   private val dragged: Signal[Option[Holding]] =
     session.current.map(_.collect { case DraggedItem(holding) => holding }).distinct
@@ -47,7 +44,7 @@ final class ItemDrag(
   private val hovered = Var(Option.empty[Target])
 
   private def verdict(target: Target): Signal[Option[Either[Rejection, Action]]] =
-    Signal.combine(dragged, playerAtInsertion, settings.signal).map((dragged, player, settings) =>
+    Signal.combine(dragged, runner.playerAtInsertion, settings.signal).map((dragged, player, settings) =>
       dragged.map(ItemTransfer.plan(_, target, player, items, settings))
     )
 
@@ -87,13 +84,13 @@ final class ItemDrag(
           session.start(DraggedItem(holding), event)
         },
         L.onClick.filter(_.shiftKey).preventDefault.compose(
-          _.sample(effectObserver, playerAtInsertion, settings.signal, isRecalculating)
-        ) --> { (maybeObserver, player, settings, busy) =>
+          _.sample(runner.run, runner.playerAtInsertion, settings.signal, isRecalculating)
+        ) --> { (maybeRun, player, settings, busy) =>
           for {
-            observer <- maybeObserver
+            run <- maybeRun
             if !busy
             action <- ItemTransfer.quickMove(holding, player, items, settings).toOption
-          } run(observer, action)
+          } run(action)
         }
       )
     )
@@ -127,11 +124,11 @@ final class ItemDrag(
         L.onDragLeave.filter(event => !isWithin(event, panel.ref)) --> (_ =>
           if (hovered.now().contains(target)) hovered.set(None)
         ),
-        L.onDrop.compose(_.withCurrentValueOf(targetVerdict, effectObserver)) --> {
-          case (event, Some(Right(action)), Some(observer)) =>
+        L.onDrop.compose(_.withCurrentValueOf(targetVerdict, runner.run)) --> {
+          case (event, Some(Right(action)), Some(run)) =>
             event.preventDefault()
             // Applied once the drag has ended, since the move can remove the dragged stack
-            session.dropped(() => run(observer, action))
+            session.dropped(() => run(action))
           case _ =>
             ()
         },
@@ -146,10 +143,6 @@ final class ItemDrag(
     )
   }
 
-  private def run(observer: Observer[Effect | Seq[Effect]], action: Action): Unit = {
-    observer.onNext(action.effects)
-    undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
-  }
 
   private def caption(text: String, rejected: Boolean): L.Div =
     L.div(

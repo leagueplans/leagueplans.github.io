@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.details.{EditRequest, RowSelection}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.{UndoController, UndoToasts}
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.player.{FocusContext, Player}
+import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.Signal
@@ -27,8 +27,7 @@ object PlanElement {
     editInDetails: EditRequest => Unit,
     rowSelection: RowSelection,
     dragSession: DragSession,
-    items: Item.ID => Item,
-    settledPlayerBefore: Signal[Option[Player]],
+    stepEditor: StepEditor,
     timeKeeper: TimeKeeper,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
@@ -60,8 +59,7 @@ object PlanElement {
         stepMover,
         stepClipboard,
         dragSession,
-        items,
-        settledPlayerBefore,
+        stepEditor,
         editInDetails,
         newStepDraft
       ).amend(L.cls(Styles.steps)),

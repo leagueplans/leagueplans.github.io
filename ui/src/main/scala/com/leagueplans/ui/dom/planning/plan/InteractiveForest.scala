@@ -1,13 +1,13 @@
 package com.leagueplans.ui.dom.planning.plan
 
+import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.player.{FocusContext, Player}
+import com.leagueplans.ui.model.player.FocusContext
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
@@ -34,8 +34,7 @@ object InteractiveForest {
     stepMover: StepMover,
     stepClipboard: StepClipboard,
     dragSession: DragSession,
-    items: Item.ID => Item,
-    settledPlayerBefore: Signal[Option[Player]],
+    stepEditor: StepEditor,
     editInDetails: EditRequest => Unit,
     newStepDraft: NewStepDraft
   ): ReactiveHtmlElement[OList] = {
@@ -89,7 +88,7 @@ object InteractiveForest {
         toSteps(forester, dom),
         newStepDraft.rowIn(None).map(_.map((index, row) => (index, L.li(L.cls(Styles.rootStep), row))))
       ).map(NewStepDraft.insertRow),
-      PlanDropZone(forester, dragSession, items, focusContext.focusID, settledPlayerBefore, draggingStatus.writer),
+      PlanDropZone(forester, dragSession, stepEditor, draggingStatus.writer),
       L.inContext(StepDropLocationIndicator(draggingStatus.signal.changes, _)),
       // Drags can end anywhere on the page, such as in the step details, where they started
       dragSession.current.changes.filter(_.isEmpty).mapTo(StepDraggingStatus.NotDragging) --> draggingStatus,

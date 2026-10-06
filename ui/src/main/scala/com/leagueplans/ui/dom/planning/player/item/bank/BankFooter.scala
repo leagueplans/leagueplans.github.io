@@ -1,8 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
-import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.ItemActions.Action
 import com.leagueplans.ui.model.player.item.ItemTransfer.{Quantity, Settings}
@@ -11,7 +10,7 @@ import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Signal
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToTextNode}
 import org.scalajs.dom.KeyValue
@@ -28,11 +27,9 @@ object BankFooter {
   def apply(
     slotsUsed: Signal[Int],
     settings: Var[Settings],
-    playerAtInsertion: Signal[Player],
-    effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    runner: ItemActionRunner,
     depositInventory: Player => Option[Action],
     depositEquipment: Player => Option[Action],
-    undoToasts: UndoToasts,
     tooltip: Tooltip
   ): L.Div = {
     // The last amount entered for X, as in the game
@@ -89,8 +86,8 @@ object BankFooter {
       ),
       L.span(
         L.cls(Styles.deposits),
-        depositButton("Deposit inventory", depositInventoryIcon, playerAtInsertion, effectObserver, depositInventory, undoToasts, tooltip),
-        depositButton("Deposit equipment", depositEquipmentIcon, playerAtInsertion, effectObserver, depositEquipment, undoToasts, tooltip)
+        depositButton("Deposit inventory", depositInventoryIcon, runner, depositInventory, tooltip),
+        depositButton("Deposit equipment", depositEquipmentIcon, runner, depositEquipment, tooltip)
       )
     )
   }
@@ -153,14 +150,12 @@ object BankFooter {
   private def depositButton(
     label: String,
     icon: String,
-    playerAtInsertion: Signal[Player],
-    effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
+    runner: ItemActionRunner,
     deposit: Player => Option[Action],
-    undoToasts: UndoToasts,
     tooltip: Tooltip
   ): L.Span = {
-    val action = Signal.combine(effectObserver, playerAtInsertion).map((observer, player) =>
-      observer.flatMap(observer => deposit(player).map(observer -> _))
+    val action = Signal.combine(runner.run, runner.playerAtInsertion).map((run, player) =>
+      run.flatMap(run => deposit(player).map(run -> _))
     )
     // The tooltip stays reachable while the button is disabled
     Card.withTooltip(
@@ -170,10 +165,7 @@ object BankFooter {
         L.aria.label(label),
         L.img(L.src(icon), L.alt(""), L.draggable(false)),
         L.disabled <-- action.map(_.isEmpty),
-        L.onClick.compose(_.sample(action).collectSome) --> { (observer, action) =>
-          observer.onNext(action.effects)
-          undoToasts.report(action.report, action.detail, duration = UndoToasts.brief)
-        }
+        L.onClick.compose(_.sample(action).collectSome) --> ((run, action) => run(action))
       ),
       Signal.fromValue(label),
       tooltip

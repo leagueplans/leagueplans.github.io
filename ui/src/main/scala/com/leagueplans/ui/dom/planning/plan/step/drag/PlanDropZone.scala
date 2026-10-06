@@ -1,14 +1,13 @@
 package com.leagueplans.ui.dom.planning.plan.step.drag
 
+import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
-import com.leagueplans.ui.dom.planning.drag.{DragSession, DropRules, StepContentTransfer}
+import com.leagueplans.ui.dom.planning.drag.{DragSession, DropRules}
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.step.drag.StepDraggingStatus.DropTarget
 import com.leagueplans.ui.dom.planning.plan.step.drag.StepDraggingStatus.DropTarget.RelativePosition
-import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.model.player.Player
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import org.scalajs.dom.{DOMRect, DataTransferDropEffectKind, DragEvent, Element, Node}
 
@@ -35,23 +34,13 @@ object PlanDropZone {
   val headerMarker: L.Modifier[L.HtmlElement] =
     L.dataAttr(headerAttribute)("")
 
-  /** @param items the item data, for merging a moved effect into the step it's dropped on
-    * @param settledPlayerBefore the player before the focused step, once the projection has caught
-    *                            up with it. Effects are dragged from the focused step's details.
-    */
+  /** @param stepEditor moves effects and requirements dropped on a step into it */
   def apply(
     forester: Forester[Step.ID, Step],
     session: DragSession,
-    items: Item.ID => Item,
-    focusID: Signal[Option[Step.ID]],
-    settledPlayerBefore: Signal[Option[Player]],
+    stepEditor: StepEditor,
     draggingStatusObserver: Observer[StepDraggingStatus]
   ): L.Modifier[L.HtmlElement] = {
-    // The drop acts outside any stream, so it reads the player from here
-    var playerBeforeFocus = Option.empty[(Step.ID, Player)]
-    def playerBefore(step: Step.ID): Option[Player] =
-      playerBeforeFocus.collect { case (`step`, player) => player }
-
     // Measured on dragenter, which fires once per element, rather than on every dragover, which
     // fires at the rate the mouse moves
     val cachedBounds = mutable.Map.empty[Element, DOMRect]
@@ -72,7 +61,6 @@ object PlanDropZone {
         }
 
     List(
-      Signal.combine(focusID, settledPlayerBefore).map((id, player) => id.zip(player)) --> { (focused: Option[(Step.ID, Player)]) => playerBeforeFocus = focused },
       L.onDragEnter --> onEnterOver(fresh = true),
       L.onDragOver --> onEnterOver(fresh = false),
       L.inContext(zone =>
@@ -85,7 +73,7 @@ object PlanDropZone {
           (stepID, target) <- toDropTarget(event, session, forester, _.getBoundingClientRect())
         } {
           event.preventDefault()
-          session.dropped(() => resolveDrop(stepID, dragged, target.relativePosition, forester, items, playerBefore))
+          session.dropped(() => resolveDrop(stepID, dragged, target.relativePosition, forester, stepEditor))
         }
       },
       // The cached bounds would be stale by the next drag
@@ -162,26 +150,14 @@ object PlanDropZone {
     dragged: Dragged,
     relativeDropPosition: RelativePosition,
     forester: Forester[Step.ID, Step],
-    items: Item.ID => Item,
-    playerBefore: Step.ID => Option[Player]
+    stepEditor: StepEditor
   ): Unit =
     dragged match {
       case Dragged.DraggedStep(dropped) =>
         resolveStepDrop(droppedOver, dropped, relativeDropPosition, forester)
 
       case content: Dragged.DraggedStepContent =>
-        // Both steps could have changed, or been removed by another tab, during the drag
-        forester.batch(batch =>
-          for {
-            source <- batch.forest.nodes.get(content.from)
-            target <- batch.forest.nodes.get(droppedOver)
-            if DropRules.canDrop(content, droppedOver, batch.forest)
-            moved <- StepContentTransfer(content, source, target, items, playerBefore(source.id))
-          } {
-            batch.update(moved.source)
-            batch.update(moved.target)
-          }
-        )
+        stepEditor.moveContent(content, droppedOver)
 
       // DropRules rules out dropping items on steps
       case _: Dragged.DraggedItem =>

@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.section
 
+import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
 import com.leagueplans.ui.dom.planning.player.item.bank.{BankElement, BankFooter}
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
@@ -25,15 +26,14 @@ object ItemsSection {
   def apply(ctx: SectionContext): L.Div = {
     val bankQuery = Var("")
     var section = Option.empty[Element]
+    val runner = ItemActionRunner(ctx.effectObserver, ctx.playerAtInsertion, ctx.undoToasts)
 
     val itemDrag =
       ItemDrag(
         ctx.dragSession,
-        ctx.playerAtInsertion,
-        ctx.effectObserver,
+        runner,
         ctx.isRecalculating,
         ctx.cache.items,
-        ctx.undoToasts,
         ctx.tooltip,
         ctx.popover
       )
@@ -41,8 +41,7 @@ object ItemsSection {
     val itemCards =
       ItemCards(
         ctx.popover,
-        ctx.playerAtInsertion,
-        ctx.effectObserver,
+        runner,
         ctx.requirementObserver,
         ctx.cache,
         itemDrag.settings.signal,
@@ -88,11 +87,9 @@ object ItemsSection {
           slotsUsed => BankFooter(
             slotsUsed,
             itemDrag.settings,
-            ctx.playerAtInsertion,
-            ctx.effectObserver,
+            runner,
             depositInventory,
             ItemActions.depositEquipment(_, ctx.cache.items),
-            ctx.undoToasts,
             ctx.tooltip
           )
         ).amend(L.cls(Styles.bank))
