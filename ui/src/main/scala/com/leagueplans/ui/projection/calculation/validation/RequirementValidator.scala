@@ -2,6 +2,7 @@ package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.plan.Requirement.*
+import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
 
@@ -24,7 +25,7 @@ object RequirementValidator {
   ): List[String] =
     requirement match {
       case r: SkillLevel => levelValidator.validate(r)(player, league, cache)
-      case r: Tool => toolValidator.validate(r)(player, league, cache)
+      case r: Holds => holdsValidator.validate(r)(player, league, cache)
       case r: And => andValidator.validate(r)(player, league, cache)
       case r: Or => orValidator.validate(r)(player, league, cache)
     }
@@ -42,22 +43,23 @@ object RequirementValidator {
         }
     }
 
-  private val toolValidator: RequirementValidator[Tool] =
-    new RequirementValidator[Tool] {
-      def validate(requirement: Tool)(
+  private val holdsValidator: RequirementValidator[Holds] =
+    new RequirementValidator[Holds] {
+      def validate(requirement: Holds)(
         player: Player,
         league: Option[Mode.League],
         cache: Cache
-      ): List[String] =
-        Validator.hasItem(
-          requirement.location,
-          requirement.item,
-          noted = false,
-          requiredCount = 1
-        )(player, league, cache) match {
-          case Left(error) => List(error)
-          case Right(()) => List.empty
+      ): List[String] = {
+        val item = cache.items(requirement.item)
+        val slot = item.equipmentType.map(Depository.Kind.EquipmentSlot.from)
+        val places = requirement.where match {
+          case Where.Inventory => List(Depository.Kind.Inventory)
+          case Where.Equipped => slot.toList
+          case Where.InventoryOrEquipped => Depository.Kind.Inventory +: slot.toList
         }
+        val held = places.exists(player.get(_).count(item.id, noted = false) > 0)
+        if (held) List.empty else List(s"${item.name} isn't ${requirement.where.description}")
+      }
     }
 
   private val andValidator: RequirementValidator[And] =

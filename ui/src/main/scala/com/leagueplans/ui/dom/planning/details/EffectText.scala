@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
@@ -12,12 +12,23 @@ final class EffectText(cache: Cache) {
       case Effect.GainExp(skill, baseExp) =>
         s"+$baseExp $skill exp"
 
-      case Effect.AddItem(item, quantity, target, note) =>
-        val sign = if (quantity < 0) "−" else "+"
-        s"$sign${quantity.abs.withCommas} ${itemName(item, note)} (${target.name.toLowerCase})"
+      case Effect.AddItem(item, ItemChange.Fill, target, note) =>
+        s"Add ${itemName(item, note)} until the ${target.name.toLowerCase} is full"
+
+      case Effect.AddItem(item, ItemChange.By(n), target, note) =>
+        s"${if (n < 0) "−" else "+"}${(math.abs(n)).withCommas} ${itemName(item, note)} (${target.name.toLowerCase})"
+
+      case Effect.AddItem(item, ItemChange.Empty, target, note) =>
+        s"Remove all ${itemName(item, note)} (${target.name.toLowerCase})"
 
       case Effect.MoveItem(item, quantity, source, notedInSource, target, _) =>
-        s"Move ${quantity.withCommas} ${itemName(item, notedInSource)}: ${source.name} → ${target.name}"
+        s"Move ${amount(quantity)} ${itemName(item, notedInSource)}: ${source.name} → ${target.name}"
+
+      case Effect.DepositAll(Effect.DepositSource.Inventory) =>
+        "Deposit the inventory"
+
+      case Effect.DepositAll(Effect.DepositSource.Equipment) =>
+        "Deposit equipment"
 
       case Effect.UnlockSkill(skill) =>
         s"Unlock $skill"
@@ -38,9 +49,15 @@ final class EffectText(cache: Cache) {
   def describe(requirement: Requirement): String =
     requirement match {
       case Requirement.SkillLevel(skill, level) => s"$skill $level"
-      case Requirement.Tool(item, location) => s"${cache.items(item).name} (${location.name.toLowerCase})"
+      case Requirement.Holds(item, where) => s"${cache.items(item).name} (${where.description})"
       case Requirement.And(left, right) => s"(${describe(left)} and ${describe(right)})"
       case Requirement.Or(left, right) => s"(${describe(left)} or ${describe(right)})"
+    }
+
+  private def amount(quantity: ItemQuantity): String =
+    quantity match {
+      case ItemQuantity.Exact(n) => n.withCommas
+      case ItemQuantity.Max => "max"
     }
 
   private def itemName(item: Item.ID, noted: Boolean): String = {

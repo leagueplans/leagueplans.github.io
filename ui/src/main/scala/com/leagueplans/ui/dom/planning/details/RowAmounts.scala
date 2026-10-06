@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.details
 
-import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
@@ -22,30 +22,60 @@ object RowAmounts {
     effect match {
       case Effect.GainExp(_, exp) =>
         Some(Amount(s"+${formatExp(exp)}", formatExp(exp).replace(",", ""), Tone.Gain))
-      case Effect.AddItem(_, quantity, _, _) =>
-        val tone = if (quantity < 0) Tone.Loss else Tone.Gain
-        val sign = if (quantity < 0) "−" else "+"
-        Some(Amount(s"$sign${quantity.abs.withCommas}", quantity.abs.toString, tone))
+      case Effect.AddItem(_, ItemChange.Fill, _, _) =>
+        Some(Amount("+max", "max", Tone.Gain))
+      case Effect.AddItem(_, ItemChange.By(n), _, _) if n < 0 =>
+        Some(Amount(s"−${formatCount(-n)}", (-n).toString, Tone.Loss))
+      case Effect.AddItem(_, ItemChange.By(n), _, _) =>
+        Some(Amount(s"+${formatCount(n)}", n.toString, Tone.Gain))
+      case Effect.AddItem(_, ItemChange.Empty, _, _) =>
+        Some(Amount("−max", "max", Tone.Loss))
       case Effect.MoveItem(_, quantity, _, _, _, _) =>
-        Some(Amount(quantity.withCommas, quantity.toString, Tone.Neutral))
+        Some(Amount(label(quantity), editText(quantity), Tone.Neutral))
       case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask |
-               Effect.CompleteLeagueTask | Effect.CompleteGridTile) =>
+               Effect.CompleteLeagueTask | Effect.CompleteGridTile | Effect.DepositAll) =>
         None
     }
 
-  /** Applies an edited amount. Removals stay removals, so the text is always a positive amount. */
+  /** Applies an edited amount. "max", or "all", makes an item effect take as many as it can where
+    * it applies: all that are held, or as many as fit. A removal stays a removal. */
   def withAmount(effect: Effect, text: String): Either[String, Effect] =
     effect match {
       case e: Effect.GainExp => parseExp(text).map(exp => e.copy(baseExp = exp))
-      case e: Effect.AddItem => parseCount(text).map(n => e.copy(quantity = if (e.quantity < 0) -n else n))
-      case e: Effect.MoveItem => parseCount(text).map(n => e.copy(quantity = n))
+      case e: Effect.AddItem if e.change.removes =>
+        parseQuantity(text).map(q => e.copy(change = changeOf(q, ItemChange.Empty, -_)))
+      case e: Effect.AddItem =>
+        parseQuantity(text).map(q => e.copy(change = changeOf(q, ItemChange.Fill, identity)))
+      case e: Effect.MoveItem => parseQuantity(text).map(q => e.copy(quantity = q))
       case _ => Left("This effect has no amount")
     }
+
+  private def changeOf(quantity: ItemQuantity, all: ItemChange, signed: Int => Int): ItemChange =
+    quantity match {
+      case ItemQuantity.Exact(n) => ItemChange.By(signed(n))
+      case ItemQuantity.Max => all
+    }
+
+  private def label(quantity: ItemQuantity): String =
+    quantity match {
+      case ItemQuantity.Exact(n) => formatCount(n)
+      case ItemQuantity.Max => "max"
+    }
+
+  private def editText(quantity: ItemQuantity): String =
+    quantity match {
+      case ItemQuantity.Exact(n) => n.toString
+      case ItemQuantity.Max => "max"
+    }
+
+  private def parseQuantity(text: String): Either[String, ItemQuantity] =
+    if (cleaned(text).equalsIgnoreCase("max") || cleaned(text).equalsIgnoreCase("all")) Right(ItemQuantity.Max)
+    else parseCount(text).left.map(_ => "Type an amount of at least 1, or max").map(ItemQuantity.Exact(_))
 
   def of(requirement: Requirement): Option[Amount] =
     requirement match {
       case Requirement.SkillLevel(_, level) => Some(Amount(level.toString, level.toString, Tone.Neutral))
-      case _: (Requirement.Tool | Requirement.And | Requirement.Or) => None
+      case _: (Requirement.Holds | Requirement.And | Requirement.Or) => None
     }
 
   def withAmount(requirement: Requirement, text: String): Either[String, Requirement] =
@@ -63,13 +93,16 @@ object RowAmounts {
     if (exp.raw % 10 == 0) whole else s"$whole.${exp.raw % 10}"
   }
 
+  private def formatCount(n: Int): String =
+    n.withCommas
+
   private def cleaned(text: String): String =
     text.trim.replace(",", "").stripPrefix("+")
 
   private def parseExp(text: String): Either[String, Exp] =
     toDecimal(cleaned(text)) match {
       case Some(exp) if exp <= 0 => Left("Gain more than 0 exp")
-      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} exp")
+      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${formatCount(maxExp)} exp")
       case Some(exp) if !(exp * 10).isWhole => Left("Exp can have at most one decimal place")
       case Some(exp) => Right(Exp.tenths((exp * 10).toIntExact))
       case None => Left("Type an amount of exp, such as 1250 or 37.5")

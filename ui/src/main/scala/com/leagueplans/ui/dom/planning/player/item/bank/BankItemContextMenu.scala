@@ -4,6 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.MoveItem
+import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
@@ -44,7 +45,7 @@ object BankItemContextMenu {
         effectObserver.contramap[Unit](_ =>
           MoveItem(
             item.id,
-            heldQuantity,
+            ItemQuantity.Exact(heldQuantity),
             Depository.Kind.Bank,
             notedInSource = false,
             Depository.Kind.Inventory,

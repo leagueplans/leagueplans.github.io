@@ -2,6 +2,7 @@ package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan}
+import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.skill.Stats
 import com.leagueplans.ui.model.player.{Cache, Player}
 
@@ -45,26 +46,8 @@ object EffectResolver {
             )
           )
 
-        case Effect.AddItem(item, count, target, note) =>
-          val depository = player.get(target)
-          val key = (item, note)
-          val updatedCount = depository.contents.getOrElse(key, 0) + count
-          val updatedContents =
-            if (updatedCount <= 0)
-              depository.contents - key
-            else
-              depository.contents + (key -> updatedCount)
-
-          player.copy(depositories =
-            player.depositories + (target -> depository.copy(contents = updatedContents))
-          )
-
-        case Effect.MoveItem(item, count, source, notedInSource, target, noteInTarget) =>
-          resolve(
-            player,
-            Effect.AddItem(item, count, target, noteInTarget),
-            Effect.AddItem(item, -count, source, notedInSource)
-          )
+        case itemEffect: (Effect.AddItem | Effect.MoveItem | Effect.DepositAll) =>
+          ItemEffects(player, itemEffect, cache.items)
 
         case Effect.CompleteQuest(questID) =>
           player.copy(completedQuests = player.completedQuests + questID)

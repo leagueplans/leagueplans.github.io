@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
 import com.leagueplans.ui.model.plan.Effect.MoveItem
+import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.uicommon.dom.{Button, ContextMenu, ContextMenuList}
@@ -20,7 +21,7 @@ object EquippedItemContextMenu {
     val observer = effectObserver.contramap[Unit](_ =>
       MoveItem(
         stack.item.id,
-        stack.quantity,
+        ItemQuantity.Exact(stack.quantity),
         slot,
         notedInSource = stack.noted,
         Depository.Kind.Inventory,

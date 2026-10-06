@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.details.RowAmounts.{Amount, Tone}
-import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import org.scalatest.freespec.AnyFreeSpec
@@ -11,10 +11,10 @@ import org.scalatest.matchers.should.Matchers
 final class RowAmountsTest extends AnyFreeSpec with Matchers {
   private val logs = Item.ID(1511)
   private val gainExp: Effect.GainExp = Effect.GainExp(Skill.Woodcutting, Exp.tenths(12505))
-  private val addLogs: Effect.AddItem = Effect.AddItem(logs, 25, Depository.Kind.Inventory, note = false)
-  private val removeLogs: Effect.AddItem = addLogs.copy(quantity = -25)
+  private val addLogs: Effect.AddItem = Effect.AddItem(logs, ItemChange.By(25), Depository.Kind.Inventory, note = false)
+  private val removeLogs: Effect.AddItem = addLogs.copy(change = ItemChange.By(-25))
   private val moveLogs: Effect.MoveItem =
-    Effect.MoveItem(logs, 1250, Depository.Kind.Inventory, false, Depository.Kind.Bank, false)
+    Effect.MoveItem(logs, ItemQuantity.Exact(1250), Depository.Kind.Inventory, false, Depository.Kind.Bank, false)
 
   "RowAmounts.of" - {
     "shows exp with its tenth only when there is one" in {
@@ -28,6 +28,12 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
       RowAmounts.of(moveLogs) shouldBe Some(Amount("1,250", "1250", Tone.Neutral))
     }
 
+    "shows Max as max" in {
+      RowAmounts.of(moveLogs.copy(quantity = ItemQuantity.Max)) shouldBe Some(Amount("max", "max", Tone.Neutral))
+      RowAmounts.of(removeLogs.copy(change = ItemChange.Empty)) shouldBe Some(Amount("−max", "max", Tone.Loss))
+      RowAmounts.of(addLogs.copy(change = ItemChange.Fill)) shouldBe Some(Amount("+max", "max", Tone.Gain))
+    }
+
     "has no amount for completions" in {
       RowAmounts.of(Effect.CompleteQuest(3)) shouldBe None
       RowAmounts.of(Effect.UnlockSkill(Skill.Sailing)) shouldBe None
@@ -35,7 +41,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
 
     "shows required levels" in {
       RowAmounts.of(Requirement.SkillLevel(Skill.Agility, Level(50))) shouldBe Some(Amount("50", "50", Tone.Neutral))
-      RowAmounts.of(Requirement.Tool(logs, Depository.Kind.Inventory)) shouldBe None
+      RowAmounts.of(Requirement.Holds(logs, Requirement.Where.Inventory)) shouldBe None
     }
   }
 
@@ -53,9 +59,16 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
       RowAmounts.withAmount(gainExp, "lots").isLeft shouldBe true
     }
 
-    "keeps removals as removals" in {
-      RowAmounts.withAmount(removeLogs, "10") shouldBe Right(removeLogs.copy(quantity = -10))
-      RowAmounts.withAmount(addLogs, "10") shouldBe Right(addLogs.copy(quantity = 10))
+    "sets item amounts" in {
+      RowAmounts.withAmount(removeLogs, "10") shouldBe Right(removeLogs.copy(change = ItemChange.By(-10)))
+      RowAmounts.withAmount(addLogs, "10") shouldBe Right(addLogs.copy(change = ItemChange.By(10)))
+    }
+
+    "sets Max from max, or all" in {
+      RowAmounts.withAmount(moveLogs, "Max") shouldBe Right(moveLogs.copy(quantity = ItemQuantity.Max))
+      RowAmounts.withAmount(removeLogs, "max") shouldBe Right(removeLogs.copy(change = ItemChange.Empty))
+      RowAmounts.withAmount(addLogs, "max") shouldBe Right(addLogs.copy(change = ItemChange.Fill))
+      RowAmounts.withAmount(addLogs, "all") shouldBe Right(addLogs.copy(change = ItemChange.Fill))
     }
 
     "rejects item amounts below 1" in {

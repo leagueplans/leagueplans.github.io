@@ -82,4 +82,8 @@ object Depository {
   *   noted or not, and the value is the number of copies of that item (noted
   *   or unnoted) in the depository.
   */
-final case class Depository(contents: Map[(Item.ID, Boolean), Int], kind: Depository.Kind)
+final case class Depository(contents: Map[(Item.ID, Boolean), Int], kind: Depository.Kind) {
+  /** How many of an item are held, noted or not */
+  def count(item: Item.ID, noted: Boolean): Int =
+    contents.getOrElse((item, noted), 0)
+}

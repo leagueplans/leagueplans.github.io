@@ -5,7 +5,6 @@ import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.player.item.ItemSearch
 import com.leagueplans.ui.model.plan.Requirement
 import com.leagueplans.ui.model.plan.Requirement.*
-import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.Level
 import com.leagueplans.uicommon.dom.form.{Form, NumberInput, Select}
 import com.leagueplans.uicommon.wrappers.fusejs.Fuse
@@ -73,14 +72,7 @@ object NewRequirementForm {
       radios
     )
 
-    val requirement = selection.map(_.map(item =>
-      item.equipmentType match {
-        case Some(tpe) =>
-          Or(Tool(item.id, Depository.Kind.Inventory), Tool(item.id, Depository.Kind.EquipmentSlot.from(tpe)))
-        case None =>
-          Tool(item.id, Depository.Kind.Inventory)
-      }
-    ))
+    val requirement = selection.map(_.map(Requirement.held))
 
     (div, requirement)
   }

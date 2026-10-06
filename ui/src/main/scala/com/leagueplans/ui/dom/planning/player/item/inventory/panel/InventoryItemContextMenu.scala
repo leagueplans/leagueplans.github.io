@@ -4,7 +4,7 @@ import com.leagueplans.common.model.EquipmentType
 import com.leagueplans.common.model.Item.Bankable
 import com.leagueplans.ui.dom.planning.player.item.MoveItemForm
 import com.leagueplans.ui.dom.planning.player.item.inventory.forms.RemoveItemForm
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
@@ -56,7 +56,7 @@ object InventoryItemContextMenu {
             effectObserver.contramap[Unit](_ =>
               MoveItem(
                 stack.item.id,
-                stack.quantity,
+                ItemQuantity.Exact(stack.quantity),
                 inventory,
                 stack.noted,
                 Depository.Kind.Bank,
@@ -93,7 +93,7 @@ object InventoryItemContextMenu {
       case (false, Some(tpe)) =>
         val equipEffect: MoveItem = MoveItem(
           stack.item.id,
-          stack.quantity,
+          ItemQuantity.Exact(stack.quantity),
           inventory,
           notedInSource = false,
           EquipmentSlot.from(tpe),
@@ -107,7 +107,7 @@ object InventoryItemContextMenu {
             Option.when[MoveItem](!sameStackableItem && conflictedType)(
               MoveItem(
                 currentlyEquipped,
-                equippedStackSize,
+                ItemQuantity.Exact(equippedStackSize),
                 slot,
                 notedInSource = false,
                 inventory,
@@ -160,7 +160,7 @@ object InventoryItemContextMenu {
       if (stack.quantity > 1)
         toRemoveItemFormOpener(stack, effectObserver, modal).toObserver
       else
-        effectObserver.contramap[Unit](_ => AddItem(stack.item.id, -stack.quantity, inventory, stack.noted))
+        effectObserver.contramap[Unit](_ => AddItem(stack.item.id, ItemChange.By(-stack.quantity), inventory, stack.noted))
 
     ContextMenuList.Item(FontAwesome.icon(FreeSolid.faTrash), "Remove", button(observer, contextMenu))
   }

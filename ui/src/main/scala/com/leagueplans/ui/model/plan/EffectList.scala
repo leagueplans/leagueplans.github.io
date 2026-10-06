@@ -3,6 +3,7 @@ package com.leagueplans.ui.model.plan
 import com.leagueplans.codec.decoding.CollectionDecoder
 import com.leagueplans.codec.encoding.CollectionEncoder
 import com.leagueplans.ui.model.plan.Effect.*
+import com.leagueplans.ui.model.plan.ItemQuantity.Exact
 import com.leagueplans.ui.model.player.skill.Exp
 
 import scala.reflect.TypeTest
@@ -27,7 +28,7 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
       case e: GainExp => add(e)
       case e: AddItem => add(e)
       case e: MoveItem => add(e)
-      case _: UnlockSkill | _: CompleteQuest | _: CompleteDiaryTask | _: CompleteLeagueTask | _: CompleteGridTile =>
+      case _: UnlockSkill | _: CompleteQuest | _: CompleteDiaryTask | _: CompleteLeagueTask | _: CompleteGridTile | _: DepositAll =>
         ignoreDuplicates(effect)
     }
 
@@ -40,15 +41,30 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
         .filter(_.baseExp != Exp(0))
     )
 
+  // Exact amounts add up, and cancel out at nothing. Fill and Empty are worked out where they
+  // apply, so they stay their own effects.
   private def add(effect: AddItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
       oldEffect.item == newEffect.item &&
         oldEffect.target == newEffect.target &&
-        oldEffect.note == newEffect.note
+        oldEffect.note == newEffect.note &&
+        oldEffect.change.isInstanceOf[ItemChange.By] &&
+        newEffect.change.isInstanceOf[ItemChange.By]
     )((oldEffect, newEffect) =>
-      Some(oldEffect.copy(quantity = oldEffect.quantity + newEffect.quantity))
-        .filter(_.quantity != 0)
+      (oldEffect.change, newEffect.change) match {
+        case (ItemChange.By(a), ItemChange.By(b)) => Option.when(a + b != 0)(oldEffect.copy(change = ItemChange.By(a + b)))
+        case _ => Some(newEffect)
+      }
     )
+
+  private def bothExact(a: ItemQuantity, b: ItemQuantity): Boolean =
+    a.isInstanceOf[Exact] && b.isInstanceOf[Exact]
+
+  private def exact(quantity: ItemQuantity): Int =
+    quantity match {
+      case Exact(n) => n
+      case ItemQuantity.Max => throw IllegalArgumentException("Only exact amounts combine")
+    }
 
   // In theory you can minimise more moves than this.
   // For example, `bank -> inventory -> equipped` can be shortened to
@@ -66,7 +82,7 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
   // where you add an edge between two distinct subgraphs).
   private def add(effect: MoveItem): EffectList =
     patch(effect)((oldEffect, newEffect) =>
-      oldEffect.item == newEffect.item && (
+      oldEffect.item == newEffect.item && bothExact(oldEffect.quantity, newEffect.quantity) && (
         (
           oldEffect.source == newEffect.source &&
             oldEffect.notedInSource == newEffect.notedInSource &&
@@ -80,12 +96,13 @@ final case class EffectList(underlying: List[Effect]) extends AnyVal {
         )
       )
     )((oldEffect, newEffect) =>
+      val (oldCount, newCount) = (exact(oldEffect.quantity), exact(newEffect.quantity))
       if (oldEffect.target == newEffect.target)
-        Some(oldEffect.copy(quantity = oldEffect.quantity + newEffect.quantity))
-      else if (oldEffect.quantity > newEffect.quantity)
-        Some(oldEffect.copy(quantity = oldEffect.quantity - newEffect.quantity))
-      else if (oldEffect.quantity < newEffect.quantity)
-        Some(newEffect.copy(quantity = newEffect.quantity - oldEffect.quantity))
+        Some(oldEffect.copy(quantity = Exact(oldCount + newCount)))
+      else if (oldCount > newCount)
+        Some(oldEffect.copy(quantity = Exact(oldCount - newCount)))
+      else if (oldCount < newCount)
+        Some(newEffect.copy(quantity = Exact(newCount - oldCount)))
       else
         None
     )

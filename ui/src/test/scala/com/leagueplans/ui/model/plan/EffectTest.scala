@@ -26,12 +26,41 @@ final class EffectTest extends CodecSpec {
       val itemID = Item.ID(2352)
       val itemIDEnc = Encoder.encode(itemID).getBytes
 
+      // An embedded message is its field's tag, its length, and then its bytes
+      def message(tag: Int, bytes: Array[Byte]): Array[Byte] =
+        Array[Byte](tag.toByte, bytes.length.toByte) ++ bytes
+
+      def quantity(q: ItemQuantity): Array[Byte] =
+        Encoder.encode(q).getBytes
+
       "AddItem" in test(
-        Effect.AddItem(itemID, quantity = 1, Depository.Kind.Inventory, note = false),
-        Array[Byte](0, 0b1, 0b1100, 0b1101, 0) ++ itemIDEnc ++
-          Array[Byte](0b1000) ++ Encoder.encode(1).getBytes ++
-          Array[Byte](0b10100, 0b100) ++ Encoder.encode[Depository.Kind](Depository.Kind.Inventory).getBytes ++
-          Array[Byte](0b11000) ++ Encoder.encode(false).getBytes
+        Effect.AddItem(itemID, change = ItemChange.By(1), Depository.Kind.Inventory, note = false),
+        Array[Byte](0, 0b1) ++ message(
+          0b1100,
+          Array[Byte](0) ++ itemIDEnc ++
+            message(0b1100, Encoder.encode[ItemChange](ItemChange.By(1)).getBytes) ++
+            message(0b10100, Encoder.encode[Depository.Kind](Depository.Kind.Inventory).getBytes) ++
+            Array[Byte](0b11000) ++ Encoder.encode(false).getBytes
+        )
+      )
+
+      "AddItem emptying a place" in test(
+        Effect.AddItem(itemID, change = ItemChange.Empty, Depository.Kind.Bank, note = false),
+        Array[Byte](0, 0b1) ++ message(
+          0b1100,
+          Array[Byte](0) ++ itemIDEnc ++
+            message(0b1100, Encoder.encode[ItemChange](ItemChange.Empty).getBytes) ++
+            message(0b10100, Encoder.encode[Depository.Kind](Depository.Kind.Bank).getBytes) ++
+            Array[Byte](0b11000) ++ Encoder.encode(false).getBytes
+        )
+      )
+
+      "DepositAll" in test(
+        Effect.DepositAll(Effect.DepositSource.Equipment),
+        Array[Byte](0, 0b1000) ++ message(
+          0b1100,
+          message(0b100, Encoder.encode[Effect.DepositSource](Effect.DepositSource.Equipment).getBytes)
+        )
       )
 
       // The ordering of the fields as they appear in the binary format does not
@@ -48,18 +77,21 @@ final class EffectTest extends CodecSpec {
       "MoveItem" in test(
         Effect.MoveItem(
           itemID,
-          quantity = 30,
+          quantity = ItemQuantity.Exact(30),
           source = Depository.Kind.Inventory,
           notedInSource = true,
           target = Depository.Kind.Bank,
           noteInTarget = false
         ),
-        Array[Byte](0, 0b10, 0b1100, 0b10101, 0) ++ itemIDEnc ++
-          Array[Byte](0b101000) ++ Encoder.encode(false).getBytes ++
-          Array[Byte](0b1000) ++ Encoder.encode(30).getBytes ++
-          Array[Byte](0b10100, 0b100) ++ Encoder.encode[Depository.Kind](Depository.Kind.Inventory).getBytes ++
-          Array[Byte](0b11000) ++ Encoder.encode(true).getBytes ++
-          Array[Byte](0b100100, 0b100) ++ Encoder.encode[Depository.Kind](Depository.Kind.Bank).getBytes
+        Array[Byte](0, 0b10) ++ message(
+          0b1100,
+          Array[Byte](0) ++ itemIDEnc ++
+            Array[Byte](0b101000) ++ Encoder.encode(false).getBytes ++
+            message(0b1100, quantity(ItemQuantity.Exact(30))) ++
+            message(0b10100, Encoder.encode[Depository.Kind](Depository.Kind.Inventory).getBytes) ++
+            Array[Byte](0b11000) ++ Encoder.encode(true).getBytes ++
+            message(0b100100, Encoder.encode[Depository.Kind](Depository.Kind.Bank).getBytes)
+        )
       )
 
       "UnlockSkill" in test(

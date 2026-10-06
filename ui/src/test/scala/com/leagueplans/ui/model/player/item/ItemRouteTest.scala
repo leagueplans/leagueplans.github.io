@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ItemQuantity}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.ItemRoute.Place
 import org.scalatest.freespec.AnyFreeSpec
@@ -57,7 +57,7 @@ final class ItemRouteTest extends AnyFreeSpec with Matchers {
 
   "ItemRoute.isPossible rejects a noted item going into an equipment slot" in {
     val scimitar = item(noteable = true, Item.Bankable.Yes(stacks = true), Some(EquipmentType.Weapon))
-    val move = new Effect.MoveItem(scimitar.id, 1, Kind.Inventory, notedInSource = true, Kind.EquipmentSlot.Weapon, noteInTarget = false)
+    val move = new Effect.MoveItem(scimitar.id, ItemQuantity.Exact(1), Kind.Inventory, notedInSource = true, Kind.EquipmentSlot.Weapon, noteInTarget = false)
 
     ItemRoute.isPossible(move, scimitar) shouldBe false
     ItemRoute.isPossible(ItemRoute(inventory, weapon).applyTo(move), scimitar) shouldBe true

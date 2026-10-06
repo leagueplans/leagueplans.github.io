@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.player.item.ItemSearch
 import com.leagueplans.ui.model.plan.Effect.AddItem
+import com.leagueplans.ui.model.plan.ItemChange
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.uicommon.dom.form.{CheckboxInput, Form, NumberInput}
 import com.leagueplans.uicommon.dom.{CancelModalButton, InfoIcon, Modal, Tooltip}
@@ -149,7 +150,7 @@ object AddItemForm {
       .sample(Signal.combine(itemSignal, quantitySignal, noteSignal))
       .map {
         case (Some(item), quantity, note) if quantity > 0 =>
-          Some(AddItem(item.id, quantity, target, note && item.noteable))
+          Some(AddItem(item.id, ItemChange.By(quantity), target, note && item.noteable))
         case _ =>
           None
       }

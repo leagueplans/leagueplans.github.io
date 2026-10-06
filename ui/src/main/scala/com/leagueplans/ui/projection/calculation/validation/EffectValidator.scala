@@ -1,7 +1,8 @@
 package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.ui.model.plan.Effect.*
-import com.leagueplans.ui.model.plan.Effect
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
+import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
 
@@ -30,6 +31,7 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: CompleteDiaryTask => completeDiaryTaskValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
       case e: CompleteLeagueTask => completeLeagueTaskValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
       case e: CompleteGridTile => completeGridTileValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: DepositAll => depositAllValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
     }
 
   private val gainExpValidator: EffectValidator[GainExp] =
@@ -40,17 +42,27 @@ object EffectValidator extends EffectValidator[Effect] {
 
   private val addItemValidator: EffectValidator[AddItem] =
     from(
-      pre = gain => if (gain.quantity < 0) List(Validator.hasItem(gain.target, gain.item, gain.note, -gain.quantity)) else List.empty,
-      post = gain => if (gain.quantity > 0) List(Validator.depositorySize(gain.target)) else List.empty
+      pre = add => add.change match {
+        case ItemChange.By(n) if n < 0 => List(Validator.hasItem(add.target, add.item, add.note, -n))
+        case ItemChange.By(_) => List.empty
+        case ItemChange.Fill | ItemChange.Empty => List(Validator.allComesToSome(add))
+      },
+      post = add => if (add.change.removes) List.empty else List(Validator.depositorySize(add.target))
     )
 
   private val moveItemValidator: EffectValidator[MoveItem] =
     from(
-      pre = move => List(
-        Validator.possibleRoute(move),
-        Validator.hasItem(move.source, move.item, move.notedInSource, move.quantity)
-      ),
+      pre = move => Validator.possibleRoute(move) +: (move.quantity match {
+        case ItemQuantity.Exact(n) => List(Validator.hasItem(move.source, move.item, move.notedInSource, n))
+        case ItemQuantity.Max => List(Validator.allComesToSome(move))
+      }),
       post = move => List(Validator.depositorySize(move.target))
+    )
+
+  private val depositAllValidator: EffectValidator[DepositAll] =
+    from(
+      pre = deposit => List(Validator.somethingToDeposit(deposit.source)),
+      post = _ => List(Validator.depositorySize(Depository.Kind.Bank))
     )
 
   private val unlockSkillValidator: EffectValidator[UnlockSkill] =

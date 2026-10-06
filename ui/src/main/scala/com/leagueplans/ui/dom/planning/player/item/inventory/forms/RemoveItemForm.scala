@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.forms
 
 import com.leagueplans.ui.model.plan.Effect.AddItem
+import com.leagueplans.ui.model.plan.ItemChange
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.uicommon.dom.form.{Form, NumberInput}
 import com.leagueplans.uicommon.utils.laminar.LaminarOps.selectOnFocus
@@ -43,6 +44,6 @@ object RemoveItemForm {
     formSubmissions
       .sample(quantitySignal)
       .map(quantity => Option.when(quantity > 0)(
-        AddItem(stack.item.id, -quantity, depository, stack.noted)
+        AddItem(stack.item.id, ItemChange.By(-quantity), depository, stack.noted)
       ))
 }

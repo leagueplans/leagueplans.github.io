@@ -3,10 +3,11 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
-import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.player.item.{ItemRoute, ItemStack}
 import com.leagueplans.uicommon.dom.ContextMenu
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Observer
 import com.raquo.laminar.api.{L, textToTextNode}
 
@@ -27,31 +28,52 @@ final case class RowContent[+T](
 )
 
 object RowContent {
-  /** @param multiplierAt the exp multiplier for a skill at the start of the step */
-  def of(effect: Effect, cache: Cache, multiplierAt: Skill => Double, contextMenu: ContextMenu): RowContent[Effect] =
+  /** @param multiplierAt the exp multiplier for a skill at the start of the step
+    * @param countHere how many items an item effect comes to where it applies in the step, which
+    *                  rows show for effects whose quantity is Max
+    */
+  def of(
+    effect: Effect,
+    cache: Cache,
+    multiplierAt: Skill => Double,
+    countHere: Effect => Option[Int],
+    contextMenu: ContextMenu
+  ): RowContent[Effect] =
     effect match {
       case Effect.GainExp(skill, baseExp) =>
         val multiplier = multiplierAt(skill)
         val detail =
           if (multiplier == 1) "base exp"
-          else s"base exp · ×${formatMultiplier(multiplier)} here → +${RowAmounts.formatExp(baseExp * multiplier)}"
+          else s"base exp · ×${formatMultiplier(multiplier)} at this step → +${RowAmounts.formatExp(baseExp * multiplier)}"
         RowContent(() => skillIcon(skill), s"$skill exp", detail)
 
-      case Effect.AddItem(item, quantity, target, note) =>
-        val detail =
-          if (quantity < 0) s"Removed from the ${target.name.toLowerCase}"
-          else s"Added to the ${target.name.toLowerCase}"
-        RowContent(itemIcon(item, quantity.abs, note, cache), itemTitle(item, note, cache), detail)
+      case add @ Effect.AddItem(item, change, target, note) =>
+        val place = target.name.toLowerCase
+        val (detail, count) = change match {
+          case ItemChange.By(n) if n < 0 => (s"Removed from the $place", -n)
+          case ItemChange.By(n) => (s"Added to the $place", n)
+          case ItemChange.Fill => (s"Added to the $place${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
+          case ItemChange.Empty => (s"Removed from the $place${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
+        }
+        RowContent(itemIcon(item, count, note, cache), itemTitle(item, note, cache), detail)
 
       case move @ Effect.MoveItem(item, quantity, _, notedInSource, _, noteInTarget) =>
         // Notes are only ever withdrawn or deposited, so the item is noted on one side at most
         val noted = notedInSource || noteInTarget
+        val title = itemTitle(item, noted, cache)
         RowContent(
-          itemIcon(item, quantity, noted, cache),
-          itemTitle(item, noted, cache),
+          itemIcon(item, iconCount(quantity, countHere(move)), noted, cache),
+          title,
           ItemRoute.of(move).label,
           editableDetail = Some(onChange => MoveLocations(move, cache.items(item), contextMenu, onChange))
         )
+
+      case Effect.DepositAll(source) =>
+        val (title, icon) = source match {
+          case Effect.DepositSource.Inventory => ("Deposit the inventory", depositInventoryIcon)
+          case Effect.DepositSource.Equipment => ("Deposit equipment", depositEquipmentIcon)
+        }
+        RowContent(image(icon), title, "Banks everything that can be banked")
 
       case Effect.UnlockSkill(skill) =>
         RowContent(() => skillIcon(skill), s"Unlock $skill", "Skill unlock")
@@ -87,11 +109,11 @@ object RowContent {
       case Requirement.SkillLevel(skill, _) =>
         RowContent(() => skillIcon(skill), s"$skill level", "At the start of this step")
 
-      case Requirement.Tool(item, location) =>
+      case Requirement.Holds(item, where) =>
         RowContent(
           itemIcon(item, 1, noted = false, cache),
           cache.items(item).name,
-          s"In the ${location.name.toLowerCase} at the start of this step"
+          s"${where.description.capitalize} at the start of this step"
         )
 
       case _: Requirement.And =>
@@ -99,6 +121,17 @@ object RowContent {
 
       case _: Requirement.Or =>
         RowContent(glyph("or"), "Any of", effectText.describe(requirement))
+    }
+
+  /** Such as " · 1,234 at this step" */
+  private def atThisStep(count: Option[Int]): String =
+    count.fold("")(n => s" · ${n.withCommas} at this step")
+
+  /** The icon shows the stack size it stands for, as stack icons change with their size */
+  private def iconCount(quantity: ItemQuantity, countHere: Option[Int]): Int =
+    quantity match {
+      case ItemQuantity.Exact(n) => n
+      case ItemQuantity.Max => countHere.getOrElse(1)
     }
 
   private def formatMultiplier(multiplier: Double): String =
@@ -123,6 +156,12 @@ object RowContent {
 
   private def glyph(text: String): () => L.Node =
     () => L.span(L.cls(Styles.glyph), text)
+
+  @js.native @JSImport("/images/bank-deposit-inventory.png", JSImport.Default)
+  private val depositInventoryIcon: String = js.native
+
+  @js.native @JSImport("/images/bank-deposit-equipment.png", JSImport.Default)
+  private val depositEquipmentIcon: String = js.native
 
   @js.native @JSImport("/images/quest-point-icon.png", JSImport.Default)
   private val questIcon: String = js.native

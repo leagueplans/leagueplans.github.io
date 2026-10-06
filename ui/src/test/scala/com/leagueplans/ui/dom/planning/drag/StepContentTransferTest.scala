@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.drag
 
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
-import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step, StepDetails}
+import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, Requirement, Step, StepDetails}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import org.scalatest.freespec.AnyFreeSpec
@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 final class StepContentTransferTest extends AnyFreeSpec with Matchers {
   private val attackExp = Effect.GainExp(Skill.Attack, Exp(100))
-  private val logs = Effect.AddItem(Item.ID(1511), 5, Depository.Kind.Inventory, note = false)
+  private val logs = Effect.AddItem(Item.ID(1511), ItemChange.By(5), Depository.Kind.Inventory, note = false)
   private val agility50 = Requirement.SkillLevel(Skill.Agility, Level(50))
 
   private def step(id: String, effects: List[Effect] = List.empty, requirements: List[Requirement] = List.empty): Step =

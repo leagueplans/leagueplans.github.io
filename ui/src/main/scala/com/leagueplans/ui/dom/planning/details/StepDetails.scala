@@ -8,6 +8,7 @@ import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
+import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
@@ -112,7 +113,9 @@ object StepDetails {
         RowList[Effect](
           Kind.Effects,
           effects,
-          expMultiplierAt.map(multiplierAt => RowContent.of(_, cache, multiplierAt, contextMenu)),
+          Signal.combine(expMultiplierAt, countsHere(effects, playerBefore, cache)).map((multiplierAt, countHere) =>
+            RowContent.of(_, cache, multiplierAt, countHere, contextMenu)
+          ),
           RowAmounts.of,
           RowAmounts.withAmount,
           errors = errorsByKind.map(_._1),
@@ -162,6 +165,31 @@ object StepDetails {
       SubstepSummaryElement(stepSignal, forester.signal, playerBefore, playerAfterAll, cache)
     )
   }
+
+  /** What each item effect comes to where it applies in the step, worked out by applying the
+    * step's item effects in order to the player at its start. Rows show this for effects whose
+    * quantity is Max. Repeated steps show the first repetition. */
+  private def countsHere(
+    effects: Signal[List[Effect]],
+    playerBefore: Signal[Player],
+    cache: Cache
+  ): Signal[Effect => Option[Int]] =
+    Signal.combine(effects, playerBefore).map { (effects, player) =>
+      val (_, counts) =
+        effects.foldLeft((player, Map.empty[Effect, Int])) { case ((player, counts), effect) =>
+          effect match {
+            case e: (Effect.AddItem | Effect.MoveItem) =>
+              // Equal effects share a row's content, so each shows what the first comes to
+              val updated = if (counts.contains(e)) counts else counts + (e -> ItemEffects.count(e, player, cache.items))
+              (ItemEffects(player, e, cache.items), updated)
+            case e: Effect.DepositAll =>
+              (ItemEffects(player, e, cache.items), counts)
+            case _ =>
+              (player, counts)
+          }
+        }
+      counts.get
+    }
 
   private def isTyping(target: org.scalajs.dom.EventTarget): Boolean =
     target match {

@@ -6,13 +6,16 @@ import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.skill.Exp
 
+// Saved plans refer to effects by their position in this list, so new effects go at the end
+
 enum Effect {
   case GainExp(skill: Skill, baseExp: Exp)
 
-  case AddItem(item: Item.ID, quantity: Int, target: Depository.Kind, note: Boolean)
+  /** Adds items, or takes them away */
+  case AddItem(item: Item.ID, change: ItemChange, target: Depository.Kind, note: Boolean)
   case MoveItem(
     item: Item.ID,
-    quantity: Int,
+    quantity: ItemQuantity,
     source: Depository.Kind,
     notedInSource: Boolean,
     target: Depository.Kind,
@@ -25,9 +28,29 @@ enum Effect {
   case CompleteDiaryTask(task: Int)
   case CompleteLeagueTask(task: Int)
   case CompleteGridTile(tile: Int)
+
+  /** Banks everything the inventory, or every equipment slot, holds when the effect applies, apart from
+    * items that can't be banked */
+  case DepositAll(source: Effect.DepositSource)
 }
 
 object Effect {
+  enum DepositSource {
+    case Inventory, Equipment
+
+    /** The places a deposit banks from */
+    def places: List[Depository.Kind] =
+      this match {
+        case Inventory => List(Depository.Kind.Inventory)
+        case Equipment => Depository.Kind.EquipmentSlot.values.toList
+      }
+  }
+
+  object DepositSource {
+    given Encoder[DepositSource] = Encoder.derived
+    given Decoder[DepositSource] = Decoder.derived
+  }
+
   given Encoder[Effect] = Encoder.derived
   given Decoder[Effect] = Decoder.derived
 }

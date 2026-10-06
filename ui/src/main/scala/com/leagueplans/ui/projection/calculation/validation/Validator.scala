@@ -1,8 +1,9 @@
 package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.common.model.{Item, Skill}
-import com.leagueplans.ui.model.plan.Effect.MoveItem
-import com.leagueplans.ui.model.player.item.{Depository, ItemRoute}
+import com.leagueplans.ui.model.plan.ItemChange
+import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositSource, MoveItem}
+import com.leagueplans.ui.model.player.item.{Depository, ItemEffects, ItemRoute}
 import com.leagueplans.ui.model.player.mode.*
 import com.leagueplans.ui.model.player.skill.Level
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -27,14 +28,59 @@ object Validator {
   def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
-        val heldCount = player.get(kind).contents.getOrElse((itemID, noted), 0)
+        val heldCount = player.get(kind).count(itemID, noted)
         Either.cond(
           heldCount >= requiredCount,
           right = (),
-          left = s"${kind.name} does not have enough of ${if (noted) "noted " else ""}${cache.items(itemID).name}"
+          left = s"${kind.name} does not have enough of ${itemName(itemID, noted, cache)}"
         )
       }
     }
+
+  /** An effect that adds, moves or removes as many as it can must come to at least one item where it
+    * applies */
+  def allComesToSome(effect: AddItem | MoveItem): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
+        Either.cond(
+          ItemEffects.count(effect, player, cache.items) > 0,
+          right = (),
+          left = {
+            def name(item: Item.ID, noted: Boolean) = itemName(item, noted, cache)
+            effect match {
+              case AddItem(item, ItemChange.Empty, source, noted) =>
+                s"There's no ${name(item, noted)} in the ${source.name.toLowerCase} at this step"
+              case AddItem(item, _, target, note) =>
+                if (ItemEffects.room(cache.items(item), note, target, player, cache.items).isEmpty)
+                  s"Adding until full only works for items that take a slot each, so it can't add ${name(item, note)}"
+                else
+                  s"There's no room for ${name(item, note)} in the ${target.name.toLowerCase} at this step"
+              case MoveItem(item, _, source, notedInSource, target, noteInTarget) =>
+                if (player.get(source).count(item, notedInSource) == 0)
+                  s"There's no ${name(item, notedInSource)} in the ${source.name.toLowerCase} at this step"
+                else
+                  s"There's no room for ${name(item, noteInTarget)} in the ${target.name.toLowerCase} at this step"
+            }
+          }
+        )
+    }
+
+  def somethingToDeposit(source: DepositSource): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] =
+        Either.cond(
+          ItemEffects.deposits(source, player, cache.items).nonEmpty,
+          right = (),
+          left = source match {
+            case DepositSource.Inventory => "There's nothing in the inventory to bank at this step"
+            case DepositSource.Equipment => "There's no equipment to bank at this step"
+          }
+        )
+    }
+
+  /** Such as "Logs (noted)" */
+  private def itemName(item: Item.ID, noted: Boolean, cache: Cache): String =
+    s"${cache.items(item).name}${if (noted) " (noted)" else ""}"
 
   def possibleRoute(move: MoveItem): Validator =
     new Validator {

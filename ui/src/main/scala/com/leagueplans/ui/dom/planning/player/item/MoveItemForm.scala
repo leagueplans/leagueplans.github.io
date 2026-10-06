@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.ui.model.plan.Effect.MoveItem
+import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack}
 import com.leagueplans.uicommon.dom.form.{Form, NumberInput}
 import com.leagueplans.uicommon.utils.laminar.LaminarOps.selectOnFocus
@@ -49,7 +50,7 @@ object MoveItemForm {
       Option.when(quantity > 0)(
         MoveItem(
           stack.item.id,
-          quantity,
+          ItemQuantity.Exact(quantity),
           source,
           stack.noted,
           target,

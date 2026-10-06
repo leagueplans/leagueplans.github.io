@@ -24,11 +24,7 @@ object InventorySidebar {
   ): L.Div = {
     val addItemButton = AddItemButton(itemFuse, effectObserverSignal, tooltip, modal)
 
-    val bankAllButton =
-      BankAllButton(
-        playerSignal.map(_.get(Depository.Kind.Inventory)),
-        effectObserverSignal
-      )
+    val bankAllButton = BankAllButton(effectObserverSignal)
 
     val bankTagsButton =
       ExportBankTagsButton(
