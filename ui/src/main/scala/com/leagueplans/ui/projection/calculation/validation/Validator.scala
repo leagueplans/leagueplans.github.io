@@ -7,24 +7,40 @@ import com.leagueplans.ui.model.player.item.{Depository, ItemEffects, ItemRoute}
 import com.leagueplans.ui.model.player.mode.*
 import com.leagueplans.ui.model.player.skill.Level
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
 import scala.math.Ordering.Implicits.infixOrderingOps
 
 sealed trait Validator extends ((Player, Option[Mode.League], Cache) => Either[String, Unit])
 
 object Validator {
+  /** A place holds no more than it has room for. The message is worded for the effect that
+    * filled it, which it's shown with. */
   def depositorySize(kind: Depository.Kind): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
-        val stackCount = cache.itemise(player.get(kind)).size
+        val depository = player.get(kind)
+        val spaces = cache.itemise(depository).size
         Either.cond(
-          stackCount <= kind.capacity,
+          spaces <= kind.capacity,
           right = (),
-          left = s"${kind.name} requires $stackCount spaces (max ${kind.capacity})"
+          left = kind match {
+            case slot: Depository.Kind.EquipmentSlot =>
+              val contents = depository.contents.toList.sortBy { case ((id, noted), _) => (cache.items(id).name, noted) }
+              val stacks = contents.forall { case ((id, _), _) => cache.items(id).stackable }
+              val named = contents.map { case ((id, noted), n) =>
+                val name = itemName(id, noted, cache)
+                if (n > 1 && !cache.items(id).stackable) s"${n.withCommas} × $name" else name
+              }
+              s"This would put ${listed(named)} in the ${place(slot)}, which holds one ${if (stacks) "stack" else "item"}"
+            case _ =>
+              s"This would fill ${spaces.withCommas} ${place(kind)} slots, but there are only ${kind.capacity.withCommas}"
+          }
         )
       }
     }
 
+  /** A place holds enough of an item for an exact removal or move */
   def hasItem(kind: Depository.Kind, itemID: Item.ID, noted: Boolean, requiredCount: Int): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
@@ -32,7 +48,12 @@ object Validator {
         Either.cond(
           heldCount >= requiredCount,
           right = (),
-          left = s"${kind.name} does not have enough of ${itemName(itemID, noted, cache)}"
+          left = {
+            val name = itemName(itemID, noted, cache)
+            val held = if (heldCount == 0) s"no $name" else s"${heldCount.withCommas} × $name"
+            val short = if (requiredCount > 1) s", short of ${requiredCount.withCommas}" else ""
+            s"The ${place(kind)} has $held at this step$short"
+          }
         )
       }
     }
@@ -49,17 +70,17 @@ object Validator {
             def name(item: Item.ID, noted: Boolean) = itemName(item, noted, cache)
             effect match {
               case AddItem(item, ItemChange.Empty, source, noted) =>
-                s"There's no ${name(item, noted)} in the ${source.name.toLowerCase} at this step"
+                s"The ${place(source)} has no ${name(item, noted)} at this step"
               case AddItem(item, _, target, note) =>
-                if (ItemEffects.room(cache.items(item), note, target, player, cache.items).isEmpty)
-                  s"Adding until full only works for items that take a slot each, so it can't add ${name(item, note)}"
+                if (ItemEffects.canFill(cache.items(item), note, target))
+                  s"The ${place(target)} has no room for ${name(item, note)} at this step"
                 else
-                  s"There's no room for ${name(item, note)} in the ${target.name.toLowerCase} at this step"
+                  s"${name(item, note).capitalize} can't be added until full: only unnoted items that each take an inventory slot can"
               case MoveItem(item, _, source, notedInSource, target, noteInTarget) =>
                 if (player.get(source).count(item, notedInSource) == 0)
-                  s"There's no ${name(item, notedInSource)} in the ${source.name.toLowerCase} at this step"
+                  s"The ${place(source)} has no ${name(item, notedInSource)} at this step"
                 else
-                  s"There's no room for ${name(item, noteInTarget)} in the ${target.name.toLowerCase} at this step"
+                  s"The ${place(target)} has no room for ${name(item, noteInTarget)} at this step"
             }
           }
         )
@@ -72,27 +93,58 @@ object Validator {
           ItemEffects.deposits(source, player, cache.items).nonEmpty,
           right = (),
           left = source match {
-            case DepositSource.Inventory => "There's nothing in the inventory to bank at this step"
-            case DepositSource.Equipment => "There's no equipment to bank at this step"
+            case DepositSource.Inventory => "The inventory has nothing to bank at this step"
+            case DepositSource.Equipment => "Nothing equipped can be banked at this step"
           }
         )
     }
+
+  /** Such as "inventory" or "head slot" */
+  private def place(kind: Depository.Kind): String =
+    kind.name.toLowerCase
 
   /** Such as "Logs (noted)" */
   private def itemName(item: Item.ID, noted: Boolean, cache: Cache): String =
     s"${cache.items(item).name}${if (noted) " (noted)" else ""}"
 
+  /** Such as "A, B and C" */
+  private def listed(names: List[String]): String =
+    names match {
+      case init :+ last if init.nonEmpty => s"${init.mkString(", ")} and $last"
+      case _ => names.mkString
+    }
+
+  /** The item can be moved that way in the game. The message gives the reason where it can. */
   def possibleRoute(move: MoveItem): Validator =
     new Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         val item = cache.items(move.item)
-        val route = ItemRoute.of(move)
         Either.cond(
           ItemRoute.isPossible(move, item),
           right = (),
-          left = s"${item.name} can't be moved from ${route.from.label} to ${route.to.label}"
+          left = move.target match {
+            case Depository.Kind.Bank if item.bankable == Item.Bankable.No =>
+              s"${item.name} can't be banked"
+            case slot: Depository.Kind.EquipmentSlot =>
+              item.equipmentType.map(Depository.Kind.EquipmentSlot.from) match {
+                case None => s"${item.name} can't be equipped"
+                case Some(own) if own != slot => s"${item.name} can't be equipped in the ${place(slot)}"
+                case Some(_) if move.notedInSource => s"Noted ${item.name} can't be equipped"
+                case Some(_) => fallback(move, item)
+              }
+            case _ if move.noteInTarget && !item.noteable =>
+              s"${item.name} can't be noted"
+            case _ =>
+              fallback(move, item)
+          }
         )
       }
+
+      private def fallback(move: MoveItem, item: Item): String =
+        s"${item.name} can't be moved from the ${routePlace(move.source, move.notedInSource)} to the ${routePlace(move.target, move.noteInTarget)}"
+
+      private def routePlace(kind: Depository.Kind, noted: Boolean): String =
+        if (noted) s"${place(kind)} (noted)" else place(kind)
     }
 
   def skillUnlocked(skill: Skill): Validator =
