@@ -41,50 +41,57 @@ object BankFooter {
 
     L.div(
       L.cls(Styles.footer),
-      // As the inventory's footer shows its slots
+      // The settings wrap onto more rows when the footer is narrow, leaving the deposit buttons
+      // beside them
       L.span(
-        L.cls(Styles.group),
-        L.span(L.cls(Styles.label), "Slots"),
+        L.cls(Styles.settings),
+        // As the inventory's footer shows its slots
         L.span(
-          L.cls(Styles.used),
-          L.cls(Styles.over) <-- slotsUsed.map(_ > Depository.Kind.Bank.capacity),
-          L.text <-- slotsUsed.map(used => s"$used/${Depository.Kind.Bank.capacity}")
-        )
-      ),
-      L.span(
-        L.cls(Styles.group),
-        L.span(L.cls(Styles.label), "Withdraw as"),
+          L.cls(Styles.group),
+          L.span(L.cls(Styles.label), "Slots"),
+          L.span(
+            L.cls(Styles.used),
+            L.cls(Styles.over) <-- slotsUsed.map(_ > Depository.Kind.Bank.capacity),
+            L.text <-- slotsUsed.map(used => s"$used/${Depository.Kind.Bank.capacity}")
+          )
+        ),
         L.span(
-          L.cls(Styles.segments),
-          List(false -> "Item", true -> "Note").map((noted, label) =>
-            segment(label, settings.signal.map(_.withdrawNoted == noted))(
-              settings.update(_.copy(withdrawNoted = noted))
+          L.cls(Styles.group),
+          L.span(L.cls(Styles.label), "Withdraw as"),
+          L.span(
+            L.cls(Styles.segments),
+            List(false -> "Item", true -> "Note").map((noted, label) =>
+              segment(label, settings.signal.map(_.withdrawNoted == noted))(
+                settings.update(_.copy(withdrawNoted = noted))
+              )
             )
+          )
+        ),
+        L.span(
+          L.cls(Styles.group),
+          L.span(L.cls(Styles.label), "Quantity"),
+          L.span(
+            L.cls(Styles.segments),
+            List(Quantity.One -> "1", Quantity.Five -> "5", Quantity.Ten -> "10").map((quantity, label) =>
+              segment(label, settings.signal.map(_.quantity == quantity))(settings.update(_.copy(quantity = quantity)))
+            ),
+            L.child <-- editingX.signal.map(
+              if (_) xInput(settings, lastX, editingX)
+              else xButton(settings, lastX, editingX, tooltip)
+            ),
+            segment("All", settings.signal.map(_.quantity == Quantity.All))(settings.update(_.copy(quantity = Quantity.All)))
+          ),
+          tooltip.register(
+            L.span(L.cls(Styles.tooltip), "Decides how much moves when you drag items into and out of the bank"),
+            FloatingConfig.basicTooltip(Placement.top)
           )
         )
       ),
       L.span(
-        L.cls(Styles.group),
-        L.span(L.cls(Styles.label), "Quantity"),
-        L.span(
-          L.cls(Styles.segments),
-          List(Quantity.One -> "1", Quantity.Five -> "5", Quantity.Ten -> "10").map((quantity, label) =>
-            segment(label, settings.signal.map(_.quantity == quantity))(settings.update(_.copy(quantity = quantity)))
-          ),
-          L.child <-- editingX.signal.map(
-            if (_) xInput(settings, lastX, editingX)
-            else xButton(settings, lastX, editingX, tooltip)
-          ),
-          segment("All", settings.signal.map(_.quantity == Quantity.All))(settings.update(_.copy(quantity = Quantity.All)))
-        ),
-        tooltip.register(
-          L.span(L.cls(Styles.tooltip), "Decides how much moves when you drag items into and out of the bank"),
-          FloatingConfig.basicTooltip(Placement.top)
-        )
-      ),
-      L.span(L.cls(Styles.spacer)),
-      depositButton("Deposit inventory", depositInventoryIcon, playerAtInsertion, effectObserver, depositInventory, undoToasts, tooltip),
-      depositButton("Deposit equipment", depositEquipmentIcon, playerAtInsertion, effectObserver, depositEquipment, undoToasts, tooltip)
+        L.cls(Styles.deposits),
+        depositButton("Deposit inventory", depositInventoryIcon, playerAtInsertion, effectObserver, depositInventory, undoToasts, tooltip),
+        depositButton("Deposit equipment", depositEquipmentIcon, playerAtInsertion, effectObserver, depositEquipment, undoToasts, tooltip)
+      )
     )
   }
 
@@ -190,7 +197,8 @@ object BankFooter {
     val segment: String = js.native
     val xInput: String = js.native
     val tooltip: String = js.native
-    val spacer: String = js.native
+    val settings: String = js.native
+    val deposits: String = js.native
     val deposit: String = js.native
   }
 }

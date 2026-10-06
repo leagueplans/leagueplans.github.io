@@ -3,9 +3,8 @@
   padding-top: 8px;
 
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: 12px;
 
   border-top: 1px solid #1d1813;
   font-family: var(--font-ui);
@@ -97,8 +96,22 @@
   text-align: center;
 }
 
-.spacer {
+/* Wraps onto more rows when the footer is narrow, while the deposit buttons stay beside it */
+.settings {
   flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Centred against however many rows the settings take */
+.deposits {
+  flex: none;
+  display: flex;
+  gap: 6px;
 }
 
 .deposit {
