@@ -54,51 +54,55 @@ object ItemsSection {
 
     val depositInventory = ItemActions.depositInventory(_, ctx.cache.items)
 
+    // The outer element is the section's scroller, which scrolls when the view is too short or
+    // narrow for the layout's minimum size
     L.div(
-      L.cls(Styles.section),
-      L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
-      EquipmentElement(
-        ctx.displayedPlayer,
-        ctx.cache,
-        itemCards,
-        itemDrag,
-        ctx.tooltip
-      ).amend(L.cls(Styles.equipment)),
-      InventoryPanel(
-        ctx.displayedPlayer,
-        bankQuery.signal,
-        ctx.cache,
-        itemCards,
-        itemDrag,
-        ctx.focusID,
-        ctx.tooltip,
-        ctx.toasts
-      ).amend(L.cls(Styles.inventory)),
-      BankElement(
-        ctx.displayedPlayer,
-        ctx.playerAtInsertion,
-        bankQuery,
-        ctx.cache,
-        itemCards,
-        itemDrag,
-        ctx.tooltip,
-        slotsUsed => BankFooter(
-          slotsUsed,
-          itemDrag.settings,
-          ctx.playerAtInsertion,
-          ctx.effectObserver,
-          depositInventory,
-          ItemActions.depositEquipment(_, ctx.cache.items),
-          ctx.undoToasts,
+      L.div(
+        L.cls(Styles.layout),
+        L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
+        EquipmentElement(
+          ctx.displayedPlayer,
+          ctx.cache,
+          itemCards,
+          itemDrag,
           ctx.tooltip
-        )
-      ).amend(L.cls(Styles.bank))
+        ).amend(L.cls(Styles.equipment)),
+        InventoryPanel(
+          ctx.displayedPlayer,
+          bankQuery.signal,
+          ctx.cache,
+          itemCards,
+          itemDrag,
+          ctx.focusID,
+          ctx.tooltip,
+          ctx.toasts
+        ).amend(L.cls(Styles.inventory)),
+        BankElement(
+          ctx.displayedPlayer,
+          ctx.playerAtInsertion,
+          bankQuery,
+          ctx.cache,
+          itemCards,
+          itemDrag,
+          ctx.tooltip,
+          slotsUsed => BankFooter(
+            slotsUsed,
+            itemDrag.settings,
+            ctx.playerAtInsertion,
+            ctx.effectObserver,
+            depositInventory,
+            ItemActions.depositEquipment(_, ctx.cache.items),
+            ctx.undoToasts,
+            ctx.tooltip
+          )
+        ).amend(L.cls(Styles.bank))
+      )
     )
   }
 
   @js.native @JSImport("/styles/planning/section/itemsSection.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val section: String = js.native
+    val layout: String = js.native
     val equipment: String = js.native
     val inventory: String = js.native
     val bank: String = js.native

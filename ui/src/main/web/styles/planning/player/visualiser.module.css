@@ -54,4 +54,6 @@
 
   overflow: auto;
   background-color: #645c52;
+  /* For screens too short for a section, as the panels' own scrollbars are */
+  scrollbar-color: #61553e #252019;
 }
