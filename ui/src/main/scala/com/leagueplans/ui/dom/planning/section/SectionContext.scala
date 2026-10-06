@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
-import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
@@ -14,6 +14,7 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
   *                          requirements and preview multipliers against this, not the displayed
   *                          state, which may be from before the step or after its substeps.
   * @param baseline the state before the focused step, for showing what the step changed
+  * @param focusID the focused step, if there is one
   * @param effectObserver adds effects to the focused step, if there is one
   * @param requirementObserver adds a requirement to the focused step, if there is one
   * @param focusChanges fires when a different step is focused. Sections use it to clear drafts
@@ -31,6 +32,7 @@ final case class SectionContext(
   displayedPlayer: Signal[Player],
   playerAtInsertion: Signal[Player],
   baseline: Signal[Option[Player]],
+  focusID: Signal[Option[Step.ID]],
   effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
   requirementObserver: Signal[Option[Observer[Requirement]]],
   focusChanges: EventStream[Unit],

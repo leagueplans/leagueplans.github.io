@@ -85,6 +85,7 @@ object PlanningPage {
           displayedState.displayedPlayer,
           displayedState.playerAtInsertion,
           displayedState.baseline,
+          focusContext.focusID,
           createEffectObserver(focusContext.focus, forester),
           createRequirementObserver(focusContext.focus, forester),
           focusContext.focusID.changes.mapToUnit,

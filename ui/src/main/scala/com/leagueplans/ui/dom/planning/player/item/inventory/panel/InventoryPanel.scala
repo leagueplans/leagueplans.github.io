@@ -4,6 +4,7 @@ import com.leagueplans.ui.dom.planning.player.item.DepositoryStacks.Layout
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
+import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.{Depository, ItemStack, ItemTransfer}
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -24,6 +25,7 @@ object InventoryPanel {
     cache: Cache,
     itemCards: ItemCards,
     itemDrag: ItemDrag,
+    focusID: Signal[Option[Step.ID]],
     tooltip: Tooltip,
     toasts: ToastHub.Publisher
   ): L.Div = {
@@ -43,7 +45,7 @@ object InventoryPanel {
         DepositoryStacks.within(numbered, capacity, Layout.Columns(4, rows = Some(7)), toElement),
         L.child.maybe <-- DepositoryStacks.beyond(numbered, capacity, renderLimit = 80, layout = Layout.Columns(4), toElement = toElement)
       ),
-      InventoryFooter(stacks, toasts, tooltip)
+      InventoryFooter(stacks, focusID, toasts, tooltip)
     )
   }
 

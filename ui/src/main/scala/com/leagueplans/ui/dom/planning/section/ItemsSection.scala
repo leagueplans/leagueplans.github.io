@@ -70,6 +70,7 @@ object ItemsSection {
         ctx.cache,
         itemCards,
         itemDrag,
+        ctx.focusID,
         ctx.tooltip,
         ctx.toasts
       ).amend(L.cls(Styles.inventory)),

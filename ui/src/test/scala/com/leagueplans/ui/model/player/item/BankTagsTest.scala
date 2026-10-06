@@ -2,6 +2,7 @@ package com.leagueplans.ui.model.player.item
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{InfoboxKey, Item}
+import com.leagueplans.ui.model.plan.Step
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -38,6 +39,11 @@ final class BankTagsTest extends AnyFreeSpec with Matchers {
 
     "has no layout entries for an empty inventory" in {
       BankTags.layout("planner", List.empty) shouldBe "banktags,1,planner,550,layout"
+    }
+
+    "names each step's tab after the start of the step's ID" in {
+      BankTags.tabName(Some(Step.ID.fromString("3F9A2C1B-0000-4000-8000-000000000000"))) shouldBe "lp-3f9a2c"
+      BankTags.tabName(None) shouldBe "leagueplans"
     }
   }
 }

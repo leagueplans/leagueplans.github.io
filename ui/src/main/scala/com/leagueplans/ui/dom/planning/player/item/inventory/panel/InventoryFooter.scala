@@ -1,6 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
 import com.leagueplans.ui.dom.planning.player.card.Card
+import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.item.{BankTags, Depository, ItemStack}
 import com.leagueplans.uicommon.dom.{Tooltip, ToastHub}
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
@@ -18,10 +19,8 @@ import scala.util.{Failure, Success}
   * copies the inventory as a RuneLite bank tag tab.
   */
 object InventoryFooter {
-  /** The name of the bank tag tab the inventory is copied as */
-  private val tagName = "leagueplans"
-
-  def apply(stacks: Signal[List[ItemStack]], toasts: ToastHub.Publisher, tooltip: Tooltip): L.Div =
+  /** @param focusID the focused step, which the bank tag tab is named after */
+  def apply(stacks: Signal[List[ItemStack]], focusID: Signal[Option[Step.ID]], toasts: ToastHub.Publisher, tooltip: Tooltip): L.Div =
     L.div(
       L.cls(Styles.footer),
       L.span(L.cls(Styles.label), "Slots"),
@@ -38,7 +37,7 @@ object InventoryFooter {
           L.aria.label("Copy a RuneLite bank tag for the inventory"),
           FontAwesome.icon(FreeSolid.faTag),
           L.disabled <-- stacks.map(_.isEmpty),
-          L.onClick.compose(_.sample(stacks)) --> (copyTags(_, toasts))
+          L.onClick.compose(_.sample(stacks, focusID)) --> ((stacks, focusID) => copyTags(stacks, BankTags.tabName(focusID), toasts))
         ),
         stacks.map(stacks =>
           if (stacks.isEmpty) "The inventory is empty, so there's nothing to tag"
@@ -48,14 +47,14 @@ object InventoryFooter {
       )
     )
 
-  private def copyTags(stacks: List[ItemStack], toasts: ToastHub.Publisher): Unit = {
+  private def copyTags(stacks: List[ItemStack], tabName: String, toasts: ToastHub.Publisher): Unit = {
     import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
-    window.navigator.clipboard.writeText(BankTags.layout(tagName, stacks)).toFuture.onComplete {
+    window.navigator.clipboard.writeText(BankTags.layout(tabName, stacks)).toFuture.onComplete {
       case Success(_) =>
         toasts.publish(
           ToastHub.Type.Success,
           8.seconds,
-          "Copied the inventory as a bank tag tab",
+          s"Copied the inventory as the $tabName bank tag tab",
           Some(s"In the game's bank, right-click the + tab and choose Import tag tab. It needs RuneLite's Bank Tags plugin.")
         )
       case Failure(_) =>

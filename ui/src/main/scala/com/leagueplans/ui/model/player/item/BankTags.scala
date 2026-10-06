@@ -1,5 +1,7 @@
 package com.leagueplans.ui.model.player.item
 
+import com.leagueplans.ui.model.plan.Step
+
 /** Builds a RuneLite bank tag tab holding a set of stacks, laid out as they are in the
   * inventory, which the Bank Tags plugin can import.
   *
@@ -10,6 +12,13 @@ object BankTags {
   private val formatVersion = 1
   /** The tab's icon */
   private val newcomerMapID = 550
+
+  /** A tab's name, unique to the step it's copied for, since importing a tab replaces any tab of
+    * the same name. The start of the step's ID is enough to tell a plan's steps apart. Without a
+    * step, the tab is just "leagueplans".
+    */
+  def tabName(step: Option[Step.ID]): String =
+    step.fold("leagueplans")(id => s"lp-${id.filter(_.isLetterOrDigit).take(6).toLowerCase}")
 
   def layout(name: String, stacks: List[ItemStack]): String = {
     val positions = Iterator.iterate(0)(increment)
