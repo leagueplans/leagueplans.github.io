@@ -25,7 +25,11 @@ object InventoryFooter {
     L.div(
       L.cls(Styles.footer),
       L.span(L.cls(Styles.label), "Slots"),
-      L.span(L.cls(Styles.used), L.text <-- stacks.map(stacks => s"${stacks.size}/${Depository.Kind.Inventory.capacity}")),
+      L.span(
+        L.cls(Styles.used),
+        L.cls(Styles.over) <-- stacks.map(_.size > Depository.Kind.Inventory.capacity),
+        L.text <-- stacks.map(stacks => s"${stacks.size}/${Depository.Kind.Inventory.capacity}")
+      ),
       L.span(L.cls(Styles.spacer)),
       Card.withTooltip(
         L.button(
@@ -69,6 +73,7 @@ object InventoryFooter {
     val footer: String = js.native
     val label: String = js.native
     val used: String = js.native
+    val over: String = js.native
     val spacer: String = js.native
     val tags: String = js.native
   }

@@ -1,5 +1,13 @@
-.contents {
-  max-height: 350px;
+/* Styled like the bank's */
+.scroller {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto;
+  scrollbar-color: #61553e #252019;
+  /* Room for the scrollbar is kept, since the panel is only as wide as its stacks */
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .unmatched {

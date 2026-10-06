@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.item.inventory.panel
 
+import com.leagueplans.ui.dom.planning.player.item.DepositoryStacks.Layout
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
@@ -27,26 +28,28 @@ object InventoryPanel {
     toasts: ToastHub.Publisher
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
+    val numbered = stacks.map(DepositoryStacks.numbered)
+    val capacity = Depository.Kind.Inventory.capacity
+    val toElement = toStackElement(query, itemCards, itemDrag, tooltip)
 
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
       itemDrag.target(ItemTransfer.Target.Inventory),
       InventoryHeader(),
-      DepositoryStacks(
-        stacks,
-        columnCount = 4,
-        rowCount = 7,
-        overflowRowCount = 20,
-        toStackElement(query, itemCards, itemDrag, tooltip),
-        tooltip
-      ).amend(L.cls(Styles.contents)),
+      // Scrolls as the bank does when the section is too short for the whole inventory, with any
+      // stacks that don't fit beneath the rest
+      L.div(
+        L.cls(Styles.scroller),
+        DepositoryStacks.within(numbered, capacity, Layout.Columns(4, rows = Some(7)), toElement),
+        L.child.maybe <-- DepositoryStacks.beyond(numbered, capacity, renderLimit = 80, layout = Layout.Columns(4), toElement = toElement)
+      ),
       InventoryFooter(stacks, toasts, tooltip)
     )
   }
 
   @js.native @JSImport("/styles/planning/player/item/inventory/panel/inventoryPanel.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val contents: String = js.native
+    val scroller: String = js.native
     val unmatched: String = js.native
   }
 

@@ -1,149 +1,103 @@
 package com.leagueplans.ui.dom.planning.player.item
 
 import com.leagueplans.ui.model.player.item.ItemStack
-import com.leagueplans.uicommon.dom.Tooltip
-import com.leagueplans.uicommon.facades.floatingui.Placement
-import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
-import com.leagueplans.uicommon.utils.laminar.FontAwesome
-import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, seqToModifier, textToTextNode}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html.OList
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
+/** The stacks in a place, such as the inventory or the bank. Each stack is numbered by its index
+  * among all of the place's stacks, even when only some are shown, such as those that match a
+  * search.
+  *
+  * A place can hold more than it has room for, such as a plan that adds 30 items to the
+  * inventory. The stacks that don't fit are shown apart from the rest, hatched, beneath a line
+  * marking the place's capacity.
+  */
 object DepositoryStacks {
-  def apply(
-    stacksSignal: Signal[List[ItemStack]],
-    columnCount: Int,
-    rowCount: Int,
-    overflowRowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement],
-    tooltip: Tooltip,
-    fillWidth: Boolean = false
-  ): L.Div = {
-    val maxContents = columnCount * rowCount
+  /** @param rows the rows to keep room for, even while they're empty. The rows are otherwise
+    *             only as many as the stacks need.
+    */
+  enum Layout {
+    case Columns(count: Int, rows: Option[Int] = None)
+    case FillWidth
+  }
 
-    L.div(
-      L.cls(Styles.content),
-      mainStacks(stacksSignal, maxContents, columnCount, rowCount, toElement, fillWidth),
-      L.child.maybe <-- maybeOverflowStacks(stacksSignal, maxContents, columnCount, overflowRowCount, toElement, fillWidth),
-      L.child.maybe <-- maybeOverflowWarning(stacksSignal, maxContents, columnCount, overflowRowCount, tooltip)
+  /** Numbers each stack by its index in the place */
+  def numbered(stacks: List[ItemStack]): List[(ItemStack, Int)] =
+    stacks.zipWithIndex
+
+  /** The stacks that fit in the place */
+  def within(
+    stacks: Signal[List[(ItemStack, Int)]],
+    capacity: Int,
+    layout: Layout,
+    toElement: ItemStack => L.Modifier[L.HtmlElement]
+  ): ReactiveHtmlElement[OList] =
+    StackList(stacks.map(_.filter((_, index) => index < capacity)), toElement).amend(
+      L.cls(Styles.stacks),
+      gridTemplate(layout)
+    )
+
+  /** The stacks that don't fit in the place, if any are shown, beneath a line marking the place's
+    * capacity. Only so many are shown, to keep the page quick.
+    */
+  def beyond(
+    stacks: Signal[List[(ItemStack, Int)]],
+    capacity: Int,
+    renderLimit: Int,
+    layout: Layout,
+    toElement: ItemStack => L.Modifier[L.HtmlElement]
+  ): Signal[Option[L.Div]] = {
+    val extras = stacks.map(_.filter((_, index) => index >= capacity))
+    extras.map(_.nonEmpty).distinct.map(isOver =>
+      Option.when(isOver)(
+        L.div(
+          L.cls(Styles.beyond),
+          L.div(L.cls(Styles.rule)),
+          StackList(extras.map(_.take(renderLimit)), toElement).amend(
+            L.cls(Styles.stacks, Styles.extras),
+            gridTemplate(layout match {
+              case Layout.Columns(count, _) => Layout.Columns(count)
+              case Layout.FillWidth => Layout.FillWidth
+            })
+          ),
+          L.child.maybe <-- extras.map(_.size - renderLimit).map(hidden =>
+            Option.when(hidden > 0)(L.p(L.cls(Styles.hidden), s"and ${hidden.withCommas} more, not shown"))
+          )
+        )
+      )
     )
   }
 
   @js.native @JSImport("/styles/planning/player/item/depositoryStacks.module.css", JSImport.Default)
   private object Styles extends js.Object {
-    val content: String = js.native
-
     val stacks: String = js.native
-    val overflowStacks: String = js.native
-
-    val overflowWarning: String = js.native
-    val overflowIcon: String = js.native
-    val overflowText: String = js.native
-    val overflowTooltip: String = js.native
+    val beyond: String = js.native
+    val rule: String = js.native
+    val extras: String = js.native
+    val hidden: String = js.native
   }
 
-  private def mainStacks(
-    stacksSignal: Signal[List[ItemStack]],
-    maxContents: Int,
-    columnCount: Int,
-    rowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement],
-    fillWidth: Boolean
-  ): ReactiveHtmlElement[OList] =
-    StackList(
-      stacksSignal.map(_.take(maxContents)),
-      toElement
-    ).amend(
-      L.cls(Styles.stacks),
-      gridTemplate(columnCount, rowCount, fillWidth)
-    )
-
-  private def maybeOverflowStacks(
-    stacksSignal: Signal[List[ItemStack]],
-    maxContents: Int,
-    columnCount: Int,
-    overflowRowCount: Int,
-    toElement: ItemStack => L.Modifier[L.HtmlElement],
-    fillWidth: Boolean
-  ): Signal[Option[ReactiveHtmlElement[OList]]] =
-    stacksSignal.splitOne {
-      case stacks if maxContents + (columnCount * overflowRowCount) < stacks.size => 0
-      case stacks if maxContents < stacks.size => ((stacks.size - maxContents - 1) / columnCount) + 1
-      case _ => 0
-    }((rowCount, _, signal) =>
-      Option.when(rowCount != 0)(
-        StackList(
-          signal.map(_.drop(maxContents)),
-          toElement
-        ).amend(
-          L.cls(Styles.overflowStacks),
-          gridTemplate(columnCount, rowCount, fillWidth)
+  /** Stacks that fill the width wrap onto as many rows as they need */
+  private def gridTemplate(layout: Layout): L.Modifier[L.HtmlElement] =
+    layout match {
+      case Layout.Columns(count, rows) =>
+        List(
+          L.styleProp[String]("grid-template-columns")(s"repeat($count, ${L.style.px(36)})"),
+          rows match {
+            case Some(rows) => L.styleProp[String]("grid-template-rows")(s"repeat($rows, ${L.style.px(36)})")
+            case None => L.styleProp[String]("grid-auto-rows")(L.style.px(36))
+          }
         )
-      )
-    )
-
-  /** Stacks that fill the width wrap onto as many rows as they need. The column count is then only
-    * used to work out how many stacks to show. */
-  private def gridTemplate(columnCount: Int, rowCount: Int, fillWidth: Boolean): L.Modifier[L.HtmlElement] =
-    if (fillWidth)
-      List(
-        L.styleProp[String]("grid-template-columns")(s"repeat(auto-fill, ${L.style.px(36)})"),
-        L.styleProp[String]("grid-auto-rows")(L.style.px(36))
-      )
-    else
-      List(templateVector("columns", columnCount), templateVector("rows", rowCount))
-
-  private def templateVector(s: "rows" | "columns", length: Int) =
-    L.styleProp[String](s"grid-template-$s")(
-      s"repeat($length, ${L.style.px(36)})"
-    )
-
-  private def maybeOverflowWarning(
-    stacksSignal: Signal[List[ItemStack]],
-    maxContents: Int,
-    columnCount: Int,
-    overflowRowCount: Int,
-    tooltip: Tooltip
-  ): Signal[Option[L.Div]] =
-    stacksSignal
-      .map(_.size - maxContents)
-      .splitOne(_ > columnCount * overflowRowCount)((shouldRender, _, overflowCount) =>
-        Option.when(shouldRender)(overflowWarning(overflowCount, tooltip))
-      )
-
-  private def overflowWarning(
-    overflowCount: Signal[Int],
-    tooltip: Tooltip
-  ): L.Div =
-    L.div(
-      L.cls(Styles.overflowWarning),
-      FontAwesome.icon(
-        FreeSolid.faTriangleExclamation
-      ).amend(L.svg.cls(Styles.overflowIcon)),
-      overflowText(overflowCount),
-      tooltip.register(overflowTooltip, FloatingConfig.basicTooltip(Placement.top))
-    )
-
-  private def overflowText(overflowCount: Signal[Int]): L.Span =
-    L.span(
-      L.cls(Styles.overflowText),
-      L.text <-- overflowCount.map(count =>
-        if (count == 1)
-          "one more item not shown"
-        else
-          s"$count more items not shown"
-      )
-    )
-
-  private val overflowTooltip: L.Div =
-    L.div(
-      L.cls(Styles.overflowTooltip),
-      L.p("You're holding too many items."),
-      L.p("Excess items have been hidden to avoid impacting UI performance.")
-    )
+      case Layout.FillWidth =>
+        List(
+          L.styleProp[String]("grid-template-columns")(s"repeat(auto-fill, ${L.style.px(36)})"),
+          L.styleProp[String]("grid-auto-rows")(L.style.px(36))
+        )
+    }
 }

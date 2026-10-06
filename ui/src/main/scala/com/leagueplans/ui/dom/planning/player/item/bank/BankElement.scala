@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
+import com.leagueplans.ui.dom.planning.player.item.DepositoryStacks.Layout
 import com.leagueplans.ui.dom.planning.player.item.{DepositoryStacks, ItemQuery, StackElement}
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -33,10 +34,14 @@ object BankElement {
   ): L.Div = {
     val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
     val stacks = bankSignal.map(cache.itemise)
+    // Numbered before they're searched, so the stacks keep their places in the bank
     val matchingStacks =
-      Signal.combine(stacks, query.signal).map((stacks, query) =>
-        if (ItemQuery.isEmpty(query)) stacks else stacks.filter(stack => ItemQuery.matches(stack.item, query))
-      )
+      Signal.combine(stacks, query.signal).map { (stacks, query) =>
+        val numbered = DepositoryStacks.numbered(stacks)
+        if (ItemQuery.isEmpty(query)) numbered else numbered.filter((stack, _) => ItemQuery.matches(stack.item, query))
+      }
+    val capacity = Depository.Kind.Bank.capacity
+    val toElement = toStackElement(itemCards, itemDrag, tooltip)
 
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
@@ -49,15 +54,8 @@ object BankElement {
       searchBar(query, playerSignal, cache),
       L.div(
         L.cls(Styles.scroller),
-        DepositoryStacks(
-          matchingStacks,
-          columnCount = 8,
-          rowCount = 100,
-          overflowRowCount = 10,
-          toStackElement(itemCards, itemDrag, tooltip),
-          tooltip,
-          fillWidth = true
-        ),
+        DepositoryStacks.within(matchingStacks, capacity, Layout.FillWidth, toElement),
+        L.child.maybe <-- DepositoryStacks.beyond(matchingStacks, capacity, renderLimit = 80, layout = Layout.FillWidth, toElement = toElement),
         L.child.maybe <-- Signal.combine(stacks, matchingStacks, query.signal).map((all, matching, query) =>
           Option.when(matching.isEmpty)(
             L.p(

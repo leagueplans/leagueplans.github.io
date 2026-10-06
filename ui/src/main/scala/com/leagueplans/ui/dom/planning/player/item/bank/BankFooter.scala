@@ -45,7 +45,11 @@ object BankFooter {
       L.span(
         L.cls(Styles.group),
         L.span(L.cls(Styles.label), "Slots"),
-        L.span(L.cls(Styles.used), L.text <-- slotsUsed.map(used => s"$used/${Depository.Kind.Bank.capacity}"))
+        L.span(
+          L.cls(Styles.used),
+          L.cls(Styles.over) <-- slotsUsed.map(_ > Depository.Kind.Bank.capacity),
+          L.text <-- slotsUsed.map(used => s"$used/${Depository.Kind.Bank.capacity}")
+        )
       ),
       L.span(
         L.cls(Styles.group),
@@ -181,6 +185,7 @@ object BankFooter {
     val group: String = js.native
     val label: String = js.native
     val used: String = js.native
+    val over: String = js.native
     val segments: String = js.native
     val segment: String = js.native
     val xInput: String = js.native

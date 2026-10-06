@@ -54,3 +54,9 @@
 .tags:disabled {
   opacity: 0.4;
 }
+
+/* The place holds more than it has room for */
+.over {
+  color: #ff9c94;
+  font-weight: 700;
+}

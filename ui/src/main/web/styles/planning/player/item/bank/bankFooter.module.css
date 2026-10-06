@@ -134,3 +134,9 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* The place holds more than it has room for */
+.over {
+  color: #ff9c94;
+  font-weight: 700;
+}
