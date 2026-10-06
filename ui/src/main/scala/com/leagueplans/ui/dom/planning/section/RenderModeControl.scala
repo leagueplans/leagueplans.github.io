@@ -22,18 +22,23 @@ object RenderModeControl {
     renderMode: Var[RenderMode],
     tooltip: Tooltip
   ): L.Div = {
-    val afterAllRepsLabel =
+    val shape =
       Signal.combine(stepSignal, forester.signal).map { (step, forest) =>
-        val inLoop = forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions).product * step.repetitions > 1
-        val hasSubsteps = forest.children(step.id).nonEmpty
+        Shape(
+          repeats = forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions).product * step.repetitions > 1,
+          hasSubsteps = forest.children(step.id).nonEmpty
+        )
+      }.distinct
 
-        if (inLoop)
+    val afterAllRepsLabel =
+      shape.map(shape =>
+        if (shape.repeats)
           Some("After all reps")
-        else if (hasSubsteps)
+        else if (shape.hasSubsteps)
           Some("After its substeps")
         else
           None
-      }.distinct
+      ).distinct
 
     L.div(
       L.cls(Styles.control),
@@ -51,7 +56,7 @@ object RenderModeControl {
           ),
           externalSignal = renderMode.signal,
           externalConsumer = renderMode.writer,
-          renderOption(_, _, _, _, afterAllRepsLabel, tooltip)
+          renderOption(_, _, _, _, afterAllRepsLabel, shape, tooltip)
         )
       ),
       afterAllRepsLabel --> renderMode.updater[Option[String]]((mode, label) =>
@@ -67,6 +72,7 @@ object RenderModeControl {
     radio: L.Input,
     label: L.Label,
     afterAllRepsLabel: Signal[Option[String]],
+    shape: Signal[Shape],
     tooltip: Tooltip
   ): List[L.HtmlElement] =
     mode match {
@@ -79,7 +85,7 @@ object RenderModeControl {
             L.display <-- displayStyle,
             L.text <-- afterAllRepsLabel.map(_.getOrElse("")),
             tooltip.register(
-              L.span(L.cls(Styles.tooltip), modeTooltip(mode)),
+              L.span(L.cls(Styles.tooltip), L.text <-- shape.map(modeTooltip(mode, _))),
               FloatingConfig.basicTooltip(Placement.bottom)
             )
           )
@@ -92,7 +98,7 @@ object RenderModeControl {
             L.cls <-- checked.map(if (_) Styles.selected else Styles.option),
             modeLabel(mode),
             tooltip.register(
-              L.span(L.cls(Styles.tooltip), modeTooltip(mode)),
+              L.span(L.cls(Styles.tooltip), L.text <-- shape.map(modeTooltip(mode, _))),
               FloatingConfig.basicTooltip(Placement.bottom)
             )
           )
@@ -106,14 +112,31 @@ object RenderModeControl {
       case RenderMode.AfterAllReps => "" // Unreachable
     }
 
-  private def modeTooltip(mode: RenderMode): String =
-    mode match {
-      case RenderMode.Before =>
+  /** What the focused step is like, which decides what the options mean
+    *
+    * @param repeats whether the step runs more than once, because it repeats or is in a loop
+    */
+  private final case class Shape(repeats: Boolean, hasSubsteps: Boolean)
+
+  /** Each tooltip only mentions the substeps and repetitions the step has */
+  private def modeTooltip(mode: RenderMode, shape: Shape): String =
+    (mode, shape.repeats, shape.hasSubsteps) match {
+      case (RenderMode.Before, _, _) =>
         "Your character just before this step"
-      case RenderMode.AfterEffects =>
-        "Your character after this step's own effects, before its substeps and any repetitions"
-      case RenderMode.AfterAllReps =>
-        "Your character once this step, its substeps and all its repetitions are done, including any loops it's in"
+      case (RenderMode.AfterEffects, false, false) =>
+        "Your character after this step"
+      case (RenderMode.AfterEffects, false, true) =>
+        "Your character after this step's own effects, before its substeps"
+      case (RenderMode.AfterEffects, true, false) =>
+        "Your character after the first time through this step"
+      case (RenderMode.AfterEffects, true, true) =>
+        "Your character after this step's own effects, the first time through, before its substeps"
+      case (RenderMode.AfterAllReps, true, true) =>
+        "Your character once this step and its substeps have finished repeating"
+      case (RenderMode.AfterAllReps, true, false) =>
+        "Your character once this step has finished repeating"
+      case (RenderMode.AfterAllReps, false, _) =>
+        "Your character once this step and its substeps are done"
     }
 
   @js.native @JSImport("/styles/planning/section/renderModeControl.module.css", JSImport.Default)
