@@ -1,7 +1,7 @@
 package com.leagueplans.ui.model.player.item
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
+import com.leagueplans.ui.model.plan.{ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind
@@ -55,53 +55,6 @@ object ItemEffects {
   /** Whether a place can be filled with the item: only where each item takes a slot of its own */
   def canFill(item: Item, noted: Boolean, target: Depository.Kind): Boolean =
     target == Kind.Inventory && !item.stackable && !noted
-
-  /** Adds an effect to a step's effects. When it merges with an earlier effect, whatever the merge
-    * leaves that would come to nothing at this step is dropped too: unequipping everything just
-    * after equipping it, say, leaves a move of everything that's equipped, which is nothing if
-    * nothing was equipped when the step started.
-    *
-    * @param playerAtStart the player before the step's effects apply, if it's known. Without it,
-    *                      nothing is dropped.
-    */
-  def addToStep(effects: EffectList, effect: Effect, playerAtStart: Option[Player], items: Item.ID => Item): EffectList = {
-    val entries = effects.addMarkingMerges(effect, items)
-    playerAtStart.fold(EffectList(entries.map(_.effect)))(withoutMergedNoOps(entries, _, items))
-  }
-
-  /** Merges a step's effects again after one is deleted, reordered or edited, dropping what the
-    * merges leave that comes to nothing at this step, as `addToStep` does
-    *
-    * @param playerAtStart the player before the step's effects apply, if it's known
-    */
-  def reconcileStep(effects: EffectList, playerAtStart: Option[Player], items: Item.ID => Item): EffectList = {
-    val entries = effects.reconciledMarkingMerges(items)
-    playerAtStart.fold(EffectList(entries.map(_.effect)))(withoutMergedNoOps(entries, _, items))
-  }
-
-  /** Drops the effects that came from merging and come to nothing where they apply */
-  private def withoutMergedNoOps(entries: List[EffectList.Entry], playerAtStart: Player, items: Item.ID => Item): EffectList = {
-    val (_, kept) = entries.foldLeft((playerAtStart, List.empty[Effect])) { case ((player, kept), entry) =>
-      val keep = !entry.merged || !comesToNothing(entry.effect, player, items)
-      (applyIfItem(player, entry.effect, items), if (keep) kept :+ entry.effect else kept)
-    }
-    EffectList(kept)
-  }
-
-  /** Whether an effect that's worked out where it applies changes nothing */
-  private def comesToNothing(effect: Effect, player: Player, items: Item.ID => Item): Boolean =
-    effect match {
-      case e @ AddItem(_, ItemChange.Fill | ItemChange.Empty, _, _) => count(e, player, items) == 0
-      case e @ MoveItem(_, ItemQuantity.Max, _, _, _, _) => count(e, player, items) == 0
-      case DepositAll(source) => deposits(source, player, items).isEmpty
-      case _ => false
-    }
-
-  private def applyIfItem(player: Player, effect: Effect, items: Item.ID => Item): Player =
-    effect match {
-      case e: (AddItem | MoveItem | DepositAll) => apply(player, e, items)
-      case _ => player
-    }
 
   /** How many more of an item a place has room for, or None if there's no limit, as for a stack
     * that's already held. Each unstacked item in the inventory takes a slot of its own. */

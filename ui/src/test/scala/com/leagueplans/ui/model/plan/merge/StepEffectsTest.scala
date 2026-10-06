@@ -1,16 +1,20 @@
-package com.leagueplans.ui.model.plan
+package com.leagueplans.ui.model.plan.merge
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{InfoboxKey, Item}
+import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
+import com.leagueplans.ui.model.player.league.LeagueStatus
+import com.leagueplans.ui.model.player.skill.Stats
+import com.leagueplans.ui.model.player.{GridStatus, Player}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-final class EffectListMergeTest extends AnyFreeSpec with Matchers {
+final class StepEffectsTest extends AnyFreeSpec with Matchers {
   private val logs = Item.ID(1)
   private val lobster = Item.ID(2)
   private val arrows = Item.ID(3)
@@ -38,10 +42,22 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
   private def bank(quantity: ItemQuantity, item: Item.ID = logs): MoveItem = move(item, quantity, Kind.Inventory, Kind.Bank)
   private def add(change: ItemChange, item: Item.ID = logs): AddItem = AddItem(item, change, Kind.Inventory, note = false)
 
-  private def merged(effects: Effect*): List[Effect] =
-    effects.foldLeft(EffectList.empty)(_.add(_, items)).underlying
+  private def player(contents: ((Depository.Kind, Item.ID), Int)*): Player =
+    Player(
+      Stats(),
+      contents
+        .groupBy { case ((kind, _), _) => kind }
+        .map((kind, entries) => kind -> Depository(entries.map { case ((_, item), n) => (item, false) -> n }.toMap, kind)),
+      Set.empty,
+      Set.empty,
+      LeagueStatus(0, Set.empty, Set.empty),
+      GridStatus(Set.empty)
+    )
 
-  "EffectList" - {
+  private def merged(effects: Effect*): List[Effect] =
+    effects.foldLeft(EffectList.empty)(StepEffects.add(_, _, playerAtStart = None, items)).underlying
+
+  "StepEffects" - {
     "adds up exact amounts of the same move" in {
       merged(withdraw(Exact(2)), withdraw(Exact(3))) shouldBe List(withdraw(Exact(5)))
     }
@@ -132,17 +148,42 @@ final class EffectListMergeTest extends AnyFreeSpec with Matchers {
 
     "when reconciled, merges effects that can now meet, without keeping later choices" in {
       val removeLobsters = add(ItemChange.By(-3), lobster)
-      EffectList(List(withdraw(Exact(2)), withdraw(Exact(3)))).reconciled(items).underlying shouldBe List(withdraw(Exact(5)))
+      StepEffects.reconcile(EffectList(List(withdraw(Exact(2)), withdraw(Exact(3)))), playerAtStart = None, items).underlying shouldBe List(withdraw(Exact(5)))
       // Deleting what separated a fill from an exact addition doesn't replace the fill
-      EffectList(List(add(ItemChange.Fill), add(ItemChange.By(2)))).reconciled(items).underlying shouldBe
+      StepEffects.reconcile(EffectList(List(add(ItemChange.Fill), add(ItemChange.By(2)))), playerAtStart = None, items).underlying shouldBe
         List(add(ItemChange.Fill), add(ItemChange.By(2)))
-      EffectList(List(withdraw(Exact(2)), removeLobsters, withdraw(Exact(3)))).reconciled(items).underlying shouldBe
+      StepEffects.reconcile(EffectList(List(withdraw(Exact(2)), removeLobsters, withdraw(Exact(3)))), playerAtStart = None, items).underlying shouldBe
         List(withdraw(Exact(2)), removeLobsters, withdraw(Exact(3)))
     }
 
     "merges past effects that don't touch what the later one does" in {
       merged(withdraw(Exact(2)), withdraw(Exact(4), lobster), Effect.CompleteQuest(1), withdraw(Exact(3))) shouldBe
         List(withdraw(Exact(5)), withdraw(Exact(4), lobster), Effect.CompleteQuest(1))
+    }
+    "drops what a merge leaves that comes to nothing at the step" - {
+      val equip = move(arrows, Max, Kind.Bank, EquipmentSlot.Ammo)
+      val unequip = move(arrows, Max, EquipmentSlot.Ammo, Kind.Bank)
+      def added(start: Player, effects: Effect*) =
+        effects.foldLeft(EffectList.empty)(StepEffects.add(_, _, Some(start), items)).underlying
+
+      "when an effect is added" in {
+        // Nothing was equipped, so unequipping everything equipped does nothing
+        added(player((Kind.Bank, arrows) -> 100), equip, unequip) shouldBe empty
+        // Something was, so it still unequips that
+        added(player((Kind.Bank, arrows) -> 100, (EquipmentSlot.Ammo, arrows) -> 5), equip, unequip) shouldBe List(unequip)
+      }
+
+      "but keeps an effect that comes to nothing when it's added on its own" in {
+        added(player(), unequip) shouldBe List(unequip)
+      }
+
+      "when reconciled, but not what was already there, nor without the player at the start" in {
+        val start = player((Kind.Bank, arrows) -> 100)
+        // As after deleting what separated the equip from the unequip
+        StepEffects.reconcile(EffectList(List(equip, unequip)), Some(start), items).underlying shouldBe empty
+        StepEffects.reconcile(EffectList(List(unequip)), Some(start), items).underlying shouldBe List(unequip)
+        StepEffects.reconcile(EffectList(List(equip, unequip)), None, items).underlying shouldBe List(unequip)
+      }
     }
   }
 }

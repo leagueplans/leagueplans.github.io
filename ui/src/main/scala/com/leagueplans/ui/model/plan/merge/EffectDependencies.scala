@@ -1,6 +1,7 @@
-package com.leagueplans.ui.model.plan
+package com.leagueplans.ui.model.plan.merge
 
 import com.leagueplans.common.model.Item
+import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.Depository.Kind
@@ -9,7 +10,7 @@ import com.leagueplans.ui.model.player.item.Depository.Kind
   * swap places without changing what the step does. An effect can only merge with an earlier
   * one if it can move back next to it.
   */
-private[plan] object EffectDependencies {
+private[merge] object EffectDependencies {
   enum Resource {
     /** The items in a stack. `None` stands for any item, or either noted state. */
     case Stack(item: Option[Item.ID], noted: Option[Boolean], place: Depository.Kind)

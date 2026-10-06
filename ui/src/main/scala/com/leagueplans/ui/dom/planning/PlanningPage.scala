@@ -8,7 +8,7 @@ import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
-import com.leagueplans.ui.model.player.item.ItemEffects
+import com.leagueplans.ui.model.plan.merge.StepEffects
 import com.leagueplans.ui.model.player.{Cache, FocusContext, Player}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -215,7 +215,7 @@ object PlanningPage {
           case effects: Seq[Effect @unchecked] => effects
         }
         forester.update(focusedStep.id, step =>
-          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(ItemEffects.addToStep(_, _, player, cache.items)))
+          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(StepEffects.add(_, _, player, cache.items)))
         )
       }
     ))

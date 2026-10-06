@@ -1,7 +1,8 @@
-package com.leagueplans.ui.model.plan
+package com.leagueplans.ui.model.plan.merge
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
+import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -18,7 +19,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
   * the merged effects give the same player as the effects applied one by one, and run without
   * problems wherever the effects did. The later choice between an exact amount and the most
   * deliberately changes the result, so it's left out here. */
-final class EffectListPropertyTest extends AnyFreeSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+final class StepEffectsPropertyTest extends AnyFreeSpec with Matchers with ScalaCheckDrivenPropertyChecks {
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 5000)
 
@@ -139,7 +140,7 @@ final class EffectListPropertyTest extends AnyFreeSpec with Matchers with ScalaC
       forAll(playerGen, Gen.choose(1, 7).flatMap(Gen.listOfN(_, effectGen))) { (player, effects) =>
         run(player, effects).foreach { expected =>
           checked += 1
-          val merged = effects.foldLeft(EffectList.empty)(_.plus(_, items, keepLatestChoice = false)).underlying
+          val merged = effects.foldLeft(EffectList.empty)(StepEffects.merged(_, _, items, keepLatestChoice = false)).underlying
           withClue(s"Merged $effects into $merged, from ${contents(player)}:") {
             run(player, merged).map(contents) shouldBe Some(contents(expected))
           }

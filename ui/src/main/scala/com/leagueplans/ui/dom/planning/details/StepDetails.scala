@@ -8,6 +8,7 @@ import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, EffectList, Requirement, Step}
+import com.leagueplans.ui.model.plan.merge.StepEffects
 import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -62,7 +63,7 @@ object StepDetails {
     // Deleting, reordering or editing an effect can let others merge
     def updateEffects(f: List[Effect] => List[Effect]): Unit =
       current.foreach(step => forester.update(step.id, s => s.deepCopy(directEffects =
-        ItemEffects.reconcileStep(EffectList(f(s.directEffects.underlying)), currentPlayerBefore, cache.items)
+        StepEffects.reconcile(EffectList(f(s.directEffects.underlying)), currentPlayerBefore, cache.items)
       )))
     def updateRequirements(f: List[Requirement] => List[Requirement]): Unit =
       current.foreach(step => forester.update(step.id, s => s.deepCopy(requirements = f(s.requirements))))

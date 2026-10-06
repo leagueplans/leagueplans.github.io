@@ -3,8 +3,8 @@ package com.leagueplans.ui.dom.planning.drag
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged.{DraggedEffect, DraggedRequirement, DraggedStepContent}
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{EffectList, Requirement, Step}
+import com.leagueplans.ui.model.plan.merge.StepEffects
 import com.leagueplans.ui.model.player.Player
-import com.leagueplans.ui.model.player.item.ItemEffects
 
 /** Moves an effect or requirement dragged out of one step's details onto another step */
 object StepContentTransfer {
@@ -36,9 +36,9 @@ object StepContentTransfer {
       case DraggedEffect(_, index, effect) =>
         Option.when(source.directEffects.underlying.lift(index).contains(effect))((
           source = source.deepCopy(directEffects =
-            ItemEffects.reconcileStep(EffectList(source.directEffects.underlying.patch(index, Nil, 1)), sourcePlayerBefore, items)
+            StepEffects.reconcile(EffectList(source.directEffects.underlying.patch(index, Nil, 1)), sourcePlayerBefore, items)
           ),
-          target = target.deepCopy(directEffects = EffectList(target.directEffects.underlying :+ effect).reconciled(items))
+          target = target.deepCopy(directEffects = StepEffects.reconcile(EffectList(target.directEffects.underlying :+ effect), playerAtStart = None, items))
         ))
 
       case DraggedRequirement(_, index, requirement) =>
