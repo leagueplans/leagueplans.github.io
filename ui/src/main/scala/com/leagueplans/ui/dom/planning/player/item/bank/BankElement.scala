@@ -66,7 +66,7 @@ object BankElement {
         ),
         // The same search finds items to add
         L.child.maybe <-- query.signal.map(ItemQuery.isEmpty).distinct.map(isEmpty =>
-          Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards))
+          Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards, tooltip))
         )
       ),
       footer(stacks.map(_.size))
@@ -105,8 +105,8 @@ object BankElement {
       L.input(
         L.cls(Styles.searchInput),
         L.tpe("search"),
-        L.placeholder("Search the bank, or find any item to add"),
-        L.aria.label("Search the bank, or find any item to add"),
+        L.placeholder("Search the bank and all items"),
+        L.aria.label("Search the bank and all items"),
         L.autoComplete("off"),
         L.controlled(L.value <-- query.signal, L.onInput.mapToValue --> query.writer)
       ),

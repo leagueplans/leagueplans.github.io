@@ -1,26 +1,34 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.dom.planning.player.item.StackIcon
+import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackIcon}
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.model.player.item.{Depository, ItemIdentity, ItemMatcher, ItemStack}
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
+import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 /** Beneath the bank's own matches, the bank search lists every item that matches, including
-  * ones already held, so that it doubles as the way to add items. Results show enough to tell
-  * variants apart: the variant as a chip, examine text and held counts.
+  * ones already held, so that it doubles as the way to add items. The results are small tiles
+  * that show enough to tell variants apart, with more in their tooltips.
   */
 object AddResults {
   private val limit = 30
 
-  def apply(query: Signal[String], playerSignal: Signal[Player], cache: Cache, itemCards: ItemCards): L.Div = {
+  def apply(
+    query: Signal[String],
+    playerSignal: Signal[Player],
+    cache: Cache,
+    itemCards: ItemCards,
+    tooltip: Tooltip
+  ): L.Div = {
     val matcher = ItemMatcher(cache.items.values)
     val matches = query.map(matcher.rank).distinct
 
@@ -38,32 +46,37 @@ object AddResults {
         )
       ),
       L.ol(
-        L.cls(Styles.rows),
+        L.cls(Styles.tiles),
         L.children <-- matches.map(_.take(limit)).split(_.id)((_, item, _) =>
-          L.li(row(item, playerSignal, itemCards))
+          L.li(tile(item, playerSignal, itemCards, tooltip))
         )
       )
     )
   }
 
-  private def row(item: Item, playerSignal: Signal[Player], itemCards: ItemCards): L.Button = {
+  /** A tile with the item's icon and name, and its variant beneath. The examine text and held
+    * counts are in its tooltip, to keep the tiles small. */
+  private def tile(item: Item, playerSignal: Signal[Player], itemCards: ItemCards, tooltip: Tooltip): L.Button = {
     val identity = ItemIdentity(item)
     L.button(
-      L.cls(Styles.row),
+      L.cls(Styles.tile),
       L.tpe("button"),
+      L.aria.label(s"Add ${item.name}"),
       L.div(L.cls(Styles.icon), StackIcon(ItemStack(item, noted = false, quantity = 1))),
       L.div(
         L.cls(Styles.text),
-        L.span(
-          L.cls(Styles.name),
-          identity.base,
-          identity.variants.map(variant => L.span(L.cls(Card.Styles.chip), variant))
-        ),
-        L.span(L.cls(Styles.details), item.examine)
+        L.span(L.cls(Styles.name), identity.base),
+        L.when(identity.variants.nonEmpty)(L.span(L.cls(Styles.variant), identity.variants.mkString(" · ")))
       ),
-      L.span(L.cls(Styles.held), L.text <-- playerSignal.map(held(item, _))),
-      L.span(L.cls(Styles.plus), "+"),
-      itemCards.addTrigger(item)
+      itemCards.addTrigger(item),
+      L.inContext(node =>
+        tooltip.register(
+          // As the stacks' tooltips are
+          StackElement.tooltipContents(item, playerSignal.map(held(item, _)).map(held => Option.when(held.nonEmpty)(held))),
+          FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
+          suppressed = itemCards.isOpenOn(node.ref)
+        )
+      )
     )
   }
 
@@ -81,13 +94,11 @@ object AddResults {
   private object Styles extends js.Object {
     val results: String = js.native
     val summary: String = js.native
-    val rows: String = js.native
-    val row: String = js.native
+    val tiles: String = js.native
+    val tile: String = js.native
     val icon: String = js.native
     val text: String = js.native
     val name: String = js.native
-    val details: String = js.native
-    val held: String = js.native
-    val plus: String = js.native
+    val variant: String = js.native
   }
 }

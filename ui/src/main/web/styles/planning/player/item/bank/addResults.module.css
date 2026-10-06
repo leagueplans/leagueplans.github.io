@@ -16,24 +16,26 @@
   font-size: 0.75rem;
 }
 
-.rows {
+/* As many tiles to a row as fit, so the results take little space */
+.tiles {
   margin: 0;
   padding: 0;
   list-style: none;
 
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 3px;
 }
 
-.row {
+.tile {
   width: 100%;
-  padding: 3px 8px 3px 4px;
+  height: 100%;
+  padding: 2px 6px 2px 2px;
   box-sizing: border-box;
 
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 
   border: 1px solid transparent;
   border-radius: 4px;
@@ -44,7 +46,7 @@
   cursor: pointer;
 }
 
-.row:hover, .row:focus-visible {
+.tile:hover, .tile:focus-visible {
   border-color: #5d5243;
   background-color: rgba(255, 255, 255, 0.06);
   outline: none;
@@ -63,41 +65,21 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
-.name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-
-  font-size: 0.82rem;
-  font-weight: 500;
-}
-
-.details {
+.name, .variant {
   overflow: hidden;
-  color: var(--text-muted);
-  font-size: 0.72rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.held {
-  flex: none;
-  color: #ffff00;
-  font-size: 0.7rem;
-  white-space: nowrap;
+.name {
+  font-size: 0.78rem;
+  font-weight: 500;
 }
 
-.plus {
-  flex: none;
-  width: 18px;
-
-  color: var(--green);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: center;
+.variant {
+  color: var(--text-muted);
+  font-size: 0.68rem;
 }

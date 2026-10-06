@@ -27,7 +27,11 @@ object StackElement {
       StackIcon(stack),
       StackQuantityElement(stack.quantity).amend(L.cls(Styles.stackSize)),
       L.inContext(node =>
-        tooltip.register(toTooltipContents(stack.item, stack.quantity), tooltipConfig, hideTooltip(node.ref))
+        tooltip.register(
+          tooltipContents(stack.item, Signal.fromValue(Option.when(stack.quantity > 1)(s"Count: ${stack.quantity.withCommas}"))),
+          tooltipConfig,
+          hideTooltip(node.ref)
+        )
       )
     )
 
@@ -41,16 +45,13 @@ object StackElement {
     val tooltipCount: String = js.native
   }
 
-  private def toTooltipContents(item: Item, quantity: Int): L.Div =
+  /** An item's tooltip: its name, its examine text, and a line about how many there are, if any.
+    * Shared with anything else that shows an item, such as the bank search's results. */
+  def tooltipContents(item: Item, countLine: Signal[Option[String]]): L.Div =
     L.div(
       L.cls(Styles.tooltip),
       L.p(L.cls(Styles.tooltipHeader), item.name),
-      L.p(L.cls(Styles.tooltipExamine), item.examine),
-      L.when(quantity > 1)(
-        L.p(
-          L.cls(Styles.tooltipCount),
-          s"Count: ${quantity.withCommas}"
-        )
-      )
+      L.when(item.examine.nonEmpty)(L.p(L.cls(Styles.tooltipExamine), item.examine)),
+      L.child.maybe <-- countLine.map(_.map(line => L.p(L.cls(Styles.tooltipCount), line)))
     )
 }
