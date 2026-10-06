@@ -3,7 +3,9 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 32px;
+  /* The same height as the step details' and the sections' headers, borders included */
+  box-sizing: border-box;
+  min-height: 36px;
   padding: 0 6px 0 4px;
 
   background-color: var(--navy-bar);
