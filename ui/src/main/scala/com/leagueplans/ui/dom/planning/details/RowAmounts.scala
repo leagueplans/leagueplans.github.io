@@ -12,8 +12,9 @@ object RowAmounts {
 
   /** @param label how the amount is shown on the row
     * @param editText the text the box starts with when the amount is edited
+    * @param counted whether it's a count of items, which the arrow keys step up and down
     */
-  final case class Amount(label: String, editText: String, tone: Tone)
+  final case class Amount(label: String, editText: String, tone: Tone, counted: Boolean = false)
 
   /** The most base exp a single effect can hold */
   val maxExp: Int = 200000000
@@ -23,15 +24,15 @@ object RowAmounts {
       case Effect.GainExp(_, exp) =>
         Some(Amount(s"+${formatExp(exp)}", formatExp(exp).replace(",", ""), Tone.Gain))
       case Effect.AddItem(_, ItemChange.Fill, _, _) =>
-        Some(Amount("+max", "max", Tone.Gain))
+        Some(Amount("+max", "max", Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) if n < 0 =>
-        Some(Amount(s"−${formatCount(-n)}", (-n).toString, Tone.Loss))
+        Some(Amount(s"−${formatCount(-n)}", (-n).toString, Tone.Loss, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) =>
-        Some(Amount(s"+${formatCount(n)}", n.toString, Tone.Gain))
+        Some(Amount(s"+${formatCount(n)}", n.toString, Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.Empty, _, _) =>
-        Some(Amount("−max", "max", Tone.Loss))
+        Some(Amount("−max", "max", Tone.Loss, counted = true))
       case Effect.MoveItem(_, quantity, _, _, _, _) =>
-        Some(Amount(label(quantity), editText(quantity), Tone.Neutral))
+        Some(Amount(label(quantity), editText(quantity), Tone.Neutral, counted = true))
       case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask |
                Effect.CompleteLeagueTask | Effect.CompleteGridTile | Effect.DepositAll) =>
         None
@@ -49,6 +50,10 @@ object RowAmounts {
       case e: Effect.MoveItem => parseQuantity(text).map(q => e.copy(quantity = q))
       case _ => Left("This effect has no amount")
     }
+
+  /** The text after the up (1) or down (-1) arrow key in the box editing an amount, if it steps */
+  def step(amount: Amount, text: String, by: Int): Option[String] =
+    if (amount.counted) ItemQuantity.stepped(text, by) else None
 
   private def changeOf(quantity: ItemQuantity, all: ItemChange, signed: Int => Int): ItemChange =
     quantity match {

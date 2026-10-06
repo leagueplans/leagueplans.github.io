@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
+import com.leagueplans.ui.dom.planning.player.item.{AmountStepKeys, ItemActionRunner}
 import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.ItemActions.Action
@@ -131,6 +131,7 @@ object BankFooter {
       L.placeholder("Amount"),
       L.value <-- lastX.signal.map(_.map(_.toString).getOrElse("")),
       L.onMountCallback(ctx => { ctx.thisNode.ref.focus(); ctx.thisNode.ref.select() }),
+      AmountStepKeys(),
       L.inContext(node =>
         List(
           L.onKeyDown.filter(_.key == KeyValue.Enter) --> (_ => node.ref.blur()),

@@ -46,6 +46,27 @@ final class ItemQuantityTest extends AnyFreeSpec with Matchers {
     }
   }
 
+  "ItemQuantity.stepped" - {
+    "steps a count up and down by one, writing it out in full" in {
+      ItemQuantity.stepped("10", 1) shouldBe Some("11")
+      ItemQuantity.stepped("10k", -1) shouldBe Some("9999")
+      ItemQuantity.stepped("1.5", 1) shouldBe Some("2")
+    }
+
+    "stays from 1 to the most a stack holds" in {
+      ItemQuantity.stepped("1", -1) shouldBe Some("1")
+      ItemQuantity.stepped("", 1) shouldBe Some("1")
+      ItemQuantity.stepped("0", -1) shouldBe Some("1")
+      ItemQuantity.stepped("2147483647", 1) shouldBe Some("2147483647")
+      ItemQuantity.stepped("5b", -1) shouldBe Some("2147483647")
+    }
+
+    "leaves max and other text alone" in {
+      ItemQuantity.stepped("max", 1) shouldBe None
+      ItemQuantity.stepped("lots", -1) shouldBe None
+    }
+  }
+
   "ItemQuantity.parse" - {
     "reads max and all as Max" in {
       ItemQuantity.parse("Max") shouldBe Right(ItemQuantity.Max)

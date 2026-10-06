@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
-import com.leagueplans.ui.dom.planning.player.item.StackIcon
+import com.leagueplans.ui.dom.planning.player.item.{AmountStepKeys, StackIcon}
 import com.leagueplans.ui.model.plan.{ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind
@@ -35,7 +35,8 @@ object ItemCardParts {
         L.idAttr(id),
         L.tpe("text"),
         L.inputMode("decimal"),
-        L.controlled(L.value <-- amountText.signal, L.onInput.mapToValue --> amountText.writer)
+        L.controlled(L.value <-- amountText.signal, L.onInput.mapToValue --> amountText.writer),
+        AmountStepKeys(amountText.writer)
       ),
       L.span(
         L.cls(Card.Styles.segments),

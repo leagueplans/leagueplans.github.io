@@ -139,7 +139,8 @@ object RowList {
                 onCommit = commits.writer,
                 onStatus = editStatus.writer,
                 startEditing = editRequests.withCurrentValueOf(index).collect { case (requested, i) if requested == i => () },
-                inputMode = "decimal"
+                inputMode = "decimal",
+                step = (v, text, by) => amount(v).flatMap(RowAmounts.step(_, text, by))
               ).amend(L.cls(Styles.amount))
             )
           ),

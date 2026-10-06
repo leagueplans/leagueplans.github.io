@@ -23,15 +23,15 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
     }
 
     "shows whether items are added or removed" in {
-      RowAmounts.of(addLogs) shouldBe Some(Amount("+25", "25", Tone.Gain))
-      RowAmounts.of(removeLogs) shouldBe Some(Amount("−25", "25", Tone.Loss))
-      RowAmounts.of(moveLogs) shouldBe Some(Amount("1,250", "1250", Tone.Neutral))
+      RowAmounts.of(addLogs) shouldBe Some(Amount("+25", "25", Tone.Gain, counted = true))
+      RowAmounts.of(removeLogs) shouldBe Some(Amount("−25", "25", Tone.Loss, counted = true))
+      RowAmounts.of(moveLogs) shouldBe Some(Amount("1,250", "1250", Tone.Neutral, counted = true))
     }
 
     "shows Max as max" in {
-      RowAmounts.of(moveLogs.copy(quantity = ItemQuantity.Max)) shouldBe Some(Amount("max", "max", Tone.Neutral))
-      RowAmounts.of(removeLogs.copy(change = ItemChange.Empty)) shouldBe Some(Amount("−max", "max", Tone.Loss))
-      RowAmounts.of(addLogs.copy(change = ItemChange.Fill)) shouldBe Some(Amount("+max", "max", Tone.Gain))
+      RowAmounts.of(moveLogs.copy(quantity = ItemQuantity.Max)) shouldBe Some(Amount("max", "max", Tone.Neutral, counted = true))
+      RowAmounts.of(removeLogs.copy(change = ItemChange.Empty)) shouldBe Some(Amount("−max", "max", Tone.Loss, counted = true))
+      RowAmounts.of(addLogs.copy(change = ItemChange.Fill)) shouldBe Some(Amount("+max", "max", Tone.Gain, counted = true))
     }
 
     "has no amount for completions" in {

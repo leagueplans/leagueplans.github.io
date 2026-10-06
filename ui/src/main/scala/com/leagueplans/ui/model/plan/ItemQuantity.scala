@@ -44,6 +44,18 @@ object ItemQuantity {
       case _ => Left(Problem.Unreadable)
     }
 
+  /** The text for a count one step up or down from the typed one, as a number box's arrow keys
+    * give, going no lower than 1. Nothing for "max", or text that isn't a count. */
+  def stepped(text: String, by: Int): Option[String] =
+    if (text.trim.isEmpty) Some("1")
+    else
+      parseCount(text) match {
+        case Right(count) => Some((count.toLong + by).max(1).min(Int.MaxValue).toString)
+        case Left(Problem.BelowOne) => Some("1")
+        case Left(Problem.AboveMax) => Some(Int.MaxValue.toString)
+        case Left(Problem.Unreadable) => None
+      }
+
   private val countPattern = """(\d+\.?\d*|\.\d+)([kKmMbB])?""".r
 
   private val multipliers: Map[Char, BigDecimal] =

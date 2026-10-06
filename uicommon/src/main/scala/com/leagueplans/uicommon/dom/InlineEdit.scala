@@ -2,7 +2,8 @@ package com.leagueplans.uicommon.dom
 
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.laminar.api.{L, enrichSource}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor}
+import org.scalajs.dom.KeyValue
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -21,6 +22,8 @@ object InlineEdit {
     * @param onStatus told what the box's text parses to as it's typed, and `None` once the box
     *                 closes, so the caller can show why text can't be saved
     * @param startEditing opens the box without a click
+    * @param step the text for the box after the up (1) or down (-1) arrow key, given the value the
+    *             edit started from, as a number box steps; nothing leaves the keys to move the caret
     */
   def apply[T](
     value: Signal[T],
@@ -32,7 +35,8 @@ object InlineEdit {
     onStatus: Observer[Option[Either[String, T]]] = Observer.empty,
     startEditing: EventStream[Unit] = EventStream.empty,
     placeholder: String = "",
-    inputMode: String = "text"
+    inputMode: String = "text",
+    step: (T, String, Int) => Option[String] = (_: T, _: String, _: Int) => None
   ): L.Span = {
     val draft = TextDraft(toText, parse, onCommit)
 
@@ -45,7 +49,20 @@ object InlineEdit {
             L.inputMode(inputMode),
             L.placeholder(placeholder),
             L.aria.label <-- label,
-            draft.input
+            draft.input,
+            L.inContext(node =>
+              L.onKeyDown.compose(_.withCurrentValueOf(value)) --> { (event, original) =>
+                val by = event.key match {
+                  case KeyValue.ArrowUp => 1
+                  case KeyValue.ArrowDown => -1
+                  case _ => 0
+                }
+                if (by != 0) step(original, node.ref.value, by).foreach { text =>
+                  event.preventDefault()
+                  draft.setText.onNext(text)
+                }
+              }
+            )
           ),
         whenFalse = _ =>
           Button(_.handledWith(_.sample(value)) --> draft.start).amend(
