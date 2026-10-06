@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.player.item.equipment
 
-import com.leagueplans.ui.dom.planning.player.item.StackElement
+import com.leagueplans.ui.dom.planning.player.item.{StackElement, StackIcon}
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
@@ -8,10 +8,9 @@ import com.leagueplans.ui.model.player.item.ItemActions.Holding
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
-import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
-import com.leagueplans.uicommon.utils.laminar.FontAwesome
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.laminar.api.{L, textToInserter}
+import com.raquo.laminar.api.{L, nodeOptionToModifier, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -33,32 +32,28 @@ object EquipmentSlotElement {
         L.src(toBackground(slot, stacks.isEmpty)),
         L.alt(slot.name)
       ),
-      stacks match {
-        case Nil => L.emptyNode
-        case stack :: Nil =>
-          StackElement(
-            stack,
-            tooltip,
-            tooltipConfig = FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
-            hideTooltip = itemCards.isOpenOn
-          ).amend(
-            L.cls(Styles.contents),
-            itemCards.trigger(Holding(stack.item, stack.noted, slot)),
-            itemDrag.source(Holding(stack.item, stack.noted, slot))
-          )
-        case _ =>
-          L.div(
-            L.cls(Styles.contents),
-            FontAwesome.icon(FreeSolid.faTriangleExclamation).amend(L.svg.cls(Styles.warningIcon)),
-            tooltip.register(
-              L.p(
-                L.cls(Styles.warningTooltip),
-                "Multiple items are occupying this slot"
-              ),
-              FloatingConfig.basicTooltip(Placement.bottom, offset = 6)
-            )
-          )
-      }
+      // A slot holding more than one item, which a plan can lead to, is hatched as the inventory's
+      // extras are. It shows its first item, and how many it holds in the corner opposite the
+      // item's own count.
+      L.when(stacks.size > 1)(
+        List(
+          L.cls(Styles.conflict),
+          L.span(L.cls(Styles.conflictCount), s"×${stacks.size}")
+        )
+      ),
+      stacks.headOption.map(stack =>
+        StackElement(
+          stack,
+          tooltip,
+          tooltipConfig = FloatingConfig.basicTooltip(Placement.bottom, offset = 6),
+          hideTooltip = itemCards.isOpenOn,
+          customTooltip = Option.when(stacks.size > 1)(conflictTooltip(slot, stacks))
+        ).amend(
+          L.cls(Styles.contents),
+          itemCards.trigger(Holding(stack.item, stack.noted, slot)),
+          itemDrag.source(Holding(stack.item, stack.noted, slot))
+        )
+      )
     )
 
   private object Backgrounds {
@@ -88,13 +83,32 @@ object EquipmentSlotElement {
     val weapon: String = js.native
   }
 
+  private def conflictTooltip(slot: EquipmentSlot, stacks: List[ItemStack]): L.Div =
+    L.div(
+      L.cls(Styles.conflictTooltip),
+      L.p(slot.name),
+      L.p(L.cls(Styles.conflictNote), s"Holds ${stacks.size} items, but only has room for 1"),
+      L.ul(
+        L.cls(Styles.conflictItems),
+        stacks.map(stack =>
+          L.li(
+            StackIcon(stack),
+            if (stack.quantity > 1) s"${stack.quantity.withCommas} × ${stack.item.name}" else stack.item.name
+          )
+        )
+      )
+    )
+
   @js.native @JSImport("/styles/planning/player/item/equipment/equipmentSlotElement.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val slot: String = js.native
     val contents: String = js.native
     val background: String = js.native
-    val warningIcon: String = js.native
-    val warningTooltip: String = js.native
+    val conflict: String = js.native
+    val conflictCount: String = js.native
+    val conflictTooltip: String = js.native
+    val conflictNote: String = js.native
+    val conflictItems: String = js.native
   }
 
   private def toBackground(slot: EquipmentSlot, isEmpty: Boolean): String =

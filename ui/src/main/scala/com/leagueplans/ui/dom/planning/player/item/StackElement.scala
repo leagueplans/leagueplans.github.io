@@ -15,12 +15,14 @@ import scala.scalajs.js.annotation.JSImport
 object StackElement {
   /** @param hideTooltip whether to hide the stack's tooltip, given the stack's element, such as
     *                    while the stack's card is open
+    * @param customTooltip what the tooltip shows, if not the stack's own details
     */
   def apply(
     stack: ItemStack,
     tooltip: Tooltip,
     tooltipConfig: FloatingConfig,
-    hideTooltip: Element => Signal[Boolean]
+    hideTooltip: Element => Signal[Boolean],
+    customTooltip: Option[L.HtmlElement] = None
   ): L.Div =
     L.div(
       L.cls(Styles.stack),
@@ -28,7 +30,9 @@ object StackElement {
       StackQuantityElement(stack.quantity).amend(L.cls(Styles.stackSize)),
       L.inContext(node =>
         tooltip.register(
-          tooltipContents(stack.item, Signal.fromValue(Option.when(stack.quantity > 1)(s"Count: ${stack.quantity.withCommas}"))),
+          customTooltip.getOrElse(
+            tooltipContents(stack.item, Signal.fromValue(Option.when(stack.quantity > 1)(s"Count: ${stack.quantity.withCommas}")))
+          ),
           tooltipConfig,
           hideTooltip(node.ref)
         )

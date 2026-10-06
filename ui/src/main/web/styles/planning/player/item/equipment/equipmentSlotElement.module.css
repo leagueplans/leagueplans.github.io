@@ -18,13 +18,72 @@
   align-content: center;
 }
 
-.warningIcon {
-  height: 20px;
-  color: orange;
+/* Hatched as the inventory's extras are, in place of the slot's background */
+.conflict {
+  box-sizing: border-box;
+  border: 1px solid #d0453c;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(208, 69, 60, 0.32) 0 4px,
+    rgba(208, 69, 60, 0.12) 4px 8px
+  );
 }
 
-.warningTooltip {
-  width: max-content;
+.conflict > .background {
+  display: none;
+}
+
+/* In the bottom-right corner, since a stackable item's own count is in the top left */
+.conflictCount {
+  composes: osrs-font from "../../../../fonts.module.css";
+  position: absolute;
+  right: 1px;
+  bottom: -1px;
+  z-index: 2;
+
+  color: #ff9c94;
+  text-shadow: 1px 1px black;
+  pointer-events: none;
+}
+
+/* Styled like the stacks' tooltips */
+.conflictTooltip {
   max-width: 16rem;
   text-align: center;
+  pointer-events: none;
+}
+
+.conflictNote {
+  color: grey;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.conflictItems {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+
+.conflictItems > li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conflictItems div {
+  width: 20px;
+  height: 18px;
+}
+
+.conflictItems img {
+  max-width: 20px;
+  max-height: 18px;
 }
