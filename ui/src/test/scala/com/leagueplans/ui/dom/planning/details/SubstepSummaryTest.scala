@@ -21,7 +21,7 @@ final class SubstepSummaryTest extends AnyFreeSpec with Matchers {
   private val miniquest = 3
 
   private def between(before: Player, after: Player): List[Change] =
-    SubstepSummary.between(before, after, isMiniquest = _ == miniquest)
+    SubstepSummary.between(before, after, Map(logs -> "Logs", coins -> "Coins"), isMiniquest = _ == miniquest)
 
   "SubstepSummary.between" - {
     "finds nothing when nothing changed" in {
@@ -36,15 +36,16 @@ final class SubstepSummaryTest extends AnyFreeSpec with Matchers {
       )
     }
 
-    "reports items by depository, inventory first" in {
+    "reports items by name, whichever depository they're in" in {
       val before = start.copy(depositories =
         holding(Depository.Kind.Inventory, (logs, false) -> 5, (coins, false) -> 100)
       )
       val after = start.copy(depositories =
-        holding(Depository.Kind.Inventory, (coins, false) -> 100) ++
-          holding(Depository.Kind.Bank, (logs, false) -> 30, (logs, true) -> 2)
+        holding(Depository.Kind.Bank, (logs, false) -> 30, (logs, true) -> 2, (coins, false) -> 100)
       )
       between(before, after) shouldBe List(
+        Change.ItemsChanged(coins, noted = false, Depository.Kind.Inventory, -100),
+        Change.ItemsChanged(coins, noted = false, Depository.Kind.Bank, 100),
         Change.ItemsChanged(logs, noted = false, Depository.Kind.Inventory, -5),
         Change.ItemsChanged(logs, noted = false, Depository.Kind.Bank, 30),
         Change.ItemsChanged(logs, noted = true, Depository.Kind.Bank, 2)

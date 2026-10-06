@@ -16,10 +16,12 @@ object SubstepSummary {
     case LeaguePointsGained(points: Int)
   }
 
-  /** @param isMiniquest whether a quest is a miniquest, which is counted apart from the quests */
-  def between(before: Player, after: Player, isMiniquest: Int => Boolean): List[Change] =
+  /** @param itemName orders the item changes, so that they read alphabetically
+    * @param isMiniquest whether a quest is a miniquest, which is counted apart from the quests
+    */
+  def between(before: Player, after: Player, itemName: Item.ID => String, isMiniquest: Int => Boolean): List[Change] =
     expChanges(before, after) ++
-      itemChanges(before, after) ++
+      itemChanges(before, after, itemName) ++
       unlocks(before, after) ++
       completions(before, after, isMiniquest) ++
       leaguePoints(before, after)
@@ -33,14 +35,16 @@ object SubstepSummary {
       }
     }
 
-  private def itemChanges(before: Player, after: Player): List[Change] =
-    (before.depositories.keySet ++ after.depositories.keySet).toList.sorted.flatMap { kind =>
+  // By name, so an item's changes in different places sit together, unnoted before noted
+  private def itemChanges(before: Player, after: Player, itemName: Item.ID => String): List[Change] =
+    (before.depositories.keySet ++ after.depositories.keySet).toList.flatMap { kind =>
       val (from, to) = (before.get(kind).contents, after.get(kind).contents)
-      (from.keySet ++ to.keySet).toList.sortBy((item, noted) => (item: Int, noted)).flatMap { stack =>
+      (from.keySet ++ to.keySet).toList.flatMap { case stack @ (item, noted) =>
         val by = to.getOrElse(stack, 0) - from.getOrElse(stack, 0)
-        Option.when(by != 0)(Change.ItemsChanged(stack._1, stack._2, kind, by))
+        Option.when(by != 0)((item, noted, kind, by))
       }
-    }
+    }.sortBy((item, noted, kind, _) => (itemName(item), item: Int, noted, kind))
+      .map(Change.ItemsChanged.apply)
 
   private def unlocks(before: Player, after: Player): List[Change] = {
     val unlocked = Skill.ordered.toList.filter(skill =>
