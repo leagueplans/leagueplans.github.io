@@ -32,26 +32,26 @@ object AddItemCard {
     tooltip: Tooltip,
     close: () => Unit
   ): L.Div = {
-    val amount = draft.amount.signal.map(ItemCard.parseAmount)
+    val amount = draft.amount.signal.map(ItemCardParts.parseAmount)
     // Max only works where each item takes a slot of its own
     val unavailable =
       Signal.combine(amount, draft.target.signal, draft.noted.signal).map {
         case (Some(ItemQuantity.Max), target, noted) if !ItemEffects.canFill(item, noted && item.noteable, target) =>
-          Some(ItemCard.fillReason)
+          Some(ItemActions.fillReason)
         case _ =>
           None
       }
 
     L.div(
       L.cls(Card.Styles.card),
-      ItemCard.header(item, noted = false, ItemStack(item, noted = false, quantity = 1), close),
-      ItemCard.facts(item, runner.playerAtInsertion),
-      ItemCard.noFocusNotice(runner.run),
+      ItemCardParts.header(item, noted = false, ItemStack(item, noted = false, quantity = 1), close),
+      ItemCardParts.facts(item, runner.playerAtInsertion),
+      ItemCardParts.noFocusNotice(runner.run),
       // Labels in one column and controls in the other, so the controls line up
       L.div(
         L.cls(Card.Styles.well, Card.Styles.form),
-        ItemCard.amountLabel(amountID),
-        ItemCard.amountControls(amountID, draft.amount),
+        ItemCardParts.amountLabel(amountID),
+        ItemCardParts.amountControls(amountID, draft.amount),
         L.span(L.cls(Card.Styles.label), "Into"),
         L.span(
           L.cls(Card.Styles.controls),
@@ -103,15 +103,15 @@ object AddItemCard {
                 close()
               }
             ),
-            Signal.combine(ItemCard.noFocusTip(runner.run), unavailable).map((noFocus, unavailable) =>
+            Signal.combine(ItemCardParts.noFocusTip(runner.run), unavailable).map((noFocus, unavailable) =>
               if (noFocus.nonEmpty) noFocus else unavailable.getOrElse("")
             ),
             tooltip
           )
         ),
-        L.child.maybe <-- draft.amount.signal.map(ItemCard.amountProblem(_).map(ItemCard.warning))
+        L.child.maybe <-- draft.amount.signal.map(ItemCardParts.amountProblem(_).map(ItemCardParts.warning))
       ),
-      ItemCard.footer(item, leading = ItemCard.requireButton(item, requirementObserver, undoToasts, tooltip, close))
+      ItemCardParts.footer(item, leading = ItemCardParts.requireButton(item, requirementObserver, undoToasts, tooltip, close))
     )
   }
 

@@ -36,6 +36,85 @@ object ItemActions {
       !holding.noted &&
       holding.item.equipmentType.nonEmpty
 
+  /** Why adding Max isn't possible: only items that each take a slot can be added until the
+    * inventory's full */
+  val fillReason: String = "Adding until full only works for items that take an inventory slot each"
+
+  /** A button on a stack's card */
+  enum CardButton {
+    /** Acts on the whole stack */
+    case Whole(label: String, act: Player => Option[Action])
+
+    /** Takes the amount entered on the card
+      *
+      * @param secondary whether it's shown less prominently, as removing and adding are
+      * @param maxLabel the label when the amount is Max, if not "<label> all"
+      * @param unavailable why it can't take an amount, if there's one it can't take
+      */
+    case WithAmount(
+      label: String,
+      secondary: Boolean,
+      maxLabel: Option[String],
+      unavailable: ItemQuantity => Option[String],
+      act: (ItemQuantity, Player) => Option[Action]
+    )
+  }
+
+  /** The buttons on a stack's card. Only the inventory's cards add or remove items: on the bank's
+    * and the equipment's cards, those would read as moves, which they aren't.
+    *
+    * Amounts above what's held, or more than there's room for, are allowed: the plan shows the
+    * problem, and it can help while other steps are still being changed.
+    */
+  def cardButtons(holding: Holding, items: Item.ID => Item): List[CardButton] = {
+    def amount(label: String, secondary: Boolean = false, maxLabel: Option[String] = None)(
+      act: ItemQuantity => Action
+    ): CardButton =
+      CardButton.WithAmount(label, secondary, maxLabel, _ => None, (n, _) => Some(act(n)))
+
+    val equipWhole = CardButton.Whole("Equip", equip(holding, _, items))
+    holding.place match {
+      case Kind.Inventory =>
+        Option.when(canEquip(holding))(equipWhole).toList ++
+          Option.when(canBank(holding))(amount("Bank")(bank(holding, _))).toList ++
+          List(
+            amount("Remove", secondary = true)(remove(holding, _)),
+            CardButton.WithAmount(
+              "Add",
+              secondary = true,
+              Some("Add until full"),
+              {
+                case ItemQuantity.Max if !ItemEffects.canFill(holding.item, holding.noted, Kind.Inventory) => Some(fillReason)
+                case _ => None
+              },
+              (n, _) => Some(addMore(holding, n))
+            )
+          )
+
+      case Kind.Bank =>
+        // Only one of an unstackable item can be equipped, so there's no amount to take
+        Option.when(canEquip(holding) && !holding.item.stackable)(equipWhole).toList ++
+          List(
+            // Max withdraws as many as fit in the inventory, which is all of them if they stack
+            Some(amount("Withdraw", maxLabel = Option.when(!holding.item.stackable)("Withdraw until full"))(
+              withdraw(holding, _, noted = false)
+            )),
+            Option.when(canWithdrawNoted(holding))(
+              amount("Withdraw noted", maxLabel = Some("Withdraw all noted"))(withdraw(holding, _, noted = true))
+            ),
+            Option.when(canEquip(holding) && holding.item.stackable)(
+              CardButton.WithAmount("Equip", secondary = false, None, _ => None, (n, player) => equip(holding, player, items, n))
+            )
+          ).flatten
+
+      case _: EquipmentSlot =>
+        List(
+          Some(CardButton.Whole("Unequip", _ => unequip(holding, Kind.Inventory))),
+          Option.when(holding.item.bankable != Item.Bankable.No)(CardButton.Whole("Bank", _ => unequip(holding, Kind.Bank)))
+        ).flatten
+    }
+  }
+
   /** An exact amount becomes a signed change, and Max becomes the change given for it */
   private def changeOf(quantity: ItemQuantity, all: ItemChange, signed: Int => Int): ItemChange =
     quantity match {

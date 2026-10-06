@@ -56,7 +56,31 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       GridStatus(Set.empty)
     )
 
+  private def buttons(holding: Holding): List[String] =
+    ItemActions.cardButtons(holding, items).map {
+      case ItemActions.CardButton.Whole(label, _) => label
+      case button: ItemActions.CardButton.WithAmount => s"${button.label} (amount)"
+    }
+
   "ItemActions" - {
+    "offers buttons on a card for what can be done where the stack is held" in {
+      buttons(Holding(scimitar, noted = false, Kind.Inventory)) shouldBe
+        List("Equip", "Bank (amount)", "Remove (amount)", "Add (amount)")
+      buttons(Holding(book, noted = false, Kind.Inventory)) shouldBe List("Remove (amount)", "Add (amount)")
+      buttons(Holding(scimitar, noted = false, Kind.Bank)) shouldBe
+        List("Equip", "Withdraw (amount)", "Withdraw noted (amount)")
+      buttons(Holding(sword, noted = false, EquipmentSlot.Weapon)) shouldBe List("Unequip", "Bank")
+      buttons(Holding(book, noted = false, EquipmentSlot.Weapon)) shouldBe List("Unequip")
+    }
+
+    "only adds until full for items that take a slot each" in {
+      val add = ItemActions.cardButtons(Holding(logs, noted = true, Kind.Inventory), items).collectFirst {
+        case button: ItemActions.CardButton.WithAmount if button.label == "Add" => button
+      }
+      add.flatMap(_.unavailable(ItemQuantity.Max)) shouldBe Some(ItemActions.fillReason)
+      add.flatMap(_.unavailable(Exact(5))) shouldBe None
+    }
+
     "counts the stack held where it is, noted and unnoted apart" in {
       ItemActions.held(Holding(logs, noted = false, Kind.Inventory), player) shouldBe 3
       ItemActions.held(Holding(logs, noted = true, Kind.Inventory), player) shouldBe 20
