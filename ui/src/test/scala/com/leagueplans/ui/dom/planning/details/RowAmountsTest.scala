@@ -62,6 +62,8 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
     "sets item amounts" in {
       RowAmounts.withAmount(removeLogs, "10") shouldBe Right(removeLogs.copy(change = ItemChange.By(-10)))
       RowAmounts.withAmount(addLogs, "10") shouldBe Right(addLogs.copy(change = ItemChange.By(10)))
+      RowAmounts.withAmount(moveLogs, "10k") shouldBe Right(moveLogs.copy(quantity = ItemQuantity.Exact(10000)))
+      RowAmounts.withAmount(moveLogs, "2.5") shouldBe Right(moveLogs.copy(quantity = ItemQuantity.Exact(2)))
     }
 
     "sets Max from max, or all" in {
@@ -74,7 +76,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
     "rejects item amounts below 1" in {
       RowAmounts.withAmount(moveLogs, "0").isLeft shouldBe true
       RowAmounts.withAmount(moveLogs, "-5").isLeft shouldBe true
-      RowAmounts.withAmount(moveLogs, "2.5").isLeft shouldBe true
+      RowAmounts.withAmount(moveLogs, "0.5").isLeft shouldBe true
     }
 
     "sets levels from 1 to 99" in {

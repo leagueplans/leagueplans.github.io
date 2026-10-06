@@ -19,7 +19,6 @@ import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToText
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import scala.util.Try
 
 /** The parts the item card and the add card share: the head and foot, the counts held, the Amount
   * box, and the Make required button */
@@ -35,7 +34,7 @@ object ItemCardParts {
         L.cls(Card.Styles.number),
         L.idAttr(id),
         L.tpe("text"),
-        L.inputMode("numeric"),
+        L.inputMode("decimal"),
         L.controlled(L.value <-- amountText.signal, L.onInput.mapToValue --> amountText.writer)
       ),
       L.span(
@@ -69,21 +68,14 @@ object ItemCardParts {
   /** An amount typed into a card, if it's one the actions can take. Max is everything that's held,
     * or as much as fits. All is taken to mean the same. */
   def parseAmount(text: String): Option[ItemQuantity] =
-    text.trim.replace(",", "") match {
-      case word if word.equalsIgnoreCase("all") || word.equalsIgnoreCase("max") => Some(ItemQuantity.Max)
-      case number => number.toIntOption.filter(_ > 0).map(ItemQuantity.Exact(_))
-    }
+    ItemQuantity.parse(text).toOption
 
   /** Why the actions can't take an amount typed into a card, if they can't */
   def amountProblem(text: String): Option[String] =
-    text.trim.replace(",", "") match {
-      case "" => None
-      case trimmed if parseAmount(trimmed).nonEmpty => None
-      case trimmed =>
-        Try(BigInt(trimmed)).toOption match {
-          case Some(n) if n > Int.MaxValue => Some(s"A stack can hold at most ${Int.MaxValue.withCommas}.")
-          case _ => Some("Type a whole number from 1, or pick an amount.")
-        }
+    Option.when(text.trim.nonEmpty)(ItemQuantity.parse(text)).flatMap {
+      case Right(_) => None
+      case Left(ItemQuantity.Problem.AboveMax) => Some(s"A stack can hold at most ${Int.MaxValue.withCommas}.")
+      case Left(_) => Some("Type an amount from 1, such as 250 or 1.5k, or pick one.")
     }
 
   def warning(text: String): L.HtmlElement =

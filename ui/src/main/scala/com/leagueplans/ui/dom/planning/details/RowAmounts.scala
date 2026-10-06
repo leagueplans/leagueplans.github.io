@@ -69,8 +69,10 @@ object RowAmounts {
     }
 
   private def parseQuantity(text: String): Either[String, ItemQuantity] =
-    if (cleaned(text).equalsIgnoreCase("max") || cleaned(text).equalsIgnoreCase("all")) Right(ItemQuantity.Max)
-    else parseCount(text).left.map(_ => "Type an amount of at least 1, or max").map(ItemQuantity.Exact(_))
+    ItemQuantity.parse(text).left.map {
+      case ItemQuantity.Problem.AboveMax => s"A stack can hold at most ${formatCount(Int.MaxValue)}"
+      case _ => "Type an amount of at least 1, such as 250 or 1.5k, or max"
+    }
 
   def of(requirement: Requirement): Option[Amount] =
     requirement match {
@@ -110,11 +112,4 @@ object RowAmounts {
 
   private def toDecimal(text: String): Option[BigDecimal] =
     try Some(BigDecimal(text)) catch { case _: NumberFormatException => None }
-
-  private def parseCount(text: String): Either[String, Int] =
-    cleaned(text).toIntOption match {
-      case Some(n) if n > 0 => Right(n)
-      case Some(_) => Left("Type an amount of at least 1")
-      case None => Left("Type a whole number")
-    }
 }

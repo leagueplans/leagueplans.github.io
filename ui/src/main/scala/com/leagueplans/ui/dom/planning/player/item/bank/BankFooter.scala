@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.player.item.bank
 
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
+import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.ItemActions.Action
 import com.leagueplans.ui.model.player.item.ItemTransfer.{Quantity, Settings}
@@ -122,8 +123,10 @@ object BankFooter {
   private def xInput(settings: Var[Settings], lastX: Var[Option[Int]], editingX: Var[Boolean]): L.Input =
     L.input(
       L.cls(Styles.xInput),
-      L.tpe("number"),
-      L.minAttr("1"),
+      // Text rather than a number, so that it takes the game's shortcuts, such as 10k
+      L.tpe("text"),
+      L.inputMode("decimal"),
+      L.autoComplete("off"),
       L.aria.label("How many to move for X"),
       L.placeholder("Amount"),
       L.value <-- lastX.signal.map(_.map(_.toString).getOrElse("")),
@@ -137,7 +140,7 @@ object BankFooter {
             node.ref.blur()
           },
           L.onBlur --> { _ =>
-            node.ref.value.trim.toIntOption.filter(_ > 0).foreach { amount =>
+            ItemQuantity.parseCount(node.ref.value).foreach { amount =>
               lastX.set(Some(amount))
               settings.update(_.copy(quantity = Quantity.X(amount)))
             }
