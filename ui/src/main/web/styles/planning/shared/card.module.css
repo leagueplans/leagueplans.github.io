@@ -150,6 +150,20 @@
   font-size: 0.75rem;
 }
 
+/* A checkbox with its label, centred on each other */
+.check {
+  composes: label;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.check > input {
+  margin: 0;
+}
+
 /* Labelled controls, with the labels in a column of their own so the controls line up */
 .form {
   display: grid;

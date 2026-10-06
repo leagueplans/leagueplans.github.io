@@ -1,6 +1,6 @@
 package com.leagueplans.ui.model.player.item
 
-import com.leagueplans.common.model.{EquipmentType, Item}
+import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.player.Player
@@ -30,15 +30,11 @@ object ItemActions {
   def canWithdrawNoted(holding: Holding): Boolean =
     holding.place == Kind.Bank && holding.item.noteable
 
-  def canWear(holding: Holding): Boolean =
-    holding.place == Kind.Inventory && !holding.noted && holding.item.equipmentType.nonEmpty
-
-  /** "Wield" for weapons, "Wear" for anything else */
-  def wearLabel(item: Item): String =
-    item.equipmentType match {
-      case Some(EquipmentType.Weapon | EquipmentType.TwoHanded) => "Wield"
-      case _ => "Wear"
-    }
+  /** Items can be equipped from the inventory, or straight from the bank */
+  def canEquip(holding: Holding): Boolean =
+    (holding.place == Kind.Inventory || holding.place == Kind.Bank) &&
+      !holding.noted &&
+      holding.item.equipmentType.nonEmpty
 
   /** An exact amount becomes a signed change, and Max becomes the change given for it */
   private def changeOf(quantity: ItemQuantity, all: ItemChange, signed: Int => Int): ItemChange =
@@ -77,18 +73,17 @@ object ItemActions {
   /** With Max, adds as many as fit in the place */
   def add(item: Item, quantity: ItemQuantity, target: Depository.Kind, noted: Boolean): Action = {
     val effect = AddItem(item.id, changeOf(quantity, ItemChange.Fill, identity), target, noted && item.noteable)
-    val place = target.name.toLowerCase
     quantity match {
       case ItemQuantity.Max =>
-        Action(List(effect), s"Added ${item.name} until the $place was full", s"Add ${item.name} until the $place is full")
+        Action(List(effect), s"Added ${item.name} until the ${target.name.toLowerCase} was full", s"Add ${item.name} until the ${target.name.toLowerCase} is full")
       case ItemQuantity.Exact(_) =>
-        val what = s"${describe(item, quantity)} to the $place"
+        val what = s"${describe(item, quantity)} to the ${target.name.toLowerCase}"
         Action(List(effect), s"Added $what", s"Add $what")
     }
   }
 
-  /** @param quantity how many of a stackable item to wear, such as the bank's withdraw quantity */
-  def wear(
+  /** @param quantity how many of a stackable item to equip, such as the bank's withdraw quantity */
+  def equip(
     holding: Holding,
     player: Player,
     items: Item.ID => Item,
@@ -96,24 +91,23 @@ object ItemActions {
   ): Option[Action] =
     EquipPlan(holding.item, holding.place, player, items, quantity).map { moves =>
       val displaced = moves.init.map(move => items(move.item).name).mkString(" and ")
-      val verb = wearLabel(holding.item)
       Action(
         moves,
-        s"${if (verb == "Wield") "Wielded" else "Wore"} ${holding.item.name}",
-        s"$verb ${holding.item.name}${if (displaced.isEmpty) "" else s", taking off $displaced"}",
-        Option.when(displaced.nonEmpty)(s"Took off $displaced")
+        s"Equipped ${holding.item.name}",
+        s"Equip ${holding.item.name}${if (displaced.isEmpty) "" else s", unequipping $displaced"}",
+        Option.when(displaced.nonEmpty)(s"Unequipped $displaced")
       )
     }
 
-  /** Takes off the worn item, into the inventory or the bank */
+  /** Unequips the whole equipped stack, into the inventory or the bank */
   def unequip(holding: Holding, target: Depository.Kind): Option[Action] =
     holding.place match {
       case slot: EquipmentSlot =>
         val what = holding.item.name
         Some(Action(
           List(EquipPlan.unequip(holding.item, slot, target)),
-          if (target == Kind.Bank) s"Banked $what" else s"Took off $what",
-          if (target == Kind.Bank) s"Bank $what" else s"Take off $what"
+          if (target == Kind.Bank) s"Banked $what" else s"Unequipped $what",
+          if (target == Kind.Bank) s"Bank $what" else s"Unequip $what"
         ))
       case _ =>
         None
@@ -124,10 +118,10 @@ object ItemActions {
   def depositInventory(player: Player, items: Item.ID => Item): Option[Action] =
     deposit(DepositSource.Inventory, player, items, "the inventory")
 
-  /** Banks every worn item that can be banked when the step applies, or None if there's nothing
+  /** Banks every equipped item that can be banked when the step applies, or None if there's nothing
     * to bank here */
-  def depositWorn(player: Player, items: Item.ID => Item): Option[Action] =
-    deposit(DepositSource.Equipment, player, items, "worn items")
+  def depositEquipment(player: Player, items: Item.ID => Item): Option[Action] =
+    deposit(DepositSource.Equipment, player, items, "equipment")
 
   private def deposit(source: DepositSource, player: Player, items: Item.ID => Item, what: String): Option[Action] = {
     val stacks = ItemEffects.deposits(source, player, items).size
@@ -147,4 +141,5 @@ object ItemActions {
       case ItemQuantity.Exact(n) => s"${n.withCommas} × ${item.name}"
       case ItemQuantity.Max => s"all ${item.name}"
     }
+
 }

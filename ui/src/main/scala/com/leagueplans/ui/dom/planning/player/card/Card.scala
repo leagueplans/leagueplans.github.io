@@ -28,6 +28,7 @@ object Card {
     val row: String = js.native
     val well: String = js.native
     val label: String = js.native
+    val check: String = js.native
     val number: String = js.native
     val segments: String = js.native
     val segment: String = js.native

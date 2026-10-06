@@ -3,11 +3,14 @@ package com.leagueplans.ui.dom.planning.player.item.card
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Effect, Requirement}
+import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.ItemActions.Holding
+import com.leagueplans.ui.model.player.item.ItemTransfer
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.uicommon.dom.{Popover, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.state.StrictSignal
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
 import org.scalajs.dom.{Element, KeyboardEvent}
 
@@ -16,6 +19,7 @@ import scala.scalajs.js.annotation.JSImport
 
 /** Opens item cards from the stacks in the Items section.
   *
+  * @param transferSettings the bank's quantity setting, which the bank's cards start on
   * @param boundary the element cards prefer to stay within, so that they don't cover the plan
   */
 final class ItemCards(
@@ -24,6 +28,7 @@ final class ItemCards(
   effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
   requirementObserver: Signal[Option[Observer[Requirement]]],
   cache: Cache,
+  transferSettings: StrictSignal[ItemTransfer.Settings],
   undoToasts: UndoToasts,
   tooltip: Tooltip,
   boundary: () => Option[Element]
@@ -63,7 +68,7 @@ final class ItemCards(
           if (isOpen) popover.close()
           else popover.open(
             node.ref,
-            AddItemCard(item, addDraft, effectObserver, requirementObserver, undoToasts, tooltip, () => popover.close()),
+            AddItemCard(item, addDraft, playerAtInsertion, effectObserver, requirementObserver, undoToasts, tooltip, () => popover.close()),
             boundary(),
             below = true
           )
@@ -75,10 +80,26 @@ final class ItemCards(
     tooltip.close()
     popover.open(
       anchor,
-      ItemCard(holding, playerAtInsertion, effectObserver, requirementObserver, cache, undoToasts, tooltip, () => popover.close()),
+      ItemCard(holding, initialAmount(holding), playerAtInsertion, effectObserver, requirementObserver, cache, undoToasts, tooltip, () => popover.close()),
       boundary()
     )
   }
+
+  /** A bank stack's card starts on the bank's quantity setting. An inventory stack that's a single
+    * item, as unnoted unstackable items are, starts on 1. Other cards start on the whole stack. */
+  private def initialAmount(holding: Holding): String =
+    holding.place match {
+      case Kind.Bank =>
+        transferSettings.now().quantity match {
+          case ItemTransfer.Quantity.One => "1"
+          case ItemTransfer.Quantity.Five => "5"
+          case ItemTransfer.Quantity.Ten => "10"
+          case ItemTransfer.Quantity.X(amount) => amount.toString
+          case ItemTransfer.Quantity.All => "Max"
+        }
+      case Kind.Inventory if !holding.noted && !holding.item.stackable => "1"
+      case _ => "Max"
+    }
 
   private def isActivation(event: KeyboardEvent): Boolean =
     event.key == "Enter" || event.key == " "

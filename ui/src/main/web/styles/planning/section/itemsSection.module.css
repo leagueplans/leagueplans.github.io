@@ -9,8 +9,8 @@
   gap: 0.5rem;
 }
 
-/* The worn and inventory panels share the column's width */
-.section > .worn {
+/* The equipment and inventory panels share the column's width */
+.section > .equipment {
   grid-column: 1;
   grid-row: 1;
   width: auto;

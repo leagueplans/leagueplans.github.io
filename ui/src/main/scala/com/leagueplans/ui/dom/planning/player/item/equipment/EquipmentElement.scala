@@ -12,7 +12,7 @@ import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-/** Worn items, in a panel styled like the inventory's. The slots keep their in-game places, joined
+/** Equipped items, in a panel styled like the inventory's. The slots keep their in-game places, joined
   * by the game's bars.
   */
 object EquipmentElement {
@@ -25,8 +25,8 @@ object EquipmentElement {
   ): L.Div =
     L.div(
       L.cls(DepositoryStyles.depository, PanelStyles.panel),
-      // Dropping anywhere on the panel wears the item in its own slot
-      itemDrag.target(ItemTransfer.Target.Worn),
+      // Dropping anywhere on the panel equips the item in its own slot
+      itemDrag.target(ItemTransfer.Target.Equipment),
       header,
       L.div(
         L.cls(Styles.layout),

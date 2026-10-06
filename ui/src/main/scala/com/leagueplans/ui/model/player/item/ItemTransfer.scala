@@ -9,8 +9,9 @@ import com.leagueplans.ui.model.player.item.ItemActions.{Action, Holding}
 
 /** Works out what dragging a stack onto a panel does, following the game's bank: a quantity
   * setting (1 / 5 / 10 / X / All) and a Withdraw as Item / Note setting decide how much moves and
-  * whether it's noted. Dropping anywhere on the worn panel wears the item in its own slot. An
-  * inventory item that takes a slot to itself, unnoted and unstackable, moves one at a time.
+  * whether it's noted. Dropping anywhere on the equipment panel equips the item in its own slot.
+  * An inventory item that takes a slot to itself, unnoted and unstackable, moves one at a time, as
+  * its card does.
   */
 object ItemTransfer {
   enum Quantity {
@@ -27,16 +28,16 @@ object ItemTransfer {
 
   /** The panels a stack can be dropped on */
   enum Target {
-    case Inventory, Bank, Worn
+    case Inventory, Bank, Equipment
   }
 
   enum Rejection(val message: String) {
     /** Dropping a stack back where it came from does nothing, and says nothing */
     case SameDepository extends Rejection("")
     case NotBankable extends Rejection("This item can't be banked")
-    case NotWearable extends Rejection("This item can't be worn")
-    case NotedWear extends Rejection("Noted items can't be worn")
-    case NothingToMove extends Rejection("None of these are held here")
+    case NotEquippable extends Rejection("This item can't be equipped")
+    case NotedEquip extends Rejection("Noted items can't be equipped")
+    case NothingToMove extends Rejection("None of these are held at this step")
   }
 
   def plan(
@@ -61,7 +62,7 @@ object ItemTransfer {
       Left(Rejection.NothingToMove)
     else
       (source.place, target) match {
-        case (Kind.Inventory, Target.Inventory) | (Kind.Bank, Target.Bank) | (_: EquipmentSlot, Target.Worn) =>
+        case (Kind.Inventory, Target.Inventory) | (Kind.Bank, Target.Bank) | (_: EquipmentSlot, Target.Equipment) =>
           Left(Rejection.SameDepository)
 
         case (_, Target.Bank) =>
@@ -85,21 +86,21 @@ object ItemTransfer {
         case (_: EquipmentSlot, Target.Inventory) =>
           toRight(ItemActions.unequip(source, Kind.Inventory), Rejection.NothingToMove)
 
-        case (_, Target.Worn) =>
+        case (_, Target.Equipment) =>
           if (source.item.equipmentType.isEmpty)
-            Left(Rejection.NotWearable)
+            Left(Rejection.NotEquippable)
           else if (source.noted)
-            Left(Rejection.NotedWear)
+            Left(Rejection.NotedEquip)
           else
             // From the bank, stackable items follow the withdraw quantity, as other withdrawals do
             val quantity = if (source.place == Kind.Bank) resolve(settings.quantity, held) else ItemQuantity.Max
-            toRight(ItemActions.wear(source, player, items, quantity), Rejection.NothingToMove)
+            toRight(ItemActions.equip(source, player, items, quantity), Rejection.NothingToMove)
       }
   }
 
-  /** Shift-clicking a stack moves all of it: from the inventory or a worn slot to the bank, or
-    * from the bank to the inventory (noted if Withdraw as Note is chosen). Worn items that can't
-    * be banked go to the inventory. */
+  /** Shift-clicking a stack moves all of it: from the inventory or the equipment to the bank, or
+    * from the bank to the inventory (noted if Withdraw as Note is chosen). Equipped items that
+    * can't be banked go to the inventory. */
   def quickMove(source: Holding, player: Player, items: Item.ID => Item, settings: Settings): Either[Rejection, Action] = {
     val target = source.place match {
       case Kind.Inventory => Target.Bank
@@ -109,8 +110,8 @@ object ItemTransfer {
     transfer(source, target, player, items, settings.copy(quantity = Quantity.All), oneAtATime = false)
   }
 
-  /** All becomes Max, so the effect moves whatever is held where it applies, and a withdrawal stops
-    * at what fits. Other quantities take no more than is held now. */
+  /** All becomes Max, so the effect moves whatever is held where it applies. Other quantities take
+    * no more than is held now. */
   private def resolve(quantity: Quantity, held: Int): ItemQuantity =
     quantity match {
       case Quantity.One => ItemQuantity.Exact(math.min(1, held))

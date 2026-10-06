@@ -17,7 +17,7 @@ object ItemRoute {
   private val bank = Place(Kind.Bank, noted = false)
 
   /** The ways an item can be moved in the game. Notes only come from withdrawing from the bank,
-    * and only go back into it, where they're unnoted. Only unnoted items are worn. */
+    * and only go back into it, where they're unnoted. Only unnoted items are equipped. */
   def allFor(item: Item): List[ItemRoute] = {
     val banks = item.bankable != Item.Bankable.No
     val slot = item.equipmentType.map(tpe => Place(Kind.EquipmentSlot.from(tpe), noted = false))

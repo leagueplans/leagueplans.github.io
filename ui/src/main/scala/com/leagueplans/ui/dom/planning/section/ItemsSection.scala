@@ -13,7 +13,7 @@ import org.scalajs.dom.Element
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-/** Worn items and the inventory sit on the left at their in-game sizes, and the bank takes the
+/** Equipment and the inventory sit on the left at their in-game sizes, and the bank takes the
   * rest of the space, scrolling on its own. Clicking any stack opens its card.
   *
   * Stacks can be dragged between the panels, and shift-clicked to move a whole stack.
@@ -25,19 +25,6 @@ object ItemsSection {
   def apply(ctx: SectionContext): L.Div = {
     val bankQuery = Var("")
     var section = Option.empty[Element]
-
-    val itemCards =
-      ItemCards(
-        ctx.popover,
-        ctx.playerAtInsertion,
-        ctx.effectObserver,
-        ctx.requirementObserver,
-        ctx.cache,
-        ctx.undoToasts,
-        ctx.tooltip,
-        // Cards prefer to stay over the section, so that the plan and step details stay visible
-        boundary = () => section
-      )
 
     val itemDrag =
       ItemDrag(
@@ -51,6 +38,20 @@ object ItemsSection {
         ctx.popover
       )
 
+    val itemCards =
+      ItemCards(
+        ctx.popover,
+        ctx.playerAtInsertion,
+        ctx.effectObserver,
+        ctx.requirementObserver,
+        ctx.cache,
+        itemDrag.settings.signal,
+        ctx.undoToasts,
+        ctx.tooltip,
+        // Cards prefer to stay over the section, so that the plan and step details stay visible
+        boundary = () => section
+      )
+
     val depositInventory = ItemActions.depositInventory(_, ctx.cache.items)
 
     L.div(
@@ -62,7 +63,7 @@ object ItemsSection {
         itemCards,
         itemDrag,
         ctx.tooltip
-      ).amend(L.cls(Styles.worn)),
+      ).amend(L.cls(Styles.equipment)),
       InventoryPanel(
         ctx.displayedPlayer,
         bankQuery.signal,
@@ -86,7 +87,7 @@ object ItemsSection {
           ctx.playerAtInsertion,
           ctx.effectObserver,
           depositInventory,
-          ItemActions.depositWorn(_, ctx.cache.items),
+          ItemActions.depositEquipment(_, ctx.cache.items),
           ctx.undoToasts,
           ctx.tooltip
         )
@@ -97,7 +98,7 @@ object ItemsSection {
   @js.native @JSImport("/styles/planning/section/itemsSection.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val section: String = js.native
-    val worn: String = js.native
+    val equipment: String = js.native
     val inventory: String = js.native
     val bank: String = js.native
   }

@@ -113,20 +113,19 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
         List(AddItem(book.id, ItemChange.By(1), Kind.Inventory, false))
     }
 
-    "wields a weapon, saying what it took off" in {
-      val action = ItemActions.wear(Holding(scimitar, noted = false, Kind.Inventory), player, items)
-      action.map(_.report) shouldBe Some("Wielded Rune scimitar")
-      action.flatMap(_.detail) shouldBe Some("Took off Bronze sword")
+    "equips a weapon, saying what it unequipped" in {
+      val action = ItemActions.equip(Holding(scimitar, noted = false, Kind.Inventory), player, items)
+      action.map(_.report) shouldBe Some("Equipped Rune scimitar")
+      action.flatMap(_.detail) shouldBe Some("Unequipped Bronze sword")
       action.map(_.effects.size) shouldBe Some(2)
     }
 
     "only offers what suits the stack" in {
       ItemActions.canBank(Holding(book, noted = false, Kind.Inventory)) shouldBe false
       ItemActions.canBank(Holding(logs, noted = false, Kind.Bank)) shouldBe false
-      ItemActions.canWear(Holding(scimitar, noted = true, Kind.Inventory)) shouldBe false
-      ItemActions.canWear(Holding(scimitar, noted = false, Kind.Bank)) shouldBe false
+      ItemActions.canEquip(Holding(scimitar, noted = true, Kind.Inventory)) shouldBe false
+      ItemActions.canEquip(Holding(scimitar, noted = false, EquipmentSlot.Weapon)) shouldBe false
       ItemActions.canWithdrawNoted(Holding(book, noted = false, Kind.Bank)) shouldBe false
-      ItemActions.wearLabel(helm) shouldBe "Wear"
     }
 
     "deposits the inventory, noted stacks as unnoted, leaving what can't be banked" in {
@@ -140,14 +139,14 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
         List(MoveItem(logs.id, Exact(20), Kind.Inventory, notedInSource = true, Kind.Bank, noteInTarget = false))
     }
 
-    "deposits worn items" in {
-      ItemActions.depositWorn(player, items).map(_.effects) shouldBe Some(List(DepositAll(DepositSource.Equipment)))
+    "deposits equipment" in {
+      ItemActions.depositEquipment(player, items).map(_.effects) shouldBe Some(List(DepositAll(DepositSource.Equipment)))
       ItemEffects.deposits(DepositSource.Equipment, player, items) shouldBe
         List(MoveItem(sword.id, Exact(1), EquipmentSlot.Weapon, notedInSource = false, Kind.Bank, noteInTarget = false))
     }
 
     "has nothing to deposit from empty places" in {
-      ItemActions.depositWorn(player.copy(depositories = Map.empty), items) shouldBe None
+      ItemActions.depositEquipment(player.copy(depositories = Map.empty), items) shouldBe None
     }
 
     "describes quantities with thousands separators" in {

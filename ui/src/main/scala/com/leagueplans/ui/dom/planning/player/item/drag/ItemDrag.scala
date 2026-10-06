@@ -51,17 +51,17 @@ final class ItemDrag(
       dragged.map(ItemTransfer.plan(_, target, player, items, settings))
     )
 
-  /** Slots the worn panel highlights while a stack is dragged over it: where the item will go,
-    * and what it will take off */
+  /** Slots the equipment panel highlights while a stack is dragged over it: where the item will go,
+    * and what it will unequip */
   val slotHighlights: Signal[Map[EquipmentSlot, ItemDrag.SlotHighlight]] =
-    verdict(Target.Worn).map {
+    verdict(Target.Equipment).map {
       case Some(Right(action)) =>
         action.effects.collect {
           case move: MoveItem =>
             (move.target, move.source) match {
               case (slot: EquipmentSlot, _) => slot -> ItemDrag.SlotHighlight.Target
               case (_, slot: EquipmentSlot) => slot -> ItemDrag.SlotHighlight.Displaced
-              case _ => throw IllegalStateException("Wearing an item only moves items in or out of slots")
+              case _ => throw IllegalStateException("Equipping an item only moves items in or out of slots")
             }
         }.toMap
       case _ =>
@@ -173,9 +173,9 @@ final class ItemDrag(
 
 object ItemDrag {
   enum SlotHighlight {
-    /** Where the dragged item will be worn */
+    /** Where the dragged item will be equipped */
     case Target
-    /** What wearing it will take off */
+    /** What equipping it will unequip */
     case Displaced
   }
 

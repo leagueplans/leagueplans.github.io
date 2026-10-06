@@ -21,7 +21,7 @@ import scala.scalajs.js.annotation.JSImport
 
 /** The bank's controls, as in the game. Withdraw as Item / Note and the quantity decide what
   * dragging a stack in or out of the bank moves. The deposit buttons bank the whole inventory, or
-  * everything worn.
+  * all equipment.
   */
 object BankFooter {
   /** @param slotsUsed how many of the bank's slots are taken */
@@ -31,7 +31,7 @@ object BankFooter {
     playerAtInsertion: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
     depositInventory: Player => Option[Action],
-    depositWorn: Player => Option[Action],
+    depositEquipment: Player => Option[Action],
     undoToasts: UndoToasts,
     tooltip: Tooltip
   ): L.Div = {
@@ -80,7 +80,7 @@ object BankFooter {
       ),
       L.span(L.cls(Styles.spacer)),
       depositButton("Deposit inventory", depositInventoryIcon, playerAtInsertion, effectObserver, depositInventory, undoToasts, tooltip),
-      depositButton("Deposit worn items", depositWornIcon, playerAtInsertion, effectObserver, depositWorn, undoToasts, tooltip)
+      depositButton("Deposit equipment", depositEquipmentIcon, playerAtInsertion, effectObserver, depositEquipment, undoToasts, tooltip)
     )
   }
 
@@ -173,7 +173,7 @@ object BankFooter {
   private val depositInventoryIcon: String = js.native
 
   @js.native @JSImport("/images/bank-deposit-equipment.png", JSImport.Default)
-  private val depositWornIcon: String = js.native
+  private val depositEquipmentIcon: String = js.native
 
   @js.native @JSImport("/styles/planning/player/item/bank/bankFooter.module.css", JSImport.Default)
   private object Styles extends js.Object {

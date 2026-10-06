@@ -16,7 +16,7 @@ import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, eventPropToProcessor, seqToModifier, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -25,12 +25,17 @@ import scala.util.Try
 /** The card that opens on a held stack. One Amount box drives every button that takes an amount,
   * and those buttons repeat it in their labels, such as "Bank 25".
   *
+  * Only the inventory's cards can add or remove items. On the bank's and the equipment's cards,
+  * those read as moves, which they aren't.
+  *
   * Counts and limits come from the state that new effects are applied to, which can differ from
   * the state on show.
   */
 object ItemCard {
+  /** @param initialAmount what the Amount box starts on, such as the bank's quantity setting */
   def apply(
     holding: Holding,
+    initialAmount: String,
     playerAtInsertion: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
     requirementObserver: Signal[Option[Observer[Requirement]]],
@@ -39,8 +44,7 @@ object ItemCard {
     tooltip: Tooltip,
     close: () => Unit
   ): L.Div = {
-    // A whole stack is Max, so its effects take whatever is held where they apply
-    val amountText = Var("Max")
+    val amountText = Var(initialAmount)
     val amount = amountText.signal.map(parseAmount)
 
     def run(observer: Observer[Effect | Seq[Effect]], action: Action): Unit = {
@@ -58,20 +62,30 @@ object ItemCard {
       allLabel: Option[String] = None,
       unavailable: ItemQuantity => Option[String] = _ => None
     )(toAction: ItemQuantity => Action): L.Span =
+      amountButtonFor(label, ghost, allLabel, unavailable)((n, _) => Some(toAction(n)))
+
+    /** As amountButton, for an action that depends on the state, such as equipping an item */
+    def amountButtonFor(
+      label: String,
+      ghost: Boolean,
+      allLabel: Option[String] = None,
+      unavailable: ItemQuantity => Option[String] = _ => None
+    )(toAction: (ItemQuantity, Player) => Option[Action]): L.Span =
       Card.withTooltip(
         L.button(
           L.cls(if (ghost) Card.Styles.ghost else Card.Styles.button),
           L.tpe("button"),
           L.children <-- amount.map {
             case Some(ItemQuantity.Max) => List(L.textToTextNode(allLabel.getOrElse(s"$label all")))
-            case Some(ItemQuantity.Exact(n)) => List(L.textToTextNode(s"$label "), L.span(L.cls(Card.Styles.amount), format(n)))
+            case Some(ItemQuantity.Exact(n)) => List(L.textToTextNode(s"$label "), L.span(L.cls(Card.Styles.amount), n.withCommas))
             case None => List(L.textToTextNode(s"$label "), L.span(L.cls(Card.Styles.amount), "?"))
           },
           L.disabled <-- Signal.combine(effectObserver, amount).map((observer, amount) =>
             observer.isEmpty || amount.forall(unavailable(_).nonEmpty)
           ),
-          L.onClick.compose(_.sample(effectObserver, amount).collect { case (Some(observer), Some(n)) => (observer, n) }) -->
-            ((observer, n) => run(observer, toAction(n)))
+          L.onClick.compose(
+            _.sample(effectObserver, amount, playerAtInsertion).collect { case (Some(observer), Some(n), player) => (observer, n, player) }
+          ) --> ((observer, n, player) => toAction(n, player).foreach(run(observer, _)))
         ),
         Signal.combine(noFocusTip(effectObserver), amount).map((noFocus, amount) =>
           if (noFocus.nonEmpty) noFocus else amount.flatMap(unavailable).getOrElse("")
@@ -95,8 +109,11 @@ object ItemCard {
 
     val wholeActions: List[L.Span] =
       holding.place match {
-        case Kind.Inventory if ItemActions.canWear(holding) =>
-          List(wholeButton(ItemActions.wearLabel(holding.item))(ItemActions.wear(holding, _, cache.items)))
+        case Kind.Inventory if ItemActions.canEquip(holding) =>
+          List(wholeButton("Equip")(ItemActions.equip(holding, _, cache.items)))
+        // Only one of an unstackable item can be equipped, so there's no amount to take
+        case Kind.Bank if ItemActions.canEquip(holding) && !holding.item.stackable =>
+          List(wholeButton("Equip")(ItemActions.equip(holding, _, cache.items)))
         case _: EquipmentSlot =>
           List(
             Some(wholeButton("Unequip")(_ => ItemActions.unequip(holding, Kind.Inventory))),
@@ -108,53 +125,62 @@ object ItemCard {
           List.empty
       }
 
-    // Amounts above what's held are allowed: the plan shows the problem, and it can help while
-    // other steps are still being changed
-    val placeActions: List[L.Span] =
+    // Amounts above what's held, or more than there's room for, are allowed: the plan shows the
+    // problem, and it can help while other steps are still being changed
+    val amountActions: List[L.Span] =
       holding.place match {
         case Kind.Inventory =>
           Option.when(ItemActions.canBank(holding))(
             amountButton("Bank", ghost = false)(ItemActions.bank(holding, _))
-          ).toList :+ amountButton("Remove", ghost = true)(ItemActions.remove(holding, _))
+          ).toList ++ List(
+            amountButton("Remove", ghost = true)(ItemActions.remove(holding, _)),
+            amountButton(
+              "Add",
+              ghost = true,
+              allLabel = Some("Add until full"),
+              unavailable = {
+                case ItemQuantity.Max if !ItemEffects.canFill(holding.item, holding.noted, Kind.Inventory) => Some(fillReason)
+                case _ => None
+              }
+            )(ItemActions.addMore(holding, _))
+          )
         case Kind.Bank =>
           List(
-            Some(amountButton("Withdraw", ghost = false)(ItemActions.withdraw(holding, _, noted = false))),
+            // Max withdraws as many as fit in the inventory, which is all of them if they stack
+            Some(amountButton(
+              "Withdraw",
+              ghost = false,
+              allLabel = Option.when(!holding.item.stackable)("Withdraw until full")
+            )(ItemActions.withdraw(holding, _, noted = false))),
             Option.when(ItemActions.canWithdrawNoted(holding))(
               amountButton("Withdraw noted", ghost = false, allLabel = Some("Withdraw all noted"))(
                 ItemActions.withdraw(holding, _, noted = true)
               )
             ),
-            Some(amountButton("Remove", ghost = true)(ItemActions.remove(holding, _)))
+            Option.when(ItemActions.canEquip(holding) && holding.item.stackable)(
+              amountButtonFor("Equip", ghost = false)((n, player) => ItemActions.equip(holding, player, cache.items, n))
+            )
           ).flatten
         case _: EquipmentSlot =>
           List.empty
       }
 
-    val amountActions: List[L.Span] =
-      placeActions :+ amountButton(
-        "Add",
-        ghost = true,
-        allLabel = Some("Add until full"),
-        unavailable = {
-          case ItemQuantity.Max if !ItemEffects.canFill(holding.item, holding.noted, Kind.Inventory) => Some(fillReason)
-          case _ => None
-        }
-      )(ItemActions.addMore(holding, _))
-
     L.div(
       L.cls(Card.Styles.card),
       header(holding.item, holding.noted, ItemStack(holding.item, holding.noted, 1), close),
-      L.div(
-        L.cls(Card.Styles.facts),
-        L.children <-- playerAtInsertion.map(player => facts(holding.item, player))
-      ),
+      facts(holding.item, playerAtInsertion),
       noFocusNotice(effectObserver),
       L.when(wholeActions.nonEmpty)(L.div(L.cls(Card.Styles.row), wholeActions)),
-      L.div(
-        L.cls(Card.Styles.well),
-        amountRow(inputID, amountText),
-        L.div(L.cls(Card.Styles.row), amountActions),
-        L.child.maybe <-- amountText.signal.map(amountProblem(_).map(warning))
+      L.when(amountActions.nonEmpty)(
+        // Laid out as the add card is, with the labels in a column of their own
+        L.div(
+          L.cls(Card.Styles.well, Card.Styles.form),
+          amountLabel(inputID),
+          amountControls(inputID, amountText),
+          // Across the whole card, so they start beneath the labels
+          L.span(L.cls(Card.Styles.controls, Card.Styles.wide), amountActions),
+          L.child.maybe <-- amountText.signal.map(amountProblem(_).map(warning))
+        )
       ),
       footer(holding.item, leading = requireButton(holding.item, requirementObserver, undoToasts, tooltip, close))
     )
@@ -163,9 +189,6 @@ object ItemCard {
   /** Why Add can't take Max: only items that each take a slot can be added until the inventory's
     * full */
   val fillReason: String = "Adding until full only works for items that take an inventory slot each"
-
-  def amountRow(id: String, amountText: Var[String]): L.Div =
-    L.div(L.cls(Card.Styles.row), amountLabel(id), amountControls(id, amountText))
 
   def amountLabel(id: String): L.Label =
     L.label(L.cls(Card.Styles.label), L.forId(id), "Amount")
@@ -224,7 +247,7 @@ object ItemCard {
       case trimmed if parseAmount(trimmed).nonEmpty => None
       case trimmed =>
         Try(BigInt(trimmed)).toOption match {
-          case Some(n) if n > Int.MaxValue => Some(s"A stack can hold at most ${format(Int.MaxValue)}.")
+          case Some(n) if n > Int.MaxValue => Some(s"A stack can hold at most ${Int.MaxValue.withCommas}.")
           case _ => Some("Type a whole number from 1, or pick an amount.")
         }
     }
@@ -232,7 +255,7 @@ object ItemCard {
   def warning(text: String): L.HtmlElement =
     L.p(L.cls(Card.Styles.warning), text)
 
-  /** Makes the focused step need the item at its start, in the inventory or worn */
+  /** Makes the focused step need the item at its start, in the inventory or equipped */
   def requireButton(
     item: Item,
     requirementObserver: Signal[Option[Observer[Requirement]]],
@@ -240,7 +263,7 @@ object ItemCard {
     tooltip: Tooltip,
     close: () => Unit
   ): L.Span = {
-    val where = if (item.equipmentType.nonEmpty) "is in the inventory or worn" else "is in the inventory"
+    val where = if (item.equipmentType.nonEmpty) "is in the inventory or equipped" else "is in the inventory"
     Card.withTooltip(
       L.button(
         L.cls(Card.Styles.ghost),
@@ -299,17 +322,24 @@ object ItemCard {
   @js.native @JSImport("/images/wiki-icon.png", JSImport.Default)
   private val wikiIcon: String = js.native
 
-  private def facts(item: Item, player: Player): List[L.Span] = {
+  /** How many of the item are held in each place, noted or not */
+  def facts(item: Item, playerSignal: Signal[Player]): L.Div =
+    L.div(
+      L.cls(Card.Styles.facts),
+      L.children <-- playerSignal.map(player => factList(item, player))
+    )
+
+  private def factList(item: Item, player: Player): List[L.Span] = {
     def count(kind: Kind): Int =
       player.get(kind).contents.collect { case ((id, _), n) if id == item.id => n }.sum
 
-    val worn = EquipmentSlot.values.exists(slot => count(slot) > 0)
+    val equipped = EquipmentSlot.values.map(count).sum
     List(
-      L.span("Inventory ", L.b(format(count(Kind.Inventory)))),
-      L.span("Bank ", L.b(format(count(Kind.Bank))))
-    ) ++ Option.when(item.equipmentType.nonEmpty)(L.span("Worn ", L.b(if (worn) "yes" else "no")))
+      L.span("Inventory ", L.b(count(Kind.Inventory).withCommas)),
+      L.span("Bank ", L.b(count(Kind.Bank).withCommas))
+    ) ++ Option.when(item.equipmentType.nonEmpty)(
+      // Only one of an unstackable item can be equipped, so whether it is says it all
+      L.span("Equipped ", L.b(if (item.stackable) equipped.withCommas else if (equipped > 0) "yes" else "no"))
+    )
   }
-
-  private def format(n: Int): String =
-    n.withCommas
 }

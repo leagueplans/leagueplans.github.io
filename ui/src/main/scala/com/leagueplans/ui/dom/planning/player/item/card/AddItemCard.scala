@@ -4,6 +4,7 @@ import com.leagueplans.common.model.Item
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.model.plan.{Effect, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.{Depository, ItemActions, ItemEffects, ItemStack}
 import com.leagueplans.uicommon.dom.Tooltip
 import com.raquo.airstream.core.{Observer, Signal}
@@ -25,6 +26,7 @@ object AddItemCard {
   def apply(
     item: Item,
     draft: Draft,
+    playerAtInsertion: Signal[Player],
     effectObserver: Signal[Option[Observer[Effect | Seq[Effect]]]],
     requirementObserver: Signal[Option[Observer[Requirement]]],
     undoToasts: UndoToasts,
@@ -44,6 +46,7 @@ object AddItemCard {
     L.div(
       L.cls(Card.Styles.card),
       ItemCard.header(item, noted = false, ItemStack(item, noted = false, quantity = 1), close),
+      ItemCard.facts(item, playerAtInsertion),
       ItemCard.noFocusNotice(effectObserver),
       // Labels in one column and controls in the other, so the controls line up
       L.div(
@@ -69,19 +72,18 @@ object AddItemCard {
           ),
           L.when(item.noteable)(
             L.label(
-              L.cls(Card.Styles.label),
+              L.cls(Card.Styles.check),
               L.input(
                 L.tpe("checkbox"),
                 L.controlled(L.checked <-- draft.noted.signal, L.onClick.mapToChecked --> draft.noted.writer)
               ),
-              " Noted"
+              "Noted"
             )
           )
         ),
-        // Under the controls, past the labels
-        L.span(),
+        // Across the whole card, as on the item card
         L.span(
-          L.cls(Card.Styles.controls),
+          L.cls(Card.Styles.controls, Card.Styles.wide),
           Card.withTooltip(
             L.button(
               L.cls(Card.Styles.button),

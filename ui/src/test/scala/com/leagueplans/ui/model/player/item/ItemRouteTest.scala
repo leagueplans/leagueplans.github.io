@@ -29,7 +29,7 @@ final class ItemRouteTest extends AnyFreeSpec with Matchers {
   private val weapon = Place(Kind.EquipmentSlot.Weapon, noted = false)
 
   "ItemRoute.allFor" - {
-    "gives every route for an item that can be banked, noted and worn" in {
+    "gives every route for an item that can be banked, noted and equipped" in {
       ItemRoute.allFor(item(noteable = true, Item.Bankable.Yes(stacks = true), Some(EquipmentType.Weapon))) shouldBe List(
         ItemRoute(bank, inventory),
         ItemRoute(bank, notes),
