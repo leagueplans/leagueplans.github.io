@@ -31,7 +31,7 @@ object InventoryPanel {
   ): L.Div = {
     val stacks = playerSignal.map(player => cache.itemise(player.get(Depository.Kind.Inventory)))
     val numbered = stacks.map(DepositoryStacks.numbered)
-    val capacity = Depository.Kind.Inventory.capacity
+    val capacity = Signal.fromValue(Depository.Kind.Inventory.capacity)
     val toElement = toStackElement(query, itemCards, itemDrag, tooltip)
 
     L.div(

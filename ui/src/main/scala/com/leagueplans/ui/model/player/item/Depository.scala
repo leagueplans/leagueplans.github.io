@@ -34,7 +34,8 @@ object Depository {
 
     case object Bank extends Kind {
       val name: String = "Bank"
-      val capacity: Int = 800
+      /** Before anything's unlocked. `Player.capacity` gives a player's. */
+      val capacity: Int = BankSpace.base
     }
 
     enum EquipmentSlot(slotName: String) extends Kind {

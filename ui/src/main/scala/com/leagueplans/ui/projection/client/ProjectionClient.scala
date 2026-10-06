@@ -2,6 +2,7 @@ package com.leagueplans.ui.projection.client
 
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.player.ViewerAccount
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.model.{Projection, StepError}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
@@ -15,17 +16,19 @@ object ProjectionClient {
   val projectionStatusKey = "projection-client-projection"
   val errorDetectionStatusKey = "projection-client-error-detection"
 
+  /** @param initialAccount what's true of the viewer's account, which applies to every plan */
   def apply(
     initialPlan: Forest[Step.ID, Step],
-    initialSettings: Plan.Settings
+    initialSettings: Plan.Settings,
+    initialAccount: ViewerAccount
   ): ProjectionClient = {
     val worker = WorkerFactory.projectionWorker()
     val port = MessagePortClient[Inbound, Outbound](worker)
-    port.send(Inbound.Initialise(id = 0L, initialPlan, initialSettings))
+    port.send(Inbound.Initialise(id = 0L, initialPlan, initialSettings, initialAccount))
 
     new ProjectionClient(
       port,
-      Var(Projection(initialSettings)).distinct,
+      Var(Projection(initialAccount.applyTo(initialSettings.initialPlayer))).distinct,
       _stepsWithErrors = Var(Map.empty).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       Var(StatusTracker.Status.Busy).distinct,
@@ -102,8 +105,8 @@ final class ProjectionClient(
   val stepsWithErrors: StrictSignal[Map[Step.ID, List[StepError]]] =
     _stepsWithErrors.signal
 
-  def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings): Unit =
-    send(Inbound.Initialise(nextId(), forest, settings))
+  def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings, account: ViewerAccount): Unit =
+    send(Inbound.Initialise(nextId(), forest, settings, account))
 
   def applyForestUpdates(updates: List[Forest.Update[Step.ID, Step]]): Unit =
     send(Inbound.ForestUpdated(nextId(), updates))
@@ -113,6 +116,9 @@ final class ProjectionClient(
 
   def changeFocus(focusID: Option[Step.ID]): Unit =
     send(Inbound.FocusChanged(nextId(), focusID))
+
+  def updateAccount(account: ViewerAccount): Unit =
+    send(Inbound.AccountChanged(nextId(), account))
 
   private def send(msg: Inbound): Unit = {
     _projectionStatus.set(StatusTracker.Status.Busy)

@@ -45,7 +45,7 @@ final class PlanTest extends CodecSpec {
         "Explicit" in testRoundTripSerialisation(
           Plan.Settings.Explicit(player, List(expMultiplier), Some(leaguePointScoring)),
           Decoder.decodeMessage,
-          Array[Byte](0, 0b1, 0b1100, -0b11100, 0b1, 0b100, 0b101001) ++ Encoder.encode(player).getBytes ++
+          Array[Byte](0, 0b1, 0b1100, -0b11000, 0b1, 0b100, 0b101101) ++ Encoder.encode(player).getBytes ++
             Array[Byte](0b1100, -0b1100001, 0b1) ++ Encoder.encode(expMultiplier).getBytes ++
             Array[Byte](0b10100, 0b10101) ++ Encoder.encode(leaguePointScoring).getBytes
         )

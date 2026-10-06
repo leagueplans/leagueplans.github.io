@@ -3,15 +3,15 @@ package com.leagueplans.ui.dom.planning
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController}
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
-import com.leagueplans.ui.storage.local.PlanLocalStorage
+import com.leagueplans.ui.storage.local.{PlanLocalStorage, ViewerAccountStorage}
 import com.leagueplans.ui.storage.model.StepUpdates
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
-import com.raquo.airstream.core.Observer
+import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
@@ -29,7 +29,8 @@ object PlanningPageBootstrap {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): L.Div = {
-    val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings)
+    val account = Var(ViewerAccountStorage.load())
+    val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings, account.now())
     val timeKeeper = TimeKeeper(initialPlan.steps)
 
 
@@ -42,8 +43,14 @@ object PlanningPageBootstrap {
       planStorage,
       initialPlan.name,
       settings.signal,
+      account,
       forester,
-      FocusContext(focusedStep, forester.signal, projectionClient.projection),
+      // The account applies at once; the worker's problems catch up when it's worked them out
+      FocusContext(
+        focusedStep,
+        forester.signal,
+        Signal.combine(projectionClient.projection, account.signal).map(_.withAccount(_))
+      ),
       timeKeeper,
       focusController,
       CollapsedSteps(planStorage, initialPlan.steps.nodes.keySet),
@@ -65,6 +72,10 @@ object PlanningPageBootstrap {
       forester.updates --> Observer(projectionClient.applyForestUpdates),
       settings.signal.changes --> Observer(projectionClient.updateSettings),
       focusedStep.changes --> Observer(projectionClient.changeFocus),
+      account.signal.changes --> Observer { (account: ViewerAccount) =>
+        ViewerAccountStorage.save(account)
+        projectionClient.updateAccount(account)
+      },
       projectionClient.projectionsStatus --> Observer(statusTracker.set(ProjectionClient.projectionStatusKey, _)),
       projectionClient.errorDetectionStatus --> Observer(statusTracker.set(ProjectionClient.errorDetectionStatusKey, _)),
       // Timekeeping

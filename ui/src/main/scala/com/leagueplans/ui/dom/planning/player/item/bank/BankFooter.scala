@@ -3,12 +3,13 @@ package com.leagueplans.ui.dom.planning.player.item.bank
 import com.leagueplans.ui.dom.planning.player.card.Card
 import com.leagueplans.ui.dom.planning.player.item.{AmountStepKeys, ItemActionRunner}
 import com.leagueplans.ui.model.plan.ItemQuantity
-import com.leagueplans.ui.model.player.item.Depository
 import com.leagueplans.ui.model.player.item.ItemActions.Action
 import com.leagueplans.ui.model.player.item.ItemTransfer.{Quantity, Settings}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
@@ -24,9 +25,14 @@ import scala.scalajs.js.annotation.JSImport
   * all equipment.
   */
 object BankFooter {
-  /** @param slotsUsed how many of the bank's slots are taken */
+  /** @param slotsUsed how many of the bank's slots are taken
+    * @param capacity how many slots the bank has
+    * @param slotsTrigger opens the bank space card from the slot count
+    */
   def apply(
     slotsUsed: Signal[Int],
+    capacity: Signal[Int],
+    slotsTrigger: L.Modifier[L.HtmlElement],
     settings: Var[Settings],
     runner: ItemActionRunner,
     depositInventory: Player => Option[Action],
@@ -43,14 +49,22 @@ object BankFooter {
       // beside them
       L.span(
         L.cls(Styles.settings),
-        // As the inventory's footer shows its slots
+        // As the inventory's footer shows its slots, on a button like the footer's others, which
+        // opens the card that says where they come from
         L.span(
           L.cls(Styles.group),
           L.span(L.cls(Styles.label), "Slots"),
-          L.span(
-            L.cls(Styles.used),
-            L.cls(Styles.over) <-- slotsUsed.map(_ > Depository.Kind.Bank.capacity),
-            L.text <-- slotsUsed.map(used => s"$used/${Depository.Kind.Bank.capacity}")
+          L.button(
+            L.cls(Styles.slots),
+            L.tpe("button"),
+            L.aria.label("Bank slots: see where they come from"),
+            slotsTrigger,
+            L.span(
+              L.cls(Styles.used),
+              L.cls(Styles.over) <-- Signal.combine(slotsUsed, capacity).map(_ > _),
+              L.text <-- Signal.combine(slotsUsed, capacity).map((used, capacity) => s"$used/$capacity")
+            ),
+            FontAwesome.icon(FreeSolid.faCircleInfo).amend(L.svg.cls(Styles.slotsIcon))
           )
         ),
         L.span(
@@ -187,6 +201,8 @@ object BankFooter {
     val footer: String = js.native
     val group: String = js.native
     val label: String = js.native
+    val slots: String = js.native
+    val slotsIcon: String = js.native
     val used: String = js.native
     val over: String = js.native
     val segments: String = js.native

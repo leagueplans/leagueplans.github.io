@@ -12,7 +12,8 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
 
-final class StepErrorFinder(settings: Plan.Settings, resolver: EffectResolver, cache: Cache) {
+/** @param initialPlayer the player before the plan's first step */
+final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, resolver: EffectResolver, cache: Cache) {
   private val maybeLeague = settings.maybeLeaguePointScoring.map(_.league)
 
   def findAsync(
@@ -21,7 +22,7 @@ final class StepErrorFinder(settings: Plan.Settings, resolver: EffectResolver, c
   ): Future[Option[Map[Step.ID, List[StepError]]]] =
     ForestFolder.foldLeftAsync(
       forest,
-      (Map.empty[Step.ID, List[StepError]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], settings.initialPlayer),
+      (Map.empty[Step.ID, List[StepError]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], initialPlayer),
       signal,
       _.repetitions
     ) { case ((errors, completionOwners, processedReps, player), step, reps) =>

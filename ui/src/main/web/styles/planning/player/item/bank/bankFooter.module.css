@@ -21,6 +21,35 @@
   font-size: 0.75rem;
 }
 
+/* The slot count, on a button like the footer's others, which opens the bank space card */
+.slots {
+  padding: 3px 8px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid #1d1813;
+  border-radius: 6px;
+  background-color: #3b3229;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.slots:hover, .slots:focus-visible {
+  background-color: #4a3f33;
+  outline: none;
+}
+
+.slots[aria-expanded="true"] {
+  background-color: #2f4679;
+}
+
+.slotsIcon {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
 .used {
   color: var(--text-bright);
   font-size: 0.75rem;

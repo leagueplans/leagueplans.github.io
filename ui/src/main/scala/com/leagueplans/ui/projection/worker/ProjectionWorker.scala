@@ -2,7 +2,7 @@ package com.leagueplans.ui.projection.worker
 
 import com.leagueplans.ui.model.common.forest.{Forest, ForestResolver}
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.player.{Cache, ViewerAccount}
 import com.leagueplans.ui.projection.calculation.{EffectResolver, Projector, StepErrorFinder}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.projection.worker.ProjectionWorker.State
@@ -55,6 +55,8 @@ private object ProjectionWorker {
   private final case class State(
     forest: Forest[Step.ID, Step],
     focusID: Option[Step.ID],
+    settings: Plan.Settings,
+    account: ViewerAccount,
     projector: Projector,
     errorFinder: StepErrorFinder,
     latestID: Long,
@@ -76,13 +78,15 @@ private final class ProjectionWorker(
     currentController = new AbortController()
 
     message match {
-      case Inbound.Initialise(id, plan, settings) =>
-        val resolver = EffectResolver(settings, cache)
+      case Inbound.Initialise(id, plan, settings, account) =>
+        val (projector, errorFinder) = calculators(settings, account)
         state = Some(State(
           plan,
           focusID = None,
-          projector = new Projector(settings, resolver),
-          errorFinder = new StepErrorFinder(settings, resolver, cache),
+          settings,
+          account,
+          projector,
+          errorFinder,
           latestID = id,
           latestNonFocusID = id,
           lastSuccessfulErrorID = None
@@ -100,19 +104,29 @@ private final class ProjectionWorker(
         ))
 
       case Inbound.SettingsChanged(id, settings) =>
-        val resolver = EffectResolver(settings, cache)
-        state = state.map(_.copy(
-          projector = new Projector(settings, resolver),
-          errorFinder = new StepErrorFinder(settings, resolver, cache),
-          latestID = id,
-          latestNonFocusID = id
-        ))
+        state = state.map { s =>
+          val (projector, errorFinder) = calculators(settings, s.account)
+          s.copy(settings = settings, projector = projector, errorFinder = errorFinder, latestID = id, latestNonFocusID = id)
+        }
+
+      case Inbound.AccountChanged(id, account) =>
+        state = state.map { s =>
+          val (projector, errorFinder) = calculators(s.settings, account)
+          s.copy(account = account, projector = projector, errorFinder = errorFinder, latestID = id, latestNonFocusID = id)
+        }
 
       case Inbound.FocusChanged(id, focusID) =>
         state = state.map(_.copy(focusID = focusID, latestID = id))
     }
 
     scheduleComputation()
+  }
+
+  /** The viewer's account applies to the plan's starting player */
+  private def calculators(settings: Plan.Settings, account: ViewerAccount): (Projector, StepErrorFinder) = {
+    val resolver = EffectResolver(settings, cache)
+    val initialPlayer = account.applyTo(settings.initialPlayer)
+    (new Projector(initialPlayer, resolver), new StepErrorFinder(settings, initialPlayer, resolver, cache))
   }
 
   private def scheduleComputation(): Unit =

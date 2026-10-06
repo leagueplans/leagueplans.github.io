@@ -5,7 +5,7 @@ import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemChange
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.league.LeagueStatus
@@ -105,6 +105,20 @@ final class ValidatorTest extends AnyFreeSpec with Matchers {
         "This would put 2 × Rune scimitar in the weapon slot, which holds one item"
       error(Validator.depositorySize(EquipmentSlot.Ammo), player(((EquipmentSlot.Ammo, bronzeArrows, false), 50), ((EquipmentSlot.Ammo, ironArrows, false), 20))) shouldBe
         "This would put Bronze arrow and Iron arrow in the ammo slot, which holds one stack"
+    }
+
+    "measures the bank against the player's bank space, saying where its slots come from" in {
+      val fillers = (1000 until 1951).map(id => item(id, s"Filler $id"))
+      val bigCache = cache.copy(items = cache.items ++ fillers.map(i => i.id -> i))
+      val bank = Depository(fillers.map(i => (i.id, false) -> 1).toMap, Kind.Bank)
+      val full = player().copy(depositories = Map(Kind.Bank -> bank))
+      def bankError(player: Player): String =
+        Validator.depositorySize(Kind.Bank)(player, None, bigCache).left.getOrElse(fail("Expected a problem"))
+
+      bankError(full) shouldBe "This would fill 951 bank slots, but there are only 900"
+      bankError(full.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.JagexAccount, BankSpace.Unlock.Authenticator), 0))) shouldBe
+        "This would fill 951 bank slots, but there are only 940 (900, and 40 from your account)"
+      Validator.depositorySize(Kind.Bank)(full.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), blocksBought = 1)), None, bigCache) shouldBe Right(())
     }
 
     "gives the reason an item can't be moved somewhere" in {

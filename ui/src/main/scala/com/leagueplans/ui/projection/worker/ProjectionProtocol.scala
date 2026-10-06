@@ -4,6 +4,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.player.ViewerAccount
 import com.leagueplans.ui.projection.model.{Projection, StepError}
 
 object ProjectionProtocol {
@@ -15,7 +16,8 @@ object ProjectionProtocol {
     final case class Initialise(
       id: Long,
       plan: Forest[Step.ID, Step],
-      settings: Plan.Settings
+      settings: Plan.Settings,
+      account: ViewerAccount
     ) extends Inbound
 
     final case class ForestUpdated(
@@ -31,6 +33,12 @@ object ProjectionProtocol {
     final case class FocusChanged(
       id: Long,
       focusID: Option[Step.ID]
+    ) extends Inbound
+
+    /** The viewer changed what's true of their account, which isn't part of the plan */
+    final case class AccountChanged(
+      id: Long,
+      account: ViewerAccount
     ) extends Inbound
 
     given Encoder[Inbound] = Encoder.derived

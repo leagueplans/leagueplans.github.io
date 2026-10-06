@@ -8,7 +8,7 @@ import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan, Step}
-import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
@@ -17,7 +17,7 @@ import com.leagueplans.ui.storage.local.PlanLocalStorage
 import com.leagueplans.uicommon.dom.*
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
-import com.raquo.airstream.state.Val
+import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 
 import scala.scalajs.js
@@ -28,6 +28,7 @@ object PlanningPage {
     planStorage: PlanLocalStorage,
     name: String,
     settings: Signal[Plan.Settings],
+    account: Var[ViewerAccount],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     timeKeeper: TimeKeeper,
@@ -92,6 +93,7 @@ object PlanningPage {
           stepEditor.requirementObserver,
           focusContext.focusID.changes.mapToUnit,
           settings,
+          account,
           cache,
           tooltip,
           contextMenu,

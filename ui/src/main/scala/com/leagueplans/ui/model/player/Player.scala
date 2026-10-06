@@ -2,7 +2,7 @@ package com.leagueplans.ui.model.player
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.skill.Stats
 
@@ -13,7 +13,9 @@ object Player {
     completedQuests: Set[Int],
     completedDiaryTasks: Set[Int],
     leagueStatus: LeagueStatus,
-    gridStatus: GridStatus
+    gridStatus: GridStatus,
+    // Optional so that players encoded before there was bank space still decode
+    bankSpace: Option[BankSpace]
   )
 
   given Encoder[Player] = Encoder.derived[Simplified].contramap(player =>
@@ -23,7 +25,8 @@ object Player {
       player.completedQuests,
       player.completedDiaryTasks,
       player.leagueStatus,
-      player.gridStatus
+      player.gridStatus,
+      Some(player.bankSpace)
     )
   )
 
@@ -34,7 +37,8 @@ object Player {
       simplified.completedQuests,
       simplified.completedDiaryTasks,
       simplified.leagueStatus,
-      simplified.gridStatus
+      simplified.gridStatus,
+      simplified.bankSpace.getOrElse(BankSpace.none)
     )
   )
 }
@@ -45,8 +49,16 @@ final case class Player(
   completedQuests: Set[Int],
   completedDiaryTasks: Set[Int],
   leagueStatus: LeagueStatus,
-  gridStatus: GridStatus
+  gridStatus: GridStatus,
+  bankSpace: BankSpace = BankSpace.none
 ) {
   def get(kind: Depository.Kind): Depository =
     depositories.getOrElse(kind, Depository.empty(kind))
+
+  /** How many slots a place has, which for the bank depends on what's been unlocked */
+  def capacity(kind: Depository.Kind): Int =
+    kind match {
+      case Depository.Kind.Bank => bankSpace.capacity
+      case other => other.capacity
+    }
 }

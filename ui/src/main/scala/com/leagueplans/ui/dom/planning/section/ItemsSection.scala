@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.player.item.ItemActionRunner
-import com.leagueplans.ui.dom.planning.player.item.bank.{BankElement, BankFooter}
+import com.leagueplans.ui.dom.planning.player.item.bank.{BankElement, BankFooter, BankSpaceCard}
 import com.leagueplans.ui.dom.planning.player.item.card.ItemCards
 import com.leagueplans.ui.dom.planning.player.item.drag.ItemDrag
 import com.leagueplans.ui.dom.planning.player.item.equipment.EquipmentElement
@@ -87,8 +87,10 @@ object ItemsSection {
           itemCards,
           itemDrag,
           ctx.tooltip,
-          slotsUsed => BankFooter(
+          (slotsUsed, capacity) => BankFooter(
             slotsUsed,
+            capacity,
+            BankSpaceCard.trigger(ctx.popover, ctx.displayedPlayer, ctx.account, () => section),
             itemDrag.settings,
             runner,
             depositInventory,

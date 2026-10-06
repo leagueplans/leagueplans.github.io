@@ -125,5 +125,13 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
       ItemEffects.room(scimitar, noted = false, EquipmentSlot.Weapon, player(), items) shouldBe Some(1)
       ItemEffects.room(scimitar, noted = false, EquipmentSlot.Weapon, player(((EquipmentSlot.Weapon, scimitar, false), 1)), items) shouldBe Some(0)
     }
+
+    "has room in the bank for a new stack only while the player's bank space has a free slot" in {
+      val fullBank = player().copy(depositories = Map(
+        Kind.Bank -> Depository((1000 until 1900).map(id => (Item.ID(id), false) -> 1).toMap, Kind.Bank)
+      ))
+      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank, items) shouldBe Some(0)
+      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), 0)), items) shouldBe None
+    }
   }
 }

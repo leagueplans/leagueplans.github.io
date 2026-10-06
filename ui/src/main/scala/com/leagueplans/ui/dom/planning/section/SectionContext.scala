@@ -3,9 +3,10 @@ package com.leagueplans.ui.dom.planning.section
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
-import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.player.{Cache, Player, ViewerAccount}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.airstream.state.Var
 
 /** What a section needs from the planning page.
   *
@@ -20,6 +21,7 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
   * @param focusChanges fires when a different step is focused. Sections use it to clear drafts
   *                     built from the old step's state, such as an open menu showing a stack's
   *                     quantity. Drafts that don't depend on the step, such as search text, stay.
+  * @param account what's true of the viewer's account, which applies to every plan they open
   * @param popover shows a card anchored to something in the section, such as an item's card.
   *                Cards are built from the focused step's state, so they close when the focus
   *                changes.
@@ -37,6 +39,7 @@ final case class SectionContext(
   requirementObserver: Signal[Option[Observer[Requirement]]],
   focusChanges: EventStream[Unit],
   settings: Signal[Plan.Settings],
+  account: Var[ViewerAccount],
   cache: Cache,
   tooltip: Tooltip,
   contextMenu: ContextMenu,

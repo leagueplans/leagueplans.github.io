@@ -1,7 +1,7 @@
 package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.projection.model.Projection
 import org.scalajs.dom
@@ -9,7 +9,8 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
 
-final class Projector(settings: Plan.Settings, effectResolver: EffectResolver) {
+/** @param initialPlayer the player before the plan's first step */
+final class Projector(initialPlayer: Player, effectResolver: EffectResolver) {
   /** Computes the [[Projection]] for the focused step asynchronously, yielding to the
     * macrotask queue periodically. This keeps the worker responsive — if a newer message
     * arrives mid-computation, the signal is aborted and [[None]] is returned early.
@@ -57,7 +58,7 @@ final class Projector(settings: Plan.Settings, effectResolver: EffectResolver) {
     }
 
     // Phase 1
-    foldLeftAsync(precedingRootSteps, settings.initialPlayer, signal)(resolvePlayer).flatMap {
+    foldLeftAsync(precedingRootSteps, initialPlayer, signal)(resolvePlayer).flatMap {
       case None => Future.successful(None)
       case Some(playerAfterPreceding) =>
         // Phase 2: playerBeforeFocus

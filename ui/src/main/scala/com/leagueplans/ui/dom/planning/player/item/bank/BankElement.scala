@@ -21,6 +21,7 @@ object BankElement {
   /** @param playerAtInsertion the state new effects apply to, for the add results' held counts
     * @param query the bank search, which also dims the inventory's stacks that don't match, and
     *              finds items to add
+    * @param footer the bank's footer, given how many slots are taken and how many there are
     */
   def apply(
     playerSignal: Signal[Player],
@@ -30,7 +31,7 @@ object BankElement {
     itemCards: ItemCards,
     itemDrag: ItemDrag,
     tooltip: Tooltip,
-    footer: Signal[Int] => L.Div
+    footer: (Signal[Int], Signal[Int]) => L.Div
   ): L.Div = {
     val bankSignal = playerSignal.map(_.get(Depository.Kind.Bank))
     val stacks = bankSignal.map(cache.itemise)
@@ -40,7 +41,7 @@ object BankElement {
         val numbered = DepositoryStacks.numbered(stacks)
         if (ItemQuery.isEmpty(query)) numbered else numbered.filter((stack, _) => ItemQuery.matches(stack.item, query))
       }
-    val capacity = Depository.Kind.Bank.capacity
+    val capacity = playerSignal.map(_.capacity(Depository.Kind.Bank)).distinct
     val toElement = toStackElement(itemCards, itemDrag, tooltip)
 
     L.div(
@@ -69,7 +70,7 @@ object BankElement {
           Option.when(!isEmpty)(AddResults(query.signal, playerAtInsertion, cache, itemCards, tooltip))
         )
       ),
-      footer(stacks.map(_.size))
+      footer(stacks.map(_.size), capacity)
     )
   }
 

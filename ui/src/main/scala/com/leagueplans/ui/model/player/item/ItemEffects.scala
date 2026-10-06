@@ -63,7 +63,7 @@ object ItemEffects {
     val alreadyHeld = depository.contents.contains((item.id, noted))
     target match {
       case Kind.Bank =>
-        if (alreadyHeld || depository.contents.size < Kind.Bank.capacity) None else Some(0)
+        if (alreadyHeld || depository.contents.size < player.capacity(Kind.Bank)) None else Some(0)
       case Kind.Inventory =>
         val used = depository.contents.toList.map { case ((id, isNoted), n) =>
           if (items(id).stackable || isNoted) 1 else n

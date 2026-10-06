@@ -3,7 +3,7 @@ package com.leagueplans.ui.projection.calculation.validation
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.plan.ItemChange
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositSource, MoveItem}
-import com.leagueplans.ui.model.player.item.{Depository, ItemEffects, ItemRoute}
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository, ItemEffects, ItemRoute}
 import com.leagueplans.ui.model.player.mode.*
 import com.leagueplans.ui.model.player.skill.Level
 import com.leagueplans.ui.model.player.{Cache, Player}
@@ -21,8 +21,9 @@ object Validator {
       def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
         val depository = player.get(kind)
         val spaces = cache.itemise(depository).size
+        val capacity = player.capacity(kind)
         Either.cond(
-          spaces <= kind.capacity,
+          spaces <= capacity,
           right = (),
           left = kind match {
             case slot: Depository.Kind.EquipmentSlot =>
@@ -33,8 +34,10 @@ object Validator {
                 if (n > 1 && !cache.items(id).stackable) s"${n.withCommas} × $name" else name
               }
               s"This would put ${listed(named)} in the ${place(slot)}, which holds one ${if (stacks) "stack" else "item"}"
+            case Depository.Kind.Bank if player.bankSpace != BankSpace.none =>
+              s"This would fill ${spaces.withCommas} bank slots, but there are only ${capacity.withCommas} (${player.bankSpace.breakdown})"
             case _ =>
-              s"This would fill ${spaces.withCommas} ${place(kind)} slots, but there are only ${kind.capacity.withCommas}"
+              s"This would fill ${spaces.withCommas} ${place(kind)} slots, but there are only ${capacity.withCommas}"
           }
         )
       }

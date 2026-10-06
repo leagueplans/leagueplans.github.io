@@ -34,11 +34,11 @@ object DepositoryStacks {
   /** The stacks that fit in the place */
   def within(
     stacks: Signal[List[(ItemStack, Int)]],
-    capacity: Int,
+    capacity: Signal[Int],
     layout: Layout,
     toElement: ItemStack => L.Modifier[L.HtmlElement]
   ): ReactiveHtmlElement[OList] =
-    StackList(stacks.map(_.filter((_, index) => index < capacity)), toElement).amend(
+    StackList(Signal.combine(stacks, capacity).map((stacks, capacity) => stacks.filter((_, index) => index < capacity)), toElement).amend(
       L.cls(Styles.stacks),
       gridTemplate(layout)
     )
@@ -48,12 +48,12 @@ object DepositoryStacks {
     */
   def beyond(
     stacks: Signal[List[(ItemStack, Int)]],
-    capacity: Int,
+    capacity: Signal[Int],
     renderLimit: Int,
     layout: Layout,
     toElement: ItemStack => L.Modifier[L.HtmlElement]
   ): Signal[Option[L.Div]] = {
-    val extras = stacks.map(_.filter((_, index) => index >= capacity))
+    val extras = Signal.combine(stacks, capacity).map((stacks, capacity) => stacks.filter((_, index) => index >= capacity))
     extras.map(_.nonEmpty).distinct.map(isOver =>
       Option.when(isOver)(
         L.div(
