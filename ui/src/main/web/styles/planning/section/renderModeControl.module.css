@@ -24,7 +24,7 @@
 
 .segment {
   display: block;
-  padding: 4px 10px;
+  padding: 3px 9px;
 
   cursor: pointer;
   font-size: 0.75rem;
@@ -50,12 +50,13 @@
 }
 
 .option:hover {
-  background-color: #494034;
+  background-color: #4a3f33;
 }
 
+/* Styled like the bank's quantity options */
 .selected {
   composes: segment;
-  background-color: #645c52;
+  background-color: #2f4679;
   color: var(--text-bright);
 }
 
