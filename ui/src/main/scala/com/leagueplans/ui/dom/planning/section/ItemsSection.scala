@@ -59,23 +59,26 @@ object ItemsSection {
       L.div(
         L.cls(Styles.layout),
         L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
-        EquipmentElement(
-          ctx.displayedPlayer,
-          ctx.cache,
-          itemCards,
-          itemDrag,
-          ctx.tooltip
-        ).amend(L.cls(Styles.equipment)),
-        InventoryPanel(
-          ctx.displayedPlayer,
-          bankQuery.signal,
-          ctx.cache,
-          itemCards,
-          itemDrag,
-          ctx.focusID,
-          ctx.tooltip,
-          ctx.toasts
-        ).amend(L.cls(Styles.inventory)),
+        L.div(
+          L.cls(Styles.worn),
+          EquipmentElement(
+            ctx.displayedPlayer,
+            ctx.cache,
+            itemCards,
+            itemDrag,
+            ctx.tooltip
+          ).amend(L.cls(Styles.equipment)),
+          InventoryPanel(
+            ctx.displayedPlayer,
+            bankQuery.signal,
+            ctx.cache,
+            itemCards,
+            itemDrag,
+            ctx.focusID,
+            ctx.tooltip,
+            ctx.toasts
+          ).amend(L.cls(Styles.inventory))
+        ),
         BankElement(
           ctx.displayedPlayer,
           ctx.playerAtInsertion,
@@ -100,6 +103,7 @@ object ItemsSection {
   @js.native @JSImport("/styles/planning/section/itemsSection.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val layout: String = js.native
+    val worn: String = js.native
     val equipment: String = js.native
     val inventory: String = js.native
     val bank: String = js.native
