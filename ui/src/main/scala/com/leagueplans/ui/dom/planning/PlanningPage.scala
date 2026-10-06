@@ -8,7 +8,8 @@ import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
-import com.leagueplans.ui.model.player.{Cache, FocusContext}
+import com.leagueplans.ui.model.player.item.ItemEffects
+import com.leagueplans.ui.model.player.{Cache, FocusContext, Player}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.model.StepError
@@ -86,7 +87,7 @@ object PlanningPage {
           displayedState.playerAtInsertion,
           displayedState.baseline,
           focusContext.focusID,
-          createEffectObserver(focusContext.focus, forester),
+          createEffectObserver(focusContext.focus, focusContext.playerBeforeCurrentFocus, cache, forester),
           createRequirementObserver(focusContext.focus, forester),
           focusContext.focusID.changes.mapToUnit,
           settings,
@@ -194,18 +195,21 @@ object PlanningPage {
     }
 
   /** Adds effects to the focused step. Several effects can be added together in one update. */
+  /** Adds effects to the focused step, merging them with its effects */
   private def createEffectObserver(
     focusedStepSignal: Signal[Option[Step]],
+    playerAtStart: Signal[Player],
+    cache: Cache,
     forester: Forester[Step.ID, Step]
   ): Signal[Option[Observer[Effect | Seq[Effect]]]] =
-    focusedStepSignal.map(_.map(focusedStep =>
+    Signal.combine(focusedStepSignal, playerAtStart).map((focusedStep, player) => focusedStep.map(focusedStep =>
       Observer[Effect | Seq[Effect]] { effectOrEffects =>
         val effects = effectOrEffects match {
           case effect: Effect => List(effect)
           case effects: Seq[Effect @unchecked] => effects
         }
         forester.update(focusedStep.id, step =>
-          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(_ + _))
+          step.deepCopy(directEffects = effects.foldLeft(step.directEffects)(ItemEffects.addToStep(_, _, player, cache.items)))
         )
       }
     ))
