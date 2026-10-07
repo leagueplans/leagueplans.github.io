@@ -13,6 +13,23 @@ object Changelog {
     L.ol(
       L.cls(Styles.changelog),
       item(
+        new Date(2026, 9, 7),
+        "A new planning page",
+        List(
+          "The tabs above your character have been replaced by a column of icons down the left: one each for" +
+            " your items, stats, quests, diaries and so on.",
+          "The step editor has moved from the bottom of the page to a column beside your steps, which you can" +
+            " resize or hide. Click an effect's amount to change it, drag effects and requirements to reorder them" +
+            " or onto a different step, and delete them with the bin icon. Every deletion can be undone.",
+          "Your bank, inventory and worn equipment now look and work like they do in game. Click an item to bank," +
+            " withdraw, wear or drop it, or drag it where you want it to go. Searching the bank also finds items" +
+            " you don't have yet, so you can add them.",
+          "The bank has the game's Withdraw as Item/Note and quantity buttons, and amounts accept 10k, 1.5m and so on.",
+          "Banks now have 900 slots, plus 20 each for a Jagex Account and an authenticator. Click the bank's slot" +
+            " count to set a bank PIN or buy more bank space."
+        )
+      ),
+      item(
         new Date(2026, 9, 3),
         "Undo and redo",
         List(
