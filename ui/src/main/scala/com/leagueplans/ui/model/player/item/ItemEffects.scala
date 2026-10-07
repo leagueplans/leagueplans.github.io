@@ -87,8 +87,14 @@ object ItemEffects {
     val depository = player.get(target)
     val alreadyHeld = depository.contents.contains((item.id, noted))
     target match {
+      // As in the game, an item takes one slot for its whole stack, or one for each item if it
+      // doesn't stack in the bank
       case Kind.Bank =>
-        if (alreadyHeld || depository.contents.size < player.capacity(Kind.Bank)) None else Some(0)
+        def stacksInBank(item: Item): Boolean = item.bankable != Item.Bankable.Yes(stacks = false)
+        val used = depository.contents.toList.map { case ((id, _), n) => if (stacksInBank(items(id))) 1 else n }.sum
+        val free = math.max(player.capacity(Kind.Bank) - used, 0)
+        if (stacksInBank(item)) Option.when(!alreadyHeld && free == 0)(0)
+        else Some(free)
       case Kind.Inventory =>
         val used = depository.contents.toList.map { case ((id, isNoted), n) =>
           if (items(id).stackable || isNoted) 1 else n

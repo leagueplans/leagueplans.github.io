@@ -127,6 +127,20 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
       ItemEffects.room(scimitar, noted = false, EquipmentSlot.Weapon, player(((EquipmentSlot.Weapon, scimitar, false), 1)), items) shouldBe Some(0)
     }
 
+    "counts a slot for each item that doesn't stack in the bank" in {
+      val flask = item(5000, bankable = Item.Bankable.Yes(stacks = false))
+      val fillers = (6000 until 6897).map(item(_))
+      val allItems = items ++ (flask +: fillers).map(i => i.id -> i)
+      val bank = Depository(fillers.map(i => (i.id, false) -> 1).toMap + ((flask.id, false) -> 3), Kind.Bank)
+      val full = player().copy(depositories = Map(Kind.Bank -> bank))
+
+      // 897 stacks and 3 flasks fill all 900 slots
+      ItemEffects.room(lobster, noted = false, Kind.Bank, full, allItems) shouldBe Some(0)
+      ItemEffects.room(flask, noted = false, Kind.Bank, full, allItems) shouldBe Some(0)
+      // With a PIN's 20 slots, each further flask needs a slot of its own
+      ItemEffects.room(flask, noted = false, Kind.Bank, full.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), 0)), allItems) shouldBe Some(20)
+    }
+
     "sets a bank PIN, unlocking its space" in {
       ItemEffects(player(), SetBankPin, items).bankSpace.unlocks shouldBe Set(BankSpace.Unlock.Pin)
     }
@@ -162,11 +176,13 @@ final class ItemEffectsTest extends AnyFreeSpec with Matchers {
     }
 
     "has room in the bank for a new stack only while the player's bank space has a free slot" in {
+      val fillers = (1000 until 1900).map(item(_))
+      val allItems = items ++ fillers.map(i => i.id -> i)
       val fullBank = player().copy(depositories = Map(
-        Kind.Bank -> Depository((1000 until 1900).map(id => (Item.ID(id), false) -> 1).toMap, Kind.Bank)
+        Kind.Bank -> Depository(fillers.map(i => (i.id, false) -> 1).toMap, Kind.Bank)
       ))
-      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank, items) shouldBe Some(0)
-      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), 0)), items) shouldBe None
+      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank, allItems) shouldBe Some(0)
+      ItemEffects.room(lobster, noted = false, Kind.Bank, fullBank.copy(bankSpace = BankSpace(Set(BankSpace.Unlock.Pin), 0)), allItems) shouldBe None
     }
   }
 }
