@@ -14,8 +14,9 @@ import org.scalajs.dom.Element
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-/** Equipment and the inventory sit on the left at their in-game sizes, and the bank takes the
-  * rest of the space, scrolling on its own. Clicking any stack opens its card.
+/** The bank sits on the left, taking the space that equipment and the inventory leave it on the
+  * right at their in-game sizes. It's as tall as its contents, from the inventory's height up to
+  * the view's, and then scrolls on its own. Clicking any stack opens its card.
   *
   * Stacks can be dragged between the panels, and shift-clicked to move a whole stack.
   *
@@ -59,6 +60,25 @@ object ItemsSection {
       L.div(
         L.cls(Styles.layout),
         L.onMountUnmountCallback(ctx => section = Some(ctx.thisNode.ref), _ => section = None),
+        BankElement(
+          ctx.displayedPlayer,
+          ctx.playerAtInsertion,
+          bankQuery,
+          ctx.cache,
+          itemCards,
+          itemDrag,
+          ctx.tooltip,
+          (slotsUsed, capacity) => BankFooter(
+            slotsUsed,
+            capacity,
+            BankSpaceCard.trigger(ctx.popover, ctx.displayedPlayer, ctx.account, runner, ctx.tooltip, () => section),
+            itemDrag.settings,
+            runner,
+            depositInventory,
+            ItemActions.depositEquipment(_, ctx.cache.items),
+            ctx.tooltip
+          )
+        ).amend(L.cls(Styles.bank)),
         L.div(
           L.cls(Styles.worn),
           EquipmentElement(
@@ -78,26 +98,7 @@ object ItemsSection {
             ctx.tooltip,
             ctx.toasts
           ).amend(L.cls(Styles.inventory))
-        ),
-        BankElement(
-          ctx.displayedPlayer,
-          ctx.playerAtInsertion,
-          bankQuery,
-          ctx.cache,
-          itemCards,
-          itemDrag,
-          ctx.tooltip,
-          (slotsUsed, capacity) => BankFooter(
-            slotsUsed,
-            capacity,
-            BankSpaceCard.trigger(ctx.popover, ctx.displayedPlayer, ctx.account, runner, ctx.tooltip, () => section),
-            itemDrag.settings,
-            runner,
-            depositInventory,
-            ItemActions.depositEquipment(_, ctx.cache.items),
-            ctx.tooltip
-          )
-        ).amend(L.cls(Styles.bank))
+        )
       )
     )
   }
