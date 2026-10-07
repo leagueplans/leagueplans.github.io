@@ -50,6 +50,12 @@ jobs:
       with:
         sbt-runner-version: 1.13.0
 
+    # The Scala.js tests import npm packages (uicommon's fuse.js façade), which have to be
+    # installed for them to link.
+    - name: Install npm packages
+      if: steps.identify-changes.outputs.sources == 'true'
+      run: npm ci
+
     # Publishing to docs/ is a deployment, so it has to be gated on the tests for the code
     # being deployed. Running them here rather than depending on the Test workflow keeps
     # that guarantee in one job: if this step fails, the bundle is never built and docs/ is
@@ -64,9 +70,7 @@ jobs:
     - name: Bundle javascript
       id: bundle-js
       if: steps.identify-changes.outputs.sources == 'true'
-      run: |
-        npm ci
-        npm run build
+      run: npm run build
 
     - name: Sync docs
       if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
