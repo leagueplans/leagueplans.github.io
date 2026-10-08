@@ -1,6 +1,8 @@
 package com.leagueplans.ui.dom.planning.details
 
+import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 
@@ -19,7 +21,8 @@ object RowAmounts {
   /** The most base exp a single effect can hold */
   val maxExp: Int = 200000000
 
-  def of(effect: Effect): Option[Amount] =
+  /** @param items looks up a moved item, to say whether its most is "max" or "all" */
+  def of(effect: Effect, items: Item.ID => Item): Option[Amount] =
     effect match {
       case Effect.GainExp(_, exp) =>
         Some(Amount(s"+${formatExp(exp)}", formatExp(exp).replace(",", ""), Tone.Gain))
@@ -31,8 +34,9 @@ object RowAmounts {
         Some(Amount(s"+${n.withCommas}", n.toString, Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.Empty, _, _) =>
         Some(Amount("−all", "all", Tone.Loss, counted = true))
-      case Effect.MoveItem(_, quantity, _, _, _, _) =>
-        Some(Amount(label(quantity), editText(quantity), Tone.Neutral, counted = true))
+      case move: Effect.MoveItem =>
+        val most = mostWord(move, items)
+        Some(Amount(label(move.quantity, most), editText(move.quantity, most), Tone.Neutral, counted = true))
       case _: (Effect.UnlockSkill | Effect.CompleteQuest | Effect.CompleteDiaryTask | Effect.CompleteLeagueTask |
                Effect.CompleteGridTile | Effect.DepositAll | Effect.BuyBankSpace) | Effect.SetBankPin =>
         None
@@ -40,14 +44,14 @@ object RowAmounts {
 
   /** Applies an edited amount. "max", or "all", makes an item effect take as many as it can where
     * it applies: all that are held, or as many as fit. A removal stays a removal. */
-  def withAmount(effect: Effect, text: String): Either[String, Effect] =
+  def withAmount(items: Item.ID => Item)(effect: Effect, text: String): Either[String, Effect] =
     effect match {
       case e: Effect.GainExp => parseExp(text).map(exp => e.copy(baseExp = exp))
       case e: Effect.AddItem if e.change.removes =>
-        parseQuantity(text).map(q => e.copy(change = changeOf(q, ItemChange.Empty, -_)))
+        parseQuantity(text, "all").map(q => e.copy(change = changeOf(q, ItemChange.Empty, -_)))
       case e: Effect.AddItem =>
-        parseQuantity(text).map(q => e.copy(change = changeOf(q, ItemChange.Fill, identity)))
-      case e: Effect.MoveItem => parseQuantity(text).map(q => e.copy(quantity = q))
+        parseQuantity(text, "max").map(q => e.copy(change = changeOf(q, ItemChange.Fill, identity)))
+      case e: Effect.MoveItem => parseQuantity(text, mostWord(e, items)).map(q => e.copy(quantity = q))
       case _ => Left("This effect has no amount")
     }
 
@@ -61,22 +65,28 @@ object RowAmounts {
       case ItemQuantity.Max => all
     }
 
-  private def label(quantity: ItemQuantity): String =
+  /** What a move's Max is called: "max" when it withdraws until the inventory's full, as the card's
+    * button says, and "all" when it takes the whole stack */
+  private def mostWord(move: Effect.MoveItem, items: Item.ID => Item): String =
+    if (ItemEffects.canFill(items(move.item), move.noteInTarget, move.target)) "max" else "all"
+
+  private def label(quantity: ItemQuantity, most: String): String =
     quantity match {
       case ItemQuantity.Exact(n) => n.withCommas
-      case ItemQuantity.Max => "max"
+      case ItemQuantity.Max => most
     }
 
-  private def editText(quantity: ItemQuantity): String =
+  private def editText(quantity: ItemQuantity, most: String): String =
     quantity match {
       case ItemQuantity.Exact(n) => n.toString
-      case ItemQuantity.Max => "max"
+      case ItemQuantity.Max => most
     }
 
-  private def parseQuantity(text: String): Either[String, ItemQuantity] =
+  /** @param most the word the error suggests for the most, though "max" and "all" both work */
+  private def parseQuantity(text: String, most: String): Either[String, ItemQuantity] =
     ItemQuantity.parse(text).left.map {
       case ItemQuantity.Problem.AboveMax => s"A stack can hold at most ${Int.MaxValue.withCommas}"
-      case _ => "Type an amount of at least 1, such as 250 or 1.5k, or max"
+      case _ => s"Type an amount of at least 1, such as 250 or 1.5k, or $most"
     }
 
   def of(requirement: Requirement): Option[Amount] =

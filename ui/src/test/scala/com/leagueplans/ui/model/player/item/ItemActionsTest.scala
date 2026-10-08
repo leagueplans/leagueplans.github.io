@@ -103,10 +103,10 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       action.report shouldBe "Withdrew 25 × Logs as notes"
     }
 
-    "withdraws all, worked out where the effect applies" in {
+    "withdraws until the inventory is full, worked out where the effect applies" in {
       val action = ItemActions.withdraw(Holding(logs, noted = false, Kind.Bank), ItemQuantity.Max, noted = false)
       action.effects shouldBe List(MoveItem(logs.id, ItemQuantity.Max, Kind.Bank, notedInSource = false, Kind.Inventory, noteInTarget = false))
-      action.report shouldBe "Withdrew all Logs"
+      action.report shouldBe "Withdrew Logs until the inventory was full"
     }
 
     "removes the most of a stack by emptying it" in {

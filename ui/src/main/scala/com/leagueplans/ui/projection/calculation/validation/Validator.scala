@@ -134,7 +134,7 @@ object Validator {
           right = (),
           left = source match {
             case DepositSource.Inventory => "The inventory has nothing to bank at this step"
-            case DepositSource.Equipment => "Nothing equipped can be banked at this step"
+            case DepositSource.Equipment => "Nothing worn can be banked at this step"
           }
         )
     }

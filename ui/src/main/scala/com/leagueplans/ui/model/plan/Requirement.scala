@@ -21,12 +21,12 @@ object Requirement {
   enum Where {
     case Inventory, Equipped, InventoryOrEquipped
 
-    /** Such as "in the inventory or equipped" */
+    /** Such as "in the inventory or worn" */
     def description: String =
       this match {
         case Inventory => "in the inventory"
-        case Equipped => "equipped"
-        case InventoryOrEquipped => "in the inventory or equipped"
+        case Equipped => "worn"
+        case InventoryOrEquipped => "in the inventory or worn"
       }
   }
 

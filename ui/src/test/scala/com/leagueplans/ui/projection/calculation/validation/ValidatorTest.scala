@@ -159,7 +159,7 @@ final class ValidatorTest extends AnyFreeSpec with Matchers {
 
     "says when there's nothing to deposit" in {
       error(Validator.somethingToDeposit(DepositSource.Inventory), player()) shouldBe "The inventory has nothing to bank at this step"
-      error(Validator.somethingToDeposit(DepositSource.Equipment), player()) shouldBe "Nothing equipped can be banked at this step"
+      error(Validator.somethingToDeposit(DepositSource.Equipment), player()) shouldBe "Nothing worn can be banked at this step"
     }
   }
 }

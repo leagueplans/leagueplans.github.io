@@ -52,8 +52,8 @@ final class RequirementValidatorTest extends AnyFreeSpec with Matchers {
 
     "gives one error for an item that isn't held where it's required" in {
       errors(Holds(axe.id, Where.InventoryOrEquipped), holding(Some(Kind.Bank))) shouldBe
-        List("Rune axe isn't in the inventory or equipped at the start of this step")
-      errors(Holds(axe.id, Where.Equipped), holding(Some(Kind.Inventory))) shouldBe List("Rune axe isn't equipped at the start of this step")
+        List("Rune axe isn't in the inventory or worn at the start of this step")
+      errors(Holds(axe.id, Where.Equipped), holding(Some(Kind.Inventory))) shouldBe List("Rune axe isn't worn at the start of this step")
     }
   }
 }

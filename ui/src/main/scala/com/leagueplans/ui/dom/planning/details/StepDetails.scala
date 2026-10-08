@@ -118,8 +118,8 @@ object StepDetails {
           Signal.combine(expMultiplierAt, countsHere(effects, playerBefore, cache)).map((multiplierAt, countHere) =>
             RowContent.of(_, cache, multiplierAt, countHere, contextMenu)
           ),
-          RowAmounts.of,
-          RowAmounts.withAmount,
+          RowAmounts.of(_, cache.items),
+          RowAmounts.withAmount(cache.items),
           errors = errorsByKind.map(_._1),
           showMet = false,
           selection,

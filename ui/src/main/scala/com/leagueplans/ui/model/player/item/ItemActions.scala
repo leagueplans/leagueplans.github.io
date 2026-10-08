@@ -132,12 +132,16 @@ object ItemActions {
     )
 
   def withdraw(holding: Holding, quantity: ItemQuantity, noted: Boolean): Action = {
-    val what = s"${describe(holding.item, quantity)}${if (noted) " as notes" else ""}"
-    Action(
-      List(MoveItem(holding.item.id, quantity, Kind.Bank, notedInSource = false, Kind.Inventory, noteInTarget = noted)),
-      s"Withdrew $what",
-      s"Withdraw $what"
-    )
+    val effects =
+      List(MoveItem(holding.item.id, quantity, Kind.Bank, notedInSource = false, Kind.Inventory, noteInTarget = noted))
+    quantity match {
+      case ItemQuantity.Max if ItemEffects.canFill(holding.item, noted, Kind.Inventory) =>
+        val name = holding.item.fullName
+        Action(effects, s"Withdrew $name until the inventory was full", s"Withdraw $name until the inventory is full")
+      case _ =>
+        val what = s"${describe(holding.item, quantity)}${if (noted) " as notes" else ""}"
+        Action(effects, s"Withdrew $what", s"Withdraw $what")
+    }
   }
 
   def remove(holding: Holding, quantity: ItemQuantity): Action =
@@ -221,12 +225,12 @@ object ItemActions {
   /** Banks everything in the inventory when the step applies, leaving items that can't be banked,
     * or None if there's nothing to bank here */
   def depositInventory(player: Player, items: Item.ID => Item): Option[Action] =
-    deposit(DepositSource.Inventory, player, items, "the inventory")
+    deposit(DepositSource.Inventory, player, items, "inventory")
 
   /** Banks every equipped item that can be banked when the step applies, or None if there's nothing
     * to bank here */
   def depositEquipment(player: Player, items: Item.ID => Item): Option[Action] =
-    deposit(DepositSource.Equipment, player, items, "equipment")
+    deposit(DepositSource.Equipment, player, items, "worn items")
 
   private def deposit(source: DepositSource, player: Player, items: Item.ID => Item, what: String): Option[Action] = {
     val stacks = ItemEffects.deposits(source, player, items).size

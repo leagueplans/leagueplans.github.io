@@ -5,7 +5,7 @@ import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.{BankSpace, ItemRoute, ItemStack}
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository, ItemRoute, ItemStack}
 import com.leagueplans.uicommon.dom.ContextMenu
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Observer
@@ -50,28 +50,28 @@ object RowContent {
       case add @ Effect.AddItem(item, change, target, note) =>
         val place = target.name.toLowerCase
         val (detail, count) = change match {
-          case ItemChange.By(n) if n < 0 => (s"Removed from the $place", -n)
-          case ItemChange.By(n) => (s"Added to the $place", n)
-          case ItemChange.Fill => (s"Added to the $place${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
-          case ItemChange.Empty => (s"Removed from the $place${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
+          case ItemChange.By(n) if n < 0 => (s"From the $place", -n)
+          case ItemChange.By(n) => (s"To the $place", n)
+          case ItemChange.Fill => (s"Until the $place is full${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
+          case ItemChange.Empty => (s"All from the $place${atThisStep(countHere(add))}", countHere(add).getOrElse(1))
         }
-        RowContent(itemIcon(item, count, note, cache), itemTitle(item, note, cache), detail)
+        val verb = if (change.removes) "Remove" else "Add"
+        RowContent(itemIcon(item, count, note, cache), s"$verb ${itemTitle(item, note, cache)}", detail)
 
-      case move @ Effect.MoveItem(item, quantity, _, notedInSource, _, noteInTarget) =>
+      case move @ Effect.MoveItem(item, quantity, source, notedInSource, target, noteInTarget) =>
         // Notes are only ever withdrawn or deposited, so the item is noted on one side at most
         val noted = notedInSource || noteInTarget
-        val title = itemTitle(item, noted, cache)
         RowContent(
           itemIcon(item, iconCount(quantity, countHere(move)), noted, cache),
-          title,
+          s"${moveVerb(source, target)} ${itemTitle(item, noted, cache)}",
           ItemRoute.of(move).label,
           editableDetail = Some(onChange => MoveLocations(move, cache.items(item), contextMenu, onChange))
         )
 
       case Effect.DepositAll(source) =>
         val (title, icon) = source match {
-          case Effect.DepositSource.Inventory => ("Deposit the inventory", depositInventoryIcon)
-          case Effect.DepositSource.Equipment => ("Deposit equipment", depositEquipmentIcon)
+          case Effect.DepositSource.Inventory => ("Deposit inventory", depositInventoryIcon)
+          case Effect.DepositSource.Equipment => ("Deposit worn items", depositEquipmentIcon)
         }
         RowContent(image(icon), title, "Banks everything that can be banked")
 
@@ -112,11 +112,11 @@ object RowContent {
 
       case Effect.BuyBankSpace(block) =>
         val detail = BankSpace.price(block).fold("There's no such block")(price =>
-          s"+${BankSpace.blockSlots} bank slots for ${price.withCommas} coins"
+          s"Block $block of ${BankSpace.blockPrices.size} · +${BankSpace.blockSlots} bank slots for ${price.withCommas} coins"
         )
         RowContent(
           () => bankIcon().amend(L.cls(Styles.drawnIcon)),
-          s"Buy bank space: block $block of ${BankSpace.blockPrices.size}",
+          s"Buy bank space block $block",
           detail
         )
     }
@@ -147,6 +147,16 @@ object RowContent {
       case Requirement.Holds(item, where) => s"${cache.items(item).fullName} (${where.description})"
       case Requirement.And(left, right) => s"(${describe(left, cache)} and ${describe(right, cache)})"
       case Requirement.Or(left, right) => s"(${describe(left, cache)} or ${describe(right, cache)})"
+    }
+
+  /** The button on an item's card that makes the move, or "Move" for routes no button takes */
+  private def moveVerb(source: Depository.Kind, target: Depository.Kind): String =
+    (source, target) match {
+      case (Depository.Kind.Bank, Depository.Kind.Inventory) => "Withdraw"
+      case (_, Depository.Kind.Bank) => "Bank"
+      case (_, _: Depository.Kind.EquipmentSlot) => "Equip"
+      case (_: Depository.Kind.EquipmentSlot, Depository.Kind.Inventory) => "Unequip"
+      case _ => "Move"
     }
 
   /** Such as " · 1,234 at this step" */

@@ -102,7 +102,7 @@ object BankFooter {
       L.span(
         L.cls(Styles.deposits),
         depositButton("Deposit inventory", depositInventoryIcon, runner, depositInventory, tooltip),
-        depositButton("Deposit equipment", depositEquipmentIcon, runner, depositEquipment, tooltip)
+        depositButton("Deposit worn items", depositEquipmentIcon, runner, depositEquipment, tooltip)
       )
     )
   }
