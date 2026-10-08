@@ -110,7 +110,9 @@ object ItemActions {
       case _: EquipmentSlot =>
         List(
           Some(CardButton.Whole("Unequip", _ => unequip(holding, Kind.Inventory))),
-          Option.when(holding.item.bankable != Item.Bankable.No)(CardButton.Whole("Bank", _ => unequip(holding, Kind.Bank)))
+          Option.when(holding.item.bankable != Item.Bankable.No)(CardButton.Whole("Bank", _ => unequip(holding, Kind.Bank))),
+          // A worn stack, such as arrows or chinchompas, is used up as it's fired or thrown
+          Option.when(holding.item.stackable)(amount("Remove", secondary = true)(remove(holding, _)))
         ).flatten
     }
   }

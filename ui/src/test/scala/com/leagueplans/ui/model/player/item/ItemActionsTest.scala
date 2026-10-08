@@ -40,7 +40,8 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
   private val helm = item(3, "Rune full helm", Some(EquipmentType.Head))
   private val sword = item(4, "Bronze sword", Some(EquipmentType.Weapon))
   private val book = item(5, "Quest book", noteable = false, bankable = Item.Bankable.No)
-  private val items = List(logs, scimitar, helm, sword, book).map(i => i.id -> i).toMap
+  private val arrows = item(6, "Bronze arrow", Some(EquipmentType.Ammo)).copy(stackable = true)
+  private val items = List(logs, scimitar, helm, sword, book, arrows).map(i => i.id -> i).toMap
 
   private val player =
     Player(
@@ -71,6 +72,10 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
         List("Equip", "Withdraw (amount)", "Withdraw noted (amount)")
       buttons(Holding(sword, noted = false, EquipmentSlot.Weapon)) shouldBe List("Unequip", "Bank")
       buttons(Holding(book, noted = false, EquipmentSlot.Weapon)) shouldBe List("Unequip")
+      // A worn stack can be used up, as arrows are by firing them
+      buttons(Holding(arrows, noted = false, EquipmentSlot.Ammo)) shouldBe List("Unequip", "Bank", "Remove (amount)")
+      ItemActions.remove(Holding(arrows, noted = false, EquipmentSlot.Ammo), Exact(10)).effects shouldBe
+        List(AddItem(arrows.id, ItemChange.By(-10), EquipmentSlot.Ammo, note = false))
     }
 
     "only adds until full for items that take a slot each" in {
