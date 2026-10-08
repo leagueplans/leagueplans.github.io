@@ -73,7 +73,7 @@ object ItemEffects {
   def deposits(source: DepositSource, player: Player, items: Item.ID => Item): List[MoveItem] =
     for {
       kind <- source.places
-      ((id, noted), quantity) <- player.get(kind).contents.toList.sortBy { case ((id, noted), _) => (items(id).name, noted) }
+      ((id, noted), quantity) <- player.get(kind).contents.toList.sortBy { case ((id, noted), _) => (items(id).fullName, noted) }
       if items(id).bankable != Item.Bankable.No
     } yield MoveItem(id, ItemQuantity.Exact(quantity), kind, noted, Kind.Bank, noteInTarget = false)
 

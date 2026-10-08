@@ -36,11 +36,11 @@ object MoveCandidates {
     * For the search, where the reviewer has already decided the pairing is worth looking
     * at and only wants it described the same way a ranked suggestion would be.
     */
-  def describe(subject: ItemData, key: InfoboxKey, item: ItemData): Candidate =
+  def describe(subjectKey: InfoboxKey, subject: ItemData, key: InfoboxKey, item: ItemData): Candidate =
     Candidate(
       key,
       item,
-      SimilarityScorer.score(subject, item),
+      SimilarityScorer.score(SimilarityScorer.Text(subjectKey, subject), SimilarityScorer.Text(key, item)),
       sharesGameID = compareGameIDs(subject, item) == GameIDVerdict.Same
     )
 
@@ -85,37 +85,41 @@ final class MoveCandidates private (
 
   /** Added pages this removed item might have moved to. */
   def forRemoval(key: InfoboxKey, item: ItemData): List[MoveCandidates.Candidate] =
-    forRemovals.getOrElseUpdate(key, rank(item, added))
+    forRemovals.getOrElseUpdate(key, rank(key, item, added))
 
   /** Removed pages this added item might be. The same relation read the other way round:
     * a page move shows up as a removal and an addition in the same scrape, so an addition
     * that closely resembles a removal is very likely not a new item at all.
     */
   def forAddition(key: InfoboxKey, item: ItemData): List[MoveCandidates.Candidate] =
-    forAdditions.getOrElseUpdate(key, rank(item, removed))
+    forAdditions.getOrElseUpdate(key, rank(key, item, removed))
 
   private def rank(
+    subjectKey: InfoboxKey,
     subject: ItemData,
     against: List[(InfoboxKey, ItemData)]
-  ): List[MoveCandidates.Candidate] =
+  ): List[MoveCandidates.Candidate] = {
+    val subjectText = SimilarityScorer.Text(subjectKey, subject)
     against
-      .flatMap((key, item) => consider(subject, key, item))
+      .flatMap((key, item) => consider(subject, subjectText, key, item))
       // A shared game ID outranks any amount of text similarity: a page move keeps it, and
       // two items holding the same one are the same item however differently they read.
-      .sortBy(candidate => (!candidate.sharesGameID, -candidate.score, candidate.item.name))
+      .sortBy(candidate => (!candidate.sharesGameID, -candidate.score, candidate.item.fullName(candidate.key)))
       .take(MoveCandidates.limit)
+  }
 
   // The text score is by far the most expensive thing the page does — a page of removals
   // scores each against every addition — so everything cheaper that can rule a pair out
   // runs first. Neither shortcut changes which pairs are suggested or what they score.
   private def consider(
     subject: ItemData,
+    subjectText: SimilarityScorer.Text,
     key: InfoboxKey,
     item: ItemData
   ): Option[MoveCandidates.Candidate] =
     MoveCandidates.compareGameIDs(subject, item) match {
       case GameIDVerdict.Same =>
-        Some(MoveCandidates.Candidate(key, item, SimilarityScorer.score(subject, item), sharesGameID = true))
+        Some(MoveCandidates.Candidate(key, item, SimilarityScorer.score(subjectText, SimilarityScorer.Text(key, item)), sharesGameID = true))
 
       // Two items the game itself distinguishes are not the same item, whatever their
       // pages say.
@@ -124,7 +128,7 @@ final class MoveCandidates private (
 
       case GameIDVerdict.NoOpinion =>
         SimilarityScorer
-          .scoreIfAtLeast(subject, item, MoveCandidates.threshold)
+          .scoreIfAtLeast(subjectText, SimilarityScorer.Text(key, item), MoveCandidates.threshold)
           .map(MoveCandidates.Candidate(key, item, _, sharesGameID = false))
     }
 }

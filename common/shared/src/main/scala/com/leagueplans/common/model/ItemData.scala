@@ -46,6 +46,7 @@ object ItemData {
   */
 final case class ItemData(
   gameID: Option[Int],
+  /** The name of the item's wiki page, which items on the same page share */
   name: String,
   examine: String,
   images: NonEmptyList[ItemData.Image],
@@ -53,4 +54,8 @@ final case class ItemData(
   stackable: Boolean,
   noteable: Boolean,
   equipmentType: Option[EquipmentType]
-)
+) {
+  /** The name, with the infobox version that tells the item apart from others on its page */
+  def fullName(infobox: InfoboxKey): String =
+    Item.fullName(name, infobox.version)
+}

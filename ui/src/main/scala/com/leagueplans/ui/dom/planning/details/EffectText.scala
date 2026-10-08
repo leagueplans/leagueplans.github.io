@@ -55,7 +55,7 @@ final class EffectText(cache: Cache) {
   def describe(requirement: Requirement): String =
     requirement match {
       case Requirement.SkillLevel(skill, level) => s"$skill $level"
-      case Requirement.Holds(item, where) => s"${cache.items(item).name} (${where.description})"
+      case Requirement.Holds(item, where) => s"${cache.items(item).fullName} (${where.description})"
       case Requirement.And(left, right) => s"(${describe(left)} and ${describe(right)})"
       case Requirement.Or(left, right) => s"(${describe(left)} or ${describe(right)})"
     }
@@ -67,7 +67,7 @@ final class EffectText(cache: Cache) {
     }
 
   private def itemName(item: Item.ID, noted: Boolean): String = {
-    val name = cache.items(item).name
+    val name = cache.items(item).fullName
     if (noted) s"$name (noted)" else name
   }
 }

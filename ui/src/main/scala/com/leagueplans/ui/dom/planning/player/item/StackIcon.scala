@@ -12,7 +12,7 @@ object StackIcon {
     val itemImage = L.img(
       L.cls(Styles.item),
       L.src(iconPath(stack.item, stack.quantity)),
-      L.alt(s"${stack.item.name} icon"),
+      L.alt(s"${stack.item.fullName} icon"),
       // Otherwise dragging a stack would drag the image's address instead
       L.draggable(false)
     )

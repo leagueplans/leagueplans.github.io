@@ -9,5 +9,5 @@ object ItemQuery {
     query.trim.isEmpty
 
   def matches(item: Item, query: String): Boolean =
-    item.name.toLowerCase.contains(query.trim.toLowerCase)
+    item.fullName.toLowerCase.contains(query.trim.toLowerCase)
 }

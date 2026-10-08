@@ -41,13 +41,19 @@ object Item {
     given Codec[Bankable] = deriveCodec
   }
 
-  given Ordering[Item] = Ordering.by(item => (item.name, item.examine, item.id))
+  /** The name with the infobox version in brackets, such as "Coins (Mage Training Arena)". The
+    * versions on a page differ, so this tells apart items that share a page. */
+  def fullName(name: String, version: List[String]): String =
+    if (version.isEmpty) name else s"$name (${version.mkString(", ")})"
+
+  given Ordering[Item] = Ordering.by(item => (item.fullName, item.examine, item.id))
   given Codec[Item] = deriveCodec
 }
 
 final case class Item(
   id: Item.ID,
   gameID: Option[Int],
+  /** The name of the item's wiki page, which items on the same page share. See [[fullName]]. */
   name: String,
   examine: String,
   images: NonEmptyList[(Item.Image.Bin, Item.Image.Path)],
@@ -58,6 +64,10 @@ final case class Item(
   /** The wiki infobox the item was scraped from */
   infobox: InfoboxKey
 ) {
+  /** The name, with the infobox version that tells the item apart from others on its page */
+  def fullName: String =
+    Item.fullName(name, infobox.version)
+
   def imageFor(quantity: Int): Item.Image.Path = {
     val (_, path) =
       images

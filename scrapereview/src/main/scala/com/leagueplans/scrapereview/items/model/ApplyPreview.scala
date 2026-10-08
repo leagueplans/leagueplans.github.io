@@ -19,7 +19,7 @@ object ApplyPreview {
     val added = changeset.added.toMap
     val after = resolution.idMap.mappings
     def name(key: InfoboxKey): String =
-      added.get(key).orElse(accepted.get(key)).fold(key.toString)(_.name)
+      added.get(key).orElse(accepted.get(key)).fold(key.toString)(_.fullName(key))
 
     val moves =
       decisions.removals.toList.collect {
@@ -32,7 +32,7 @@ object ApplyPreview {
     val newItems =
       changeset.added.collect {
         case (key, item) if !movedTo.contains(key) && after.contains(key) =>
-          NewItem(key, item.name, after(key))
+          NewItem(key, item.fullName(key), after(key))
       }
 
     val retirements =

@@ -1,22 +1,11 @@
 package com.leagueplans.scrapereview.items.model
 
-import cats.data.NonEmptyList
-import com.leagueplans.common.model.{Item, ItemData}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 final class SimilarityScorerTest extends AnyFreeSpec with Matchers {
-  private def item(name: String, examine: String): ItemData =
-    ItemData(
-      gameID = None,
-      name = name,
-      examine = examine,
-      images = NonEmptyList.of(ItemData.Image(Item.Image.Bin(1), "png", "abc", "0123abcd")),
-      bankable = Item.Bankable.No,
-      stackable = false,
-      noteable = false,
-      equipmentType = None
-    )
+  private def item(name: String, examine: String): SimilarityScorer.Text =
+    SimilarityScorer.Text(name, examine)
 
   "SimilarityScorer" - {
     "score" - {

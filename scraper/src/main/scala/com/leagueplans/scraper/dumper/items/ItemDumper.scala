@@ -113,7 +113,8 @@ final class ItemDumper(
   private def toItemData(item: WikiItem, images: NonEmptyList[ItemData.Image]): ItemData =
     ItemData(
       toLiveID(item.infoboxes.item.id),
-      toName(item.infoboxes),
+      // The infobox version is kept apart, in the item's InfoboxKey
+      item.infoboxes.pageName.wikiName,
       item.infoboxes.item.examine,
       images,
       item.infoboxes.item.bankable,
@@ -121,12 +122,6 @@ final class ItemDumper(
       item.infoboxes.item.noteable,
       item.infoboxes.maybeBonuses.map(_.equipmentType)
     )
-
-  private def toName(infoboxes: WikiItem.Infoboxes): String =
-    infoboxes.version.raw match {
-      case Nil => infoboxes.pageName.wikiName
-      case path => s"${infoboxes.pageName.wikiName} (${path.mkString(", ")})"
-    }
 
   private def toLiveID(id: Option[WikiItem.GameID]): Option[Int] =
     id match {

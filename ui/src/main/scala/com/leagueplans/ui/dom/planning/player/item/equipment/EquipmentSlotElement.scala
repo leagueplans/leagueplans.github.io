@@ -93,7 +93,7 @@ object EquipmentSlotElement {
         stacks.map(stack =>
           L.li(
             StackIcon(stack),
-            if (stack.quantity > 1) s"${stack.quantity.withCommas} × ${stack.item.name}" else stack.item.name
+            if (stack.quantity > 1) s"${stack.quantity.withCommas} × ${stack.item.fullName}" else stack.item.fullName
           )
         )
       )

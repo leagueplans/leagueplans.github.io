@@ -40,7 +40,7 @@ object SubstepSummaryElement {
           L.h3(L.cls(Styles.title), title),
           L.children <-- Signal.combine(playerBefore, playerAfterAll).map((before, after) =>
             // Miniquests are the quests that give no quest points, as in the quest list
-            SubstepSummary.between(before, after, cache.items(_).name, quest => cache.quests(quest).points == 0) match {
+            SubstepSummary.between(before, after, cache.items(_).fullName, quest => cache.quests(quest).points == 0) match {
               case Nil => List(L.p(L.cls(Styles.none), "No net change."))
               case changes => changes.map(toLine(_, cache))
             }
@@ -62,7 +62,7 @@ object SubstepSummaryElement {
         )
 
       case Change.ItemsChanged(item, noted, depository, by) =>
-        val name = cache.items(item).name
+        val name = cache.items(item).fullName
         L.div(
           L.cls(Styles.line),
           L.span(L.cls(Styles.icon), RowContent.itemIcon(ItemStack(cache.items(item), noted, by.abs))),

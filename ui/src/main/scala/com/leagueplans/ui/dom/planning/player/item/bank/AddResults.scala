@@ -61,7 +61,7 @@ object AddResults {
     L.button(
       L.cls(Styles.tile),
       L.tpe("button"),
-      L.aria.label(s"Add ${item.name}"),
+      L.aria.label(s"Add ${item.fullName}"),
       L.div(L.cls(Styles.icon), StackIcon(ItemStack(item, noted = false, quantity = 1))),
       L.div(
         L.cls(Styles.text),

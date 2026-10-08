@@ -35,6 +35,16 @@ final class MoveCandidatesTest extends AnyFreeSpec with Matchers {
       candidatesFor(key(1) -> moved, key(2) -> moved).map(_.key) shouldBe List(key(2))
     }
 
+    "tells apart the items on a page by their infobox versions" in {
+      val cape = item("Agility cape", "The cape worn by the most agile of heroes.")
+
+      candidatesFor(
+        InfoboxKey(1, List("Untrimmed")) -> cape,
+        InfoboxKey(2, List("Trimmed")) -> cape,
+        InfoboxKey(2, List("Untrimmed")) -> cape
+      ).map(_.key).headOption shouldBe Some(InfoboxKey(2, List("Untrimmed")))
+    }
+
     // The case from a real changeset: every cargo crate is called "Crate of something" and
     // described as "A cargo crate of something destined for somewhere", so a dozen
     // unrelated crates used to be suggested for each other at 51-56%.

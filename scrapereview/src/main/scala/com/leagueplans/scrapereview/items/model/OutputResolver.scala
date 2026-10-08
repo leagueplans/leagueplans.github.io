@@ -197,7 +197,7 @@ object OutputResolver {
       .toList
       .collect {
         case (key, Some(Removal.MergedInto(target))) =>
-          idMap.get(key).map(Migration(_, target, accepted.get(key).fold("")(_.name)))
+          idMap.get(key).map(Migration(_, target, accepted.get(key).fold("")(_.fullName(key))))
       }
       .flatten
       .sortBy(_.from: Int)

@@ -58,7 +58,7 @@ object RequirementValidator {
           case Where.InventoryOrEquipped => Depository.Kind.Inventory +: slot.toList
         }
         val held = places.exists(player.get(_).count(item.id, noted = false) > 0)
-        if (held) List.empty else List(s"${item.name} isn't ${requirement.where.description} at the start of this step")
+        if (held) List.empty else List(s"${item.fullName} isn't ${requirement.where.description} at the start of this step")
       }
     }
 

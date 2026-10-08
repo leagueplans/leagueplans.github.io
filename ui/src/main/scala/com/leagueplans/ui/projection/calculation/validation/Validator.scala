@@ -27,7 +27,7 @@ object Validator {
           right = (),
           left = kind match {
             case slot: Depository.Kind.EquipmentSlot =>
-              val contents = depository.contents.toList.sortBy { case ((id, noted), _) => (cache.items(id).name, noted) }
+              val contents = depository.contents.toList.sortBy { case ((id, noted), _) => (cache.items(id).fullName, noted) }
               val stacks = contents.forall { case ((id, _), _) => cache.items(id).stackable }
               val named = contents.map { case ((id, noted), n) =>
                 val name = itemName(id, noted, cache)
@@ -145,7 +145,7 @@ object Validator {
 
   /** Such as "Logs (noted)" */
   private def itemName(item: Item.ID, noted: Boolean, cache: Cache): String =
-    s"${cache.items(item).name}${if (noted) " (noted)" else ""}"
+    s"${cache.items(item).fullName}${if (noted) " (noted)" else ""}"
 
   /** Such as "A, B and C" */
   private def listed(names: List[String]): String =
@@ -164,16 +164,16 @@ object Validator {
           right = (),
           left = move.target match {
             case Depository.Kind.Bank if item.bankable == Item.Bankable.No =>
-              s"${item.name} can't be banked"
+              s"${item.fullName} can't be banked"
             case slot: Depository.Kind.EquipmentSlot =>
               item.equipmentType.map(Depository.Kind.EquipmentSlot.from) match {
-                case None => s"${item.name} can't be equipped"
-                case Some(own) if own != slot => s"${item.name} can't be equipped in the ${place(slot)}"
-                case Some(_) if move.notedInSource => s"Noted ${item.name} can't be equipped"
+                case None => s"${item.fullName} can't be equipped"
+                case Some(own) if own != slot => s"${item.fullName} can't be equipped in the ${place(slot)}"
+                case Some(_) if move.notedInSource => s"Noted ${item.fullName} can't be equipped"
                 case Some(_) => fallback(move, item)
               }
             case _ if move.noteInTarget && !item.noteable =>
-              s"${item.name} can't be noted"
+              s"${item.fullName} can't be noted"
             case _ =>
               fallback(move, item)
           }
@@ -181,7 +181,7 @@ object Validator {
       }
 
       private def fallback(move: MoveItem, item: Item): String =
-        s"${item.name} can't be moved from the ${routePlace(move.source, move.notedInSource)} to the ${routePlace(move.target, move.noteInTarget)}"
+        s"${item.fullName} can't be moved from the ${routePlace(move.source, move.notedInSource)} to the ${routePlace(move.target, move.noteInTarget)}"
 
       private def routePlace(kind: Depository.Kind, noted: Boolean): String =
         if (noted) s"${place(kind)} (noted)" else place(kind)

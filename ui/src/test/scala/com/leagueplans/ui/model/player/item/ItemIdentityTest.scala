@@ -1,30 +1,45 @@
 package com.leagueplans.ui.model.player.item
 
+import cats.data.NonEmptyList
+import com.leagueplans.common.model.{InfoboxKey, Item}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 final class ItemIdentityTest extends AnyFreeSpec with Matchers {
+  private def item(name: String, version: String*): Item =
+    Item(
+      Item.ID(1),
+      gameID = None,
+      name,
+      examine = "",
+      NonEmptyList.one((Item.Image.Bin(1), Item.Image.Path("1/1.png"))),
+      Item.Bankable.Yes(stacks = true),
+      stackable = false,
+      noteable = false,
+      equipmentType = None,
+      infobox = InfoboxKey(1, version.toList)
+    )
+
   "ItemIdentity" - {
-    "has no variants for a plain name" in {
-      ItemIdentity.from("Coins") shouldBe ItemIdentity("Coins", List.empty)
+    "has no variants for an item alone on its page" in {
+      ItemIdentity(item("Coins")) shouldBe ItemIdentity("Coins", List.empty)
     }
 
-    "splits a bracketed variant from the name" in {
-      ItemIdentity.from("Coins (Mage Training Arena)") shouldBe ItemIdentity("Coins", List("Mage Training Arena"))
-      ItemIdentity.from("Bronze arrow (Poison++)") shouldBe ItemIdentity("Bronze arrow", List("Poison++"))
+    "takes its variants from the infobox version" in {
+      ItemIdentity(item("Coins", "Mage Training Arena")) shouldBe ItemIdentity("Coins", List("Mage Training Arena"))
+      ItemIdentity(item("Agility cape", "Worn", "Trimmed")) shouldBe ItemIdentity("Agility cape", List("Worn", "Trimmed"))
     }
 
-    "strips nested brackets from a variant" in {
-      ItemIdentity.from("Abyssal bracelet ((5))") shouldBe ItemIdentity("Abyssal bracelet", List("5"))
+    "keeps brackets in the page's name" in {
+      ItemIdentity(item("Opal bolts (e)")) shouldBe ItemIdentity("Opal bolts (e)", List.empty)
     }
 
-    "finds several variants" in {
-      ItemIdentity.from("Pharaoh's sceptre (Jalsavrah) (uncharged)") shouldBe
-        ItemIdentity("Pharaoh's sceptre", List("Jalsavrah", "uncharged"))
+    "strips the brackets around a version" in {
+      ItemIdentity(item("Abyssal bracelet", "(5)")) shouldBe ItemIdentity("Abyssal bracelet", List("5"))
     }
 
-    "leaves brackets without a space before them in the name" in {
-      ItemIdentity.from("Amulet of glory(4)") shouldBe ItemIdentity("Amulet of glory(4)", List.empty)
+    "keeps brackets within a version" in {
+      ItemIdentity(item("Black candle", "Lit (black candle)")) shouldBe ItemIdentity("Black candle", List("Lit (black candle)"))
     }
   }
 }

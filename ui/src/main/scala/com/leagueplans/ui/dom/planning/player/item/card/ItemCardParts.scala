@@ -100,7 +100,7 @@ object ItemCardParts {
         L.onClick.compose(_.sample(requirementObserver).collectSome) --> { observer =>
           observer.onNext(requirement)
           close()
-          undoToasts.report(s"Required ${item.name}", Some("A requirement of the focused step"), duration = UndoToasts.brief)
+          undoToasts.report(s"Required ${item.fullName}", Some("A requirement of the focused step"), duration = UndoToasts.brief)
         }
       ),
       noFocusTip(requirementObserver, s"The focused step will check that this item is ${requirement.where.description}"),

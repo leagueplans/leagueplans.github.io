@@ -129,7 +129,7 @@ object RowContent {
       case Requirement.Holds(item, where) =>
         RowContent(
           itemIcon(item, 1, noted = false, cache),
-          cache.items(item).name,
+          cache.items(item).fullName,
           s"${where.description.capitalize} at the start of this step"
         )
 
@@ -155,7 +155,7 @@ object RowContent {
     if (multiplier.isWhole) multiplier.toInt.toString else multiplier.toString
 
   private def itemTitle(item: Item.ID, noted: Boolean, cache: Cache): String = {
-    val name = cache.items(item).name
+    val name = cache.items(item).fullName
     if (noted) s"$name (noted)" else name
   }
 

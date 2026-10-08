@@ -54,7 +54,7 @@ object StackElement {
   def tooltipContents(item: Item, countLine: Signal[Option[String]]): L.Div =
     L.div(
       L.cls(Styles.tooltip),
-      L.p(L.cls(Styles.tooltipHeader), item.name),
+      L.p(L.cls(Styles.tooltipHeader), item.fullName),
       L.when(item.examine.nonEmpty)(L.p(L.cls(Styles.tooltipExamine), item.examine)),
       L.child.maybe <-- countLine.map(_.map(line => L.p(L.cls(Styles.tooltipCount), line)))
     )

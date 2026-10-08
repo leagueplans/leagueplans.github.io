@@ -39,7 +39,7 @@ final class ItemCards(
       List(
         L.tabIndex(0),
         L.role("button"),
-        L.aria.label(s"${holding.item.name}: open its card"),
+        L.aria.label(s"${holding.item.fullName}: open its card"),
         L.cls(ItemCards.Styles.trigger),
         L.cls(ItemCards.Styles.selected) <-- popover.isAnchoredTo(node.ref),
         popover.closesWithAnchor,

@@ -27,11 +27,11 @@ private[dom] object RemovalsSection {
     // Built once for every card to share: indexing fourteen thousand names is the costly
     // part of a search, and each card would otherwise pay it again.
     val addedSearch =
-      NameSearch[(InfoboxKey, ItemData)](inputs.changeset.added.toVector, _._2.name)
+      NameSearch[(InfoboxKey, ItemData)](inputs.changeset.added.toVector, (key, item) => item.fullName(key))
     val survivorSearch =
       NameSearch[(InfoboxKey, Item.ID, ItemData)](
         inputs.baseline.flatMap((key, item) => inputs.idMap.get(key).map((key, _, item))),
-        _._3.name
+        (key, _, item) => item.fullName(key)
       )
 
     L.div(
@@ -293,7 +293,7 @@ private[dom] object RemovalsSection {
           added(text, include = (addedKey, _) => !current.claimedAdditions.contains(addedKey))
 
         results.shown.map((addedKey, addedItem) =>
-          candidate(key, item, MoveCandidates.describe(item, addedKey, addedItem), root, decisions)
+          candidate(key, item, MoveCandidates.describe(key, item, addedKey, addedItem), root, decisions)
         ) ++ overflow(results)
       )
     )

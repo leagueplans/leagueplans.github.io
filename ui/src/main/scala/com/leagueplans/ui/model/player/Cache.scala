@@ -67,7 +67,7 @@ final case class Cache(
       .contents
       .toList
       .map { case ((id, noted), count) => (items(id), noted, count) }
-      .sortBy((item, noted, _) => (item.name, noted))
+      .sortBy((item, noted, _) => (item.fullName, noted))
       .flatMap {
         case (item, noted, quantity) if isStacked(item, noted, depository.kind) =>
           List(ItemStack(item, noted, quantity))

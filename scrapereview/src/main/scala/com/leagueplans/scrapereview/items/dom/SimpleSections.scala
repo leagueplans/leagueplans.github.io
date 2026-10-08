@@ -88,7 +88,7 @@ private[dom] object SimpleSections {
           ),
           L.span(
             L.cls(Styles.subheading),
-            s"Closest removal: ${matches.head.item.name} — " +
+            s"Closest removal: ${matches.head.item.fullName(matches.head.key)} — " +
               f"${matches.head.score * 100}%.0f%% match. Decide it on the Removed tab."
           )
         )

@@ -1,8 +1,17 @@
 package com.leagueplans.scrapereview.items.model
 
-import com.leagueplans.common.model.ItemData
+import com.leagueplans.common.model.{InfoboxKey, ItemData}
 
 object SimilarityScorer {
+  /** What an item is compared on. The full name, as the items on one page are told apart by
+    * their infobox versions. */
+  final case class Text(name: String, examine: String)
+
+  object Text {
+    def apply(key: InfoboxKey, item: ItemData): Text =
+      Text(item.fullName(key), item.examine)
+  }
+
   // The name carries most of the signal. Examine text is a useful tiebreaker between
   // items whose names differ only by a recolour or a charge state, but on its own it is
   // often shared word for word between unrelated variants.
@@ -10,7 +19,7 @@ object SimilarityScorer {
   private val examineWeight = 0.3
 
   /** How alike two items look, from 0 for nothing in common to 1 for identical. */
-  def score(left: ItemData, right: ItemData): Double =
+  def score(left: Text, right: Text): Double =
     (nameWeight * similarity(left.name, right.name)) +
       (examineWeight * similarity(left.examine, right.examine))
 
@@ -28,7 +37,7 @@ object SimilarityScorer {
     * full comparison. Mirrors [[similarity]] exactly — same strings, same denominator — so
     * it is never lower than the real score.
     */
-  def upperBound(left: ItemData, right: ItemData): Double =
+  def upperBound(left: Text, right: Text): Double =
     (nameWeight * similarityCeiling(left.name, right.name)) +
       (examineWeight * similarityCeiling(left.examine, right.examine))
 
@@ -40,7 +49,7 @@ object SimilarityScorer {
     * examine can often be shown unable to lift the pair over the threshold even if it
     * matched perfectly. Returns exactly what [[score]] would for any pair it keeps.
     */
-  def scoreIfAtLeast(left: ItemData, right: ItemData, threshold: Double): Option[Double] =
+  def scoreIfAtLeast(left: Text, right: Text, threshold: Double): Option[Double] =
     if (upperBound(left, right) < threshold)
       None
     else {

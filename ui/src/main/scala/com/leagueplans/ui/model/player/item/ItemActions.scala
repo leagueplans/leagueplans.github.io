@@ -156,7 +156,7 @@ object ItemActions {
     val effect = AddItem(item.id, changeOf(quantity, ItemChange.Fill, identity), target, noted && item.noteable)
     quantity match {
       case ItemQuantity.Max =>
-        Action(List(effect), s"Added ${item.name} until the ${target.name.toLowerCase} was full", s"Add ${item.name} until the ${target.name.toLowerCase} is full")
+        Action(List(effect), s"Added ${item.fullName} until the ${target.name.toLowerCase} was full", s"Add ${item.fullName} until the ${target.name.toLowerCase} is full")
       case ItemQuantity.Exact(_) =>
         val what = s"${describe(item, quantity)} to the ${target.name.toLowerCase}"
         Action(List(effect), s"Added $what", s"Add $what")
@@ -171,11 +171,11 @@ object ItemActions {
     quantity: ItemQuantity = ItemQuantity.Max
   ): Option[Action] =
     EquipPlan(holding.item, holding.place, player, items, quantity).map { moves =>
-      val displaced = moves.init.map(move => items(move.item).name).mkString(" and ")
+      val displaced = moves.init.map(move => items(move.item).fullName).mkString(" and ")
       Action(
         moves,
-        s"Equipped ${holding.item.name}",
-        s"Equip ${holding.item.name}${if (displaced.isEmpty) "" else s", unequipping $displaced"}",
+        s"Equipped ${holding.item.fullName}",
+        s"Equip ${holding.item.fullName}${if (displaced.isEmpty) "" else s", unequipping $displaced"}",
         Option.when(displaced.nonEmpty)(s"Unequipped $displaced")
       )
     }
@@ -184,7 +184,7 @@ object ItemActions {
   def unequip(holding: Holding, target: Depository.Kind): Option[Action] =
     holding.place match {
       case slot: EquipmentSlot =>
-        val what = holding.item.name
+        val what = holding.item.fullName
         Some(Action(
           List(EquipPlan.unequip(holding.item, slot, target)),
           if (target == Kind.Bank) s"Banked $what" else s"Unequipped $what",
@@ -242,9 +242,9 @@ object ItemActions {
 
   def describe(item: Item, quantity: ItemQuantity): String =
     quantity match {
-      case ItemQuantity.Exact(1) => item.name
-      case ItemQuantity.Exact(n) => s"${n.withCommas} × ${item.name}"
-      case ItemQuantity.Max => s"all ${item.name}"
+      case ItemQuantity.Exact(1) => item.fullName
+      case ItemQuantity.Exact(n) => s"${n.withCommas} × ${item.fullName}"
+      case ItemQuantity.Max => s"all ${item.fullName}"
     }
 
 }

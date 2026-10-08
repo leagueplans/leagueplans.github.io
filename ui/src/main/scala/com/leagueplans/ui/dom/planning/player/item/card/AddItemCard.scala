@@ -89,7 +89,7 @@ object AddItemCard {
               L.tpe("button"),
               L.text <-- amount.map {
                 case Some(ItemQuantity.Max) => "Add until full"
-                case n => s"Add ${n.map(ItemActions.describe(item, _)).getOrElse(item.name)}"
+                case n => s"Add ${n.map(ItemActions.describe(item, _)).getOrElse(item.fullName)}"
               },
               L.disabled <-- Signal.combine(runner.canRun, amount, unavailable).map((canRun, amount, unavailable) =>
                 !canRun || amount.isEmpty || unavailable.nonEmpty
