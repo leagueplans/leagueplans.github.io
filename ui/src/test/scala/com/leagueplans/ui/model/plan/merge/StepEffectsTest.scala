@@ -1,7 +1,7 @@
 package com.leagueplans.ui.model.plan.merge
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{InfoboxKey, Item}
+import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
 import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
@@ -18,9 +18,20 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
   private val logs = Item.ID(1)
   private val lobster = Item.ID(2)
   private val arrows = Item.ID(3)
+  private val sword = Item.ID(4)
+  private val dagger = Item.ID(5)
+  private val shield = Item.ID(6)
+  private val greatsword = Item.ID(7)
+
+  private val wornAs: Map[Item.ID, EquipmentType] = Map(
+    sword -> EquipmentType.Weapon,
+    dagger -> EquipmentType.Weapon,
+    shield -> EquipmentType.Shield,
+    greatsword -> EquipmentType.TwoHanded
+  )
 
   private val items: Map[Item.ID, Item] =
-    List(logs -> false, lobster -> false, arrows -> true, BankSpace.coins -> true).map((id, stackable) =>
+    (List(logs -> false, lobster -> false, arrows -> true, BankSpace.coins -> true) ++ wornAs.keys.map(_ -> false)).map((id, stackable) =>
       id -> Item(
         id,
         gameID = None,
@@ -30,7 +41,7 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
         Item.Bankable.Yes(stacks = true),
         stackable,
         noteable = !stackable,
-        equipmentType = None,
+        equipmentType = wornAs.get(id),
         infobox = InfoboxKey(1, List.empty)
       )
     ).toMap
@@ -147,6 +158,49 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
         merged(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3))) shouldBe
           List(withdraw(Exact(2)), add(ItemChange.By(-3), lobster), withdraw(Exact(3)))
       }
+    }
+
+    "keeps one equip of an unstackable item equipped twice, as the second swaps it for itself" in {
+      val equip = move(sword, Exact(1), Kind.Inventory, EquipmentSlot.Weapon)
+      merged(equip, equip) shouldBe List(equip)
+    }
+
+    "merges equipping and unequipping into what equipping took off" - {
+      val equip = move(sword, Exact(1), Kind.Inventory, EquipmentSlot.Weapon)
+      val unequip = move(sword, Exact(1), EquipmentSlot.Weapon, Kind.Inventory)
+      def added(start: Player, effects: Effect*) =
+        effects.foldLeft(EffectList.empty)(StepEffects.add(_, _, Some(start), items)).underlying
+
+      "which is nothing when nothing was in the way" in {
+        added(player((Kind.Inventory, sword) -> 1), equip, unequip) shouldBe empty
+      }
+
+      "or the item that was" in {
+        added(player((Kind.Inventory, sword) -> 1, (EquipmentSlot.Weapon, dagger) -> 1), equip, unequip) shouldBe
+          List(move(dagger, Exact(1), EquipmentSlot.Weapon, Kind.Inventory))
+      }
+
+      "or both a weapon and a shield, for a two-handed weapon" in {
+        val start = player((Kind.Bank, greatsword) -> 1, (EquipmentSlot.Weapon, dagger) -> 1, (EquipmentSlot.Shield, shield) -> 1)
+        added(start, move(greatsword, Exact(1), Kind.Bank, EquipmentSlot.Weapon), move(greatsword, Exact(1), EquipmentSlot.Weapon, Kind.Bank)) shouldBe
+          List(move(dagger, Exact(1), EquipmentSlot.Weapon, Kind.Bank), move(shield, Exact(1), EquipmentSlot.Shield, Kind.Bank))
+      }
+
+      "and cancels unequipping and equipping again" in {
+        added(player((EquipmentSlot.Weapon, sword) -> 1), unequip, equip) shouldBe empty
+      }
+
+      "but keeps them apart without the player, which says what was in the way" in {
+        merged(equip, unequip) shouldBe List(equip, unequip)
+        merged(unequip, equip) shouldBe List(unequip, equip)
+      }
+    }
+
+    "merges withdrawals past equipping from the bank, which only puts back what can be worn" in {
+      val equip = move(sword, Exact(1), Kind.Bank, EquipmentSlot.Weapon)
+      merged(withdraw(Exact(5)), equip, withdraw(Exact(3))) shouldBe List(withdraw(Exact(8)), equip)
+      val withdrawDagger = move(dagger, Exact(1), Kind.Bank, Kind.Inventory)
+      merged(withdrawDagger, equip, withdrawDagger) shouldBe List(withdrawDagger, equip, withdrawDagger)
     }
 
     "keeps different directions apart, as in banking all but two" in {

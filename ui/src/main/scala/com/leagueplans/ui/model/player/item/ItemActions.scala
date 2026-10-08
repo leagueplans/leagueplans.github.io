@@ -174,10 +174,10 @@ object ItemActions {
     items: Item.ID => Item,
     quantity: ItemQuantity = ItemQuantity.Max
   ): Option[Action] =
-    EquipPlan(holding.item, holding.place, player, items, quantity).map { moves =>
-      val displaced = moves.init.map(move => items(move.item).fullName).mkString(" and ")
+    EquipPlan(holding.item, holding.place, player, items, quantity).map { move =>
+      val displaced = EquipPlan.displaced(move, player, items).map(moved => items(moved.item).fullName).mkString(" and ")
       Action(
-        moves,
+        List(move),
         s"Equipped ${holding.item.fullName}",
         s"Equip ${holding.item.fullName}${if (displaced.isEmpty) "" else s", unequipping $displaced"}",
         Option.when(displaced.nonEmpty)(s"Unequipped $displaced")

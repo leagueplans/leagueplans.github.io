@@ -146,7 +146,9 @@ final class ItemActionsTest extends AnyFreeSpec with Matchers {
       val action = ItemActions.equip(Holding(scimitar, noted = false, Kind.Inventory), player, items)
       action.map(_.report) shouldBe Some("Equipped Rune scimitar")
       action.flatMap(_.detail) shouldBe Some("Unequipped Bronze sword")
-      action.map(_.effects.size) shouldBe Some(2)
+      // The sword is taken off where the move applies, rather than by a move of its own
+      action.map(_.effects) shouldBe
+        Some(List(MoveItem(scimitar.id, Exact(1), Kind.Inventory, notedInSource = false, EquipmentSlot.Weapon, noteInTarget = false)))
     }
 
     "only offers what suits the stack" in {

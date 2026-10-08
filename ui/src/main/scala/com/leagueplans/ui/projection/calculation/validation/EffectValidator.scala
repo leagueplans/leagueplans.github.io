@@ -2,7 +2,7 @@ package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
-import com.leagueplans.ui.model.player.item.Depository
+import com.leagueplans.ui.model.player.item.{Depository, EquipPlan}
 import com.leagueplans.ui.model.player.mode.Mode
 import com.leagueplans.ui.model.player.{Cache, Player}
 
@@ -70,7 +70,11 @@ object EffectValidator extends EffectValidator[Effect] {
         case ItemQuantity.Exact(n) => List(Validator.hasItem(move.source, move.item, move.notedInSource, n))
         case ItemQuantity.Max => List(Validator.allComesToSome(move))
       }),
-      post = move => List(Validator.depositorySize(move.target))
+      // Equipping can displace items, which have to fit where they go
+      post = move => (move.target match {
+        case _: Depository.Kind.EquipmentSlot => List(move.target, EquipPlan.returnTo(move.source))
+        case _ => List(move.target)
+      }).map(Validator.depositorySize)
     )
 
   private val depositAllValidator: EffectValidator[DepositAll] =

@@ -129,18 +129,15 @@ final class ItemTransferTest extends AnyFreeSpec with Matchers {
 
     "puts whatever an item from the bank displaces into the bank" in {
       val sword = item(7, equipmentType = Some(EquipmentType.Weapon))
-      ItemTransfer
-        .plan(
-          Holding(scimitar, noted = false, Kind.Bank),
-          Target.Equipment,
-          player(((Kind.Bank, scimitar, false), 1), ((EquipmentSlot.Weapon, sword, false), 1)),
-          items + (sword.id -> sword),
-          Settings.default
-        )
-        .map(_.effects) shouldBe Right(List(
-          MoveItem(sword.id, Exact(1), EquipmentSlot.Weapon, notedInSource = false, Kind.Bank, noteInTarget = false),
-          MoveItem(scimitar.id, Exact(1), Kind.Bank, notedInSource = false, EquipmentSlot.Weapon, noteInTarget = false)
-        ))
+      val withSword = items + (sword.id -> sword)
+      val before = player(((Kind.Bank, scimitar, false), 1), ((EquipmentSlot.Weapon, sword, false), 1))
+      val effects =
+        ItemTransfer.plan(Holding(scimitar, noted = false, Kind.Bank), Target.Equipment, before, withSword, Settings.default).map(_.effects)
+      effects shouldBe Right(List(
+        MoveItem(scimitar.id, Exact(1), Kind.Bank, notedInSource = false, EquipmentSlot.Weapon, noteInTarget = false)
+      ))
+      val after = effects.toOption.get.collect { case move: MoveItem => move }.foldLeft(before)(ItemEffects(_, _, withSword))
+      after.get(Kind.Bank).contents shouldBe Map((sword.id, false) -> 1)
     }
 
     "equips the withdraw quantity of a stackable item from the bank" in {

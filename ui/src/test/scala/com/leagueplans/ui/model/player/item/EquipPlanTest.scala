@@ -57,66 +57,109 @@ final class EquipPlanTest extends AnyFreeSpec with Matchers {
     MoveItem(item.id, ItemQuantity.Max, from, notedInSource = false, slot, noteInTarget = false)
 
   /** Displaced items come off one at a time, or as a whole stack if they stack */
-  private def unequip(item: Item, slot: EquipmentSlot): MoveItem =
-    MoveItem(item.id, if (item.stackable) ItemQuantity.Max else ItemQuantity.Exact(1), slot, notedInSource = false, Kind.Inventory, noteInTarget = false)
+  private def unequip(item: Item, slot: EquipmentSlot, to: Kind = Kind.Inventory): MoveItem =
+    MoveItem(item.id, if (item.stackable) ItemQuantity.Max else ItemQuantity.Exact(1), slot, notedInSource = false, to, noteInTarget = false)
 
   "EquipPlan" - {
     "equips an item into the slot from its item data" in {
       EquipPlan(helm, Kind.Inventory, player((Kind.Inventory, helm, 1)), items) shouldBe
-        Some(List(equip(helm, 1, slot = EquipmentSlot.Head)))
+        Some(equip(helm, 1, slot = EquipmentSlot.Head))
     }
 
     "equips one copy of an unstackable item" in {
       EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 3)), items) shouldBe
-        Some(List(equip(sword, 1, slot = EquipmentSlot.Weapon)))
+        Some(equip(sword, 1, slot = EquipmentSlot.Weapon))
     }
 
     "equips a whole stack of a stackable item" in {
       EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), items) shouldBe
-        Some(List(equipAll(arrows, from = Kind.Bank, slot = EquipmentSlot.Ammo)))
+        Some(equipAll(arrows, from = Kind.Bank, slot = EquipmentSlot.Ammo))
     }
 
     "equips the given quantity of a stackable item, up to what's held" in {
       EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), items, ItemQuantity.Exact(10)) shouldBe
-        Some(List(equip(arrows, 10, from = Kind.Bank, slot = EquipmentSlot.Ammo)))
+        Some(equip(arrows, 10, from = Kind.Bank, slot = EquipmentSlot.Ammo))
       EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 5)), items, ItemQuantity.Exact(10)) shouldBe
-        Some(List(equip(arrows, 5, from = Kind.Bank, slot = EquipmentSlot.Ammo)))
-    }
-
-    "moves the slot's current item to the inventory first" in {
-      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)), items) shouldBe
-        Some(List(unequip(scimitar, EquipmentSlot.Weapon), equip(sword, 1, slot = EquipmentSlot.Weapon)))
-    }
-
-    "unequips the shield to equip a two-handed weapon" in {
-      EquipPlan(
-        greatsword,
-        Kind.Inventory,
-        player((Kind.Inventory, greatsword, 1), (EquipmentSlot.Weapon, sword, 1), (EquipmentSlot.Shield, shield, 1)),
-        items
-      ) shouldBe Some(List(
-        unequip(sword, EquipmentSlot.Weapon),
-        unequip(shield, EquipmentSlot.Shield),
-        equip(greatsword, 1, slot = EquipmentSlot.Weapon)
-      ))
-    }
-
-    "unequips a two-handed weapon to equip a shield, but not a one-handed one" in {
-      EquipPlan(shield, Kind.Inventory, player((Kind.Inventory, shield, 1), (EquipmentSlot.Weapon, greatsword, 1)), items) shouldBe
-        Some(List(unequip(greatsword, EquipmentSlot.Weapon), equip(shield, 1, slot = EquipmentSlot.Shield)))
-
-      EquipPlan(shield, Kind.Inventory, player((Kind.Inventory, shield, 1), (EquipmentSlot.Weapon, sword, 1)), items) shouldBe
-        Some(List(equip(shield, 1, slot = EquipmentSlot.Shield)))
-    }
-
-    "adds to an equipped stack of the same stackable item instead of taking it off" in {
-      EquipPlan(arrows, Kind.Inventory, player((Kind.Inventory, arrows, 50), (EquipmentSlot.Ammo, arrows, 100)), items) shouldBe
-        Some(List(equipAll(arrows, slot = EquipmentSlot.Ammo)))
+        Some(equip(arrows, 5, from = Kind.Bank, slot = EquipmentSlot.Ammo))
     }
 
     "can't equip items without a slot, or that aren't held" in {
       EquipPlan(logs, Kind.Inventory, player((Kind.Inventory, logs, 1)), items) shouldBe None
-      EquipPlan(sword, Kind.Inventory, player((Kind.Bank, sword, 1)), items) shouldBe None
+      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 1)).copy(depositories = Map.empty), items) shouldBe None
+    }
+  }
+
+  "EquipPlan.displaced" - {
+    def displaced(move: MoveItem, contents: (Kind, Item, Int)*): List[MoveItem] =
+      EquipPlan.displaced(move, player(contents*), items)
+
+    "takes off the slot's current item, into the inventory" in {
+      displaced(equip(sword, 1, slot = EquipmentSlot.Weapon), (Kind.Inventory, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)) shouldBe
+        List(unequip(scimitar, EquipmentSlot.Weapon))
+    }
+
+    "returns displaced items to the bank when equipping from the bank" in {
+      displaced(equip(sword, 1, from = Kind.Bank, slot = EquipmentSlot.Weapon), (Kind.Bank, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)) shouldBe
+        List(unequip(scimitar, EquipmentSlot.Weapon, to = Kind.Bank))
+    }
+
+    "takes off the shield for a two-handed weapon" in {
+      displaced(
+        equip(greatsword, 1, slot = EquipmentSlot.Weapon),
+        (Kind.Inventory, greatsword, 1),
+        (EquipmentSlot.Weapon, sword, 1),
+        (EquipmentSlot.Shield, shield, 1)
+      ) shouldBe List(unequip(sword, EquipmentSlot.Weapon), unequip(shield, EquipmentSlot.Shield))
+    }
+
+    "takes off a two-handed weapon for a shield, but not a one-handed one" in {
+      displaced(equip(shield, 1, slot = EquipmentSlot.Shield), (Kind.Inventory, shield, 1), (EquipmentSlot.Weapon, greatsword, 1)) shouldBe
+        List(unequip(greatsword, EquipmentSlot.Weapon))
+      displaced(equip(shield, 1, slot = EquipmentSlot.Shield), (Kind.Inventory, shield, 1), (EquipmentSlot.Weapon, sword, 1)) shouldBe
+        List.empty
+    }
+
+    "adds to an equipped stack of the same stackable item instead of taking it off" in {
+      displaced(equipAll(arrows, slot = EquipmentSlot.Ammo), (Kind.Inventory, arrows, 50), (EquipmentSlot.Ammo, arrows, 100)) shouldBe
+        List.empty
+    }
+
+    "takes nothing off for moves that can't equip the item" in {
+      displaced(equip(sword, 1, slot = EquipmentSlot.Shield), (Kind.Inventory, sword, 1), (EquipmentSlot.Shield, shield, 1)) shouldBe
+        List.empty
+      displaced(
+        MoveItem(sword.id, ItemQuantity.Exact(1), Kind.Inventory, notedInSource = true, EquipmentSlot.Weapon, noteInTarget = false),
+        (EquipmentSlot.Weapon, scimitar, 1)
+      ) shouldBe List.empty
+      displaced(
+        MoveItem(sword.id, ItemQuantity.Exact(1), Kind.Inventory, notedInSource = false, Kind.Bank, noteInTarget = false),
+        (EquipmentSlot.Weapon, scimitar, 1)
+      ) shouldBe List.empty
+    }
+  }
+
+  "Moving an item into its slot" - {
+    "swaps it with the item already there" in {
+      val swapped = ItemEffects(
+        player((Kind.Inventory, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)),
+        equip(sword, 1, slot = EquipmentSlot.Weapon),
+        items
+      )
+      swapped.get(EquipmentSlot.Weapon).contents shouldBe Map((sword.id, false) -> 1)
+      swapped.get(Kind.Inventory).contents shouldBe Map((scimitar.id, false) -> 1)
+    }
+
+    "displaces nothing when there's nothing to move" in {
+      val after = ItemEffects(player((EquipmentSlot.Weapon, scimitar, 1)), equipAll(sword, slot = EquipmentSlot.Weapon), items)
+      after.get(EquipmentSlot.Weapon).contents shouldBe Map((scimitar.id, false) -> 1)
+      after.get(Kind.Inventory).contents shouldBe empty
+    }
+
+    "still works after the moves an equip used to store for what it displaced" in {
+      val equipped = List(unequip(scimitar, EquipmentSlot.Weapon), equip(sword, 1, slot = EquipmentSlot.Weapon))
+        .foldLeft(player((Kind.Inventory, sword, 1), (EquipmentSlot.Weapon, scimitar, 1)))(ItemEffects(_, _, items))
+      equipped.get(EquipmentSlot.Weapon).contents shouldBe Map((sword.id, false) -> 1)
+      equipped.get(Kind.Inventory).contents shouldBe Map((scimitar.id, false) -> 1)
     }
   }
 }

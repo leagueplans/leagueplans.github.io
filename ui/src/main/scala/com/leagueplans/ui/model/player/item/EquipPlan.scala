@@ -6,16 +6,17 @@ import com.leagueplans.ui.model.plan.ItemQuantity
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 
-/** Works out the moves that equip an item. The slot comes from the item data. Whatever the item
-  * displaces goes back where the item came from, the bank or else the inventory: the slot's
-  * current item, the shield for a two-handed weapon, or a two-handed weapon for a shield. Add the
-  * moves together, so that equipping is one change to undo.
+/** Works out the move that equips an item, and what equipping it displaces. The slot comes from
+  * the item data. A move into an item's own slot takes off whatever is in the way where it applies,
+  * as the game does, so that a plan stays right when earlier steps change what's worn. Displaced
+  * items go back where the item came from, the bank or else the inventory: the slot's current item,
+  * the shield for a two-handed weapon, or a two-handed weapon for a shield.
   */
 object EquipPlan {
   /** @param source where the item is taken from, unnoted
     * @param quantity how many of a stackable item to equip, such as the bank's withdraw quantity.
     *                 Anything else is equipped one at a time.
-    * @return the moves, displaced items first, or None if the item can't be equipped or isn't held
+    * @return the move, or None if the item can't be equipped or isn't held
     */
   def apply(
     item: Item,
@@ -23,7 +24,7 @@ object EquipPlan {
     player: Player,
     items: Item.ID => Item,
     quantity: ItemQuantity = ItemQuantity.Max
-  ): Option[List[MoveItem]] =
+  ): Option[MoveItem] =
     for {
       equipmentType <- item.equipmentType
       held = player.get(source).count(item.id, noted = false)
@@ -35,18 +36,48 @@ object EquipPlan {
         case ItemQuantity.Exact(n) => ItemQuantity.Exact(math.min(n, held))
         case ItemQuantity.Max => ItemQuantity.Max
       }
-      val returnTo = if (source == Depository.Kind.Bank) Depository.Kind.Bank else Depository.Kind.Inventory
-      displaced(item, equipmentType, returnTo, player, items) :+
-        MoveItem(item.id, equipped, source, notedInSource = false, slot, noteInTarget = false)
+      MoveItem(item.id, equipped, source, notedInSource = false, slot, noteInTarget = false)
     }
+
+  /** The moves that clear the way for a move into an item's own slot, applied just before it. A
+    * move that can't equip the item, such as into another slot or from notes, displaces nothing:
+    * the plan shows its problem instead. Nor does a move of nothing, as the game wouldn't.
+    */
+  def displaced(move: MoveItem, player: Player, items: Item.ID => Item): List[MoveItem] = {
+    val item = items(move.item)
+    item.equipmentType match {
+      case Some(equipmentType) if equips(move, items) && ItemEffects.count(move, player, items) > 0 =>
+        displaced(item, equipmentType, returnTo(move.source), player, items)
+      case _ =>
+        List.empty
+    }
+  }
+
+  /** Whether a move equips its item: into the item's own slot, and not from notes */
+  def equips(move: MoveItem, items: Item.ID => Item): Boolean =
+    move.target match {
+      case slot: EquipmentSlot => !move.notedInSource && items(move.item).equipmentType.map(EquipmentSlot.from).contains(slot)
+      case _ => false
+    }
+
+  /** The slots a move into a slot may take items out of, whatever the item */
+  def slotsCleared(slot: EquipmentSlot): Set[EquipmentSlot] =
+    slot match {
+      case EquipmentSlot.Weapon | EquipmentSlot.Shield => Set(EquipmentSlot.Weapon, EquipmentSlot.Shield)
+      case other => Set(other)
+    }
+
+  /** Where items displaced by equipping from a place go: the bank for the bank, and otherwise the
+    * inventory */
+  def returnTo(source: Depository.Kind): Depository.Kind =
+    if (source == Depository.Kind.Bank) Depository.Kind.Bank else Depository.Kind.Inventory
 
   /** Moves the equipped item back to the inventory, or to the bank */
   def unequip(item: Item, slot: EquipmentSlot, target: Depository.Kind): MoveItem =
     MoveItem(item.id, unequipped(item), slot, notedInSource = false, target, noteInTarget = false)
 
-  /** One of an unstackable item, since a slot holds one, so that equipping and unequipping it in a
-    * step cancel out. A stackable item comes off as a whole stack, whatever is equipped where the
-    * step applies. */
+  /** One of an unstackable item, since a slot holds one. A stackable item comes off as a whole
+    * stack, whatever is equipped where the step applies. */
   private def unequipped(item: Item): ItemQuantity =
     if (item.stackable) ItemQuantity.Max else ItemQuantity.Exact(1)
 

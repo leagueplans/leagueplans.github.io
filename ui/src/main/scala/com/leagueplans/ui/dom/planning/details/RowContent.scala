@@ -4,8 +4,8 @@ import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
-import com.leagueplans.ui.model.player.Cache
-import com.leagueplans.ui.model.player.item.{BankSpace, Depository, ItemRoute, ItemStack}
+import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.model.player.item.{BankSpace, Depository, EquipPlan, ItemEffects, ItemRoute, ItemStack}
 import com.leagueplans.uicommon.dom.ContextMenu
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Observer
@@ -29,16 +29,19 @@ final case class RowContent[+T](
 
 object RowContent {
   /** @param multiplierAt the exp multiplier for a skill at the start of the step
-    * @param countHere how many items an item effect comes to where it applies in the step, which
-    *                  rows show for effects whose quantity is Max
+    * @param playerAt the player an item effect applies to in the step, for the rows that show what
+    *                 an effect comes to there: how many items Max is, and what equipping displaces
     */
   def of(
     effect: Effect,
     cache: Cache,
     multiplierAt: Skill => Double,
-    countHere: Effect => Option[Int],
+    playerAt: Effect => Option[Player],
     contextMenu: ContextMenu
-  ): RowContent[Effect] =
+  ): RowContent[Effect] = {
+    def countHere(effect: Effect.AddItem | Effect.MoveItem): Option[Int] =
+      playerAt(effect).map(ItemEffects.count(effect, _, cache.items))
+
     effect match {
       case Effect.GainExp(skill, baseExp) =>
         val multiplier = multiplierAt(skill)
@@ -61,11 +64,12 @@ object RowContent {
       case move @ Effect.MoveItem(item, quantity, source, notedInSource, target, noteInTarget) =>
         // Notes are only ever withdrawn or deposited, so the item is noted on one side at most
         val noted = notedInSource || noteInTarget
+        val unequips = displacedHere(move, playerAt, cache)
         RowContent(
           itemIcon(item, iconCount(quantity, countHere(move)), noted, cache),
           s"${moveVerb(source, target)} ${itemTitle(item, noted, cache)}",
-          ItemRoute.of(move).label,
-          editableDetail = Some(onChange => MoveLocations(move, cache.items(item), contextMenu, onChange))
+          s"${ItemRoute.of(move).label}$unequips",
+          editableDetail = Some(onChange => L.span(MoveLocations(move, cache.items(item), contextMenu, onChange), unequips))
         )
 
       case Effect.DepositAll(source) =>
@@ -120,6 +124,7 @@ object RowContent {
           detail
         )
     }
+  }
 
   def of(requirement: Requirement, cache: Cache): RowContent[Requirement] =
     requirement match {
@@ -158,6 +163,13 @@ object RowContent {
       case (_: Depository.Kind.EquipmentSlot, Depository.Kind.Inventory) => "Unequip"
       case _ => "Move"
     }
+
+  /** Such as " · unequips Dragon dagger", for a move that equips an item */
+  private def displacedHere(move: Effect.MoveItem, playerAt: Effect => Option[Player], cache: Cache): String =
+    playerAt(move)
+      .map(EquipPlan.displaced(move, _, cache.items).map(moved => cache.items(moved.item).fullName))
+      .filter(_.nonEmpty)
+      .fold("")(names => s" · unequips ${names.mkString(" and ")}")
 
   /** Such as " · 1,234 at this step" */
   private def atThisStep(count: Option[Int]): String =

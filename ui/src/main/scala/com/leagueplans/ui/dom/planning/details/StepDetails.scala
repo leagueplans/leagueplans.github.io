@@ -115,8 +115,8 @@ object StepDetails {
         RowList[Effect](
           Kind.Effects,
           effects,
-          Signal.combine(expMultiplierAt, countsHere(effects, playerBefore, cache)).map((multiplierAt, countHere) =>
-            RowContent.of(_, cache, multiplierAt, countHere, contextMenu)
+          Signal.combine(expMultiplierAt, playersAt(effects, playerBefore, cache)).map((multiplierAt, playerAt) =>
+            RowContent.of(_, cache, multiplierAt, playerAt, contextMenu)
           ),
           RowAmounts.of(_, cache.items),
           RowAmounts.withAmount(cache.items),
@@ -171,26 +171,27 @@ object StepDetails {
   /** What each item effect comes to where it applies in the step, worked out by applying the
     * step's item effects in order to the player at its start. Rows show this for effects whose
     * quantity is Max. Repeated steps show the first repetition. */
-  private def countsHere(
+  /** The player each of the step's item effects applies to */
+  private def playersAt(
     effects: Signal[List[Effect]],
     playerBefore: Signal[Player],
     cache: Cache
-  ): Signal[Effect => Option[Int]] =
+  ): Signal[Effect => Option[Player]] =
     Signal.combine(effects, playerBefore).map { (effects, player) =>
-      val (_, counts) =
-        effects.foldLeft((player, Map.empty[Effect, Int])) { case ((player, counts), effect) =>
+      val (_, players) =
+        effects.foldLeft((player, Map.empty[Effect, Player])) { case ((player, players), effect) =>
           effect match {
             case e: (Effect.AddItem | Effect.MoveItem) =>
-              // Equal effects share a row's content, so each shows what the first comes to
-              val updated = if (counts.contains(e)) counts else counts + (e -> ItemEffects.count(e, player, cache.items))
+              // Equal effects share a row's content, so each shows where the first applies
+              val updated = if (players.contains(e)) players else players + (e -> player)
               (ItemEffects(player, e, cache.items), updated)
             case e: (Effect.DepositAll | Effect.SetBankPin.type | Effect.BuyBankSpace) =>
-              (ItemEffects(player, e, cache.items), counts)
+              (ItemEffects(player, e, cache.items), players)
             case _ =>
-              (player, counts)
+              (player, players)
           }
         }
-      counts.get
+      players.get
     }
 
   private def isTyping(target: org.scalajs.dom.EventTarget): Boolean =

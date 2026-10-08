@@ -38,10 +38,12 @@ object ItemEffects {
       case add: AddItem =>
         val n = count(add, player, items)
         change(player, add.target, add.item, add.note, if (add.change.removes) -n else n)
+      // Counted before anything's displaced, which can return more of the item to the source
       case move: MoveItem =>
         val n = count(move, player, items)
+        val cleared = EquipPlan.displaced(move, player, items).foldLeft(player)(apply(_, _, items))
         change(
-          change(player, move.target, move.item, move.noteInTarget, n),
+          change(cleared, move.target, move.item, move.noteInTarget, n),
           move.source, move.item, move.notedInSource, -n
         )
       case DepositAll(source) =>
