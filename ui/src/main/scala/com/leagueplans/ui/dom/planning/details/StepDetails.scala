@@ -51,7 +51,6 @@ object StepDetails {
     tooltip: Tooltip,
     modal: Modal
   ): L.Div = {
-    val effectText = EffectText(cache)
     val effects = stepSignal.map(_.directEffects.underlying)
     val requirements = stepSignal.map(_.requirements)
     val editRequests = EventBus[Row]()
@@ -148,7 +147,7 @@ object StepDetails {
         RowList[Requirement](
           Kind.Requirements,
           requirements,
-          Signal.fromValue(RowContent.of(_, cache, effectText)),
+          Signal.fromValue(RowContent.of(_, cache)),
           RowAmounts.of,
           RowAmounts.withAmount,
           errors = errorsByKind.map(_._2),

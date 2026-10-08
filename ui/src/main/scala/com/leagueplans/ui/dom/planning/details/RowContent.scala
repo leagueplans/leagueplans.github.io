@@ -121,7 +121,7 @@ object RowContent {
         )
     }
 
-  def of(requirement: Requirement, cache: Cache, effectText: EffectText): RowContent[Requirement] =
+  def of(requirement: Requirement, cache: Cache): RowContent[Requirement] =
     requirement match {
       case Requirement.SkillLevel(skill, _) =>
         RowContent(() => skillIcon(skill), s"$skill level", "At the start of this step")
@@ -134,10 +134,19 @@ object RowContent {
         )
 
       case _: Requirement.And =>
-        RowContent(glyph("and"), "All of", effectText.describe(requirement))
+        RowContent(glyph("and"), "All of", describe(requirement, cache))
 
       case _: Requirement.Or =>
-        RowContent(glyph("or"), "Any of", effectText.describe(requirement))
+        RowContent(glyph("or"), "Any of", describe(requirement, cache))
+    }
+
+  /** A requirement in a line of text, for the parts of a combined requirement */
+  private def describe(requirement: Requirement, cache: Cache): String =
+    requirement match {
+      case Requirement.SkillLevel(skill, level) => s"$skill $level"
+      case Requirement.Holds(item, where) => s"${cache.items(item).fullName} (${where.description})"
+      case Requirement.And(left, right) => s"(${describe(left, cache)} and ${describe(right, cache)})"
+      case Requirement.Or(left, right) => s"(${describe(left, cache)} or ${describe(right, cache)})"
     }
 
   /** Such as " · 1,234 at this step" */
