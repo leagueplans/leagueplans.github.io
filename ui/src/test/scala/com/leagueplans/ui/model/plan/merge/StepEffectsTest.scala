@@ -1,7 +1,7 @@
 package com.leagueplans.ui.model.plan.merge
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
+import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item, Skill}
 import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
@@ -9,7 +9,7 @@ import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.league.LeagueStatus
-import com.leagueplans.ui.model.player.skill.Stats
+import com.leagueplans.ui.model.player.skill.{Exp, Stats}
 import com.leagueplans.ui.model.player.{GridStatus, Player}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -223,6 +223,21 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
         List(withdraw(Exact(5)), withdraw(Exact(4), lobster), Effect.CompleteQuest(1))
       merged(withdraw(Exact(2)), Effect.SetBankPin, withdraw(Exact(3))) shouldBe List(withdraw(Exact(5)), Effect.SetBankPin)
     }
+    "merging exp" - {
+      def gain(skill: Skill, exp: Int): Effect = Effect.GainExp(skill, Exp(exp))
+
+      "merges past exp for other skills" in {
+        merged(gain(Skill.Attack, 10), gain(Skill.Magic, 3), gain(Skill.Attack, 10)) shouldBe
+          List(gain(Skill.Attack, 20), gain(Skill.Magic, 3))
+      }
+
+      "doesn't merge past what can raise the multiplier" in {
+        val attack = gain(Skill.Attack, 10)
+        merged(attack, Effect.CompleteLeagueTask(1), attack) shouldBe List(attack, Effect.CompleteLeagueTask(1), attack)
+        merged(attack, Effect.CompleteGridTile(1), attack) shouldBe List(attack, Effect.CompleteGridTile(1), attack)
+      }
+    }
+
     "drops what a merge leaves that comes to nothing at the step" - {
       val equip = move(arrows, Max, Kind.Bank, EquipmentSlot.Ammo)
       val unequip = move(arrows, Max, EquipmentSlot.Ammo, Kind.Bank)

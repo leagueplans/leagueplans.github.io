@@ -20,6 +20,10 @@ private[merge] object EffectDependencies {
     /** Any unnoted items that can be worn in the slots, in a place. What equipping takes off is
       * one of these, put back where the equipped item came from. */
     case Wearable(slots: Set[Kind.EquipmentSlot], place: Depository.Kind)
+    /** What multiplies the exp an effect gives. League points and grid tiles can raise it, so exp
+      * can't move past what earns them. Levels can raise it too in some modes, but exp effects
+      * still move past each other, so that exp for one skill keeps merging around another's. */
+    case ExpMultiplier
   }
 
   /** @param reads what the effect's result depends on, for an effect that's worked out where it
@@ -90,7 +94,13 @@ private[merge] object EffectDependencies {
         val coins = Set(Kind.Inventory, Kind.Bank).map(place => Resource.Stack(Some(BankSpace.coins), Some(false), place))
         Access(coins, space(Kind.Inventory), coins)
 
-      case _: (GainExp | UnlockSkill | CompleteQuest | CompleteDiaryTask | CompleteLeagueTask | CompleteGridTile) | SetBankPin =>
+      case _: GainExp =>
+        Access(Set(Resource.ExpMultiplier), Set.empty, Set.empty)
+
+      case _: (CompleteLeagueTask | CompleteGridTile) =>
+        Access(Set.empty, Set(Resource.ExpMultiplier), Set.empty)
+
+      case _: (UnlockSkill | CompleteQuest | CompleteDiaryTask) | SetBankPin =>
         none
     }
 
@@ -112,6 +122,8 @@ private[merge] object EffectDependencies {
         overlap(wearable, stack, items)
       case (Resource.Wearable(slotsA, placeA), Resource.Wearable(slotsB, placeB)) =>
         placeA == placeB && slotsA.intersect(slotsB).nonEmpty
+      case (Resource.ExpMultiplier, Resource.ExpMultiplier) =>
+        true
       case _ =>
         false
     }
