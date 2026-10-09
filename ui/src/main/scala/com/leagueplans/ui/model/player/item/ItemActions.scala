@@ -174,7 +174,7 @@ object ItemActions {
     items: Item.ID => Item,
     quantity: ItemQuantity = ItemQuantity.Max
   ): Option[Action] =
-    EquipPlan(holding.item, holding.place, player, items, quantity).map { move =>
+    EquipPlan(holding.item, holding.place, player, quantity).map { move =>
       val displaced = EquipPlan.displaced(move, player, items).map(moved => items(moved.item).fullName).mkString(" and ")
       Action(
         List(move),

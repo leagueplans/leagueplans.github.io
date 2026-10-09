@@ -22,7 +22,6 @@ object EquipPlan {
     item: Item,
     source: Depository.Kind,
     player: Player,
-    items: Item.ID => Item,
     quantity: ItemQuantity = ItemQuantity.Max
   ): Option[MoveItem] =
     for {

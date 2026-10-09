@@ -62,30 +62,30 @@ final class EquipPlanTest extends AnyFreeSpec with Matchers {
 
   "EquipPlan" - {
     "equips an item into the slot from its item data" in {
-      EquipPlan(helm, Kind.Inventory, player((Kind.Inventory, helm, 1)), items) shouldBe
+      EquipPlan(helm, Kind.Inventory, player((Kind.Inventory, helm, 1))) shouldBe
         Some(equip(helm, 1, slot = EquipmentSlot.Head))
     }
 
     "equips one copy of an unstackable item" in {
-      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 3)), items) shouldBe
+      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 3))) shouldBe
         Some(equip(sword, 1, slot = EquipmentSlot.Weapon))
     }
 
     "equips a whole stack of a stackable item" in {
-      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), items) shouldBe
+      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250))) shouldBe
         Some(equipAll(arrows, from = Kind.Bank, slot = EquipmentSlot.Ammo))
     }
 
     "equips the given quantity of a stackable item, up to what's held" in {
-      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), items, ItemQuantity.Exact(10)) shouldBe
+      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 250)), ItemQuantity.Exact(10)) shouldBe
         Some(equip(arrows, 10, from = Kind.Bank, slot = EquipmentSlot.Ammo))
-      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 5)), items, ItemQuantity.Exact(10)) shouldBe
+      EquipPlan(arrows, Kind.Bank, player((Kind.Bank, arrows, 5)), ItemQuantity.Exact(10)) shouldBe
         Some(equip(arrows, 5, from = Kind.Bank, slot = EquipmentSlot.Ammo))
     }
 
     "can't equip items without a slot, or that aren't held" in {
-      EquipPlan(logs, Kind.Inventory, player((Kind.Inventory, logs, 1)), items) shouldBe None
-      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 1)).copy(depositories = Map.empty), items) shouldBe None
+      EquipPlan(logs, Kind.Inventory, player((Kind.Inventory, logs, 1))) shouldBe None
+      EquipPlan(sword, Kind.Inventory, player((Kind.Inventory, sword, 1)).copy(depositories = Map.empty)) shouldBe None
     }
   }
 
