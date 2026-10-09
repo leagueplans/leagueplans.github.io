@@ -18,37 +18,45 @@ import scala.scalajs.js.annotation.JSImport
   *
   * @param icon creates the row's icon
   * @param editableDetail shown in place of the detail, for rows that can be changed from it.
-  *                       It's given where to send the changed value.
+  *                       It's given where to send the changed value, and where to say what an
+  *                       edit's text comes to while it's typed, for edits that take text.
   */
 final case class RowContent[+T](
   icon: () => L.Node,
   title: String,
   detail: String,
-  editableDetail: Option[Observer[T] => L.Node] = None
+  editableDetail: Option[(Observer[T], Observer[Option[Either[String, T]]]) => L.Node] = None
 )
 
 object RowContent {
-  /** @param multiplierAt the exp multiplier for a skill at the start of the step
-    * @param playerAt the player an item effect applies to in the step, for the rows that show what
-    *                 an effect comes to there: how many items Max is, and what equipping displaces
+  /** @param multiplierOf a skill's exp multiplier for a player
+    * @param playerAt the player the effect applies to in the step, for the rows that show what an
+    *                 effect comes to there: the exp after the multiplier, how many items Max is,
+    *                 and what equipping displaces
     */
   def of(
     effect: Effect,
     cache: Cache,
-    multiplierAt: Skill => Double,
-    playerAt: Effect => Option[Player],
+    multiplierOf: (Skill, Player) => Double,
+    playerAt: Option[Player],
     contextMenu: ContextMenu
   ): RowContent[Effect] = {
     def countHere(effect: Effect.AddItem | Effect.MoveItem): Option[Int] =
-      playerAt(effect).map(ItemEffects.count(effect, _, cache.items))
+      playerAt.map(ItemEffects.count(effect, _, cache.items))
 
     effect match {
-      case Effect.GainExp(skill, baseExp) =>
-        val multiplier = multiplierAt(skill)
-        val detail =
-          if (multiplier == 1) "base exp"
-          else s"base exp · ×${formatMultiplier(multiplier)} at this step → +${RowAmounts.formatExp(baseExp * multiplier)}"
-        RowContent(() => skillIcon(skill), s"$skill exp", detail)
+      case gain @ Effect.GainExp(skill, actions, expEach) =>
+        val multiplier = playerAt.fold(1.0)(multiplierOf(skill, _))
+        // The amount is the base exp, so the detail says what the multiplier makes of it
+        val gained =
+          if (multiplier == 1) ""
+          else s" · ${formatMultiplier(multiplier)}× → +${RowAmounts.formatXp(gain.baseExp * multiplier)}"
+        RowContent(
+          () => skillIcon(skill),
+          s"Gain $skill xp",
+          s"${actions.withCommas} × ${RowAmounts.formatXp(expEach)} each$gained",
+          editableDetail = Some((onChange, onStatus) => ExpDetail(gain, gained, onChange, onStatus))
+        )
 
       case add @ Effect.AddItem(item, change, target, note) =>
         val place = target.name.toLowerCase
@@ -69,7 +77,7 @@ object RowContent {
           itemIcon(item, iconCount(quantity, countHere(move)), noted, cache),
           s"${moveVerb(source, target)} ${itemTitle(item, noted, cache)}",
           s"${ItemRoute.of(move).label}$unequips",
-          editableDetail = Some(onChange => L.span(MoveLocations(move, cache.items(item), contextMenu, onChange), unequips))
+          editableDetail = Some((onChange, _) => L.span(MoveLocations(move, cache.items(item), contextMenu, onChange), unequips))
         )
 
       case Effect.DepositAll(source) =>
@@ -165,8 +173,8 @@ object RowContent {
     }
 
   /** Such as " · unequips Dragon dagger", for a move that equips an item */
-  private def displacedHere(move: Effect.MoveItem, playerAt: Effect => Option[Player], cache: Cache): String =
-    playerAt(move)
+  private def displacedHere(move: Effect.MoveItem, playerAt: Option[Player], cache: Cache): String =
+    playerAt
       .map(EquipPlan.displaced(move, _, cache.items).map(moved => cache.items(moved.item).fullName))
       .filter(_.nonEmpty)
       .fold("")(names => s" · unequips ${names.mkString(" and ")}")

@@ -47,7 +47,7 @@ final class DropRulesTest extends AnyFreeSpec with Matchers {
   }
 
   "an effect or requirement" - {
-    val effect = Dragged.DraggedEffect(stepB.id, 0, Effect.GainExp(Skill.Attack, Exp(100)))
+    val effect = Dragged.DraggedEffect(stepB.id, 0, Effect.GainExp(Skill.Attack, 1, Exp(100)))
     val requirement = Dragged.DraggedRequirement(stepB.id, 0, Requirement.SkillLevel(Skill.Agility, Level(50)))
 
     "can be dropped on any other step, including its step's parent and substeps" in {

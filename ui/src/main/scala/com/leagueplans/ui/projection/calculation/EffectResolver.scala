@@ -38,8 +38,8 @@ object EffectResolver {
   ) extends EffectResolver {
     def resolve(player: Player, effect: Effect): Player =
       effect match {
-        case Effect.GainExp(skill, exp) =>
-          val gainedExp = exp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player, cache)
+        case gain @ Effect.GainExp(skill, _, _) =>
+          val gainedExp = gain.baseExp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player, cache)
           // Added as Longs, since two large gains could pass what an Int holds
           val total = (player.stats(skill).raw.toLong + gainedExp.raw).min(Exp.max.raw)
           player.copy(stats =

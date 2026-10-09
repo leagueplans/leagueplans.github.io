@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.dom.planning.details.RowAmounts.Tone
-import com.leagueplans.uicommon.dom.{Button, DragSortableList, InlineEdit, Tooltip}
+import com.leagueplans.uicommon.dom.{ArrowText, Button, DragSortableList, InlineEdit, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.HasID
@@ -22,7 +22,8 @@ import scala.scalajs.js.annotation.JSImport
   * dragging, and have their amounts edited in place.
   */
 object RowList {
-  /** @param content what a row shows, which can change with the player's state
+  /** @param content what a row shows, given its value and position, which can change with the
+    *                player's state
     * @param errors the problems with each row, by position
     * @param showMet whether rows without problems say they're met, as requirements do
     * @param editRequests asks the row at a position to start editing its amount
@@ -33,7 +34,7 @@ object RowList {
   def apply[T](
     kind: RowSelection.Kind,
     items: Signal[List[T]],
-    content: Signal[T => RowContent[T]],
+    content: Signal[(T, Int) => RowContent[T]],
     amount: T => Option[RowAmounts.Amount],
     withAmount: (T, String) => Either[String, T],
     errors: Signal[Map[Int, List[String]]],
@@ -83,7 +84,7 @@ object RowList {
     value: Signal[T],
     index: Signal[Int],
     dragIcon: L.SvgElement,
-    content: Signal[T => RowContent[T]],
+    content: Signal[(T, Int) => RowContent[T]],
     amount: T => Option[RowAmounts.Amount],
     withAmount: (T, String) => Either[String, T],
     errors: Signal[Map[Int, List[String]]],
@@ -94,7 +95,7 @@ object RowList {
     onDelete: Observer[Int],
     tooltip: Tooltip
   ): L.Modifier[L.HtmlElement] = {
-    val rowContent = Signal.combine(value, content).map((v, describe) => describe(v))
+    val rowContent = Signal.combine(value, index, content).map((v, i, describe) => describe(v, i))
     val rowErrors = Signal.combine(index, errors).map((i, all) => all.getOrElse(i, List.empty)).distinct
     val isSelected =
       Signal.combine(index, selection.selected).map((i, selected) =>
@@ -103,6 +104,8 @@ object RowList {
     val commits = EventBus[T]()
     // While the amount is being edited, whether the text can be saved
     val editStatus = Var(Option.empty[Either[String, T]])
+    // The same for an edit in the detail, which shows under it, so as not to replace the edit
+    val detailStatus = Var(Option.empty[Either[String, T]])
 
     List(
       L.cls(Styles.row),
@@ -155,8 +158,15 @@ object RowList {
           case (Some(Left(error)), _) =>
             L.div(L.cls(Styles.detail, Styles.invalid), error)
           case (None, content) =>
-            L.div(L.cls(Styles.detail), content.editableDetail.fold(L.textToTextNode(content.detail))(_(commits.writer)))
+            L.div(
+              L.cls(Styles.detail),
+              content.editableDetail.fold[L.Modifier[L.Div]](ArrowText(content.detail))(_(commits.writer, detailStatus.writer))
+            )
         },
+        L.child.maybe <-- detailStatus.signal.map(_.map {
+          case Right(_) => L.div(L.cls(Styles.detail, Styles.valid), "✓ Enter to save, Esc to cancel")
+          case Left(error) => L.div(L.cls(Styles.detail, Styles.invalid), error)
+        }),
         L.children <-- rowErrors.map(_.map(message => L.div(L.cls(Styles.error), message)))
       ),
       Button(_.handledWith(_.sample(index)) --> onDelete).amend(

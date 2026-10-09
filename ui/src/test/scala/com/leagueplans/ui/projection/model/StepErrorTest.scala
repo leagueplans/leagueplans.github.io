@@ -7,7 +7,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 final class StepErrorTest extends AnyFreeSpec with Matchers {
-  private val attackExp = Effect.GainExp(Skill.Attack, Exp(100))
+  private val attackExp = Effect.GainExp(Skill.Attack, 1, Exp(100))
   private val cooksAssistant = Effect.CompleteQuest(1)
   private val agility50 = Requirement.SkillLevel(Skill.Agility, Level(50))
 
@@ -37,7 +37,7 @@ final class StepErrorTest extends AnyFreeSpec with Matchers {
     }
 
     "is stale once its effect has been edited" in {
-      val afterEdit = step(List(Effect.GainExp(Skill.Attack, Exp(200))))
+      val afterEdit = step(List(Effect.GainExp(Skill.Attack, 1, Exp(200))))
       StepError.Source.Effect(0, attackExp).isCurrentFor(afterEdit) shouldBe false
     }
 

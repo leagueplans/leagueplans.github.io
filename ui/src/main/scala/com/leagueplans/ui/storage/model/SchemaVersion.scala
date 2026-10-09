@@ -30,6 +30,8 @@ enum SchemaVersion(val date: Date) {
   /** Adds "all" and "until full" amounts to item effects, and merges item requirements for the
     * inventory or a worn slot into one */
   case V9 extends SchemaVersion(new Date(2026, 9, 5))
+  /** Exp effects always hold their actions and the exp each gives */
+  case V10 extends SchemaVersion(new Date(2026, 9, 9))
 
   def number: Int = ordinal + 1
 }

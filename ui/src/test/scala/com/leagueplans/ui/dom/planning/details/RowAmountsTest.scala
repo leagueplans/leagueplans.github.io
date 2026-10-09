@@ -25,7 +25,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
       infobox = InfoboxKey(1, List.empty)
     )
   )
-  private val gainExp: Effect.GainExp = Effect.GainExp(Skill.Woodcutting, Exp.tenths(12505))
+  private val gainExp: Effect.GainExp = Effect.GainExp(Skill.Woodcutting, 1, Exp.tenths(12505))
   private val addLogs: Effect.AddItem = Effect.AddItem(logs, ItemChange.By(25), Depository.Kind.Inventory, note = false)
   private val removeLogs: Effect.AddItem = addLogs.copy(change = ItemChange.By(-25))
   private val moveLogs: Effect.MoveItem =
@@ -42,7 +42,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
   "RowAmounts.of" - {
     "shows exp with its tenth only when there is one" in {
       amountOf(gainExp) shouldBe Some(Amount("+1,250.5", "1250.5", Tone.Gain))
-      amountOf(Effect.GainExp(Skill.Woodcutting, Exp(25))) shouldBe Some(Amount("+25", "25", Tone.Gain))
+      amountOf(Effect.GainExp(Skill.Woodcutting, 1, Exp(25))) shouldBe Some(Amount("+25", "25", Tone.Gain))
     }
 
     "shows whether items are added or removed" in {
@@ -73,9 +73,13 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
 
   "RowAmounts.withAmount" - {
     "sets exp exactly, including tenths" in {
-      withAmount(gainExp, "37.5") shouldBe Right(gainExp.copy(baseExp = Exp.tenths(375)))
-      withAmount(gainExp, "1,000") shouldBe Right(gainExp.copy(baseExp = Exp(1000)))
-      withAmount(gainExp, "0.3") shouldBe Right(gainExp.copy(baseExp = Exp.tenths(3)))
+      withAmount(gainExp, "37.5") shouldBe Right(gainExp.copy(expEach = Exp.tenths(375)))
+      withAmount(gainExp, "1,000") shouldBe Right(gainExp.copy(expEach = Exp(1000)))
+      withAmount(gainExp, "0.3") shouldBe Right(gainExp.copy(expEach = Exp.tenths(3)))
+    }
+
+    "makes a gain of several actions a single action of the new exp" in {
+      withAmount(Effect.GainExp(Skill.Woodcutting, 2, Exp(25)), "60") shouldBe Right(Effect.GainExp(Skill.Woodcutting, 1, Exp(60)))
     }
 
     "rejects exp that can't be stored" in {

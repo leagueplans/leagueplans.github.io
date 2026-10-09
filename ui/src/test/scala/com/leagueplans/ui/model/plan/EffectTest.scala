@@ -14,21 +14,22 @@ final class EffectTest extends CodecSpec {
       def test(effect: Effect, expectedEncoding: Array[Byte]): Assertion =
         testRoundTripSerialisation(effect, Decoder.decodeMessage, expectedEncoding)
 
-      "GainExp" in {
-        val exp = Exp(1345)
-        test(
-          Effect.GainExp(Skill.Fishing, exp),
-          Array[Byte](0, 0, 0b1100, 0b1010, 0b100, 0b100) ++ Encoder.encode(Skill.Fishing).getBytes ++
-            Array[Byte](0b1000) ++ Encoder.encode(exp).getBytes
-        )
-      }
-
       val itemID = Item.ID(2352)
       val itemIDEnc = Encoder.encode(itemID).getBytes
 
       // An embedded message is its field's tag, its length, and then its bytes
       def message(tag: Int, bytes: Array[Byte]): Array[Byte] =
         Array[Byte](tag.toByte, bytes.length.toByte) ++ bytes
+
+      "GainExp" in test(
+        Effect.GainExp(Skill.Fishing, actions = 56, expEach = Exp(35)),
+        Array[Byte](0, 0) ++ message(
+          0b1100,
+          message(0b100, Encoder.encode(Skill.Fishing).getBytes) ++
+            Array[Byte](0b1000) ++ Encoder.encode(56).getBytes ++
+            Array[Byte](0b10000) ++ Encoder.encode(Exp(35)).getBytes
+        )
+      )
 
       def quantity(q: ItemQuantity): Array[Byte] =
         Encoder.encode(q).getBytes

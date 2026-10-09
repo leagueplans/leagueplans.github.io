@@ -1,6 +1,5 @@
 package com.leagueplans.ui.dom.planning.details
 
-import com.leagueplans.common.model.Skill
 import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
 import com.leagueplans.ui.dom.planning.drag.DragSession
@@ -8,10 +7,9 @@ import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
 import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
-import com.leagueplans.ui.model.plan.{Effect, Requirement, Step}
-import com.leagueplans.ui.model.player.item.ItemEffects
+import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.calculation.{EffectResolver, TimeKeeper}
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -30,7 +28,7 @@ import scala.scalajs.js.annotation.JSImport
 /** Everything about the focused step: where it sits in the plan, its description, timings,
   * problems, effects and requirements */
 object StepDetails {
-  /** @param expMultiplierAt the exp multiplier for each skill at the start of the step
+  /** @param settings the plan's settings, which say how effects apply
     * @param stepEditor changes the step's effects and requirements
     */
   def apply(
@@ -42,7 +40,7 @@ object StepDetails {
     timeKeeper: TimeKeeper,
     selection: RowSelection,
     dragSession: DragSession,
-    expMultiplierAt: Signal[Skill => Double],
+    settings: Signal[Plan.Settings],
     playerBefore: Signal[Player],
     stepEditor: StepEditor,
     playerAfterAll: Signal[Player],
@@ -115,8 +113,15 @@ object StepDetails {
         RowList[Effect](
           Kind.Effects,
           effects,
-          Signal.combine(expMultiplierAt, playersAt(effects, playerBefore, cache)).map((multiplierAt, playerAt) =>
-            RowContent.of(_, cache, multiplierAt, playerAt, contextMenu)
+          Signal.combine(settings, playersAt(effects, playerBefore, settings, cache)).map((settings, playersAt) =>
+            (effect, i) =>
+              RowContent.of(
+                effect,
+                cache,
+                ExpMultiplier.calculateMultiplier(settings.expMultipliers)(_, _, cache),
+                playersAt.lift(i),
+                contextMenu
+              )
           ),
           RowAmounts.of(_, cache.items),
           RowAmounts.withAmount(cache.items),
@@ -147,7 +152,7 @@ object StepDetails {
         RowList[Requirement](
           Kind.Requirements,
           requirements,
-          Signal.fromValue(RowContent.of(_, cache)),
+          Signal.fromValue((requirement, _) => RowContent.of(requirement, cache)),
           RowAmounts.of,
           RowAmounts.withAmount,
           errors = errorsByKind.map(_._2),
@@ -168,30 +173,19 @@ object StepDetails {
     )
   }
 
-  /** What each item effect comes to where it applies in the step, worked out by applying the
-    * step's item effects in order to the player at its start. Rows show this for effects whose
-    * quantity is Max. Repeated steps show the first repetition. */
-  /** The player each of the step's item effects applies to */
+  /** The player each of the step's effects applies to, by position, worked out by applying the
+    * step's effects in order to the player at its start. Rows use it for what an effect comes to
+    * where it applies: the exp after the multiplier, and how many items Max is. Repeated steps show
+    * the first repetition. */
   private def playersAt(
     effects: Signal[List[Effect]],
     playerBefore: Signal[Player],
+    settings: Signal[Plan.Settings],
     cache: Cache
-  ): Signal[Effect => Option[Player]] =
-    Signal.combine(effects, playerBefore).map { (effects, player) =>
-      val (_, players) =
-        effects.foldLeft((player, Map.empty[Effect, Player])) { case ((player, players), effect) =>
-          effect match {
-            case e: (Effect.AddItem | Effect.MoveItem) =>
-              // Equal effects share a row's content, so each shows where the first applies
-              val updated = if (players.contains(e)) players else players + (e -> player)
-              (ItemEffects(player, e, cache.items), updated)
-            case e: (Effect.DepositAll | Effect.SetBankPin.type | Effect.BuyBankSpace) =>
-              (ItemEffects(player, e, cache.items), players)
-            case _ =>
-              (player, players)
-          }
-        }
-      players.get
+  ): Signal[Vector[Player]] =
+    Signal.combine(effects, playerBefore, settings).map { (effects, player, settings) =>
+      val resolver = EffectResolver(settings, cache)
+      effects.scanLeft(player)((player, effect) => resolver.resolve(player, effect)).toVector
     }
 
   private def isTyping(target: org.scalajs.dom.EventTarget): Boolean =

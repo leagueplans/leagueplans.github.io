@@ -160,6 +160,6 @@ object GainExpForm {
       .collectSome
       .withCurrentValueOf(skillSignal, expSignal)
       .filter((_, _, exp) => exp.raw > 0) --> ((observer, skill, exp) =>
-        observer.onNext(GainExp(skill, exp))
+        observer.onNext(GainExp(skill, 1, exp))
       )
 }

@@ -224,17 +224,27 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
       merged(withdraw(Exact(2)), Effect.SetBankPin, withdraw(Exact(3))) shouldBe List(withdraw(Exact(5)), Effect.SetBankPin)
     }
     "merging exp" - {
-      def gain(skill: Skill, exp: Int): Effect = Effect.GainExp(skill, Exp(exp))
+      def gain(skill: Skill, actions: Int, each: Int): Effect = Effect.GainExp(skill, actions, Exp(each))
+
+      "adds the actions of exp effects with the same exp each" in {
+        merged(gain(Skill.Attack, 2, 35), gain(Skill.Attack, 3, 35)) shouldBe List(gain(Skill.Attack, 5, 35))
+        merged(gain(Skill.Attack, 1, 10), gain(Skill.Attack, 1, 10)) shouldBe List(gain(Skill.Attack, 2, 10))
+      }
+
+      "keeps exp effects with different exp each apart" in {
+        merged(gain(Skill.Attack, 2, 35), gain(Skill.Attack, 2, 20)) shouldBe List(gain(Skill.Attack, 2, 35), gain(Skill.Attack, 2, 20))
+        merged(gain(Skill.Attack, 1, 10), gain(Skill.Attack, 1, 5)) shouldBe List(gain(Skill.Attack, 1, 10), gain(Skill.Attack, 1, 5))
+      }
 
       "merges past exp for other skills" in {
-        merged(gain(Skill.Attack, 10), gain(Skill.Magic, 3), gain(Skill.Attack, 10)) shouldBe
-          List(gain(Skill.Attack, 20), gain(Skill.Magic, 3))
+        merged(gain(Skill.Attack, 1, 10), gain(Skill.Magic, 1, 3), gain(Skill.Attack, 1, 10)) shouldBe
+          List(gain(Skill.Attack, 2, 10), gain(Skill.Magic, 1, 3))
       }
 
       "doesn't merge past what can raise the multiplier" in {
-        val attack = gain(Skill.Attack, 10)
-        merged(attack, Effect.CompleteLeagueTask(1), attack) shouldBe List(attack, Effect.CompleteLeagueTask(1), attack)
-        merged(attack, Effect.CompleteGridTile(1), attack) shouldBe List(attack, Effect.CompleteGridTile(1), attack)
+        val gain = Effect.GainExp(Skill.Attack, 1, Exp(10))
+        merged(gain, Effect.CompleteLeagueTask(1), gain) shouldBe List(gain, Effect.CompleteLeagueTask(1), gain)
+        merged(gain, Effect.CompleteGridTile(1), gain) shouldBe List(gain, Effect.CompleteGridTile(1), gain)
       }
     }
 

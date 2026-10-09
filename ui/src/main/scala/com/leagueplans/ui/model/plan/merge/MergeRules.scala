@@ -6,7 +6,6 @@ import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.model.player.item.{Depository, EquipPlan, ItemEffects}
-import com.leagueplans.ui.model.player.skill.Exp
 
 /** Whether two effects that sit next to each other make a single change, and what it is:
   *
@@ -40,8 +39,10 @@ private[merge] object MergeRules {
     playerAt: Option[Player]
   ): Option[Merged] =
     (earlier, later) match {
-      case (e: GainExp, l: GainExp) if e.skill == l.skill =>
-        Some(Merged.Into(Some(e.copy(baseExp = e.baseExp + l.baseExp)).filter(_.baseExp != Exp(0)).toList))
+      // Exp only merges when each action gives the same exp, so that the merged effect is still a
+      // number of actions
+      case (e: GainExp, l: GainExp) if e.skill == l.skill && e.expEach == l.expEach =>
+        Some(Merged.Into(List(e.copy(actions = e.actions + l.actions))))
 
       case (e: AddItem, l: AddItem) if e.item == l.item && e.target == l.target && e.note == l.note =>
         (e.change, l.change) match {

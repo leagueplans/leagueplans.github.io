@@ -22,16 +22,16 @@ final class EffectResolverTest extends AnyFreeSpec with Matchers {
   "EffectResolver" - {
     "gaining exp" - {
       "applies the multiplier" in {
-        resolver(5).resolve(player, Effect.GainExp(Skill.Attack, Exp(10))).stats(Skill.Attack) shouldBe Exp(50)
+        resolver(5).resolve(player, Effect.GainExp(Skill.Attack, 1, Exp(10))).stats(Skill.Attack) shouldBe Exp(50)
       }
 
       "stops at 200M exp, as the game does" in {
-        resolver(1).resolve(player, Effect.GainExp(Skill.Attack, Exp(150000000)), Effect.GainExp(Skill.Attack, Exp(150000000)))
+        resolver(1).resolve(player, Effect.GainExp(Skill.Attack, 1, Exp(150000000)), Effect.GainExp(Skill.Attack, 1, Exp(150000000)))
           .stats(Skill.Attack) shouldBe Exp.max
       }
 
       "doesn't wrap round when the exp after the multiplier passes what an Int holds" in {
-        resolver(16).resolve(player, Effect.GainExp(Skill.Attack, Exp(150000000)), Effect.GainExp(Skill.Attack, Exp(150000000)))
+        resolver(16).resolve(player, Effect.GainExp(Skill.Attack, 1, Exp(150000000)), Effect.GainExp(Skill.Attack, 1, Exp(150000000)))
           .stats(Skill.Attack) shouldBe Exp.max
       }
     }

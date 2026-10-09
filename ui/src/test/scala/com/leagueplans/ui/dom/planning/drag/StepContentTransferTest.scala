@@ -10,7 +10,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 final class StepContentTransferTest extends AnyFreeSpec with Matchers {
-  private val attackExp = Effect.GainExp(Skill.Attack, Exp(100))
+  private val attackExp = Effect.GainExp(Skill.Attack, 1, Exp(100))
   private val logs = Effect.AddItem(Item.ID(1511), ItemChange.By(5), Depository.Kind.Inventory, note = false)
   private val agility50 = Requirement.SkillLevel(Skill.Agility, Level(50))
 
@@ -36,10 +36,10 @@ final class StepContentTransferTest extends AnyFreeSpec with Matchers {
 
     "merges a moved effect into a matching one" in {
       val source = step("source", effects = List(attackExp))
-      val target = step("target", effects = List(Effect.GainExp(Skill.Attack, Exp(50))))
+      val target = step("target", effects = List(Effect.GainExp(Skill.Attack, 2, Exp(100))))
 
       transfer(Dragged.DraggedEffect(source.id, 0, attackExp), source, target)
-        .map(_.target.directEffects.underlying) shouldBe Some(List(Effect.GainExp(Skill.Attack, Exp(150))))
+        .map(_.target.directEffects.underlying) shouldBe Some(List(Effect.GainExp(Skill.Attack, 3, Exp(100))))
     }
 
     "merges the effects left behind where they can now merge" in {

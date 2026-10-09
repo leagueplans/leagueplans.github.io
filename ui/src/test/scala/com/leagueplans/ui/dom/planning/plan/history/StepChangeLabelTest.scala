@@ -72,7 +72,7 @@ final class StepChangeLabelTest extends AnyFreeSpec with Matchers {
       }
 
       "effects" in {
-        edit(_.deepCopy(directEffects = EffectList(List(GainExp(Skill.Attack, Exp(10)))))) shouldEqual
+        edit(_.deepCopy(directEffects = EffectList(List(GainExp(Skill.Attack, 1, Exp(10)))))) shouldEqual
           "Edit effects on \"Kill the Kalphite Queen\""
       }
 

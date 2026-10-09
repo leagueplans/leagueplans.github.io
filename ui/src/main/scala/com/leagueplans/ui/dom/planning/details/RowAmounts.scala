@@ -24,8 +24,8 @@ object RowAmounts {
   /** @param items looks up a moved item, to say whether its most is "max" or "all" */
   def of(effect: Effect, items: Item.ID => Item): Option[Amount] =
     effect match {
-      case Effect.GainExp(_, exp) =>
-        Some(Amount(s"+${formatExp(exp)}", formatExp(exp).replace(",", ""), Tone.Gain))
+      case gain: Effect.GainExp =>
+        Some(Amount(s"+${formatExp(gain.baseExp)}", formatExp(gain.baseExp).replace(",", ""), Tone.Gain))
       case Effect.AddItem(_, ItemChange.Fill, _, _) =>
         Some(Amount("+max", "max", Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) if n < 0 =>
@@ -43,10 +43,11 @@ object RowAmounts {
     }
 
   /** Applies an edited amount. "max", or "all", makes an item effect take as many as it can where
-    * it applies: all that are held, or as many as fit. A removal stays a removal. */
+    * it applies: all that are held, or as many as fit. A removal stays a removal. An exp effect's
+    * new total becomes a single action of all of it. */
   def withAmount(items: Item.ID => Item)(effect: Effect, text: String): Either[String, Effect] =
     effect match {
-      case e: Effect.GainExp => parseExp(text).map(exp => e.copy(baseExp = exp))
+      case e: Effect.GainExp => parseExp(text).map(exp => e.copy(actions = 1, expEach = exp))
       case e: Effect.AddItem if e.change.removes =>
         parseQuantity(text, "all").map(q => e.copy(change = changeOf(q, ItemChange.Empty, -_)))
       case e: Effect.AddItem =>
@@ -112,10 +113,14 @@ object RowAmounts {
     if (exp.raw % 10 == 0) whole else s"$whole.${exp.raw % 10}"
   }
 
+  /** "2,500 xp", with a no-break space, so that the amount and "xp" wrap onto a new line together */
+  def formatXp(exp: Exp): String =
+    s"${formatExp(exp)}\u00a0xp"
+
   private def cleaned(text: String): String =
     text.trim.replace(",", "").stripPrefix("+")
 
-  private def parseExp(text: String): Either[String, Exp] =
+  def parseExp(text: String): Either[String, Exp] =
     toDecimal(cleaned(text)) match {
       case Some(exp) if exp <= 0 => Left("Type an amount of xp, such as 1250 or 37.5")
       case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} xp")

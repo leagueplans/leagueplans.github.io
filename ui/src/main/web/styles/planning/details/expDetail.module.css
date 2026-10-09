@@ -1,0 +1,24 @@
+/* Drawn like a move's places and the amount, since all can be clicked to change them */
+.edit input {
+  width: 4.5rem;
+}
+
+.number {
+  padding: 0 5px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
+  font-family: 'IBM Plex Mono', monospace;
+  line-height: 16px;
+}
+
+.edit button:hover .number, .edit button:focus-visible .number {
+  border-color: var(--navy-accent);
+  color: var(--text-bright);
+}
+
+.edit button:focus-visible {
+  outline: none;
+}

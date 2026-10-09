@@ -7,7 +7,7 @@ import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, Ho
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
-import com.leagueplans.ui.model.plan.{ExpMultiplier, Plan, Step}
+import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
@@ -126,9 +126,7 @@ object PlanningPage {
             timeKeeper,
             rowSelection,
             dragSession,
-            expMultiplierAt = Signal.combine(settings, focusContext.playerBeforeCurrentFocus).map((settings, player) =>
-              skill => ExpMultiplier.calculateMultiplier(settings.expMultipliers)(skill, player, cache)
-            ),
+            settings,
             focusContext.playerBeforeCurrentFocus,
             stepEditor,
             focusContext.playerAfterAllRepsOfCurrentFocus,
