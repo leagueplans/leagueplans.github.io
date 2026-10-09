@@ -4,10 +4,12 @@ import com.leagueplans.ui.dom.planning.details.SubstepSummary.Change
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.item.ItemStack
+import com.leagueplans.ui.model.player.skill.Exp
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.uicommon.dom.ArrowText
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, StringSeqValueMapper, textToTextNode}
+import com.raquo.laminar.api.{L, StringSeqValueMapper, nodeSeqToModifier, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -57,8 +59,10 @@ object SubstepSummaryElement {
           L.cls(Styles.line),
           RowContent.skillIcon(skill).amend(L.cls(Styles.icon)),
           skill.toString,
-          L.span(L.cls(Styles.number), s"+${RowAmounts.formatExp(exp)} xp"),
-          levels.map((from, to) => L.span(L.cls(Styles.pill), s"$from → $to")).getOrElse(L.emptyNode)
+          // Coloured as the items' lines are: the amount by its direction, then what it's in
+          L.span(L.cls(Styles.number, if (exp.raw >= 0) Styles.gain else Styles.loss), s"${if (exp.raw >= 0) "+" else "−"}${RowAmounts.formatExp(Exp.tenths(exp.raw.abs))}"),
+          L.span(L.cls(Styles.where), "xp"),
+          levels.map((from, to) => L.span(L.cls(Styles.where), ArrowText(s"level $from → $to"))).getOrElse(L.emptyNode)
         )
 
       case Change.ItemsChanged(item, noted, depository, by) =>
@@ -102,7 +106,6 @@ object SubstepSummaryElement {
     val number: String = js.native
     val gain: String = js.native
     val loss: String = js.native
-    val pill: String = js.native
     val where: String = js.native
   }
 }
