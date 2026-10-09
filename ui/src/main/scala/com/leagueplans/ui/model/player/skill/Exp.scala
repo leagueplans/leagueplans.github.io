@@ -11,6 +11,9 @@ object Exp {
   def apply(d: Double): Exp =
     new Exp((d * 10).toInt) {}
 
+  /** The most exp a skill can have, past which the game gives no more */
+  val max: Exp = Exp(200000000)
+
   /** Exp is stored in tenths, so this is exact where apply(Double) can be off by a tenth */
   def tenths(n: Int): Exp =
     new Exp(n) {}

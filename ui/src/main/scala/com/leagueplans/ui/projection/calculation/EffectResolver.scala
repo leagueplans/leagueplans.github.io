@@ -3,7 +3,7 @@ package com.leagueplans.ui.projection.calculation
 import com.leagueplans.common.model.LeagueTask
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan}
 import com.leagueplans.ui.model.player.item.ItemEffects
-import com.leagueplans.ui.model.player.skill.Stats
+import com.leagueplans.ui.model.player.skill.{Exp, Stats}
 import com.leagueplans.ui.model.player.{Cache, Player}
 
 trait EffectResolver {
@@ -40,9 +40,11 @@ object EffectResolver {
       effect match {
         case Effect.GainExp(skill, exp) =>
           val gainedExp = exp * ExpMultiplier.calculateMultiplier(expMultipliers)(skill, player, cache)
+          // Added as Longs, since two large gains could pass what an Int holds
+          val total = (player.stats(skill).raw.toLong + gainedExp.raw).min(Exp.max.raw)
           player.copy(stats =
             Stats(
-              player.stats.raw + (skill -> (player.stats(skill) + gainedExp))
+              player.stats.raw + (skill -> Exp.tenths(total.toInt))
             )
           )
 
