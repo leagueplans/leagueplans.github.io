@@ -61,10 +61,14 @@ final class Popover private[Popover](status: Var[Option[Popover.Open]]) {
   def isAnchoredTo(element: Element): Signal[Boolean] =
     status.signal.map(_.exists(_.anchor == element)).distinct
 
+  /** Whether a card is open on the element now, such as for a click on it to close the card */
+  def isOpenOn(element: Element): Boolean =
+    status.now().exists(_.anchor == element)
+
   /** Add to anything a card can be anchored to, so that its card closes when it's removed */
   val closesWithAnchor: L.Modifier[L.Element] =
     L.onUnmountCallback(element =>
-      if (status.now().exists(_.anchor == element.ref)) close()
+      if (isOpenOn(element.ref)) close()
     )
 
   private def decorate(anchor: Element, contents: L.HtmlElement, maybeBoundary: Option[Element], below: Boolean): L.HtmlElement = {

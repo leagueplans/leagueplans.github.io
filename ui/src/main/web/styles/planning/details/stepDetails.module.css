@@ -45,39 +45,6 @@
   font-size: 0.7rem;
 }
 
-.headerActions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.headerButton {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 22px;
-  padding: 0;
-
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: none;
-  color: var(--text-muted);
-}
-
-.headerButton svg {
-  width: 12px;
-  height: 12px;
-}
-
-.tooltip {
-  width: max-content;
-}
-
-.headerButton:hover, .headerButton:focus-visible {
-  background-color: var(--navy-line);
-  color: var(--text-bright);
-}
-
 /* The section's problems, which select the next row with one */
 .problemCount {
   padding: 0;

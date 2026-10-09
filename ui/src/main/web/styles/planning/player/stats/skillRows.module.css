@@ -1,0 +1,329 @@
+.rows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  font-family: var(--font-ui);
+}
+
+/* The skills fill a column at a time, as the game's stats panel reads */
+.skills {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(8, auto);
+}
+
+/* Fewer columns where the section is narrow, so that rows keep everything they show. The section
+ * is the container (skillsSection.module.css). */
+@container (max-width: 900px) {
+  .rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .skills {
+    grid-template-rows: repeat(12, auto);
+  }
+}
+
+@container (max-width: 600px) {
+  .rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .skills {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+  }
+}
+
+/* Each row is its own progress bar, filled in the skill's colour (--c) */
+.row {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 50px;
+  padding: 0 12px 0 8px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  background-color: #241e17;
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+}
+
+button.row:hover, button.row:focus-visible {
+  filter: brightness(1.12);
+  outline: none;
+}
+
+.track {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--c) 18%, #1b1712);
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 92%, #fff), var(--c));
+}
+
+/* What the focused step added */
+.gainFill {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--c) 78%, #fff) 0 3px,
+    color-mix(in srgb, var(--c) 88%, #fff) 3px 6px
+  );
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.25);
+}
+
+.maxFill {
+  width: 100%;
+  background: linear-gradient(180deg, #ffe680, #c9971a);
+}
+
+/* A 99 is a full gold row, with dark text */
+.maxed .name, .maxed .level, .maxed .nextAmount, .maxed .gain, .maxed .nextAmount small {
+  color: #2b1d00;
+  text-shadow: none;
+}
+
+/* Leagues where skills start locked fade their colours, and say so in place of the exp to the
+ * next level and the multiplier */
+.locked .track {
+  opacity: 0.45;
+}
+
+.locked .next, .locked .multiplier {
+  display: none;
+}
+
+.lockedPill {
+  flex: none;
+  padding: 3px 8px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  border: 1px solid #000;
+  border-radius: 999px;
+  background-color: #1b1712;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+.lock {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+/* A muted disc tinted towards the skill's colour, so dark icons read on any fill */
+.icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 40% 35%,
+    color-mix(in srgb, var(--c) 22%, #b4a88d),
+    color-mix(in srgb, var(--c) 30%, #7e745f)
+  );
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.level {
+  min-width: 26px;
+
+  color: #fff;
+  font: 700 1.3rem/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.middle {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.name {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gain {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next {
+  flex: none;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.nextAmount {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nextAmount small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.nextLabel {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.multiplier {
+  flex: none;
+  padding: 2px 6px;
+
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font: 600 0.75rem 'IBM Plex Mono', monospace;
+}
+
+/* The focused step raised this skill's multiplier */
+.raised {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #8ee09a;
+}
+
+.raisedArrow {
+  width: 8px;
+  height: 8px;
+  fill: currentColor;
+}
+
+/* The summary's rows for the total level, combat level and total exp */
+.total .level {
+  color: var(--text-bright);
+}
+
+/* Each skill's share of the total exp, in the skills' colours */
+.xpShares {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  opacity: 0.85;
+}
+
+.xpShares > span {
+  height: 100%;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35);
+}
+
+/* What stands in for an icon on a disc, such as "XP" */
+.discText {
+  color: #2b1d00;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* A level spot holding something longer than a level, such as "13.93M" */
+.shortLevel {
+  font-size: 1rem;
+}
+
+/* The rows' tooltips let the pointer through, so moving onto one moves onto the row it covers, and
+ * the tooltip closes. There's nothing in them to select. */
+.tooltip, .chipTooltip {
+  pointer-events: none;
+}
+
+.tooltip {
+  white-space: nowrap;
+}
+
+/* Too narrow for one line: the name keeps the first, and what's to the next level, the multiplier
+ * and any lock go on a second, under the level, rather than being cut off */
+@container (max-width: 300px) {
+  .row {
+    height: auto;
+    min-height: 50px;
+    padding-block: 6px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  /* Beside the level, wrapping between words, and on a line of its own only if a word won't fit */
+  .middle {
+    flex: 1 1 0;
+    min-width: min-content;
+  }
+
+  .name {
+    white-space: normal;
+  }
+
+  /* Wide enough that it can't share the first line, leaving room for the multiplier beside it */
+  .next {
+    flex: 1 1 calc(100% - 100px);
+    margin-left: 40px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 4px;
+  }
+
+  .nextLabel {
+    white-space: normal;
+  }
+
+  .lockedPill {
+    margin-left: 40px;
+  }
+}

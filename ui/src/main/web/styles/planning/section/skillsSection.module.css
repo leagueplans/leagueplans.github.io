@@ -1,4 +1,22 @@
+/* The rows and the multiplier banner lay themselves out by the section's width */
 .section {
+  container-type: inline-size;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The skill whose card is open */
+.selected {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* Between the summary and the skills */
+.divider {
+  width: 100%;
+  height: 1px;
+  margin: 4px 0;
+
+  border: none;
+  background-color: #5d4a35;
 }

@@ -132,8 +132,7 @@ object PlanningPage {
             focusContext.playerAfterAllRepsOfCurrentFocus,
             fieldEditRequests.events,
             contextMenu,
-            tooltip,
-            modal
+            tooltip
           ).amend(L.cls(Styles.editor)),
         ifEmpty = L.emptyNode
       )

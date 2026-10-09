@@ -4,7 +4,6 @@ import com.leagueplans.ui.dom.planning.StepEditor
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
-import com.leagueplans.ui.dom.planning.editor.NewRequirementForm
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
@@ -12,11 +11,7 @@ import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.{EffectResolver, TimeKeeper}
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.*
-import com.leagueplans.uicommon.facades.floatingui.Placement
-import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
-import com.leagueplans.uicommon.utils.laminar.FontAwesome
-import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, textToTextNode}
@@ -46,8 +41,7 @@ object StepDetails {
     playerAfterAll: Signal[Player],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
-    tooltip: Tooltip,
-    modal: Modal
+    tooltip: Tooltip
   ): L.Div = {
     val effects = stepSignal.map(_.directEffects.underlying)
     val requirements = stepSignal.map(_.requirements)
@@ -109,7 +103,7 @@ object StepDetails {
       ),
       L.sectionTag(
         L.cls(Styles.section),
-        toHeader("Effects", effects.map(_.size), Kind.Effects, errorsByKind.map(_._1), selection, maybeAction = None),
+        toHeader("Effects", effects.map(_.size), Kind.Effects, errorsByKind.map(_._1), selection),
         RowList[Effect](
           Kind.Effects,
           effects,
@@ -141,14 +135,7 @@ object StepDetails {
       ),
       L.sectionTag(
         L.cls(Styles.section),
-        toHeader(
-          "Requirements",
-          requirements.map(_.size),
-          Kind.Requirements,
-          errorsByKind.map(_._2),
-          selection,
-          maybeAction = Some(toAddRequirementButton(modal, tooltip, updateRequirements))
-        ),
+        toHeader("Requirements", requirements.map(_.size), Kind.Requirements, errorsByKind.map(_._2), selection),
         RowList[Requirement](
           Kind.Requirements,
           requirements,
@@ -194,6 +181,7 @@ object StepDetails {
       case _ => false
     }
 
+  // Effects and requirements are added from the sections: items' and skills' cards
   /** @param errors the problems with each row, by its index. Their count shows beside the
     *               section's, and selects the next row with a problem, so that a long list can be
     *               worked through. */
@@ -202,8 +190,7 @@ object StepDetails {
     count: Signal[Int],
     kind: Kind,
     errors: Signal[Map[Int, List[String]]],
-    selection: RowSelection,
-    maybeAction: Option[L.Button]
+    selection: RowSelection
   ): L.HtmlElement =
     L.headerTag(
       L.cls(Styles.sectionHeader),
@@ -224,33 +211,8 @@ object StepDetails {
             if (problems == 1) "1 problem" else s"$problems problems"
           )
         )
-      ),
-      maybeAction.map(button => L.div(L.cls(Styles.headerActions), button)).getOrElse(L.emptyNode)
-    )
-
-  /** Requirements are meant to come from the sections. Tools now come from item cards, but until
-    * skill levels can be required from the Skills section, the old form for them stays reachable
-    * from here */
-  private def toAddRequirementButton(
-    modal: Modal,
-    tooltip: Tooltip,
-    updateRequirements: (List[Requirement] => List[Requirement]) => Unit
-  ): L.Button = {
-    val formOpener = FormOpener(
-      modal,
-      NewRequirementForm(),
-      _.foreach(requirement => updateRequirements(_ :+ requirement))
-    )
-    Button(_.handled --> (_ => formOpener.open())).amend(
-      L.cls(Styles.headerButton),
-      L.aria.label("Add a skill level requirement"),
-      FontAwesome.icon(FreeSolid.faPlus),
-      tooltip.register(
-        L.span(L.cls(Styles.tooltip), "Add a skill level requirement. Require items from their cards in the Items section."),
-        FloatingConfig.basicTooltip(Placement.left)
       )
     )
-  }
 
   @js.native @JSImport("/styles/planning/details/stepDetails.module.css", JSImport.Default)
   private object Styles extends js.Object {
@@ -261,8 +223,5 @@ object StepDetails {
     val sectionTitle: String = js.native
     val count: String = js.native
     val problemCount: String = js.native
-    val headerActions: String = js.native
-    val headerButton: String = js.native
-    val tooltip: String = js.native
   }
 }
