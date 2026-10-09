@@ -74,7 +74,7 @@ object Validator {
           case Some(price) if ItemEffects.coinsFor(block, player).isEmpty =>
             def held(kind: Depository.Kind): Long = player.get(kind).count(BankSpace.coins, noted = false).toLong
             val costs = s"Block $block costs ${price.withCommas} coins"
-            if (held(Depository.Kind.Inventory) + held(Depository.Kind.Bank) < price) Left(s"$costs, but you cannot afford that")
+            if (held(Depository.Kind.Inventory) + held(Depository.Kind.Bank) < price) Left(s"$costs, but you can't afford that")
             else Left(s"$costs, and the cost cannot be split between the inventory and the bank")
           case _ => Right(())
         }
@@ -193,7 +193,7 @@ object Validator {
         Either.cond(
           player.leagueStatus.skillsUnlocked.contains(skill),
           right = (),
-          left = s"$skill has not been unlocked yet"
+          left = s"$skill isn't unlocked at this step"
         )
     }
 
@@ -203,7 +203,7 @@ object Validator {
         Either.cond(
           Level.of(player.stats(skill)) >= level,
           right = (),
-          left = s"$skill is lower than level $level"
+          left = s"$skill is below level $level at the start of this step"
         )
     }
 

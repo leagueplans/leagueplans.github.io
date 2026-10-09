@@ -66,7 +66,7 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
     }
 
     "shows required levels" in {
-      RowAmounts.of(Requirement.SkillLevel(Skill.Agility, Level(50))) shouldBe Some(Amount("50", "50", Tone.Neutral))
+      RowAmounts.of(Requirement.SkillLevel(Skill.Agility, Level(50))) shouldBe Some(Amount("level 50", "50", Tone.Neutral))
       RowAmounts.of(Requirement.Holds(logs, Requirement.Where.Inventory)) shouldBe None
     }
   }
@@ -106,8 +106,8 @@ final class RowAmountsTest extends AnyFreeSpec with Matchers {
     }
 
     "suggests the word the row shows for the most" in {
-      withAmount(moveLogs, "lots") shouldBe Left("Type an amount of at least 1, such as 250 or 1.5k, or all")
-      withAmount(withdrawLogs, "lots") shouldBe Left("Type an amount of at least 1, such as 250 or 1.5k, or max")
+      withAmount(moveLogs, "lots") shouldBe Left("Type an amount from 1, such as 250 or 1.5k, or all")
+      withAmount(withdrawLogs, "lots") shouldBe Left("Type an amount from 1, such as 250 or 1.5k, or max")
     }
 
     "sets levels from 1 to 99" in {

@@ -130,9 +130,9 @@ object RowList {
               InlineEdit[T](
                 value = value,
                 display = value.map(v => amount(v).map(toAmountLabel).getOrElse(L.emptyMod)),
-                // Requirements' titles already name what their amount is, as in "Mining level"
+                // A skill level is the only requirement with an amount
                 label = rowContent.map(content =>
-                  if (kind == RowSelection.Kind.Effects) s"${content.title} amount" else content.title
+                  if (kind == RowSelection.Kind.Effects) s"${content.title} amount" else s"${content.title} level"
                 ),
                 toText = v => amount(v).map(_.editText).getOrElse(""),
                 parse = withAmount,

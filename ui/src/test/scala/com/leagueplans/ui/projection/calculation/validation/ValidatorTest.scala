@@ -140,7 +140,7 @@ final class ValidatorTest extends AnyFreeSpec with Matchers {
       Validator.coinsForBankBlock(1)(coins(600000, 600000), None, goldCache).left.toOption shouldBe
         Some("Block 1 costs 1,000,000 coins, and the cost cannot be split between the inventory and the bank")
       Validator.coinsForBankBlock(1)(coins(600000, 300000), None, goldCache).left.toOption shouldBe
-        Some("Block 1 costs 1,000,000 coins, but you cannot afford that")
+        Some("Block 1 costs 1,000,000 coins, but you can't afford that")
       Validator.coinsForBankBlock(1)(coins(0, 1000000), None, goldCache) shouldBe Right(())
     }
 

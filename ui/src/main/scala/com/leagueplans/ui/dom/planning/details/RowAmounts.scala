@@ -86,23 +86,25 @@ object RowAmounts {
   private def parseQuantity(text: String, most: String): Either[String, ItemQuantity] =
     ItemQuantity.parse(text).left.map {
       case ItemQuantity.Problem.AboveMax => s"A stack can hold at most ${Int.MaxValue.withCommas}"
-      case _ => s"Type an amount of at least 1, such as 250 or 1.5k, or $most"
+      case _ => s"Type an amount from 1, such as 250 or 1.5k, or $most"
     }
 
   def of(requirement: Requirement): Option[Amount] =
     requirement match {
-      case Requirement.SkillLevel(_, level) => Some(Amount(level.toString, level.toString, Tone.Neutral))
+      case Requirement.SkillLevel(_, level) => Some(Amount(s"level $level", level.toString, Tone.Neutral))
       case _: (Requirement.Holds | Requirement.And | Requirement.Or) => None
     }
 
   def withAmount(requirement: Requirement, text: String): Either[String, Requirement] =
     requirement match {
-      case r: Requirement.SkillLevel =>
-        cleaned(text).toIntOption match {
-          case Some(level) if level >= 1 && level <= 99 => Right(r.copy(level = Level(level)))
-          case _ => Left("Type a level from 1 to 99")
-        }
+      case r: Requirement.SkillLevel => parseLevel(text).map(level => r.copy(level = level))
       case _ => Left("This requirement has no amount")
+    }
+
+  private def parseLevel(text: String): Either[String, Level] =
+    cleaned(text).toIntOption match {
+      case Some(level) if level >= 1 && level <= 99 => Right(Level(level))
+      case _ => Left("Type a level from 1 to 99")
     }
 
   def formatExp(exp: Exp): String = {
@@ -115,11 +117,11 @@ object RowAmounts {
 
   private def parseExp(text: String): Either[String, Exp] =
     toDecimal(cleaned(text)) match {
-      case Some(exp) if exp <= 0 => Left("Gain more than 0 exp")
-      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} exp")
-      case Some(exp) if !(exp * 10).isWhole => Left("Exp can have at most one decimal place")
+      case Some(exp) if exp <= 0 => Left("Type an amount of xp, such as 1250 or 37.5")
+      case Some(exp) if exp > maxExp => Left(s"An effect can hold at most ${maxExp.withCommas} xp")
+      case Some(exp) if !(exp * 10).isWhole => Left("Type xp to at most one decimal place, such as 37.5")
       case Some(exp) => Right(Exp.tenths((exp * 10).toIntExact))
-      case None => Left("Type an amount of exp, such as 1250 or 37.5")
+      case None => Left("Type an amount of xp, such as 1250 or 37.5")
     }
 
   private def toDecimal(text: String): Option[BigDecimal] =

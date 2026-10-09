@@ -129,7 +129,7 @@ object RowContent {
   def of(requirement: Requirement, cache: Cache): RowContent[Requirement] =
     requirement match {
       case Requirement.SkillLevel(skill, _) =>
-        RowContent(() => skillIcon(skill), s"$skill level", "At the start of this step")
+        RowContent(() => skillIcon(skill), skill.toString, "At least this level at the start of this step")
 
       case Requirement.Holds(item, where) =>
         RowContent(
