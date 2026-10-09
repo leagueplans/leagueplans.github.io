@@ -2,14 +2,14 @@ package com.leagueplans.ui.model.plan.merge
 
 import cats.data.NonEmptyList
 import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item, Skill}
-import com.leagueplans.ui.model.plan.{Effect, EffectList, ItemChange, ItemQuantity}
+import com.leagueplans.ui.model.plan.{Effect, EffectList, ExpTarget, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositAll, DepositSource, MoveItem}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
 import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.league.LeagueStatus
-import com.leagueplans.ui.model.player.skill.{Exp, Stats}
+import com.leagueplans.ui.model.player.skill.{Exp, Level, Stats}
 import com.leagueplans.ui.model.player.{GridStatus, Player}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -239,6 +239,14 @@ final class StepEffectsTest extends AnyFreeSpec with Matchers {
       "merges past exp for other skills" in {
         merged(gain(Skill.Attack, 1, 10), gain(Skill.Magic, 1, 3), gain(Skill.Attack, 1, 10)) shouldBe
           List(gain(Skill.Attack, 2, 10), gain(Skill.Magic, 1, 3))
+      }
+
+      "doesn't merge past a gain until a target for the same skill, which works out from its exp" in {
+        val gain = Effect.GainExp(Skill.Attack, 1, Exp(10))
+        val toTarget = Effect.GainExpToTarget(Skill.Attack, ExpTarget.AtLevel(Level(10)), None)
+        merged(gain, toTarget, gain) shouldBe List(gain, toTarget, gain)
+        merged(gain, Effect.GainExpToTarget(Skill.Magic, ExpTarget.AtLevel(Level(10)), None), gain) shouldBe
+          List(Effect.GainExp(Skill.Attack, 2, Exp(10)), Effect.GainExpToTarget(Skill.Magic, ExpTarget.AtLevel(Level(10)), None))
       }
 
       "doesn't merge past what can raise the multiplier" in {

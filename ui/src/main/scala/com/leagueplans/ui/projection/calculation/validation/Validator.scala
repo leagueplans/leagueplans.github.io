@@ -1,7 +1,7 @@
 package com.leagueplans.ui.projection.calculation.validation
 
 import com.leagueplans.common.model.{Item, Skill}
-import com.leagueplans.ui.model.plan.ItemChange
+import com.leagueplans.ui.model.plan.{ExpTarget, ItemChange}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositSource, MoveItem}
 import com.leagueplans.ui.model.player.item.{BankSpace, Depository, ItemEffects, ItemRoute}
 import com.leagueplans.ui.model.player.mode.*
@@ -195,6 +195,22 @@ object Validator {
           right = (),
           left = s"$skill isn't unlocked at this step"
         )
+    }
+
+  /** A gain until a target gains nothing once the skill has reached it */
+  def belowTarget(skill: Skill, target: ExpTarget): Validator =
+    new Validator {
+      def apply(player: Player, league: Option[Mode.League], cache: Cache): Either[String, Unit] = {
+        val current = player.stats(skill)
+        Either.cond(
+          current.raw < target.goal.raw,
+          right = (),
+          left = target match {
+            case ExpTarget.AtLevel(_) => s"$skill is already level ${Level.of(current)} at this step, so this gains no xp"
+            case ExpTarget.AtExp(_) => s"$skill already has ${(current.raw / 10).withCommas} xp at this step, so this gains no xp"
+          }
+        )
+      }
     }
 
   def hasLevel(skill: Skill, level: Level): Validator =

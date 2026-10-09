@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ExpTarget, ItemChange, ItemQuantity, Requirement}
 import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
@@ -26,6 +26,10 @@ object RowAmounts {
     effect match {
       case gain: Effect.GainExp =>
         Some(Amount(s"+${formatExp(gain.baseExp)}", formatExp(gain.baseExp).replace(",", ""), Tone.Gain))
+      case Effect.GainExpToTarget(_, ExpTarget.AtLevel(level), _) =>
+        Some(Amount(s"to level $level", level.toString, Tone.Gain))
+      case Effect.GainExpToTarget(_, ExpTarget.AtExp(exp), _) =>
+        Some(Amount(s"to ${formatXp(exp)}", formatExp(exp).replace(",", ""), Tone.Gain))
       case Effect.AddItem(_, ItemChange.Fill, _, _) =>
         Some(Amount("+max", "max", Tone.Gain, counted = true))
       case Effect.AddItem(_, ItemChange.By(n), _, _) if n < 0 =>
@@ -48,6 +52,10 @@ object RowAmounts {
   def withAmount(items: Item.ID => Item)(effect: Effect, text: String): Either[String, Effect] =
     effect match {
       case e: Effect.GainExp => parseExp(text).map(exp => e.copy(actions = 1, expEach = exp))
+      case e @ Effect.GainExpToTarget(_, _: ExpTarget.AtLevel, _) =>
+        parseLevel(text).map(level => e.copy(target = ExpTarget.AtLevel(level)))
+      case e @ Effect.GainExpToTarget(_, _: ExpTarget.AtExp, _) =>
+        parseExp(text).map(exp => e.copy(target = ExpTarget.AtExp(exp)))
       case e: Effect.AddItem if e.change.removes =>
         parseQuantity(text, "all").map(q => e.copy(change = changeOf(q, ItemChange.Empty, -_)))
       case e: Effect.AddItem =>

@@ -1,6 +1,6 @@
 package com.leagueplans.ui.model.plan.merge
 
-import com.leagueplans.common.model.Item
+import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity}
 import com.leagueplans.ui.model.plan.Effect.*
 import com.leagueplans.ui.model.player.item.{BankSpace, Depository, EquipPlan}
@@ -24,6 +24,8 @@ private[merge] object EffectDependencies {
       * can't move past what earns them. Levels can raise it too in some modes, but exp effects
       * still move past each other, so that exp for one skill keeps merging around another's. */
     case ExpMultiplier
+    /** A skill's exp, which an effect aiming for a target works out from */
+    case SkillExp(skill: Skill)
   }
 
   /** @param reads what the effect's result depends on, for an effect that's worked out where it
@@ -94,8 +96,11 @@ private[merge] object EffectDependencies {
         val coins = Set(Kind.Inventory, Kind.Bank).map(place => Resource.Stack(Some(BankSpace.coins), Some(false), place))
         Access(coins, space(Kind.Inventory), coins)
 
-      case _: GainExp =>
-        Access(Set(Resource.ExpMultiplier), Set.empty, Set.empty)
+      case GainExp(skill, _, _) =>
+        Access(Set(Resource.ExpMultiplier), Set(Resource.SkillExp(skill)), Set.empty)
+
+      case GainExpToTarget(skill, _, _) =>
+        Access(Set(Resource.ExpMultiplier, Resource.SkillExp(skill)), Set(Resource.SkillExp(skill)), Set.empty)
 
       case _: (CompleteLeagueTask | CompleteGridTile) =>
         Access(Set.empty, Set(Resource.ExpMultiplier), Set.empty)
@@ -124,6 +129,8 @@ private[merge] object EffectDependencies {
         placeA == placeB && slotsA.intersect(slotsB).nonEmpty
       case (Resource.ExpMultiplier, Resource.ExpMultiplier) =>
         true
+      case (Resource.SkillExp(skillA), Resource.SkillExp(skillB)) =>
+        skillA == skillB
       case _ =>
         false
     }

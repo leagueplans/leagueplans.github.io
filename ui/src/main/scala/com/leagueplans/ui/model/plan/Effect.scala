@@ -42,6 +42,15 @@ enum Effect {
     * from 1, each for a set price in coins. The coins come from the inventory if it holds enough,
     * and otherwise from the bank, never from both. */
   case BuyBankSpace(block: Int)
+
+  /** Gains exp in a skill until it reaches a target level or amount of exp. How much exp that takes
+    * isn't stored. It's worked out from the skill's exp and multiplier each time the plan is
+    * replayed, so it keeps up with changes earlier in the plan.
+    *
+    * With `expEach`, the gain is however many actions of that much base exp it takes, so the last
+    * action can carry the skill past the target. Without it, the gain is exactly the exp needed. A
+    * skill already at the target gains nothing. */
+  case GainExpToTarget(skill: Skill, target: ExpTarget, expEach: Option[Exp])
 }
 
 object Effect {

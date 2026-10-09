@@ -29,6 +29,21 @@ object ExpDetail {
       ArrowText(s"$xpEach$rest")
     )
 
+  /** The detail of an effect aiming for a target with exp each, whose actions are worked out where
+    * it applies, so only the exp each can be changed
+    *
+    * @param actions the actions it takes here, as text, such as "23 actions"
+    */
+  def toTarget(
+    effect: Effect.GainExpToTarget,
+    each: Exp,
+    actions: String,
+    rest: String,
+    onChange: Observer[Effect],
+    onStatus: Observer[Option[Either[String, Effect]]]
+  ): L.Span =
+    L.span(s"$actions × ", expEach(effect, each, withTargetExpEach, onChange, onStatus), ArrowText(s"$xpEach$rest"))
+
   /** Follows the editable exp each, with a no-break space so that "xp" wraps with the number */
   private val xpEach = "\u00a0xp each"
 
@@ -48,6 +63,12 @@ object ExpDetail {
     effect match {
       case e: Effect.GainExp =>
         RowAmounts.parseExp(text).flatMap(each => withinLimit(each, e.actions).map(_ => e.copy(expEach = each)))
+      case _ => Left("This effect has no actions")
+    }
+
+  def withTargetExpEach(effect: Effect, text: String): Either[String, Effect] =
+    effect match {
+      case e: Effect.GainExpToTarget => RowAmounts.parseExp(text).map(each => e.copy(expEach = Some(each)))
       case _ => Left("This effect has no actions")
     }
 
@@ -72,6 +93,7 @@ object ExpDetail {
   private def skillOf(effect: Effect): String =
     effect match {
       case e: Effect.GainExp => e.skill.toString
+      case e: Effect.GainExpToTarget => e.skill.toString
       case _ => ""
     }
 

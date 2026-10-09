@@ -34,7 +34,14 @@ object EffectValidator extends EffectValidator[Effect] {
       case e: DepositAll => depositAllValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
       case SetBankPin => setBankPinValidator.validate(SetBankPin)(preEffectPlayer, postEffectPlayer, league, cache)
       case e: BuyBankSpace => buyBankSpaceValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
+      case e: GainExpToTarget => gainExpToTargetValidator.validate(e)(preEffectPlayer, postEffectPlayer, league, cache)
     }
+
+  private val gainExpToTargetValidator: EffectValidator[GainExpToTarget] =
+    from(
+      pre = gain => List(Validator.skillUnlocked(gain.skill), Validator.belowTarget(gain.skill, gain.target)),
+      post = _ => List.empty
+    )
 
   private val setBankPinValidator: EffectValidator[SetBankPin.type] =
     from(

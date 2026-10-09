@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.player.item.Depository
-import com.leagueplans.ui.model.player.skill.Exp
+import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import org.scalatest.Assertion
 
 final class EffectTest extends CodecSpec {
@@ -128,6 +128,25 @@ final class EffectTest extends CodecSpec {
       "CompleteGridTile" in test(
         Effect.CompleteGridTile(14),
         Array[Byte](0, 0b111, 0b1100, 0b10, 0) ++ Encoder.encode(14).getBytes
+      )
+
+      "GainExpToTarget" in test(
+        Effect.GainExpToTarget(Skill.Fishing, ExpTarget.AtLevel(Level(40)), expEach = Some(Exp(35))),
+        Array[Byte](0, 0b1011) ++ message(
+          0b1100,
+          message(0b100, Encoder.encode(Skill.Fishing).getBytes) ++
+            message(0b1100, Encoder.encode[ExpTarget](ExpTarget.AtLevel(Level(40))).getBytes) ++
+            Array[Byte](0b10000) ++ Encoder.encode(Exp(35)).getBytes
+        )
+      )
+
+      "GainExpToTarget without exp each" in test(
+        Effect.GainExpToTarget(Skill.Fishing, ExpTarget.AtExp(Exp(1000)), expEach = None),
+        Array[Byte](0, 0b1011) ++ message(
+          0b1100,
+          message(0b100, Encoder.encode(Skill.Fishing).getBytes) ++
+            message(0b1100, Encoder.encode[ExpTarget](ExpTarget.AtExp(Exp(1000))).getBytes)
+        )
       )
     }
   }

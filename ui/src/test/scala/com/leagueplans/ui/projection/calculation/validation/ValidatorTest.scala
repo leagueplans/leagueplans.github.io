@@ -1,15 +1,15 @@
 package com.leagueplans.ui.projection.calculation.validation
 
 import cats.data.NonEmptyList
-import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item}
+import com.leagueplans.common.model.{EquipmentType, InfoboxKey, Item, Skill}
 import com.leagueplans.ui.model.plan.Effect.{AddItem, DepositSource, MoveItem}
-import com.leagueplans.ui.model.plan.ItemChange
+import com.leagueplans.ui.model.plan.{ExpTarget, ItemChange}
 import com.leagueplans.ui.model.plan.ItemQuantity.{Exact, Max}
 import com.leagueplans.ui.model.player.item.{BankSpace, Depository}
 import com.leagueplans.ui.model.player.item.Depository.Kind
 import com.leagueplans.ui.model.player.item.Depository.Kind.EquipmentSlot
 import com.leagueplans.ui.model.player.league.LeagueStatus
-import com.leagueplans.ui.model.player.skill.Stats
+import com.leagueplans.ui.model.player.skill.{Exp, Level, Stats}
 import com.leagueplans.ui.model.player.{Cache, GridStatus, Player}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -160,6 +160,14 @@ final class ValidatorTest extends AnyFreeSpec with Matchers {
     "says when there's nothing to deposit" in {
       error(Validator.somethingToDeposit(DepositSource.Inventory), player()) shouldBe "The inventory has nothing to bank at this step"
       error(Validator.somethingToDeposit(DepositSource.Equipment), player()) shouldBe "Nothing worn can be banked at this step"
+    }
+
+    "flags a gain until a target the skill has already reached" in {
+      error(Validator.belowTarget(Skill.Attack, ExpTarget.AtLevel(Level(1))), player()) shouldBe
+        "Attack is already level 1 at this step, so this gains no xp"
+      error(Validator.belowTarget(Skill.Attack, ExpTarget.AtExp(Exp(0))), player()) shouldBe
+        "Attack already has 0 xp at this step, so this gains no xp"
+      Validator.belowTarget(Skill.Attack, ExpTarget.AtLevel(Level(2)))(player(), None, cache) shouldBe Right(())
     }
   }
 }

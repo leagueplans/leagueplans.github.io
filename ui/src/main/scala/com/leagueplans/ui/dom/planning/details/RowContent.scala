@@ -3,7 +3,8 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.dom.planning.player.item.StackIcon
 import com.leagueplans.ui.dom.planning.player.stats.SkillIcon
-import com.leagueplans.ui.model.plan.{Effect, ItemChange, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.plan.{Effect, ExpTarget, ItemChange, ItemQuantity, Requirement}
+import com.leagueplans.ui.model.player.skill.{ExpGain, Level}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.model.player.item.{BankSpace, Depository, EquipPlan, ItemEffects, ItemRoute, ItemStack}
 import com.leagueplans.uicommon.dom.ContextMenu
@@ -57,6 +58,39 @@ object RowContent {
           s"${actions.withCommas} × ${RowAmounts.formatXp(expEach)} each$gained",
           editableDetail = Some((onChange, onStatus) => ExpDetail(gain, gained, onChange, onStatus))
         )
+
+      case gain @ Effect.GainExpToTarget(skill, target, expEach) =>
+        // Worked out where the effect applies, as Max is for items
+        val here = playerAt.map { player =>
+          val multiplier = multiplierOf(skill, player)
+          (multiplier, ExpGain.toTarget(target.goal, player.stats(skill), expEach, multiplier))
+        }
+        val gained = here.fold("") {
+          case (_, outcome) if outcome.gained.raw == 0 => " · Already reached"
+          case (multiplier, outcome) if multiplier == 1 => s" → +${RowAmounts.formatXp(outcome.gained)}"
+          case (multiplier, outcome) =>
+            s" · ${formatMultiplier(multiplier)}× → +${RowAmounts.formatXp(outcome.gained)}"
+        }
+        expEach match {
+          case Some(each) =>
+            val actions = here.flatMap(_._2.actions).fold("Actions")(n => if (n == 1) "1 action" else s"${n.withCommas} actions")
+            RowContent(
+              () => skillIcon(skill),
+              s"Gain $skill xp",
+              s"$actions × ${RowAmounts.formatXp(each)} each$gained",
+              editableDetail = Some((onChange, onStatus) => ExpDetail.toTarget(gain, each, actions, gained, onChange, onStatus))
+            )
+          // Exactly the xp that reaches the target, so the detail says where the skill starts from
+          case None =>
+            val detail = playerAt.map(_.stats(skill)).fold("Exactly the xp that reaches it") { current =>
+              val from = target match {
+                case ExpTarget.AtLevel(_) => s"level ${Level.of(current)}"
+                case ExpTarget.AtExp(_) => RowAmounts.formatXp(current)
+              }
+              if (current.raw >= target.goal.raw) s"Already $from" else s"From $from$gained"
+            }
+            RowContent(() => skillIcon(skill), s"Gain $skill xp", detail)
+        }
 
       case add @ Effect.AddItem(item, change, target, note) =>
         val place = target.name.toLowerCase
