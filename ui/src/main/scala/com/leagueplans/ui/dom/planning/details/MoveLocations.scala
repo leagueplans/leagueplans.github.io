@@ -3,12 +3,12 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.common.model.Item
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.player.item.ItemRoute
-import com.leagueplans.uicommon.dom.{Button, ContextMenu, ContextMenuList}
+import com.leagueplans.uicommon.dom.{ArrowText, Button, ContextMenu, ContextMenuList}
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.Observer
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.laminar.api.{L, nodeSeqToModifier, textToTextNode}
 import org.scalajs.dom.{Element, Event, window}
 
 import scala.scalajs.js
@@ -37,7 +37,7 @@ object MoveLocations {
     L.span(
       L.cls(Styles.locations),
       toButton(s"Moved from ${current.from.label}", current.from.label, openMenu),
-      L.span(L.cls(Styles.arrow), "→"),
+      L.span(L.cls(Styles.arrow), ArrowText("→")),
       toButton(s"Moved to ${current.to.label}", current.to.label, openMenu)
     )
   }

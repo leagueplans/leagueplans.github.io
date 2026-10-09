@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.details
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.{Duration, Step}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
-import com.leagueplans.uicommon.dom.{Button, TextDraft, Tooltip}
+import com.leagueplans.uicommon.dom.{ArrowText, Button, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.DurationOps.safeMul
@@ -170,7 +170,7 @@ object TimingRows {
         L.b(L.cls(Styles.value), DurationText.formatElapsed(start)) ::
           (if (takesTime)
             List(
-              L.span(L.cls(Styles.note), "→"),
+              L.span(L.cls(Styles.note), ArrowText("→")),
               L.b(L.cls(Styles.value), DurationText.formatElapsed(timing.finish.getOrElse(start)))
             )
           else Nil),

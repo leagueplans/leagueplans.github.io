@@ -1,0 +1,5 @@
+/* IBM Plex Sans centres → about a tenth of an em below the middle of its digits */
+.arrow {
+  position: relative;
+  top: -0.1em;
+}
