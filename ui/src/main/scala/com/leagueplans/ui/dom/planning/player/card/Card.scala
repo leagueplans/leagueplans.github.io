@@ -6,7 +6,7 @@ import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.Signal
-import com.raquo.laminar.api.{L, eventPropToProcessor}
+import com.raquo.laminar.api.{L, eventPropToProcessor, textToTextNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -59,6 +59,27 @@ object Card {
         suppressed = text.map(_.isEmpty)
       )
     )
+
+  /** The card's last row, with a link to a wiki page
+    *
+    * @param leading anything to show on the left, opposite the wiki link
+    */
+  def footer(wikiURL: String, leading: L.Modifier[L.HtmlElement] = L.emptyMod): L.Div =
+    L.div(
+      L.cls(Styles.foot),
+      leading,
+      L.a(
+        L.cls(Styles.wikiLink),
+        L.href(wikiURL),
+        L.target("_blank"),
+        L.rel("noopener noreferrer"),
+        L.img(L.src(wikiIcon), L.alt("")),
+        "Open on the wiki"
+      )
+    )
+
+  @js.native @JSImport("/images/wiki-icon.png", JSImport.Default)
+  private val wikiIcon: String = js.native
 
   def closeButton(onClose: () => Unit): L.Button =
     L.button(

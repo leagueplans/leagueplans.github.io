@@ -17,9 +17,6 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier, textToTextNode}
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
-
 /** The parts the item card and the add card share: the head and foot, the counts held, the Amount
   * box, and the Make required button */
 object ItemCardParts {
@@ -131,21 +128,7 @@ object ItemCardParts {
   /** The foot of the item cards, with a link to the item's wiki page */
   /** @param leading anything to show on the left, opposite the wiki link */
   def footer(item: Item, leading: L.Modifier[L.HtmlElement] = L.emptyMod): L.Div =
-    L.div(
-      L.cls(Card.Styles.foot),
-      leading,
-      L.a(
-        L.cls(Card.Styles.wikiLink),
-        L.href(ItemWikiPage.url(item)),
-        L.target("_blank"),
-        L.rel("noopener noreferrer"),
-        L.img(L.src(wikiIcon), L.alt("")),
-        "Open on the wiki"
-      )
-    )
-
-  @js.native @JSImport("/images/wiki-icon.png", JSImport.Default)
-  private val wikiIcon: String = js.native
+    Card.footer(ItemWikiPage.url(item), leading)
 
   /** How many of the item are held in each place, noted or not */
   def facts(item: Item, playerSignal: Signal[Player]): L.Div =
