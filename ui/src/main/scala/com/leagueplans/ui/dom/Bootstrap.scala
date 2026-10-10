@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
 import com.leagueplans.ui.dom.plans.form.{ImportPlanDialog, NewPlanDialog}
 import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager, PlanPicker, WelcomePage}
-import com.leagueplans.ui.model.player.Cache
+import com.leagueplans.ui.model.player.{Cache, LazyItems}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
@@ -13,7 +13,7 @@ import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -156,10 +156,33 @@ object Bootstrap {
       if (hasUnsavedChanges) _.preventDefault()
       else _ => ()
 
+  /** Items are decoded as they're first needed, so that showing a plan doesn't wait for all of
+    * them. The rest are decoded once the plan has had time to show, so that searching the bank
+    * doesn't wait for them either. */
+  private def decodeItemsInBackground(cache: Cache, toastPublisher: ToastHub.Publisher): Unit =
+    cache.items match {
+      case items: LazyItems =>
+        js.timers.setTimeout(5.seconds)(
+          items.decodeInBackground(
+            batchSize = 200,
+            onFailure = error =>
+              toastPublisher.publish(
+                ToastHub.Type.Error,
+                Duration.Inf,
+                "Couldn't load game data",
+                Some(s"Failed to read an item: ${error.getMessage}")
+              )
+          )
+        ): Unit
+      case _ => ()
+    }
+
   private def loadCache(toastPublisher: ToastHub.Publisher): js.Promise[Cache] =
     js.async(
       js.await(Cache.load()) match {
-        case Right(cache) => cache
+        case Right(cache) =>
+          decodeItemsInBackground(cache, toastPublisher)
+          cache
         case Left((key, error)) =>
           toastPublisher.publish(
             ToastHub.Type.Error,
