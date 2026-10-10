@@ -1,0 +1,17 @@
+.section {
+  /* Darker than other sections, as it is mostly text to read */
+  border-radius: 6px;
+  background-color: #2b251d;
+  font-family: var(--font-ui);
+}
+
+.column {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 26px 24px 48px;
+}
+
+.older {
+  margin-top: 8px;
+  border-top: 1px solid #4a3f31;
+}

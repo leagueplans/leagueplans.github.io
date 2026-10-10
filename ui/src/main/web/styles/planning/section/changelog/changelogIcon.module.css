@@ -1,0 +1,17 @@
+/* Takes no space of its own, so that the image is laid out as if it were the rail icon's child */
+.icon {
+  display: contents;
+}
+
+/* Placed against the rail's button, at its top right */
+.dot {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+  background-color: #ff981f;
+  box-shadow: 0 0 0 2px #1d1813;
+}

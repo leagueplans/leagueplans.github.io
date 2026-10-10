@@ -1,15 +1,15 @@
 package com.leagueplans.ui.dom.landing
 
-import com.leagueplans.ui.dom.landing.changelog.Changelog
 import com.leagueplans.ui.dom.landing.form.NewPlanForm
 import com.leagueplans.ui.dom.landing.menu.PlansMenu
+import com.leagueplans.ui.dom.planning.section.changelog.{ChangelogEntries, ChangelogView}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.uicommon.dom.{LoadingIcon, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
+import com.raquo.airstream.state.{Val, Var}
+import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode}
 
 import scala.concurrent.duration.DurationInt
 import scala.scalajs.js
@@ -33,6 +33,7 @@ object LandingPage {
   private object Styles extends js.Object {
     val page: String = js.native
     val content: String = js.native
+    val changelog: String = js.native
     val intro: String = js.native
     val loadingIcon: String = js.native
     val menu: String = js.native
@@ -44,7 +45,10 @@ object LandingPage {
     L.div(
       L.cls(Styles.content),
       L.p(L.cls(Styles.intro), "Recent changes"),
-      Changelog()
+      L.div(
+        L.cls(Styles.changelog),
+        ChangelogEntries.all.map(ChangelogView.entry(_, Val(false), openSection = None))
+      )
     )
   
   private def plansForm(

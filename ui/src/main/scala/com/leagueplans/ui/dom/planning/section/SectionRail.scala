@@ -73,16 +73,18 @@ object SectionRail {
           tooltipPlacement = Placement.right
         )
       )
-    else
+    else {
+      val label = section.note.map(_.fold(section.title)(note => s"${section.title} ($note)"))
       Button(_.handledAs(section.key) --> select).amend(
         L.cls(Styles.button),
         ariaCurrent <-- viewed.map(maybeKey => if (maybeKey.contains(section.key)) "page" else "false"),
         L.span(L.cls(Styles.icon), section.icon()),
-        IconButtonModifiers(
-          tooltipContents = section.title,
-          screenReaderDescription = section.title,
+        IconButtonModifiers.using(
+          tooltipContents = label,
+          screenReaderDescription = label,
           tooltip,
           tooltipPlacement = Placement.right
         )
       )
+    }
 }

@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning.player
 
 import com.leagueplans.ui.dom.planning.section.{SectionContext, SectionDef, SectionKey, SectionRail}
 import com.leagueplans.uicommon.dom.Tooltip
-import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
 
@@ -11,6 +11,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object Visualiser {
   /** @param initialSection the section to open first, if it's visible
+    * @param sectionRequests asks for a section to be opened, as if its icon in the rail were clicked
     * @param onSectionSelected told whenever the user picks a section
     * @param headerControls shown at the right of every section's header
     */
@@ -18,6 +19,7 @@ object Visualiser {
     sections: List[SectionDef],
     context: SectionContext,
     initialSection: Option[SectionKey],
+    sectionRequests: EventStream[SectionKey],
     onSectionSelected: Observer[SectionKey],
     headerControls: L.Modifier[L.Div],
     tooltip: Tooltip
@@ -25,6 +27,7 @@ object Visualiser {
     val contents = sections.flatMap(section => section.render.map(render => section.key -> render(context))).toMap
     val visibleSections = context.settings.map(settings => sections.filter(_.visibleIn(settings))).distinct
     val selectedKey = Var(initialSection)
+    val select = Observer.combine(selectedKey.writer.contramapSome, onSectionSelected)
 
     // If the selected section stops being visible, the first visible section that's built is
     // shown instead
@@ -39,7 +42,7 @@ object Visualiser {
       SectionRail(
         visibleSections,
         viewedSection.map(_.map(_.key)),
-        Observer.combine(selectedKey.writer.contramapSome, onSectionSelected),
+        select,
         tooltip
       ),
       L.div(
@@ -53,6 +56,7 @@ object Visualiser {
       ),
       // The sections' menus and cards are built from the focused step's state, such as a stack's
       // quantity or whether a quest is complete, so they'd be wrong for a newly focused step
+      sectionRequests --> select,
       context.focusChanges --> { _ =>
         context.contextMenu.close()
         context.popover.close()

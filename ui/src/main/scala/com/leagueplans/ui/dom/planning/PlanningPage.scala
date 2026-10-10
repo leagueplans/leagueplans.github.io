@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
-import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, Sections, SelectedSection}
+import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, SectionKey, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -48,6 +48,7 @@ object PlanningPage {
     val layout = ColumnLayout.load()
     val fieldEditRequests = EventBus[EditRequest]()
     val rowSelection = RowSelection()
+    val sectionRequests = EventBus[SectionKey]()
     val dragSession = DragSession()
     val stepEditor = StepEditor(forester, focusContext, cache.items)
 
@@ -102,9 +103,11 @@ object PlanningPage {
           toastPublisher,
           UndoToasts(forester, toastPublisher),
           dragSession,
+          sectionRequests.writer,
           projectionStatus.map(_ == StatusTracker.Status.Busy).distinct
         ),
         SelectedSection.load(planStorage),
+        sectionRequests.events,
         Observer(SelectedSection.save(planStorage, _)),
         L.child <-- renderModeControl,
         tooltip

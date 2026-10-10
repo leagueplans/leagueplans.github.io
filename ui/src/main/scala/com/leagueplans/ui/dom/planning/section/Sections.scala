@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.planning.section
 
+import com.leagueplans.ui.dom.planning.section.changelog.{ChangelogIcon, ChangelogSection, ChangelogSeen}
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.mode.GridMaster
 import com.raquo.laminar.api.L
@@ -66,7 +67,15 @@ object Sections {
     planned(SectionKey.Map, "Map", SectionGroup.Plan, () => image(worldMapIcon)),
     planned(SectionKey.Timeline, "Timeline", SectionGroup.Plan, () => image(timelineIcon)),
     planned(SectionKey.Settings, "Settings", SectionGroup.Plan, () => image(settingsIcon)),
-    planned(SectionKey.Changelog, "Changelog", SectionGroup.Plan, () => image(changelogIcon))
+    SectionDef(
+      SectionKey.Changelog,
+      "Changelog",
+      SectionGroup.Plan,
+      () => ChangelogIcon(changelogIcon),
+      visibleIn = _ => true,
+      Some(ChangelogSection(_)),
+      note = ChangelogSeen.unread.map(Option.when(_)("new changes"))
+    )
   )
 
   /** A section that isn't built yet, shown greyed out in the rail so the full layout is visible */

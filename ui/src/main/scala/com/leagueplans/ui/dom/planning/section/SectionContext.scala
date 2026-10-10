@@ -27,6 +27,7 @@ import com.raquo.airstream.state.Var
   *                changes.
   * @param undoToasts reports a change made from the section, with a button to undo it
   * @param dragSession what's being dragged on the page
+  * @param openSection switches the planning page to a section, as if its icon in the rail were clicked
   * @param isRecalculating whether the player states are being recalculated, so the states on show
   *                        are about to change
   */
@@ -48,5 +49,6 @@ final case class SectionContext(
   toasts: ToastHub.Publisher,
   undoToasts: UndoToasts,
   dragSession: DragSession,
+  openSection: Observer[SectionKey],
   isRecalculating: Signal[Boolean]
 )

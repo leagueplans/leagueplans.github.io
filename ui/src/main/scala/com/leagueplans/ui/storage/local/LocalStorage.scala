@@ -19,6 +19,10 @@ object LocalStorage {
   def remove(key: String): Unit =
     attempt(localStorage.removeItem(key)): Unit
 
+  /** Every key stored for the site */
+  def keys(): List[String] =
+    attempt((0 until localStorage.length).flatMap(i => Option(localStorage.key(i))).toList).getOrElse(List.empty)
+
   private def attempt[T](f: => T): Option[T] =
     try Some(f) catch { case NonFatal(_) => None }
 }

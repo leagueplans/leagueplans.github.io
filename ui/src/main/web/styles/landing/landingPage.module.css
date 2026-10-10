@@ -47,3 +47,11 @@
   text-align: center;
   font-size: 1rem;
 }
+
+.changelog {
+  box-sizing: border-box;
+  width: 40rem;
+  max-width: 100%;
+  padding: 1rem 1.5rem 1.5rem;
+  overflow: auto;
+}

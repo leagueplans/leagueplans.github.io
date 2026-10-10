@@ -26,6 +26,7 @@
 }
 
 .button {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
@@ -71,7 +72,7 @@
   height: 22px;
 }
 
-.icon > img {
+.icon img {
   max-width: 22px;
   max-height: 22px;
   object-fit: contain;
