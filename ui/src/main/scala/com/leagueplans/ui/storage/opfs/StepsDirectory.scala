@@ -47,11 +47,15 @@ final class StepsDirectory[T : DirectoryHandleLike](underlying: T) {
       .read[StepDetails](toFileName(id))
       .map(_.map(Step(id, _)))
   
-  def read(ids: Iterable[Step.ID]): EventStream[Either[FileSystemError, Map[Step.ID, Step]]] = {
+  /** Reads the steps concurrently, calling `onRead` as each one finishes */
+  def read(
+    ids: Iterable[Step.ID],
+    onRead: () => Unit
+  ): EventStream[Either[FileSystemError, Map[Step.ID, Step]]] = {
     val zero: Either[FileSystemError, Map[Step.ID, Step]] = Right(Map.empty)
 
     ids
-      .map(id => read(id).map(id -> _)).toSeq
+      .map(id => read(id).map { result => onRead(); id -> result }).toSeq
       .pipe(EventStream.safeSequence)
       .map(_.foldLeft(zero) { case (maybeAcc, (stepID, maybeStep)) =>
         for {

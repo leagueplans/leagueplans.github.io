@@ -7,6 +7,8 @@ import com.leagueplans.uicommon.wrappers.locks.Locks
 import com.raquo.airstream.core.EventStream
 
 import scala.collection.mutable
+import scala.scalajs.js
+import scala.scalajs.js.JSConverters.*
 import scala.util.{Failure, Success}
 
 /** The ports subscribed to each plan, along with the plan's Lamport timestamp and its lock.
@@ -22,6 +24,8 @@ import scala.util.{Failure, Success}
 final class PlanSubscriptions[Port](locks: Locks) {
   private val subscriptions = mutable.Map.empty[PlanID, (LamportTimestamp, Set[Port])]
   private val held = mutable.Map.empty[PlanID, Locks.Held]
+  // Locks that were released here, but that the lock manager may not have finished with
+  private val releasing = mutable.Map.empty[PlanID, Set[js.Promise[Unit]]]
 
   /** Takes the plan's lock, if this coordinator doesn't already hold it. Emits the reason if the
     * lock can't be taken.
@@ -74,24 +78,55 @@ final class PlanSubscriptions[Port](locks: Locks) {
     * the lock was taken */
   def releaseIfUnused(planID: PlanID): Unit =
     if (!subscriptions.contains(planID))
-      held.remove(planID).foreach(_.release())
+      held.remove(planID).foreach { lock =>
+        lock.release()
+        trackRelease(planID, lock.released)
+      }
 
   /** Runs `f` if the plan isn't open in any version of the app, holding the plan's lock while
-    * it does. Otherwise returns `ifInUse`, or `ifFailed` if the lock can't be requested. */
+    * it does. Otherwise returns `ifInUse`, or `ifFailed` if the lock can't be requested.
+    *
+    * The lock manager releases locks asynchronously. So that a plan that's just been closed
+    * here doesn't look as though it's open elsewhere, we wait for this coordinator's own pending
+    * releases of the plan's lock first. */
   def whileUnused[T](planID: PlanID)(ifInUse: => T, ifFailed: String => T)(
     f: => EventStream[T]
   ): EventStream[T] =
-    if (subscriptions.contains(planID) || isLocked(planID))
+    if (isOpenHere(planID))
       EventStream.fromValue(ifInUse, emitOnce = true)
     else
-      locks.ifAvailable(lockName(planID)).asObservable.recoverToTry.flatMapSwitch {
-        case Success(None) =>
+      awaitReleases(planID).flatMapSwitch { _ =>
+        // Something may have subscribed to the plan while we waited
+        if (isOpenHere(planID))
           EventStream.fromValue(ifInUse, emitOnce = true)
-        case Success(Some(lock)) =>
-          f.map { result => lock.release(); result }
-        case Failure(error) =>
-          EventStream.fromValue(ifFailed(describe(error)), emitOnce = true)
+        else
+          locks.ifAvailable(lockName(planID)).asObservable.recoverToTry.flatMapSwitch {
+            case Success(None) =>
+              EventStream.fromValue(ifInUse, emitOnce = true)
+            case Success(Some(lock)) =>
+              f.map { result => lock.release(); result }
+            case Failure(error) =>
+              EventStream.fromValue(ifFailed(describe(error)), emitOnce = true)
+          }
       }
+
+  private def isOpenHere(planID: PlanID): Boolean =
+    subscriptions.contains(planID) || isLocked(planID)
+
+  private def trackRelease(planID: PlanID, released: js.Promise[Unit]): Unit = {
+    releasing.update(planID, releasing.getOrElse(planID, Set.empty) + released)
+    released.`then`[Unit](_ => {
+      val remaining = releasing.getOrElse(planID, Set.empty) - released
+      if (remaining.isEmpty) releasing -= planID else releasing += planID -> remaining
+      ()
+    }): Unit
+  }
+
+  private def awaitReleases(planID: PlanID): EventStream[Unit] =
+    releasing.get(planID) match {
+      case None => EventStream.fromValue((), emitOnce = true)
+      case Some(pending) => js.Promise.all(pending.toJSArray).asObservable.mapTo(())
+    }
 
   def all: List[(PlanID, (LamportTimestamp, Set[Port]))] =
     subscriptions.toList

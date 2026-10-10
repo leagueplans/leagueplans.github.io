@@ -36,7 +36,7 @@ object LoadButton {
     selectionObserver: Observer[(Plan, PlanSubscription)],
     toastPublisher: ToastHub.Publisher
   ): EventStream[Unit] =
-    storage.subscribe(id).changes.collectSome.map { result =>
+    storage.subscribe(id).result.changes.collectSome.map { result =>
       result match {
         case Right(plan) => selectionObserver.onNext(plan)
         case Left(error) => 

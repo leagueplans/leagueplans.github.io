@@ -4,9 +4,35 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError, UpdateError}
-import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, StepUpdates}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, Rename, StepUpdates}
 
 object StorageProtocol {
+  /** [[StepUpdates]], [[Plan.Settings]] and [[Rename]] as a type that the codec can derive */
+  enum WireUpdate {
+    case Steps(updates: StepUpdates)
+    case Settings(settings: Plan.Settings)
+    case Name(rename: Rename)
+
+    def toUnion: StepUpdates | Plan.Settings | Rename =
+      this match {
+        case Steps(updates) => updates
+        case Settings(settings) => settings
+        case Name(rename) => rename
+      }
+  }
+
+  object WireUpdate {
+    def apply(update: StepUpdates | Plan.Settings | Rename): WireUpdate =
+      update match {
+        case updates: StepUpdates => Steps(updates)
+        case settings: Plan.Settings => Settings(settings)
+        case rename: Rename => Name(rename)
+      }
+
+    given Encoder[WireUpdate] = Encoder.derived
+    given Decoder[WireUpdate] = Decoder.derived
+  }
+
   sealed trait ToCoordinator
 
   object ToCoordinator {
@@ -24,27 +50,26 @@ object StorageProtocol {
       def apply(
         planID: PlanID,
         lamport: LamportTimestamp,
-        update: Plan.Settings | StepUpdates
+        update: StepUpdates | Plan.Settings | Rename
       ): Update =
-        Update(
-          planID,
-          lamport,
-          update match {
-            case settings: Plan.Settings => Left(settings)
-            case updates: StepUpdates => Right(updates)
-          }
-        )
+        Update(planID, lamport, WireUpdate(update))
     }
 
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Either[Plan.Settings, StepUpdates]
+      update: WireUpdate
     ) extends ToCoordinator
 
     final case class Delete(requestID: Long, planID: PlanID) extends ToCoordinator
 
     final case class Subscribe(requestID: Long, planID: PlanID) extends ToCoordinator
+
+    /** Asks the coordinator to abandon a [[Subscribe]]. This is handled as soon as it arrives,
+      * rather than in turn, so that a slow read doesn't delay it. The subscribe request still gets a
+      * reply: [[ToClient.SubscriptionFailed]] with [[SubscriptionError.Cancelled]] if the
+      * cancellation was in time, or the outcome of the read if it wasn't. */
+    final case class CancelSubscribe(requestID: Long) extends ToCoordinator
 
     final case class Unsubscribe(requestID: Long, planID: PlanID) extends ToCoordinator
 
@@ -65,6 +90,8 @@ object StorageProtocol {
     final case class FetchFailed(requestID: Long, planID: PlanID, reason: FileSystemError) extends ToClient
 
     final case class Subscription(requestID: Long, planID: PlanID, lamport: LamportTimestamp, plan: Plan) extends ToClient
+    /** Sent while a subscription's plan is being read, until the reply to the request is sent */
+    final case class SubscribeProgress(requestID: Long, stepsRead: Int, totalSteps: Int) extends ToClient
     final case class SubscriptionFailed(requestID: Long, planID: PlanID, reason: SubscriptionError) extends ToClient
     final case class SubscriptionTerminated(planID: PlanID) extends ToClient
     /** The plan was opened by another version of the app, which now owns it */
@@ -73,7 +100,7 @@ object StorageProtocol {
     final case class Update(
       planID: PlanID,
       lamport: LamportTimestamp,
-      update: Either[Plan.Settings, StepUpdates]
+      update: WireUpdate
     ) extends ToClient
 
     final case class UpdateSucceeded(

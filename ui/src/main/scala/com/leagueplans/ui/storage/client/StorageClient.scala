@@ -3,7 +3,7 @@ package com.leagueplans.ui.storage.client
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError}
-import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata}
+import com.leagueplans.ui.storage.model.{LoadProgress, PlanExport, PlanID, PlanMetadata}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{ToClient, ToCoordinator}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
 import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
@@ -42,9 +42,19 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
     val deletes: mutable.Map[Long, Observer[Either[DeletionError, Unit]]] =
       mutable.Map.empty
 
-    val subscriptions: mutable.Map[Long, Observer[Either[SubscriptionError, (Plan, PlanSubscription)]]] =
+    val subscriptions: mutable.Map[Long, SubscribeRequest] =
       mutable.Map.empty
+
+    /** Subscribe requests that were cancelled, which the coordinator may still reply to */
+    val cancelledSubscriptions: mutable.Set[Long] =
+      mutable.Set.empty
   }
+
+  private final class SubscribeRequest(
+    val planID: PlanID,
+    val result: Var[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]],
+    val progress: Var[Option[LoadProgress]]
+  )
 
   private val subscriptionBus = EventBus[(PlanID, PlanSubscription.Message) | PlanSubscription.Message]()
   private val plansVar = Var[Map[PlanID, PlanMetadata]](Map.empty)
@@ -110,14 +120,24 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
     promise.signal
   }
 
-  def subscribe(id: PlanID): StrictSignal[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]] = {
+  def subscribe(id: PlanID): PendingSubscription = {
     val requestID = nextID()
-    val promise = Var[Option[Either[SubscriptionError, (Plan, PlanSubscription)]]](None)
-    requests.subscriptions += requestID -> promise.someWriter
+    val request = SubscribeRequest(id, Var(None), Var(None))
+    requests.subscriptions += requestID -> request
     coordinator.send(ToCoordinator.Subscribe(requestID, id))
     setBusy()
-    promise.signal
+    PendingSubscription(id, request.result.signal, request.progress.signal, () => cancelSubscribe(requestID))
   }
+
+  // If the reply is already on its way, the coordinator will ignore the cancellation and the
+  // reply will be dealt with when it arrives
+  private def cancelSubscribe(requestID: Long): Unit =
+    requests.subscriptions.remove(requestID).foreach { request =>
+      requests.cancelledSubscriptions += requestID
+      coordinator.send(ToCoordinator.CancelSubscribe(requestID))
+      request.result.set(Some(Left(SubscriptionError.Cancelled)))
+      updateStatus()
+    }
 
   private def triggerPlansRefresh(): StrictSignal[Option[Either[FileSystemError, Unit]]] = {
     val requestID = nextID()
@@ -166,8 +186,20 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
         updateStatus(failureReason = Some(reason.message))
       }
 
+    case ToClient.SubscribeProgress(requestID, stepsRead, totalSteps) =>
+      requests.subscriptions.get(requestID).foreach(
+        _.progress.set(Some(LoadProgress(stepsRead, totalSteps)))
+      )
+
+    case ToClient.Subscription(requestID, planID, _, _) if requests.cancelledSubscriptions.remove(requestID) =>
+      // Nobody wants the subscription, so give it back. The coordinator tracks subscribers by
+      // tab, not by request, so it's kept if this tab has asked for the plan again since, such as
+      // when switching away and straight back. That request's reply comes after this one.
+      if (!requests.subscriptions.valuesIterator.exists(_.planID == planID))
+        coordinator.send(ToCoordinator.Unsubscribe(nextID(), planID))
+
     case ToClient.Subscription(requestID, planID, lamport, plan) =>
-      requests.subscriptions.remove(requestID).foreach { observer =>
+      requests.subscriptions.remove(requestID).foreach { request =>
         val subscription = new PlanSubscription(
           planID,
           lamport,
@@ -178,13 +210,16 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
           save = (lamport, update) => coordinator.send(ToCoordinator.Update(planID, lamport, update)),
           unsubscribe = () => coordinator.send(ToCoordinator.Unsubscribe(nextID(), planID))
         )
-        observer.onNext(Right((plan, subscription)))
+        request.result.set(Some(Right((plan, subscription))))
         updateStatus()
       }
 
+    case ToClient.SubscriptionFailed(requestID, _, _) if requests.cancelledSubscriptions.remove(requestID) =>
+      ()
+
     case ToClient.SubscriptionFailed(requestID, _, reason) =>
-      requests.subscriptions.remove(requestID).foreach { observer =>
-        observer.onNext(Left(reason))
+      requests.subscriptions.remove(requestID).foreach { request =>
+        request.result.set(Some(Left(reason)))
         updateStatus(failureReason = Some(reason.message))
       }
 
@@ -200,7 +235,7 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
 
     case ToClient.Update(planID, lamport, update) =>
       subscriptionBus.writer.onNext(
-        (planID, PlanSubscription.Message.Update(lamport, update.merge))
+        (planID, PlanSubscription.Message.Update(lamport, update.toUnion))
       )
 
     case ToClient.UpdateSucceeded(planID, lamport) =>

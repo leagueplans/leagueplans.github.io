@@ -18,8 +18,14 @@ trait Locks {
 }
 
 object Locks {
-  final class Held(onRelease: () => Unit) {
+  final class Held(onRelease: () => Unit, settled: => js.Promise[Unit]) {
+    /** Asks for the lock to be released. The lock manager releases it asynchronously, so another
+      * request for the lock can still find it held until [[released]] settles. */
     def release(): Unit = onRelease()
+
+    /** Settles once the lock manager has finished with the lock, whether because it was
+      * released or because it was stolen */
+    def released: js.Promise[Unit] = settled
   }
 
   val web: Locks =
@@ -38,7 +44,9 @@ object Locks {
     private def hold(name: String, options: LockOptions, onLost: () => Unit): js.Promise[Option[Held]] =
       new js.Promise[Option[Held]]((resolveAcquired, rejectAcquired) => {
         var granted = false
-        manager
+        // The lock can be granted before `request` returns, so `Held` reads this lazily
+        var settled: js.Promise[Unit] = js.Promise.resolve[Unit](())
+        settled = manager
           .request(name, options, lock =>
             if (lock == null) {
               resolveAcquired(None)
@@ -46,7 +54,7 @@ object Locks {
             } else {
               granted = true
               new js.Promise[Unit]((resolveHeld, _) =>
-                resolveAcquired(Some(Held(() => resolveHeld(()): Unit)))
+                resolveAcquired(Some(Held(() => resolveHeld(()): Unit, settled)))
               )
             }
           )

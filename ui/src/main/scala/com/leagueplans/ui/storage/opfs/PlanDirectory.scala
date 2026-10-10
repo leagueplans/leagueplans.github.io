@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.DecodingFailure
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.plan.{Plan, Step}
-import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, StepMappings, StepUpdates}
+import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata, Rename, StepMappings, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory.*
 import com.leagueplans.uicommon.utils.airstream.EventStreamOps.andThen
 import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
@@ -57,12 +57,21 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
       )
     )
 
-  def readPlan(): EventStream[Either[FileSystemError, Plan]] =
+  /** Reads the plan, reporting how many of its steps have been read as it goes. The first
+    * report, before any steps are read, is how the total becomes known. */
+  def readPlan(
+    onProgress: (stepsRead: Int, totalSteps: Int) => Unit
+  ): EventStream[Either[FileSystemError, Plan]] =
     readMetadata().andThen(metadata =>
       readSettings().andThen(settings =>
         readMappings().andThen(mappings =>
           acquireStepsDirectory()
-            .andThen(_.read(mappings.toChildren.keySet ++ mappings.toChildren.values.flatten))
+            .andThen { steps =>
+              val ids = mappings.toChildren.keySet ++ mappings.toChildren.values.flatten
+              var stepsRead = 0
+              onProgress(stepsRead, ids.size)
+              steps.read(ids, () => { stepsRead += 1; onProgress(stepsRead, ids.size) })
+            }
             .map(_.flatMap(steps =>
               Forest.acyclic(steps, mappings.toChildren, mappings.roots)
                 .left.map(reason => DecodingError(parentChildMappingsFileName, DecodingFailure(reason)))
@@ -72,16 +81,16 @@ final class PlanDirectory[T : DirectoryHandleLike](underlying: T) {
       )
     )
   
-  def applyUpdate(update: StepUpdates | Plan.Settings): EventStream[Either[FileSystemError, ?]] = {
-    val changes = update match {
-      case StepUpdates(updates) => applyStepUpdates(updates)
-      case settings: Plan.Settings => writeSettings(settings)
+  /** Rewriting the metadata records when the plan was changed */
+  def applyUpdate(update: StepUpdates | Plan.Settings | Rename): EventStream[Either[FileSystemError, ?]] =
+    update match {
+      case StepUpdates(updates) => applyStepUpdates(updates).andThen(_ => touchMetadata())
+      case settings: Plan.Settings => writeSettings(settings).andThen(_ => touchMetadata())
+      case Rename(name) => writeMetadata(PlanMetadata(name))
     }
 
-    changes
-      .andThen(_ => readMetadata())
-      .andThen(old => writeMetadata(PlanMetadata(old.name)))
-  }
+  private def touchMetadata(): EventStream[Either[FileSystemError, ?]] =
+    readMetadata().andThen(old => writeMetadata(PlanMetadata(old.name)))
 
   /** Applies the updates with at most one read and write of the step mappings. So that an
     * interrupted batch never leaves the mappings referring to a missing step, step files are

@@ -79,7 +79,7 @@ final class ForesterUndoIntegrationTest
 
     private def persisted: Forest[Step.ID, Step] = {
       var eventualResult = Option.empty[Either[FileSystemError, Plan]]
-      directory.readPlan().foreach(result => eventualResult = Some(result))
+      directory.readPlan((_, _) => ()).foreach(result => eventualResult = Some(result))
       eventualResult.value.value.steps
     }
   }

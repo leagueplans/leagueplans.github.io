@@ -17,24 +17,50 @@ final class PlanSubscriptionsTest extends AsyncFreeSpec with Matchers {
 
   private val planID = PlanID.fromString("plan")
 
-  /** Records requests, and lets tests decide availability and take locks away */
-  private final class FakeLocks(available: Boolean = true, failing: Boolean = false) extends Locks {
+  /** Records requests, and lets tests decide availability and take locks away. Like the real
+    * thing, a lock stays held until its release has been processed, which tests can postpone. */
+  private final class FakeLocks(
+    available: Boolean = true,
+    failing: Boolean = false,
+    postponeReleases: Boolean = false
+  ) extends Locks {
     val steals = mutable.ListBuffer.empty[String]
     val releases = mutable.ListBuffer.empty[String]
     private val lostCallbacks = mutable.Map.empty[String, () => Unit]
+    private val held = mutable.Set.empty[String]
+    private val postponed = mutable.ListBuffer.empty[() => Unit]
+
+    private def grant(name: String): Locks.Held = {
+      held += name
+      var finish: () => Unit = () => ()
+      val settled = new js.Promise[Unit]((resolve, _) => finish = () => resolve(()): Unit)
+      val process = () => { held -= name; finish() }
+      Locks.Held(
+        () => {
+          releases += name
+          if (postponeReleases) postponed += process else process()
+        },
+        settled
+      )
+    }
+
+    def processPostponedReleases(): Unit = {
+      postponed.toList.foreach(_())
+      postponed.clear()
+    }
 
     def steal(name: String, onLost: () => Unit): js.Promise[Locks.Held] =
       if (failing) js.Promise.reject("No locks here")
       else {
         steals += name
         lostCallbacks += name -> onLost
-        js.Promise.resolve[Locks.Held](Locks.Held(() => releases += name))
+        js.Promise.resolve[Locks.Held](grant(name))
       }
 
     def ifAvailable(name: String): js.Promise[Option[Locks.Held]] =
       if (failing) js.Promise.reject("No locks here")
       else js.Promise.resolve[Option[Locks.Held]](
-        Option.when(available)(Locks.Held(() => releases += name))
+        Option.when(available && !held.contains(name))(grant(name))
       )
 
     def stealFromUs(name: String): Unit =
@@ -160,6 +186,25 @@ final class PlanSubscriptionsTest extends AsyncFreeSpec with Matchers {
         run(subscriptions(locks)).map { result =>
           result shouldEqual "ran"
           locks.releases should have size 1
+        }
+      }
+
+      "waits for the lock to be released if the plan has just been closed here" in {
+        val locks = FakeLocks(postponeReleases = true)
+        val subs = subscriptions(locks)
+        for {
+          _ <- first(subs.lock(planID, noTakeOver))
+          _ = subs.register("a", planID)
+          _ = subs.deregister("a", planID)
+          result = run(subs)
+          _ <- Future.unit
+          _ <- Future.unit
+          stillWaiting = result.isCompleted
+          _ = locks.processPostponedReleases()
+          finished <- result
+        } yield {
+          stillWaiting shouldBe false
+          finished shouldEqual "ran"
         }
       }
 

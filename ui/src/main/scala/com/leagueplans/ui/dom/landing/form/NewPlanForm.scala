@@ -141,7 +141,7 @@ object NewPlanForm {
         storage.create(metadata, plan).changes.collectSome
       )
       .andThen[DecodingFailure | MigrationError | FileSystemError | SubscriptionError, (Plan, PlanSubscription)](
-        planID => storage.subscribe(planID).changes.collectSome
+        planID => storage.subscribe(planID).result.changes.collectSome
       )
       .map { result =>
         result match {

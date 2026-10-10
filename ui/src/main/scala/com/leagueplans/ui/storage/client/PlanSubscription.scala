@@ -3,7 +3,7 @@ package com.leagueplans.ui.storage.client
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker.Status
 import com.leagueplans.ui.storage.client.PlanSubscription.Message
-import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, StepUpdates}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, Rename, StepUpdates}
 import com.leagueplans.ui.storage.model.errors.UpdateError
 import com.leagueplans.uicommon.utils.airstream.ObservableOps.withKillSwitch
 import com.raquo.airstream.core.{EventStream, Signal}
@@ -14,7 +14,7 @@ object PlanSubscription {
     case Done
     /** The plan was opened by another version of the app, which now owns it */
     case TakenOver
-    case Update(lamport: LamportTimestamp, data: StepUpdates | Plan.Settings)
+    case Update(lamport: LamportTimestamp, data: StepUpdates | Plan.Settings | Rename)
     case UpdateSuccessful(lamport: LamportTimestamp)
     case UpdateFailed(lamport: LamportTimestamp, reason: UpdateError)
   }
@@ -31,7 +31,7 @@ final class PlanSubscription(
   val planID: PlanID,
   initialLamport: LamportTimestamp,
   messages: EventStream[Message],
-  save: (LamportTimestamp, StepUpdates | Plan.Settings) => ?,
+  save: (LamportTimestamp, StepUpdates | Plan.Settings | Rename) => ?,
   unsubscribe: () => ?
 ) extends AutoCloseable {
   private var currentLamport = initialLamport
@@ -42,7 +42,7 @@ final class PlanSubscription(
   /** Once the subscription has a problem, it stops for good */
   val status: Signal[Status] = internalStatus.signal.distinct
 
-  val updates: EventStream[StepUpdates | Plan.Settings] =
+  val updates: EventStream[StepUpdates | Plan.Settings | Rename] =
     upstream.collect(Function.unlift {
       case Message.Done =>
         upstreamKillSwitch.kill()
@@ -73,7 +73,7 @@ final class PlanSubscription(
         None
     })
 
-  def save(update: StepUpdates | Plan.Settings): Unit =
+  def save(update: StepUpdates | Plan.Settings | Rename): Unit =
     ifRunning { _ =>
       currentLamport = currentLamport.increment
       save(currentLamport, update)

@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata, StepUpdates}
+import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata, Rename, StepUpdates}
 import com.leagueplans.ui.storage.model.errors.FileSystemError as UIError
 import com.leagueplans.ui.storage.opfs.{PlansDirectory, RootDirectory}
 import com.leagueplans.ui.storage.worker.PlanStorage.convert
@@ -51,10 +51,13 @@ private final class PlanStorage(scope: WorkerScope) {
   def fetch(planID: PlanID): EventStream[Either[UIError, PlanExport]] =
     withDirectory(_.fetch(planID))
 
-  def read(planID: PlanID): EventStream[Either[UIError, Plan]] =
-    withDirectory(_.read(planID))
+  def read(
+    planID: PlanID,
+    onProgress: (stepsRead: Int, totalSteps: Int) => Unit
+  ): EventStream[Either[UIError, Plan]] =
+    withDirectory(_.read(planID, onProgress))
 
-  def applyUpdate(planID: PlanID, update: StepUpdates | Plan.Settings): EventStream[Either[UIError, ?]] =
+  def applyUpdate(planID: PlanID, update: StepUpdates | Plan.Settings | Rename): EventStream[Either[UIError, ?]] =
     withDirectory(_.applyUpdate(planID, update))
 
   def delete(planID: PlanID): EventStream[Either[UIError, ?]] =

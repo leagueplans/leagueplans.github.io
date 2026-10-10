@@ -11,6 +11,8 @@ import com.raquo.airstream.core.{EventStream, Observer}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.ownership.ManualOwner
 
+import scala.collection.mutable
+import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 // Every tab running this version of the app shares one coordinator. It handles their
@@ -24,6 +26,8 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 object StorageCoordinator {
   private type Port = MessagePortClient[ToClient, ToCoordinator]
   private type Result = Iterable[(Port, ToClient)]
+
+  private val progressIntervalMillis = 100.0
 
   @JSExportTopLevel("run", moduleID = "storagecoordinator")
   def run(): Unit = {
@@ -39,9 +43,16 @@ object StorageCoordinator {
       )(using new ManualOwner)
 
     scope.setOnConnect(port =>
-      port.setMessageHandler(msg =>
-        messageBus.writer.onNext((port, msg))
-      )
+      port.setMessageHandler {
+        // Handled straight away, rather than in turn, since the request it cancels may be what
+        // the queue is waiting on
+        case ToCoordinator.CancelSubscribe(requestID) =>
+          coordinator.cancelSubscribe(port, requestID)
+
+        case msg =>
+          coordinator.received(port, msg)
+          messageBus.writer.onNext((port, msg))
+      }
     )
   }
 }
@@ -50,12 +61,38 @@ private final class StorageCoordinator(
   subscriptions: PlanSubscriptions[Port],
   storage: PlanStorage
 ) {
+  /** A subscribe request that's been received but not yet replied to */
+  private final class PendingSubscribe {
+    var cancelled = false
+    val cancellations = EventBus[Unit]()
+  }
+
+  private val pendingSubscribes = mutable.Map.empty[(Port, Long), PendingSubscribe]
+
+  /** Called as soon as a message arrives, rather than when it's handled. A subscribe request can be
+    * cancelled while it's still queued, so it has to be tracked from the moment it arrives. */
+  def received(port: Port, message: ToCoordinator): Unit =
+    message match {
+      case subscribe: ToCoordinator.Subscribe =>
+        pendingSubscribes += (port, subscribe.requestID) -> PendingSubscribe()
+      case _ => ()
+    }
+
+  /** Does nothing if the request has already been replied to */
+  def cancelSubscribe(port: Port, requestID: Long): Unit =
+    pendingSubscribes.get((port, requestID)).foreach { pending =>
+      pending.cancelled = true
+      pending.cancellations.writer.onNext(())
+    }
+
   def handle(port: Port, message: ToCoordinator): EventStream[Result] =
     message match {
       case list: ToCoordinator.ListPlans => handleListPlans(port, list)
       case create: ToCoordinator.Create => handleCreate(port, create)
       case fetch: ToCoordinator.Fetch => handleFetch(port, fetch)
       case subscribe: ToCoordinator.Subscribe => handleSubscribe(port, subscribe)
+      // Cancellations skip the queue, so never get here
+      case _: ToCoordinator.CancelSubscribe => lift()
       case unsubscribe: ToCoordinator.Unsubscribe => handleUnsubscribe(port, unsubscribe)
       case update: ToCoordinator.Update => handleUpdate(port, update)
       case delete: ToCoordinator.Delete => handleDelete(port, delete)
@@ -80,30 +117,68 @@ private final class StorageCoordinator(
     }
 
   // The plan is locked before it's read, so that another version of the app can't write to it
-  // after we've read it
+  // after we've read it.
+  //
+  // Reading a big plan can take a while, and requests are handled one at a time, so the user can
+  // cancel. A request cancelled before it's started finishes straight away. One cancelled while
+  // it's reading stops waiting for the read, which carries on unseen in the background.
   private def handleSubscribe(port: Port, message: ToCoordinator.Subscribe): EventStream[Result] = {
     val planID = message.planID
-    subscriptions.lock(planID, onTakenOver = notifyTakenOver(planID)).flatMapSwitch {
-      case Left(reason) =>
-        lift((port, ToClient.SubscriptionFailed(message.requestID, planID, SubscriptionError.LockUnavailable(reason))))
+    val key = (port, message.requestID)
+    val pending = pendingSubscribes.getOrElseUpdate(key, PendingSubscribe())
+    val cancelledReply = (port, ToClient.SubscriptionFailed(message.requestID, planID, SubscriptionError.Cancelled))
 
-      case Right(()) =>
-        storage.read(planID).map {
+    val outcome =
+      if (pending.cancelled)
+        lift(cancelledReply)
+      else
+        subscriptions.lock(planID, onTakenOver = notifyTakenOver(planID)).flatMapSwitch {
           case Left(reason) =>
-            subscriptions.releaseIfUnused(planID)
-            List((port, ToClient.SubscriptionFailed(message.requestID, planID, SubscriptionError.FileSystem(reason))))
+            lift((port, ToClient.SubscriptionFailed(message.requestID, planID, SubscriptionError.LockUnavailable(reason))))
 
-          case Right(plan) =>
-            val lamportTimestamp = subscriptions.register(port, planID)
-            val subscription = (port, ToClient.Subscription(message.requestID, planID, lamportTimestamp, plan))
-            // Another version of the app may have taken the plan while we were reading it
-            if (subscriptions.isLocked(planID))
-              List(subscription)
-            else {
-              subscriptions.deregister(port, planID)
-              List(subscription, (port, ToClient.SubscriptionTakenOver(planID)))
-            }
+          case Right(()) if pending.cancelled =>
+            subscriptions.releaseIfUnused(planID)
+            lift(cancelledReply)
+
+          case Right(()) =>
+            val throttle = ProgressThrottle(progressIntervalMillis, () => js.Date.now())
+            val onProgress = (stepsRead: Int, totalSteps: Int) =>
+              // Progress isn't sent once the request has been replied to or abandoned. The last
+              // step always is, since the plan is then put together, which can take a while.
+              if (pendingSubscribes.contains(key) && !pending.cancelled && (stepsRead == totalSteps || throttle.allow()))
+                port.send(ToClient.SubscribeProgress(message.requestID, stepsRead, totalSteps))
+
+            EventStream
+              .merge(
+                storage.read(planID, onProgress).map(Some(_)),
+                pending.cancellations.events.mapTo(None)
+              )
+              .take(1)
+              .map {
+                case None =>
+                  subscriptions.releaseIfUnused(planID)
+                  List(cancelledReply)
+
+                case Some(Left(reason)) =>
+                  subscriptions.releaseIfUnused(planID)
+                  List((port, ToClient.SubscriptionFailed(message.requestID, planID, SubscriptionError.FileSystem(reason))))
+
+                case Some(Right(plan)) =>
+                  val lamportTimestamp = subscriptions.register(port, planID)
+                  val subscription = (port, ToClient.Subscription(message.requestID, planID, lamportTimestamp, plan))
+                  // Another version of the app may have taken the plan while we were reading it
+                  if (subscriptions.isLocked(planID))
+                    List(subscription)
+                  else {
+                    subscriptions.deregister(port, planID)
+                    List(subscription, (port, ToClient.SubscriptionTakenOver(planID)))
+                  }
+              }
         }
+
+    outcome.map { result =>
+      pendingSubscribes -= key
+      result
     }
   }
 
@@ -148,7 +223,7 @@ private final class StorageCoordinator(
     message: ToCoordinator.Update,
     otherSubscribers: Set[Port]
   ): EventStream[Result] =
-    storage.applyUpdate(message.planID, message.update.merge).map {
+    storage.applyUpdate(message.planID, message.update.toUnion).map {
       case Left(reason) =>
         // We've tried to write but hit a failure, so we don't know what state the
         // file system is in. The only safe thing to do is to invalidate all

@@ -279,7 +279,7 @@ private object ForestPropertyTest {
         .fromSeq(batches.map(StepUpdates(_)))
         .flatMapConcat(directory.applyUpdate)
         .foreach(_ => ())
-      directory.readPlan().foreach(plan => result = Some(plan))
+      directory.readPlan((_, _) => ()).foreach(plan => result = Some(plan))
     )(using _.killSubscriptions()).get
 
     result.getOrElse(throw new AssertionError("The persisted plan was not read")).map(_.steps) match {

@@ -8,6 +8,7 @@ enum SubscriptionError(val message: String) {
     s"Unable to lock the plan against edits from other versions of the site: $details"
   )
   case FileSystem(error: FileSystemError) extends SubscriptionError(error.message)
+  case Cancelled extends SubscriptionError("Loading the plan was cancelled")
 }
 
 object SubscriptionError {
