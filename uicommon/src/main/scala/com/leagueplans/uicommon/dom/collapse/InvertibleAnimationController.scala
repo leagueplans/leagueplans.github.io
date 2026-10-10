@@ -21,27 +21,38 @@ object InvertibleAnimationController {
   }
 }
 
-final class InvertibleAnimationController(startOpen: Boolean, animationDuration: Duration) {
+/** @param beforeOpening called, ahead of the status changing, whenever a closed controller is asked to
+  *                      open. Content that is only built once it's needed must be in place by then,
+  *                      since the animation measures it as soon as the status changes. */
+final class InvertibleAnimationController(
+  startOpen: Boolean,
+  animationDuration: Duration,
+  beforeOpening: () => Unit = () => ()
+) {
   private val status = Var[Status](if (startOpen) Status.Open else Status.Closed).distinct
   val statusSignal: StrictSignal[Status] = status.signal
   private val onAnimating = statusSignal.changes.collect { case direction: Status.Animating => direction }
   private var members = Set.empty[L.Element]
   private var activeAnimations = Map.empty[L.Element, Animation.Instance]
 
-  def toggle(): Unit =
+  def toggle(): Unit = {
+    notifyIfOpening()
     status.update {
       case Status.Open if members.isEmpty => Status.Closed
       case Status.Open | Status.Opening => Status.Closing
       case Status.Closed if members.isEmpty => Status.Open
       case Status.Closed | Status.Closing => Status.Opening
     }
+  }
 
-  def open(): Unit =
+  def open(): Unit = {
+    notifyIfOpening()
     status.update {
       case Status.Closed if members.isEmpty => Status.Open
       case Status.Closed | Status.Opening | Status.Closing => Status.Opening
       case Status.Open => Status.Open
     }
+  }
 
   def close(): Unit =
     status.update {
@@ -50,6 +61,9 @@ final class InvertibleAnimationController(startOpen: Boolean, animationDuration:
       case Status.Closed => Status.Closed
     }
     
+  private def notifyIfOpening(): Unit =
+    if (isClosed) beforeOpening()
+
   def isOpen: Boolean =
     status.now() == Status.Open
     

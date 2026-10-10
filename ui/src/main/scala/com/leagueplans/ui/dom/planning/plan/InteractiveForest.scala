@@ -42,6 +42,9 @@ object InteractiveForest {
     // Dragging a step onto a stickied step doesn't have great UX, so we disable the
     // sticky-step CSS when dragging
     val draggingStatus = Var(StepDraggingStatus.NotDragging).distinct
+    // Steps are built as their parents open, which can be after a focus change has been announced.
+    // Those steps never see the event, so they check back with the latest change when they're built.
+    var focusChange = FocusChange(None, Set.empty)
     // Steps collapsed around the focus are opened when the focus changes, or when the focused
     // step moves, so that the focus is never hidden
     val newFocusAncestors =
@@ -50,7 +53,19 @@ object InteractiveForest {
         .map((maybeFocus, forest) => (maybeFocus, maybeFocus.toList.flatMap(forest.ancestors)))
         .distinct
         .changes
-        .map((_, ancestors) => ancestors.toSet)
+        .map { (maybeFocus, ancestors) =>
+          focusChange = FocusChange(maybeFocus, ancestors.toSet)
+          focusChange.ancestors
+        }
+
+    /** Called as a step is about to be built. Returns whether it should take the focus. */
+    def catchUpWithFocus(step: Step.ID): Boolean = {
+      // Done before the step is built, as that's when it decides whether to start open
+      if (focusChange.ancestors.contains(step)) collapsedSteps.set(step, false)
+      val takesFocus = focusChange.focus.contains(step)
+      if (takesFocus) focusChange = focusChange.copy(focus = None)
+      takesFocus
+    }
 
     val dom =
       ForestUpdateConsumer[Step.ID, Step, (L.HtmlElement, Signal[Int])](
@@ -63,9 +78,10 @@ object InteractiveForest {
               case Some((_, positionOffset)) => positionOffset
               case None => Signal.fromValue(0)
             },
-            substepsSignal.map(_.map((substep, _) => substep)),
+            substepsSignal,
             focusContext.signalFor(stepID),
             substepFocused = newFocusAncestors.filter(_.contains(stepID)).mapToUnit,
+            focusOnCreation = catchUpWithFocus(stepID),
             focusController,
             collapsedSteps,
             completionController,
@@ -109,6 +125,8 @@ object InteractiveForest {
       if (active == null || active == document.body)
         dom.get(step).foreach((element, _) => element.ref.focus())
     }
+
+  private final case class FocusChange(focus: Option[Step.ID], ancestors: Set[Step.ID])
 
   @js.native @JSImport("/styles/planning/plan/interactiveForest.module.css", JSImport.Default)
   private object Styles extends js.Object {

@@ -24,7 +24,7 @@ trait ForestAssertions extends Matchers {
         withClue(s"Node $id:") {
           node.data.observe(using owner).now() shouldEqual step
           node.parent.observe(using owner).now().map(_.id) shouldEqual forest.toParent.get(id)
-          node.children.observe(using owner).now().map(_.id) shouldEqual forest.toChildren(id)
+          node.children.observe(using owner).now().map(_.node.id) shouldEqual forest.toChildren(id)
         }
       }
       succeed

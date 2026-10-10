@@ -1,6 +1,7 @@
 package com.leagueplans.ui.model.common.forest
 
 import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer
+import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.LazyNode
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.ForestPropertyTest.*
 import com.leagueplans.ui.model.plan.{Duration, Plan, Step, StepDetails}
@@ -107,7 +108,7 @@ private object ForestPropertyTest {
     id: Step.ID,
     data: Signal[Step],
     parent: Signal[Option[TreeNode]],
-    children: Signal[List[TreeNode]]
+    children: Signal[List[LazyNode[TreeNode]]]
   )
 
   enum Corruption {

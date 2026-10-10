@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
+import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.LazyNode
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, NewStepDraft, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
@@ -27,9 +28,10 @@ object StepElement {
     stepID: Step.ID,
     step: Signal[Step],
     positionOffset: Signal[Int],
-    substepsSignal: Signal[List[L.HtmlElement]],
+    substepsSignal: Signal[List[LazyNode[(L.HtmlElement, Signal[Int])]]],
     isFocused: Signal[Boolean],
     substepFocused: EventStream[Unit],
+    focusOnCreation: Boolean,
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
     completionController: CompletedStep.Controller,
@@ -48,14 +50,20 @@ object StepElement {
     val isHovering = Var(false)
     val isDraggable = Var(false)
     val isDraggingSignal = draggingStatus.signal.map(_ != StepDraggingStatus.NotDragging).distinct
+    val startOpen = !collapsedSteps.isCollapsed(stepID)
+    // The substeps' elements are only built once they're to be shown, which can be never for the
+    // many steps that stay collapsed. They stay built, and attached, once the step has opened.
+    val showSubsteps = Var(startOpen)
     val animationController = InvertibleAnimationController(
-      startOpen = !collapsedSteps.isCollapsed(stepID),
-      animationDuration = 200.millis
+      startOpen,
+      animationDuration = 200.millis,
+      beforeOpening = () => showSubsteps.set(true)
     )
+    val hasSubsteps = substepsSignal.map(_.nonEmpty)
     val header = toHeader(
       stepID,
       step,
-      substepsSignal,
+      hasSubsteps,
       isDraggingSignal,
       isFocused,
       isCompleted,
@@ -80,12 +88,12 @@ object StepElement {
         L.draggable <-- isDraggable,
         header,
         L.div(L.cls(Styles.substepsSidebar)),
-        toSubsteps(substepsSignal, newStepDraft.rowIn(Some(stepID)), isDraggingSignal, animationController),
+        toSubsteps(substepsSignal, showSubsteps.signal, newStepDraft.rowIn(Some(stepID)), isDraggingSignal, animationController),
         tooltip.register(
           L.span(L.cls(Styles.tooltip), "Click to focus or unfocus"),
           FloatingConfig.basicAnchoredTooltip(anchor = header, Placement.left, includeArrow = true)
         ),
-        toFocusListeners(stepID, isFocused, focusController),
+        toFocusListeners(stepID, isFocused, focusOnCreation, focusController),
         substepFocused --> (_ => animationController.open()),
         // A new step being typed in among the substeps must be visible
         newStepDraft.position.changes.filter(_.exists(_.parent.contains(stepID))) --> (_ => animationController.open()),
@@ -97,7 +105,7 @@ object StepElement {
         PlanDropZone.stepMarker(stepID),
         StepDragSource(
           stepID,
-          hasSubsteps = substepsSignal.map(_.nonEmpty),
+          hasSubsteps,
           draggingStatus.writer,
           header,
           closeSubsteps = animationController.close,
@@ -132,7 +140,7 @@ object StepElement {
   private def toHeader(
     stepID: Step.ID,
     step: Signal[Step],
-    substepsSignal: Signal[List[L.HtmlElement]],
+    hasSubsteps: Signal[Boolean],
     isDragging: Signal[Boolean],
     isFocused: Signal[Boolean],
     isCompleted: Signal[Boolean],
@@ -148,7 +156,7 @@ object StepElement {
     StepHeader(
       stepID,
       step,
-      substepsSignal.map(_.nonEmpty),
+      hasSubsteps,
       isFocused,
       isCompleted,
       hasErrors,
@@ -169,12 +177,18 @@ object StepElement {
     )
 
   private def toSubsteps(
-    substepsSignal: Signal[List[L.HtmlElement]],
+    substepsSignal: Signal[List[LazyNode[(L.HtmlElement, Signal[Int])]]],
+    showSubsteps: Signal[Boolean],
     newStepRow: Signal[Option[(Int, L.Div)]],
     isDragging: Signal[Boolean],
     animationController: InvertibleAnimationController
   ): L.Div = {
-    val substepItems = substepsSignal.split(identity)((child, _, _) => L.li(L.cls(Styles.substep), child))
+    val substepItems = showSubsteps.flatMapSwitch {
+      case true =>
+        substepsSignal.split(identity)((child, _, _) => L.li(L.cls(Styles.substep), child.node._1))
+      case false =>
+        Signal.fromValue(List.empty[L.LI])
+    }
     val list = L.ol(
       L.cls(Styles.substepList),
       L.children <-- Signal.combine(substepItems, newStepRow.map(_.map((index, row) => (index, L.li(row)))))
@@ -192,9 +206,19 @@ object StepElement {
   private def toFocusListeners(
     stepID: Step.ID,
     isFocused: Signal[Boolean],
+    focusOnCreation: Boolean,
     focusController: FocusController,
-  ): L.Modifier[L.HtmlElement] =
+  ): L.Modifier[L.HtmlElement] = {
+    var focusPending = focusOnCreation
     List(
+      // A step built because the focus moved into it never sees that move as a change to
+      // isFocused, so it takes the focus once it's mounted
+      L.onMountCallback[L.HtmlElement] { ctx =>
+        if (focusPending) {
+          focusPending = false
+          js.timers.setTimeout(0)(ctx.thisNode.ref.focus()): Unit
+        }
+      },
       L.onClick.handledAs(stepID) --> focusController.toggle,
       L.onKey(KeyValue.Enter).handledAs(stepID) --> focusController.toggle,
       L.inContext[L.HtmlElement](ctx =>
@@ -207,6 +231,7 @@ object StepElement {
         }
       )
     )
+  }
 
   private def toHoverListeners(isHovering: Var[Boolean]): L.Modifier[L.HtmlElement] =
     List(
