@@ -17,7 +17,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object PlanHeader {
   def apply(
-    planName: String,
+    planName: Signal[String],
     focus: Signal[Option[Step.ID]],
     tooltip: Tooltip,
     modal: Modal,
@@ -28,7 +28,7 @@ object PlanHeader {
     L.div(
       L.cls(Styles.header),
       showShortcutsButton(tooltip, modal),
-      L.span(L.cls(Styles.name), planName),
+      L.span(L.cls(Styles.name), L.text <-- planName),
       toHistoryButton(undoIcon, "Undo", "Ctrl+Z", undoController.undoLabel, tooltip)(
         undoController.undo()
       ),

@@ -3,15 +3,15 @@ package com.leagueplans.ui.dom
 import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
-import com.leagueplans.ui.model.plan.Plan
+import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.storage.client.PlanSubscription
+import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
-import com.raquo.airstream.core.{EventStream, Signal}
-import com.raquo.airstream.eventbus.EventBus
-import com.raquo.laminar.api.L
+import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
+import org.scalajs.dom.window
 
 import scala.concurrent.duration.Duration
 import scala.scalajs.js
@@ -35,6 +35,8 @@ object Bootstrap {
 
     val (modalElement, modalController) = Modal(popovers)
     val footer = Footer(statusTracker, tooltipController).amend(L.cls(Styles.footer))
+    val manager = PlanManager(StorageClient(), toastPublisher)
+    manager.start()
 
     L.div(
       L.cls(Styles.bootstrap),
@@ -43,10 +45,12 @@ object Bootstrap {
       L.styleProp[String]("--footer-height") <-- footer.trackHeight().map(height => s"${height}px"),
       L.child.maybe <-- modalController.isOpen.invert.map(Option.when(_)(popovers)),
       modalElement.amend(L.cls(Styles.modal)),
+      manager.status --> Observer(statusTracker.set(StorageClient.statusKey, _)),
+      manager.hasUnsavedChanges --> Observer(warnBeforeClosing),
       L.div(
         L.cls(Styles.page),
         L.child <-- toPageSignal(
-          statusTracker, tooltipController, contextMenuController, popoverController, modalController, toastPublisher
+          manager, statusTracker, tooltipController, contextMenuController, popoverController, modalController, toastPublisher
         ).map(_.amend(L.cls(Styles.pageContent))),
         footer
       )
@@ -69,7 +73,16 @@ object Bootstrap {
     val footer: String = js.native
   }
 
+  /** What the page shows: the planning page once a plan is open and the game data has loaded */
+  private enum PageKey {
+    case Loading
+    case Planning(subscription: PlanSubscription)
+    case Picker(notice: Option[PlanManager.Notice])
+    case Welcome
+  }
+
   private def toPageSignal(
+    manager: PlanManager,
     statusTracker: StatusTracker,
     tooltipController: Tooltip,
     contextMenu: ContextMenu,
@@ -77,23 +90,51 @@ object Bootstrap {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): Signal[L.Div] = {
-    val planBus = EventBus[(Plan, PlanSubscription)]()
-    val cacheLoader = EventStream.fromJsPromise(loadCache(toastPublisher))
+    // Read alongside the plans, rather than after them
+    val cache = EventStream.fromJsPromise(loadCache(toastPublisher)).map(Some(_)).toSignal(None)
+    val gameDataLoaded = cache.map(_.nonEmpty).distinct
 
-    planBus.events.combineWith(cacheLoader).map((plan, subscription, cache) =>
-      PlanningPageBootstrap(
-        plan,
-        subscription,
-        statusTracker,
-        cache,
-        tooltipController,
-        contextMenu,
-        popover,
-        modal,
-        toastPublisher
-      )
-    ).toSignal(initial = LandingPage(planBus.writer, statusTracker, tooltipController, toastPublisher, modal))
+    Signal.combine(manager.state, cache).splitOne {
+      case (PlanManager.State.Open(_, subscription), Some(_)) => PageKey.Planning(subscription)
+      case (PlanManager.State.Picker(notice), _) => PageKey.Picker(notice)
+      case (PlanManager.State.Welcome, _) => PageKey.Welcome
+      case _ => PageKey.Loading
+    } {
+      case (PageKey.Planning(subscription), (PlanManager.State.Open(plan, _), Some(cache)), _) =>
+        PlanningPageBootstrap(
+          plan,
+          subscription,
+          statusTracker,
+          cache,
+          tooltipController,
+          contextMenu,
+          popover,
+          modal,
+          toastPublisher
+        )
+
+      // Until the plan picker and the welcome screen are built, the landing page stands in for both
+      case (key, _, _) if key != PageKey.Loading =>
+        val landingPage = LandingPage(Observer(manager.adopt), manager.storage, tooltipController, toastPublisher, modal)
+        key match {
+          case PageKey.Picker(Some(PlanManager.Notice.Info(text))) =>
+            landingPage.amend(L.p(L.role("status"), text))
+          case PageKey.Picker(Some(PlanManager.Notice.Problem(title, detail))) =>
+            landingPage.amend(L.p(L.role("alert"), s"$title: $detail"))
+          case _ =>
+            landingPage
+        }
+
+      case (_, _, signal) =>
+        LoadingPage(signal.map((state, _) => state), gameDataLoaded)
+    }
   }
+
+  /** Asks the browser to warn before the tab is closed while changes are being saved */
+  private def warnBeforeClosing(hasUnsavedChanges: Boolean): Unit =
+    window.onbeforeunload =
+      if (hasUnsavedChanges) _.preventDefault()
+      else _ => ()
 
   private def loadCache(toastPublisher: ToastHub.Publisher): js.Promise[Cache] =
     js.async(

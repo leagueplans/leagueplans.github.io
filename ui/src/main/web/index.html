@@ -13,6 +13,12 @@
     <title>OSRS Route Planner</title>
   </head>
   <body>
+    <!-- Shown until the app's script has loaded, which removes it. The script is large, so this
+         can take a few seconds on a slow connection. The theme isn't loaded yet, so its colours
+         are repeated here. -->
+    <div id="startup" role="status" style="position: fixed; inset: 0; display: grid; place-items: center; background: #111318; color: #b3a896; font: 1rem 'IBM Plex Sans', sans-serif">
+      Loading the planner…
+    </div>
     <script type="module" src="main.js"></script>
   </body>
 </html>

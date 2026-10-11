@@ -17,7 +17,7 @@ import scala.scalajs.js.annotation.JSImport
 
 object PlanElement {
   def apply(
-    planName: String,
+    planName: Signal[String],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     focusController: FocusController,

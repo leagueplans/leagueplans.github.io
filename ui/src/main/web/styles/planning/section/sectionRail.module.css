@@ -56,7 +56,10 @@
   cursor: default;
 }
 
-.planned .icon {
+/* On the images rather than their holder, since a filter would make the holder, rather than the
+ * button, the box that anything placed absolutely within the icon, such as the changelog's dot,
+ * is placed against */
+.planned .icon img, .planned .icon > svg {
   filter: grayscale(1);
   opacity: 0.45;
 }

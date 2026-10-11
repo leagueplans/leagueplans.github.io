@@ -1,0 +1,14 @@
+.page {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background-color: var(--bg-base);
+  font-family: var(--font-ui);
+}
+
+/* As index.html's message, which this replaces */
+.startup {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}

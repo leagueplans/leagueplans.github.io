@@ -26,7 +26,7 @@ import scala.scalajs.js.annotation.JSImport
 object PlanningPage {
   def apply(
     planStorage: PlanLocalStorage,
-    name: String,
+    name: Signal[String],
     settings: Signal[Plan.Settings],
     account: Var[ViewerAccount],
     forester: Forester[Step.ID, Step],

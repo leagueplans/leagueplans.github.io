@@ -36,4 +36,12 @@ object PlanLocalStorage {
     val storage = PlanLocalStorage(planID)
     Key.values.foreach(storage.remove)
   }
+
+  /** Moves everything kept for a plan to a new ID, such as when updating the plan to the latest
+    * save format gives it a new ID */
+  def move(from: PlanID, to: PlanID): Unit = {
+    val (source, target) = (PlanLocalStorage(from), PlanLocalStorage(to))
+    Key.values.foreach(key => source.get(key).foreach(target.set(key, _)))
+    forget(from)
+  }
 }

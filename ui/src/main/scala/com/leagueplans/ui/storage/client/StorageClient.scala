@@ -149,12 +149,13 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
   }
 
   coordinator.setMessageHandler {
+    // The plans are updated first, so that they're current for whoever's waiting on the refresh
     case ToClient.Plans(requestID, data) =>
+      plansVar.writer.onNext(data)
       requests.refreshPlans.remove(requestID).foreach { observer =>
         observer.onNext(Right(()))
         updateStatus()
       }
-      plansVar.writer.onNext(data)
 
     case ToClient.ListPlansFailed(requestID, reason) =>
       requests.refreshPlans.remove(requestID).foreach { observer =>

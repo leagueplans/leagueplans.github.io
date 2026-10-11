@@ -1,0 +1,40 @@
+.card {
+  box-sizing: border-box;
+  width: min(380px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+
+  border: 1px solid #4a3f31;
+  border-radius: 8px;
+  background-color: #2b251d;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-ui);
+}
+
+.icon {
+  flex: none;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+}
+
+.text {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-bright);
+  font-size: 0.95rem;
+}
+
+/* Holds its height while empty, so the title doesn't move when progress arrives */
+.detail {
+  min-height: 1.2em;
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}

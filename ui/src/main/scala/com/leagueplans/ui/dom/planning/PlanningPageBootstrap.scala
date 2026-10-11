@@ -7,14 +7,13 @@ import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.client.ProjectionClient
-import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
+import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.local.{PlanLocalStorage, ViewerAccountStorage}
-import com.leagueplans.ui.storage.model.StepUpdates
+import com.leagueplans.ui.storage.model.{Rename, StepUpdates}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource}
-import org.scalajs.dom.window
 
 
 object PlanningPageBootstrap {
@@ -37,11 +36,12 @@ object PlanningPageBootstrap {
     val forester = Forester(initialPlan.steps, Observer(updates => subscription.save(StepUpdates(updates))))
     val (focusedStep, focusController) = FocusController(forester)
     val settings = Var(initialPlan.settings)
+    val name = Var(initialPlan.name)
     val planStorage = PlanLocalStorage(subscription.planID)
 
     PlanningPage(
       planStorage,
-      initialPlan.name,
+      name.signal,
       settings.signal,
       account,
       forester,
@@ -65,9 +65,9 @@ object PlanningPageBootstrap {
       toastPublisher
     ).amend(
       // Subscription events
-      subscription.status --> createStatusObserver(statusTracker),
       subscription.updates.collect { case StepUpdates(updates) => updates } --> Observer(forester.inject),
       subscription.updates.collect { case s: Plan.Settings => s } --> settings,
+      subscription.updates.collect { case Rename(newName) => newName } --> name,
       // Projection notifications
       forester.updates --> Observer(projectionClient.applyForestUpdates),
       settings.signal.changes --> Observer(projectionClient.updateSettings),
@@ -84,19 +84,10 @@ object PlanningPageBootstrap {
       L.onUnmountCallback { _ =>
         subscription.close()
         projectionClient.close()
+        // Otherwise the footer would keep this plan's statuses while another loads, or none is open
+        statusTracker.set(ProjectionClient.projectionStatusKey, StatusTracker.Status.Idle)
+        statusTracker.set(ProjectionClient.errorDetectionStatusKey, StatusTracker.Status.Idle)
       }
     )
   }
-
-  private def createStatusObserver(tracker: StatusTracker): Observer[StatusTracker.Status] =
-    Observer { status =>
-      tracker.set(StorageClient.statusKey, status)
-      status match {
-        case StatusTracker.Status.Busy =>
-          window.onbeforeunload = _.preventDefault()
-
-        case StatusTracker.Status.Idle | _: StatusTracker.Status.Problem =>
-          window.onbeforeunload = _ => ()
-      }
-    }
 }
