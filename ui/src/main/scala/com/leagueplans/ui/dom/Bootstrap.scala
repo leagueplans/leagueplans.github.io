@@ -1,17 +1,16 @@
 package com.leagueplans.ui.dom
 
 import com.leagueplans.ui.dom.footer.Footer
-import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
 import com.leagueplans.ui.dom.plans.form.{ImportPlanDialog, NewPlanDialog}
-import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager, WelcomePage}
+import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager, PlanPicker, WelcomePage}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.HtmlElementOps.trackHeight
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
-import com.raquo.laminar.api.{L, enrichSource, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource}
 import org.scalajs.dom.window
 
 import scala.concurrent.duration.Duration
@@ -123,17 +122,8 @@ object Bootstrap {
       case (PageKey.Welcome, _, _) =>
         WelcomePage(manager, cache, tooltipController, contextMenu)
 
-      // Until the plan picker is built, the landing page stands in for it
-      case (key, _, _) if key != PageKey.Loading =>
-        val landingPage = LandingPage(Observer(manager.adopt), manager.storage, tooltipController, toastPublisher, modal)
-        key match {
-          case PageKey.Picker(Some(PlanManager.Notice.Info(text))) =>
-            landingPage.amend(L.p(L.role("status"), text))
-          case PageKey.Picker(Some(PlanManager.Notice.Problem(title, detail))) =>
-            landingPage.amend(L.p(L.role("alert"), s"$title: $detail"))
-          case _ =>
-            landingPage
-        }
+      case (PageKey.Picker(notice), _, _) =>
+        PlanPicker(manager, notice, tooltipController, onNewPlan, onImport)
 
       case (_, _, signal) =>
         LoadingPage(manager, signal.map { case (_, (state, _)) => state }, gameDataLoaded, popover, tooltipController, onNewPlan, onImport)

@@ -1,0 +1,194 @@
+/* Shown when no plan is open. Only the list of plans scrolls, so that the buttons below it stay
+ * in view however many plans there are. */
+.page {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 48px 24px 32px;
+
+  background-color: var(--bg-base);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+}
+
+.content {
+  width: 100%;
+  max-width: 640px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.content > * {
+  flex: none;
+}
+
+.info, .problem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+
+  border-radius: 6px;
+  line-height: 1.45;
+}
+
+.info {
+  border: 1px solid #2f6b40;
+  background-color: #132418;
+  color: #bfe8c8;
+}
+
+.noticeIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.problem {
+  display: block;
+
+  border: 1px solid var(--red-border);
+  background-color: var(--red-tint);
+  color: #f3b0ab;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.content > .list {
+  /* Takes the height that's left */
+  flex: 0 1 auto;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-color: var(--navy-border) var(--navy-panel);
+
+  border: 1px solid var(--navy-line);
+  border-radius: 8px;
+  background-color: var(--navy-panel);
+}
+
+/* A plan's row, with its download button beside it */
+.entry {
+  flex: none;
+  display: flex;
+  align-items: center;
+
+  border-top: 1px solid var(--navy-line);
+}
+
+.entry:first-child {
+  border-top: 0;
+}
+
+.entry:hover, .entry:has(.row:focus-visible) {
+  background-color: var(--navy-bar);
+}
+
+.row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+
+  border: 0;
+  background: none;
+  color: var(--text-bright);
+  font: inherit;
+  text-align: left;
+}
+
+.download {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  padding: 0;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-bar);
+  color: var(--text-muted);
+}
+
+.download:hover, .download:focus-visible {
+  background-color: var(--navy-bar-hover);
+  color: var(--text-bright);
+}
+
+.download svg {
+  width: 13px;
+  height: 13px;
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.meta {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.empty {
+  margin: 0;
+  padding: 16px;
+
+  border: 1px dashed var(--navy-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action {
+  height: 34px;
+  padding: 0 14px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+}
+
+.action:hover, .action:focus-visible {
+  background-color: var(--navy-bar-hover);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}

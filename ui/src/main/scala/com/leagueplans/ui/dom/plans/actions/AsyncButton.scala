@@ -18,7 +18,13 @@ object AsyncButton {
   private val spinnerDelayMillis = 300
 
   /** @param run does the work, emitting once when it's done */
-  def apply(label: String, run: () => EventStream[Unit]): L.Button = {
+  def apply(label: String, run: () => EventStream[Unit]): L.Button =
+    withContent(label, run)
+
+  /** @param content what the button shows when it isn't busy, such as an icon
+    * @param run does the work, emitting once when it's done
+    */
+  def withContent(content: L.Modifier[L.Span], run: () => EventStream[Unit]): L.Button = {
     val isBusy = Var(false)
     val clicks = EventBus[Unit]()
     val showsBusy =
@@ -35,7 +41,7 @@ object AsyncButton {
       L.cls(Styles.button),
       L.aria.busy <-- isBusy.signal,
       L.disabled <-- showsBusy,
-      L.span(L.cls(Styles.hidden) <-- showsBusy, label),
+      L.span(L.cls(Styles.hidden) <-- showsBusy, content),
       L.child.maybe <-- showsBusy.map(Option.when(_)(LoadingIcon().amend(L.svg.cls(Styles.spinner)))),
       clicks.events.flatMapSwitch(_ => run()) --> Observer[Unit](_ => isBusy.set(false))
     )

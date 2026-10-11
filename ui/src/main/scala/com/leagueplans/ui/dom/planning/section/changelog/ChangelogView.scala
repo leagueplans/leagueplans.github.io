@@ -18,7 +18,7 @@ object ChangelogView {
   def entry(
     entry: ChangelogEntry,
     isNew: Signal[Boolean],
-    openSection: Option[Observer[SectionKey]]
+    openSection: Observer[SectionKey]
   ): L.HtmlElement =
     L.articleTag(
       L.cls(Styles.entry),
@@ -33,17 +33,16 @@ object ChangelogView {
 
   /** An entry's contents
     *
-    * @param openSection where requests to open a section of the planning page go. Buttons that open
-    *                    sections aren't shown without it.
+    * @param openSection where requests to open a section of the planning page go
     */
-  def body(entry: ChangelogEntry, openSection: Option[Observer[SectionKey]]): L.Div =
+  def body(entry: ChangelogEntry, openSection: Observer[SectionKey]): L.Div =
     L.div(
       L.cls(Styles.body),
       entry.blocks.map(toBlock(_, openSection))
     )
 
   /** An entry reduced to a row of its date and title, which opens to reveal the entry's contents */
-  def collapsedEntry(entry: ChangelogEntry, openSection: Option[Observer[SectionKey]]): L.HtmlElement =
+  def collapsedEntry(entry: ChangelogEntry, openSection: Observer[SectionKey]): L.HtmlElement =
     L.detailsTag(
       L.cls(Styles.collapsed),
       L.summaryTag(
@@ -91,7 +90,7 @@ object ChangelogView {
   private val muted = L.htmlProp("muted", BooleanAsIsCodec)
   private val loading = L.htmlAttr("loading", StringAsIsCodec)
 
-  private def toBlock(block: Block, openSection: Option[Observer[SectionKey]]): L.Node =
+  private def toBlock(block: Block, openSection: Observer[SectionKey]): L.Node =
     block match {
       case Para(inlines*) =>
         L.p(L.cls(Styles.paragraph), inlines.map(toInline))
@@ -124,14 +123,14 @@ object ChangelogView {
         )
 
       case OpenSection(key) =>
-        (openSection, Sections.all.find(_.key == key)) match {
-          case (Some(observer), Some(section)) =>
-            Button(_.handledAs(key) --> observer).amend(
+        Sections.all.find(_.key == key) match {
+          case Some(section) =>
+            Button(_.handledAs(key) --> openSection).amend(
               L.cls(Styles.openSection),
               L.span(L.cls(Styles.openSectionIcon), section.icon()),
               s"${section.title} →"
             )
-          case _ => L.emptyNode
+          case None => L.emptyNode
         }
     }
 

@@ -67,7 +67,7 @@ object PlanManager {
   * Each request to open or leave a plan replaces the one before it. A plan that's still being
   * read when the user picks another is abandoned, and results for replaced requests are dropped.
   */
-final class PlanManager(val storage: StorageClient, toasts: ToastHub.Publisher) {
+final class PlanManager(val storage: StorageClient, val toasts: ToastHub.Publisher) {
   private given owner: Owner = new ManualOwner
 
   private val stateVar = Var[State](State.Starting)
@@ -145,13 +145,6 @@ final class PlanManager(val storage: StorageClient, toasts: ToastHub.Publisher) 
         }
       }
     }
-
-  /** Shows a plan that was opened elsewhere. Only the landing page does this, until it's retired. */
-  def adopt(plan: Plan, subscription: PlanSubscription): Unit = {
-    nextRequest()
-    LocalStorage.set(lastPlanKey, subscription.planID)
-    leave(State.Open(plan, subscription))
-  }
 
   private def isOpenOrOpening(planID: PlanID): Boolean =
     stateVar.now() match {

@@ -3,7 +3,10 @@ package com.leagueplans.ui.dom.plans.actions
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.ui.storage.model.{PlanExport, PlanID}
-import com.leagueplans.uicommon.dom.ToastHub
+import com.leagueplans.uicommon.dom.{IconButtonModifiers, ToastHub, Tooltip}
+import com.leagueplans.uicommon.facades.floatingui.Placement
+import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
+import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.raquo.airstream.core.EventStream
 import com.raquo.airstream.state.StrictSignal
 import com.raquo.laminar.api.L
@@ -22,6 +25,21 @@ object DownloadButton {
     toastPublisher: ToastHub.Publisher
   ): L.Button =
     AsyncButton("Download plan file", () => onClick(id, name.now(), storage, toastPublisher))
+
+  /** A download icon, explained on hover, for a row in a list of plans
+    *
+    * @param name the plan's name when the button is pressed
+    */
+  def icon(
+    id: PlanID,
+    name: () => String,
+    storage: StorageClient,
+    toastPublisher: ToastHub.Publisher,
+    tooltip: Tooltip
+  ): L.Button =
+    AsyncButton
+      .withContent(FontAwesome.icon(FreeSolid.faDownload), () => onClick(id, name(), storage, toastPublisher))
+      .amend(IconButtonModifiers("Download plan file", "Download plan file", tooltip, Placement.left))
 
   private def onClick(
     id: PlanID,

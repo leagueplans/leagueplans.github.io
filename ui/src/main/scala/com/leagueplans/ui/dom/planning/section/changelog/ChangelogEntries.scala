@@ -6,6 +6,18 @@ import com.leagueplans.ui.dom.planning.section.changelog.ChangelogEntry.Date
 /** Newest first */
 object ChangelogEntries {
   val all: List[ChangelogEntry] = List(
+    ChangelogEntry(Date(2026, 10, 10), "Revamped plan management")(
+      Para(
+        "The site now opens straight into the plan you last had open. To switch to another plan, click your" +
+          " plan's name at the top of the page. New plans and plan files are added from there too."
+      ),
+      Para(
+        "Renaming, changing the game mode, copying, downloading and deleting a plan have moved to the new" +
+          " Settings section. Plan files can now be imported whether they end in .plan or .plan.gz."
+      ),
+      Para("The changelog lives here now. A dot on its icon means there's something you haven't read."),
+      OpenSection(SectionKey.Settings)
+    ),
     ChangelogEntry(Date(2026, 10, 7), "Revamped planning page")(
       Bullets(
         "A column of icons down the left now switches between your items, stats, quests, diaries and so on," +

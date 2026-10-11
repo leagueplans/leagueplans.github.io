@@ -18,7 +18,7 @@ object ChangelogSection {
     def isNew(entry: ChangelogEntry) = seenUpTo.signal.map(_.exists(entry.date.isAfter))
 
     val (full, older) = ChangelogEntries.all.splitAt(fullEntries)
-    val openSection = Some(ctx.openSection)
+    val openSection = ctx.openSection
 
     L.div(
       L.cls(Styles.section),
