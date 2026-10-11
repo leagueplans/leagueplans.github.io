@@ -1,0 +1,117 @@
+.section {
+  /* As dark as the changelog, since this is mostly text to read */
+  border-radius: 6px;
+  background-color: #2b251d;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+}
+
+.column {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 22px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+
+  border: 1px solid #5a4d3c;
+  border-radius: 6px;
+  background-color: #3a3127;
+}
+
+.cardTitle {
+  margin: 0;
+  color: #ff981f;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: #d6c8ae;
+  font-size: 0.75rem;
+}
+
+.inline {
+  display: flex;
+  gap: 8px;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 9px;
+
+  border: 1px solid #6b5c47;
+  border-radius: 4px;
+  background-color: #1d1813;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+}
+
+.field:focus-visible {
+  outline: 2px solid #ff981f;
+  outline-offset: 1px;
+}
+
+.button {
+  height: 32px;
+  padding: 0 12px;
+
+  border: 1px solid #6b5c47;
+  border-radius: 4px;
+  background-color: #494034;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.button:enabled:hover, .button:enabled:focus-visible {
+  background-color: #5a4f40;
+}
+
+.button:disabled {
+  opacity: 0.45;
+}
+
+.danger {
+  border-color: var(--red-border);
+  background-color: #3a1d1c;
+  color: #f3b0ab;
+}
+
+.danger:enabled:hover, .danger:enabled:focus-visible {
+  background-color: #552624;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.text {
+  margin: 0;
+  color: #c2b498;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+

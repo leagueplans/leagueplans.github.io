@@ -37,11 +37,17 @@ object PlanLocalStorage {
     Key.values.foreach(storage.remove)
   }
 
+  /** Copies everything kept for a plan to another plan, such as a duplicate of it. Step IDs are
+    * kept when a plan is copied, so the same steps are collapsed. */
+  def copy(from: PlanID, to: PlanID): Unit = {
+    val (source, target) = (PlanLocalStorage(from), PlanLocalStorage(to))
+    Key.values.foreach(key => source.get(key).foreach(target.set(key, _)))
+  }
+
   /** Moves everything kept for a plan to a new ID, such as when updating the plan to the latest
     * save format gives it a new ID */
   def move(from: PlanID, to: PlanID): Unit = {
-    val (source, target) = (PlanLocalStorage(from), PlanLocalStorage(to))
-    Key.values.foreach(key => source.get(key).foreach(target.set(key, _)))
+    copy(from, to)
     forget(from)
   }
 }

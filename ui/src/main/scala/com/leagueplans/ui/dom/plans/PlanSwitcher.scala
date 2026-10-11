@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.plans
 import com.leagueplans.ui.dom.plans.PlanManager.State
 import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata}
 import com.leagueplans.uicommon.dom.{Button, Popover, Tooltip}
-import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
+import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.{handled, handledWith}
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.laminar.api.{L, enrichSource, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
@@ -23,12 +23,17 @@ object PlanSwitcher {
   private val mounted = mutable.LinkedHashMap.empty[Element, () => Unit]
   private var reopen = false
 
-  /** @param current the plan that's open, or being opened, and the name to show for it */
+  /** @param current the plan that's open, or being opened, and the name to show for it
+    * @param onNewPlan called when the user asks to make a new plan
+    * @param onImport called when the user asks to import a plan file
+    */
   def apply(
     manager: PlanManager,
     current: Signal[Option[(PlanID, String)]],
     popover: Popover,
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    onNewPlan: () => Unit,
+    onImport: () => Unit
   ): L.Button = {
     def open(anchor: Element, immediately: Boolean): Unit = {
       // Other tabs may have made plans since the list was last read. The list shows what it has
@@ -36,7 +41,7 @@ object PlanSwitcher {
       manager.refreshPlans()
       popover.open(
         anchor,
-        toPanel(manager, current, tooltip),
+        toPanel(manager, current, popover, tooltip, onNewPlan, onImport),
         below = true,
         alignStart = true,
         immediately = immediately
@@ -122,6 +127,8 @@ object PlanSwitcher {
     val separator: String = js.native
     val row: String = js.native
     val rowText: String = js.native
+    val footer: String = js.native
+    val footerButton: String = js.native
   }
 
   private val ariaCurrent = L.htmlAttr("aria-current", StringAsIsCodec)
@@ -141,7 +148,10 @@ object PlanSwitcher {
   private def toPanel(
     manager: PlanManager,
     current: Signal[Option[(PlanID, String)]],
-    tooltip: Tooltip
+    popover: Popover,
+    tooltip: Tooltip,
+    onNewPlan: () => Unit,
+    onImport: () => Unit
   ): L.Div = {
     val others = Signal.combine(manager.plans, current).map {
       case (plans, Some((id, _))) => otherPlans(plans, id)
@@ -179,9 +189,20 @@ object PlanSwitcher {
         L.children <-- others.split(_._1) { (id, initial, entry) =>
           PlanRow(manager, id, initial._2, entry.map(_._2), tooltip, rowClasses)
         }
+      ),
+      L.div(
+        L.cls(Styles.footer),
+        toFooterButton("New plan", popover, onNewPlan),
+        toFooterButton("Import a plan file", popover, onImport)
       )
     )
   }
 
   private lazy val rowClasses = PlanRow.Classes(Styles.row, Styles.rowText, Styles.name, Styles.meta)
+
+  private def toFooterButton(label: String, popover: Popover, onClick: () => Unit): L.Button =
+    Button(_.handled --> Observer[Unit] { _ =>
+      popover.close()
+      onClick()
+    }).amend(L.cls(Styles.footerButton), label)
 }

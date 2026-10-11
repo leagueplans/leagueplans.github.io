@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom
 import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
+import com.leagueplans.ui.dom.plans.form.{ImportPlanDialog, NewPlanDialog}
 import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
@@ -93,6 +94,9 @@ object Bootstrap {
     modal: Modal,
     toastPublisher: ToastHub.Publisher
   ): Signal[L.Div] = {
+    val onNewPlan = () => NewPlanDialog.open(manager, modal)
+    val onImport = () => ImportPlanDialog.open(manager, modal)
+
     // Read alongside the plans, rather than after them
     val cache = EventStream.fromJsPromise(loadCache(toastPublisher)).map(Some(_)).toSignal(None)
     val gameDataLoaded = cache.map(_.nonEmpty).distinct
@@ -111,7 +115,9 @@ object Bootstrap {
           contextMenu,
           popover,
           modal,
-          toastPublisher
+          toastPublisher,
+          onNewPlan,
+          onImport
         )
 
       // Until the plan picker and the welcome screen are built, the landing page stands in for both
@@ -127,7 +133,7 @@ object Bootstrap {
         }
 
       case (_, _, signal) =>
-        LoadingPage(manager, signal.map { case (_, (state, _)) => state }, gameDataLoaded, popover, tooltipController)
+        LoadingPage(manager, signal.map { case (_, (state, _)) => state }, gameDataLoaded, popover, tooltipController, onNewPlan, onImport)
     }
   }
 

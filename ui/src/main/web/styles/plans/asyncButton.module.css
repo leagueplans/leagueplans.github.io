@@ -1,0 +1,15 @@
+/* The spinner sits over the hidden label, so that the button keeps its width */
+.button {
+  position: relative;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}

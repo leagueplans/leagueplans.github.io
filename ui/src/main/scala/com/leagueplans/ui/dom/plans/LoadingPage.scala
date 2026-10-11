@@ -15,13 +15,17 @@ import scala.scalajs.js.annotation.JSImport
 object LoadingPage {
   /** @param state what the plan manager is doing
     * @param gameDataLoaded whether the game data has been read, which plans can't be shown without
+    * @param onNewPlan called when the user asks to make a new plan, from the plan switcher
+    * @param onImport called when the user asks to import a plan file, from the plan switcher
     */
   def apply(
     manager: PlanManager,
     state: Signal[State],
     gameDataLoaded: Signal[Boolean],
     popover: Popover,
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    onNewPlan: () => Unit,
+    onImport: () => Unit
   ): L.Div = {
     val plan = state.map(PlanSwitcher.toCurrent)
 
@@ -35,7 +39,7 @@ object LoadingPage {
           L.div(
             L.cls(Styles.column),
             L.child.maybe <-- plan.map(_.nonEmpty).distinct.map(Option.when(_)(
-              PlanSwitcher(manager, plan, popover, tooltip)
+              PlanSwitcher(manager, plan, popover, tooltip, onNewPlan, onImport)
             )),
             LoadingStatus(state, gameDataLoaded)
           )

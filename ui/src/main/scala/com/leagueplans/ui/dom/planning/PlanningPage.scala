@@ -6,6 +6,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
+import com.leagueplans.ui.dom.plans.{OpenPlan, PlanManager}
 import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, SectionDef, SectionKey, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
@@ -32,6 +33,8 @@ object PlanningPage {
     * @param loadingStatus says how the other plan is coming along, while the page is locked
     */
   def apply(
+    manager: PlanManager,
+    openPlan: OpenPlan,
     planStorage: PlanLocalStorage,
     planSwitcher: L.Element,
     locked: Signal[Boolean],
@@ -118,7 +121,9 @@ object PlanningPage {
           UndoToasts(forester, toastPublisher),
           dragSession,
           sectionRequests.writer,
-          projectionStatus.map(_ == StatusTracker.Status.Busy).distinct
+          projectionStatus.map(_ == StatusTracker.Status.Busy).distinct,
+          manager,
+          openPlan
         ),
         SelectedSection.load(planStorage),
         sectionRequests.events,

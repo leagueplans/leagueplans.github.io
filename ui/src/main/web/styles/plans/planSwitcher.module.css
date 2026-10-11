@@ -124,3 +124,28 @@
   min-width: 0;
   display: grid;
 }
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+
+  border-top: 1px solid var(--navy-line);
+}
+
+.footerButton {
+  height: 28px;
+  padding: 0 10px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-panel);
+  color: var(--text-bright);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.footerButton:hover, .footerButton:focus-visible {
+  background-color: var(--navy-bar-hover);
+}

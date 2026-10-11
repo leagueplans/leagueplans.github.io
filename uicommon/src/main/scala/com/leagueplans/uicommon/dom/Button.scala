@@ -26,6 +26,10 @@ object Button {
       )
     )
 
+  /** A button that submits the form it's in. The form listens for the submission. */
+  def submit(): L.Button =
+    L.button(L.cls(Styles.button), L.`type`("submit"))
+
   @js.native @JSImport("/styles/common/button.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val button: String = js.native

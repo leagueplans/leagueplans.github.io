@@ -66,7 +66,15 @@ object Sections {
     planned(SectionKey.Combat, "Combat", SectionGroup.Actions, () => image(combatIcon)),
     planned(SectionKey.Map, "Map", SectionGroup.Plan, () => image(worldMapIcon)),
     planned(SectionKey.Timeline, "Timeline", SectionGroup.Plan, () => image(timelineIcon)),
-    planned(SectionKey.Settings, "Settings", SectionGroup.Plan, () => image(settingsIcon)),
+    SectionDef(
+      SectionKey.Settings,
+      "Settings",
+      SectionGroup.Plan,
+      () => image(settingsIcon),
+      visibleIn = _ => true,
+      Some(SettingsSection(_)),
+      fullWidth = true
+    ),
     SectionDef(
       SectionKey.Changelog,
       "Changelog",

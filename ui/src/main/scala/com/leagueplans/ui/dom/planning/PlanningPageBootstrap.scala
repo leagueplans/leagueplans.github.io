@@ -2,7 +2,7 @@ package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController}
-import com.leagueplans.ui.dom.plans.{LoadingStatus, PlanManager, PlanSwitcher}
+import com.leagueplans.ui.dom.plans.{LoadingStatus, OpenPlan, PlanManager, PlanSwitcher}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -18,6 +18,9 @@ import com.raquo.laminar.api.{L, enrichSource}
 
 
 object PlanningPageBootstrap {
+  /** @param onNewPlan called when the user asks to make a new plan, from the plan switcher
+    * @param onImport called when the user asks to import a plan file, from the plan switcher
+    */
   def apply(
     manager: PlanManager,
     initialPlan: Plan,
@@ -28,7 +31,9 @@ object PlanningPageBootstrap {
     contextMenu: ContextMenu,
     popover: Popover,
     modal: Modal,
-    toastPublisher: ToastHub.Publisher
+    toastPublisher: ToastHub.Publisher,
+    onNewPlan: () => Unit,
+    onImport: () => Unit
   ): L.Div = {
     val account = Var(ViewerAccountStorage.load())
     val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings, account.now())
@@ -41,6 +46,23 @@ object PlanningPageBootstrap {
     val name = Var(initialPlan.name)
     val planStorage = PlanLocalStorage(subscription.planID)
 
+    val openPlan = OpenPlan(
+      subscription.planID,
+      name.signal,
+      rename = newName => {
+        subscription.save(Rename(newName))
+        name.set(newName)
+        // So that the plan switcher lists the new name
+        manager.refreshPlans()
+      },
+      changeMode = mode => {
+        // The subscription only hears of changes made in other tabs
+        val newSettings = Plan.Settings.Deferred(mode)
+        subscription.save(newSettings)
+        settings.set(newSettings)
+      }
+    )
+
     // Once the user picks another plan, this one stays on the page, locked, until that one's ready
     val locked = manager.state.map {
       case PlanManager.State.Open(_, open) => open != subscription
@@ -52,8 +74,10 @@ object PlanningPageBootstrap {
     )
 
     PlanningPage(
+      manager,
+      openPlan,
       planStorage,
-      PlanSwitcher(manager, current, popover, tooltip),
+      PlanSwitcher(manager, current, popover, tooltip, onNewPlan, onImport),
       locked,
       LoadingStatus(manager.state, gameDataLoaded = Val(true)),
       settings.signal,

@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.section
 
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
+import com.leagueplans.ui.dom.plans.{OpenPlan, PlanManager}
 import com.leagueplans.ui.model.plan.{Effect, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player, ViewerAccount}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
@@ -30,6 +31,8 @@ import com.raquo.airstream.state.Var
   * @param openSection switches the planning page to a section, as if its icon in the rail were clicked
   * @param isRecalculating whether the player states are being recalculated, so the states on show
   *                        are about to change
+  * @param planManager opens, creates and deletes plans
+  * @param openPlan the plan that's open, and what can be done to it as a whole, such as renaming it
   */
 final case class SectionContext(
   displayedPlayer: Signal[Player],
@@ -50,5 +53,7 @@ final case class SectionContext(
   undoToasts: UndoToasts,
   dragSession: DragSession,
   openSection: Observer[SectionKey],
-  isRecalculating: Signal[Boolean]
+  isRecalculating: Signal[Boolean],
+  planManager: PlanManager,
+  openPlan: OpenPlan
 )
