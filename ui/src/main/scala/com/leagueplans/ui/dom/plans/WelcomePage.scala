@@ -75,12 +75,15 @@ object WelcomePage {
   def suggestedName(mode: Mode): String =
     s"My ${shortName(mode)} route"
 
-  /** @param cache the game data, which the animation of how the planner works is drawn from once it's read */
+  /** @param cache the game data, which the animation of how the planner works is drawn from once it's read
+    * @param onStart called when the user makes or imports a plan from here
+    */
   def apply(
     manager: PlanManager,
     cache: Signal[Option[Cache]],
     tooltip: Tooltip,
-    contextMenu: ContextMenu
+    contextMenu: ContextMenu,
+    onStart: () => Unit
   ): L.Div = {
     val mode = Var[Mode](cards.head.mode)
     val name = Var(suggestedName(cards.head.mode))
@@ -113,6 +116,7 @@ object WelcomePage {
       selection.changes.collect { case Selection.Readable(_, plan) => plan }.flatMapSwitch { plan =>
         isImporting.set(true)
         importFailure.set(None)
+        onStart()
         PlanFileImport.save(manager, plan)
       } --> Observer[Either[String, Unit]] {
         // The plan manager takes over the page when the plan opens
@@ -121,7 +125,10 @@ object WelcomePage {
           isImporting.set(false)
           importFailure.set(Some(reason))
       },
-      creations.events.flatMapSwitch(NewPlan.create(manager, _, _)) -->
+      creations.events.flatMapSwitch { (name, mode) =>
+        onStart()
+        NewPlan.create(manager, name, mode)
+      } -->
         Observer[Either[FileSystemError, PlanID]] {
           case Right(_) => ()
           case Left(error) =>

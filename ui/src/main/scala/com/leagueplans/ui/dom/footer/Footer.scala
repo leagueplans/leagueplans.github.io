@@ -1,5 +1,6 @@
 package com.leagueplans.ui.dom.footer
 
+import com.leagueplans.ui.dom.DevMode
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.StorageClient
@@ -9,7 +10,9 @@ import com.leagueplans.uicommon.facades.fontawesome.freebrands.FreeBrands
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.laminar.api.{L, textToTextNode}
+import com.raquo.airstream.core.Observer
+import com.raquo.laminar.api.{L, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
+import org.scalajs.dom.window
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.HTMLParagraphElement
 
@@ -28,6 +31,18 @@ object Footer {
       feedback(tooltip),
       L.sectionTag(
         L.cls(Styles.statuses),
+        // Pages that are otherwise hard to get to, which are easy to forget about
+        Option.when(DevMode.isOn)(
+          L.select(
+            L.cls(Styles.devPages),
+            L.aria.label("Show a page, for development"),
+            L.option(L.value(""), "Dev pages…"),
+            DevMode.Page.values.toList.map(page => L.option(L.value(page.key), page.label)),
+            L.onChange.mapToValue --> Observer[String](key =>
+              DevMode.Page.values.find(_.key == key).foreach(page => window.location.href = DevMode.url(page))
+            )
+          )
+        ),
         toStatus("Rendering", id = ProjectionClient.projectionStatusKey, statusTracker, tooltip),
         toStatus("File system", id = StorageClient.statusKey, statusTracker, tooltip),
         toStatus("Error detection", id = ProjectionClient.errorDetectionStatusKey, statusTracker, tooltip)
@@ -95,6 +110,7 @@ object Footer {
     val footer: String = js.native
 
     val attributions: String = js.native
+    val devPages: String = js.native
     val attribution: String = js.native
     val attributionLink: String = js.native
 

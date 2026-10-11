@@ -38,6 +38,8 @@ object Bootstrap {
     val manager = PlanManager(StorageClient(), toastPublisher)
     manager.start()
 
+    val pageOverride = DevMode.PageOverride(manager.state)
+
     L.div(
       L.cls(Styles.bootstrap),
       // The footer's credits wrap in narrow windows, so the toasts need to know how tall it is
@@ -47,10 +49,11 @@ object Bootstrap {
       modalElement.amend(L.cls(Styles.modal)),
       manager.status --> Observer(statusTracker.set(StorageClient.statusKey, _)),
       manager.hasUnsavedChanges --> Observer(warnBeforeClosing),
+      pageOverride.binder,
       L.div(
         L.cls(Styles.page),
         L.child <-- toPageSignal(
-          manager, statusTracker, tooltipController, contextMenuController, popoverController, modalController, toastPublisher
+          manager, pageOverride.state, () => pageOverride.leave(), statusTracker, tooltipController, contextMenuController, popoverController, modalController, toastPublisher
         ).map(_.amend(L.cls(Styles.pageContent))),
         footer
       )
@@ -84,8 +87,14 @@ object Bootstrap {
     case Welcome
   }
 
+  /** @param state what to show, which is the manager's state unless a page was asked for while
+    *              developing
+    * @param onStart called when the user starts a plan from the welcome screen
+    */
   private def toPageSignal(
     manager: PlanManager,
+    state: Signal[PlanManager.State],
+    onStart: () => Unit,
     statusTracker: StatusTracker,
     tooltipController: Tooltip,
     contextMenu: ContextMenu,
@@ -99,8 +108,7 @@ object Bootstrap {
     // Read alongside the plans, rather than after them
     val cache = EventStream.fromJsPromise(loadCache(toastPublisher)).map(Some(_)).toSignal(None)
     val gameDataLoaded = cache.map(_.nonEmpty).distinct
-
-    Signal.combine(manager.state, cache)
+    Signal.combine(state, cache)
       .scanLeft(next => (toPageKey(None, next), next))((previous, next) => (toPageKey(Some(previous._1), next), next))
       .splitOne((key, _) => key) {
       case (PageKey.Planning(subscription), (_, (PlanManager.State.Open(plan, _), Some(cache))), _) =>
@@ -119,11 +127,11 @@ object Bootstrap {
           onImport
         )
 
-      case (PageKey.Welcome, _, _) =>
-        WelcomePage(manager, cache, tooltipController, contextMenu)
-
       case (PageKey.Picker(notice), _, _) =>
         PlanPicker(manager, notice, tooltipController, onNewPlan, onImport)
+
+      case (PageKey.Welcome, _, _) =>
+        WelcomePage(manager, cache, tooltipController, contextMenu, onStart)
 
       case (_, _, signal) =>
         LoadingPage(manager, signal.map { case (_, (state, _)) => state }, gameDataLoaded, popover, tooltipController, onNewPlan, onImport)
