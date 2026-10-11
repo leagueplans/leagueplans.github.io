@@ -42,7 +42,7 @@
   height: 100vh;
   isolation: isolate;
   display: grid;
-  grid-template-rows: auto min-content;
+  grid-template-rows: minmax(0, 1fr) min-content;
 }
 
 .pageContent {

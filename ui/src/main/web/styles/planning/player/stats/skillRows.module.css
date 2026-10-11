@@ -327,3 +327,50 @@ button.row:hover, button.row:focus-visible {
     margin-left: 40px;
   }
 }
+
+/* A single short line, for where there's little room: the level, the name and what was gained,
+ * without what's to the next level. After the narrow rules above, which it replaces. */
+.compact .row {
+  height: 30px;
+  min-height: 0;
+  padding: 0 8px 0 4px;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.compact .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.compact .icon img {
+  width: 16px;
+  height: 16px;
+}
+
+.compact .level {
+  min-width: 18px;
+  font-size: 1rem;
+}
+
+.compact .middle {
+  flex: 1;
+  min-width: 0;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.compact .name {
+  white-space: nowrap;
+}
+
+.compact .next {
+  display: none;
+}
+
+.compact .lockedPill {
+  margin-left: 0;
+}
+

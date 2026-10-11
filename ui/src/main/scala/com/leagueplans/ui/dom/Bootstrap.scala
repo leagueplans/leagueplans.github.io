@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.footer.Footer
 import com.leagueplans.ui.dom.landing.LandingPage
 import com.leagueplans.ui.dom.planning.PlanningPageBootstrap
 import com.leagueplans.ui.dom.plans.form.{ImportPlanDialog, NewPlanDialog}
-import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager}
+import com.leagueplans.ui.dom.plans.{LoadingPage, PlanManager, WelcomePage}
 import com.leagueplans.ui.model.player.Cache
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.client.{PlanSubscription, StorageClient}
@@ -120,7 +120,10 @@ object Bootstrap {
           onImport
         )
 
-      // Until the plan picker and the welcome screen are built, the landing page stands in for both
+      case (PageKey.Welcome, _, _) =>
+        WelcomePage(manager, cache, tooltipController, contextMenu)
+
+      // Until the plan picker is built, the landing page stands in for it
       case (key, _, _) if key != PageKey.Loading =>
         val landingPage = LandingPage(Observer(manager.adopt), manager.storage, tooltipController, toastPublisher, modal)
         key match {

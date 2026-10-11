@@ -1,0 +1,302 @@
+/* The welcome screen's animation. The columns are laid out in the order the story is told, so that
+ * each caption sits under the column it's about. */
+.howItWorks {
+  --columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  font-family: var(--font-ui);
+  transition: opacity 400ms;
+}
+
+.picture {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--columns);
+  height: 222px;
+  overflow: hidden;
+
+  border: 1px solid var(--navy-line);
+  border-radius: 9px;
+}
+
+/* As the loop ends, before it starts again */
+.fading {
+  opacity: 0;
+}
+
+.column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.column + .column {
+  border-left: 2px solid black;
+}
+
+/* Like the plan's and the step details' bars */
+.columnHead {
+  flex: none;
+  box-sizing: border-box;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+
+  border-bottom: 1px solid var(--navy-line);
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.steps {
+  background-color: var(--navy-panel);
+}
+
+/* Coloured by the step tree's own backgrounds (background.module.css) */
+.step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 8px 0 calc(6px + var(--depth) * 18px);
+
+  border-bottom: 1px solid var(--navy-line);
+  font-size: 0.82rem;
+}
+
+.chevron {
+  flex: none;
+  width: 12px;
+  color: var(--text-muted);
+}
+
+.stepTitle {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.details {
+  background-color: var(--navy-panel);
+}
+
+.detailsBody {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sectionLabel {
+  padding: 6px 10px 2px;
+  color: var(--text-dim);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Steps, rows and items slide in as they're first shown */
+.appearing {
+  animation: appear 350ms ease-out both;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+/* Steps open out instead, moving the steps below them down, then their text fades in */
+.step.appearing {
+  overflow: hidden;
+  animation: open 600ms ease-out both;
+}
+
+@keyframes open {
+  from {
+    min-height: 0;
+    max-height: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  to {
+    max-height: 31px;
+  }
+}
+
+/* A mistake, once pointed out: everything but the step that can't be done, and why, fades back,
+ * and those two are ringed in red until it's fixed */
+.step, .detailRow, .account > * {
+  transition: opacity 400ms;
+}
+
+.problem {
+  transition: color 400ms, background-color 400ms;
+}
+
+.spotlit .problem {
+  margin-left: -3px;
+  padding: 0 3px;
+
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--red) 20%, transparent);
+  color: #ff9a90;
+  font-weight: 600;
+}
+
+.spotlit .step:not(.spotlight),
+.spotlit .detailRow:not(.spotlight),
+.spotlit .account > * {
+  opacity: 0.35;
+}
+
+.spotlight, .fix {
+  position: relative;
+}
+
+.spotlit .spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+
+  border: 2px solid var(--red);
+  border-radius: 4px;
+  animation: ring 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes ring {
+  from {
+    opacity: 1;
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--red) 60%, transparent);
+  }
+  to {
+    opacity: 0.45;
+    box-shadow: none;
+  }
+}
+
+/* The step that fixes it is ringed in green as it's written, which then fades */
+.fix::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+
+  border: 2px solid var(--green);
+  border-radius: 4px;
+  animation: fixed 2s ease-out 300ms both;
+}
+
+@keyframes fixed {
+  from {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--green) 60%, transparent);
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Only what the story needs: the first slots of the inventory, and the skills it trains */
+.account {
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+
+  background-color: #645c52;
+}
+
+.inventory {
+  display: grid;
+  grid-template-columns: repeat(4, 36px);
+  grid-auto-rows: 28px;
+  gap: 2px 6px;
+  padding: 6px 10px;
+
+  border: 1px solid #2b251d;
+  border-radius: 5px;
+  background-color: #3e3529;
+}
+
+.slot {
+  display: grid;
+  place-items: center;
+}
+
+/* The Skills section's rows decide their columns by the width of their container */
+.skills {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  container-type: inline-size;
+}
+
+.skill {
+  transition: opacity 400ms;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.captions {
+  display: grid;
+  grid-template-columns: var(--columns);
+  margin-top: 8px;
+}
+
+.caption {
+  display: grid;
+  padding: 8px 10px 0;
+
+  border-top: 2px solid var(--navy-line);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  transition: border-color 600ms ease-in-out, color 600ms ease-in-out;
+}
+
+/* The texts a caption changes between share its place. The one going fades out before the one
+ * coming fades in. */
+.captionText {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: opacity 250ms 250ms;
+}
+
+.captionText.hidden {
+  transition-delay: 0s;
+}
+
+/* Coloured apart from the caption once lit, so it eases on its own */
+.caption span {
+  transition: color 600ms ease-in-out;
+}
+
+.caption b {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.lit {
+  border-color: var(--navy-accent);
+  color: var(--text-bright);
+}
+
+.lit span {
+  color: var(--text-muted);
+}

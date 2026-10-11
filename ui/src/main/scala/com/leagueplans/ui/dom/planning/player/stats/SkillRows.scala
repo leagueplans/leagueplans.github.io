@@ -39,6 +39,9 @@ object SkillRows {
     * @param multiplierNote how a skill's multiplier stands, for its chip's tooltip
     * @param onClick told the skill and its row when a row is clicked
     * @param modifiers added to each skill's row, such as what marks its card as open
+    * @param skills the skills to show, which is all of them in the game's order unless only some are wanted
+    * @param compact whether the rows are a single short line, without the exp to the next level,
+    *                for small pictures such as the welcome screen's
     */
   def apply(
     displayed: Signal[Player],
@@ -48,12 +51,15 @@ object SkillRows {
     multiplierNote: Signal[Skill => String],
     tooltip: Tooltip,
     onClick: (Skill, Element) => Unit,
-    modifiers: Skill => L.Modifier[L.Button]
+    modifiers: Skill => L.Modifier[L.Button],
+    skills: List[Skill] = columnOrder,
+    compact: Boolean = false
   ): L.Div =
     L.div(
       L.cls(Styles.rows, Styles.skills),
+      if (compact) L.cls(Styles.compact) else L.emptyMod,
       // A column at a time, as the game's stats panel reads, so the order holds with fewer columns
-      columnOrder.map { skill =>
+      skills.map { skill =>
         val state = Signal.combine(displayed, baseline, multiplierOf).map((player, baseline, multiplierOf) =>
           rowState(skill, player, baseline, multiplierOf)
         ).distinct
@@ -195,6 +201,7 @@ object SkillRows {
   private[stats] object Styles extends js.Object {
     val rows: String = js.native
     val skills: String = js.native
+    val compact: String = js.native
     val row: String = js.native
     val maxed: String = js.native
     val locked: String = js.native

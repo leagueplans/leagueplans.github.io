@@ -14,8 +14,8 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 
-/** What choosing a plan file to import involves: picking the file, reading it, and saving the
-  * plan it holds
+/** What choosing a plan file to import involves, shared by the import dialog and the welcome
+  * screen: picking the file, reading it, and saving the plan it holds
   */
 object PlanFileImport {
   /** What has been chosen to import */

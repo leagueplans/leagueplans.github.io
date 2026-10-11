@@ -1,0 +1,374 @@
+/* Shown when this browser has no plans. Centred in the page, and scrolls inside it, above the
+ * footer, when it's too tall. */
+.page {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+
+  background-color: var(--bg-base);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  scrollbar-color: var(--navy-border) var(--bg-base);
+}
+
+.content {
+  width: 100%;
+  max-width: 1080px;
+  /* Centres the content, and leaves it at the top rather than cut off when it doesn't fit */
+  margin-block: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+.lede {
+  margin: -12px 0 0;
+  color: var(--text-soft);
+  font-size: 0.97rem;
+  line-height: 1.55;
+}
+
+.muted {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Holds the animation's height while the game data is read, which is its height at full size. Once
+ * it's there, it sizes itself, as it shrinks where the page is narrow. */
+.reading {
+  min-height: 280px;
+}
+
+/* On a phone the animation would shrink too small to read, and the title and lede say what the
+ * planner is for without it */
+@media (max-width: 640px) {
+  .howItWorks {
+    display: none;
+  }
+}
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+
+  border: 1px solid var(--navy-line);
+  border-radius: 8px;
+  background-color: var(--navy-panel);
+}
+
+.startCard {
+  flex: 999 1 560px;
+  gap: 14px;
+}
+
+.importCard {
+  flex: 1 1 280px;
+  gap: 10px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 600;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+
+  border: 1px solid var(--navy-line);
+  border-radius: 7px;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font: inherit;
+  text-align: left;
+}
+
+.mode:hover, .mode:focus-visible {
+  border-color: #4a5a80;
+}
+
+/* The same amber as the plan switcher's open plan */
+.modeSelected, .modeSelected:hover, .modeSelected:focus-visible {
+  border-color: #ff981f;
+  background-color: #241d12;
+  box-shadow: 0 0 0 1px #ff981f;
+}
+
+.modeHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modeIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+
+  border-radius: 6px;
+  background-color: #2b251d;
+}
+
+.modeIcon img {
+  max-width: 18px;
+  max-height: 18px;
+}
+
+.modeName {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.modeDescription {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.disclosure {
+  align-self: flex-start;
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: #8fb0ee;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.disclosure:hover, .disclosure:focus-visible {
+  color: #b9cdf5;
+}
+
+.olderModes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.olderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.olderHeading {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.olderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.olderMode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+
+  border: 1px solid var(--navy-line);
+  border-radius: 7px;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font: inherit;
+  text-align: left;
+}
+
+.olderText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.olderName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.olderSubtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.olderMode:hover, .olderMode:focus-visible {
+  border-color: #4a5a80;
+}
+
+.olderModeSelected, .olderModeSelected:hover, .olderModeSelected:focus-visible {
+  border-color: #ff981f;
+  background-color: #241d12;
+  box-shadow: 0 0 0 1px #ff981f;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 10px;
+
+  border: 1px solid var(--red-border);
+  border-radius: 5px;
+  background-color: var(--red-tint);
+  color: var(--text-bright);
+  font-size: 0.78rem;
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.nameField {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.field {
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 10px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+}
+
+.field:focus-visible {
+  outline: 2px solid var(--navy-accent);
+  outline-offset: 1px;
+}
+
+.primary {
+  height: 36px;
+  padding: 0 18px;
+
+  border: 1px solid var(--navy-accent);
+  border-radius: 5px;
+  background-color: #3d5a9c;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.primary:enabled:hover, .primary:enabled:focus-visible {
+  background-color: #4a69b0;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+}
+
+.secondary {
+  height: 34px;
+  padding: 0 14px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+}
+
+.secondary:enabled:hover, .secondary:enabled:focus-visible {
+  background-color: var(--navy-bar-hover);
+}
+
+.secondary:disabled {
+  opacity: 0.45;
+}
+
+.drop {
+  flex: 1;
+  box-sizing: border-box;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+
+  border: 1px dashed #4a5a80;
+  border-radius: 7px;
+  background-color: var(--navy-well);
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.dragging {
+  border-style: solid;
+  border-color: var(--navy-accent);
+  background-color: var(--navy-bar);
+}
+
+.dropIcon {
+  width: 28px;
+  height: 28px;
+  color: #8fb0ee;
+}
+
+.dropTitle {
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
