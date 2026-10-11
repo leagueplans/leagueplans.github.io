@@ -16,8 +16,11 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object PlanElement {
+  /** @param hotkeysEnabled whether the keyboard shortcuts act, which they shouldn't while the plan
+    *                       is hidden
+    */
   def apply(
-    planName: Signal[String],
+    hotkeysEnabled: Signal[Boolean],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     focusController: FocusController,
@@ -43,7 +46,7 @@ object PlanElement {
     L.div(
       L.cls(Styles.plan),
       undoController.modifier,
-      PlanHeader(planName, focusContext.focusID, tooltip, modal, newStepDraft, stepDeleter, undoController).amend(
+      PlanHeader(focusContext.focusID, tooltip, modal, newStepDraft, stepDeleter, undoController).amend(
         L.cls(Styles.header)
       ),
       InteractiveForest(
@@ -64,6 +67,7 @@ object PlanElement {
         newStepDraft
       ).amend(L.cls(Styles.steps)),
       HotkeyModifiers(
+        hotkeysEnabled,
         focusContext.focusID,
         focusController,
         stepMover,

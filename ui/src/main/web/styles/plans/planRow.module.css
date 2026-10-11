@@ -1,0 +1,15 @@
+/* The icon on a plan made with an older version of the site */
+.olderVersionIcon {
+  display: grid;
+  color: var(--text-dim);
+}
+
+.olderVersionIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tooltip {
+  width: max-content;
+  max-width: 15rem;
+}

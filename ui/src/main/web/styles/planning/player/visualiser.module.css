@@ -27,6 +27,12 @@
   font-family: var(--font-ui);
 }
 
+/* Between the plan's name and the section's title */
+.crumb {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
 .title {
   margin: 0;
 

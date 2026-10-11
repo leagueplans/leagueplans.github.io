@@ -74,6 +74,7 @@ object Sections {
       () => ChangelogIcon(changelogIcon),
       visibleIn = _ => true,
       Some(ChangelogSection(_)),
+      fullWidth = true,
       note = ChangelogSeen.unread.map(Option.when(_)("new changes"))
     )
   )

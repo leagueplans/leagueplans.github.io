@@ -44,27 +44,9 @@
   height: 15px;
 }
 
-.name {
+/* Pushes the step buttons to the right, away from the history and shortcuts buttons */
+.spacer {
   flex: 1;
-  min-width: 0;
-  padding: 0 4px;
-
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  color: var(--text-bright);
-  font-size: 0.875rem;
-  /* The heaviest weight the page loads. Heavier weights are faked by the browser, and blur. */
-  font-weight: 500;
-}
-
-.separator {
-  flex: none;
-  width: 1px;
-  height: 18px;
-  margin: 0 4px;
-  background-color: var(--navy-line);
 }
 
 .textButton {
@@ -136,7 +118,7 @@
 /* Too narrow for every button's words, and some of the plan's name. "Delete step" keeps its words,
  * so that it can't be mistaken for deleting the plan. */
 @container (max-width: 360px) {
-  .separator, .addStepLabel, .deleteStepIcon {
+  .addStepLabel, .deleteStepIcon {
     display: none;
   }
 

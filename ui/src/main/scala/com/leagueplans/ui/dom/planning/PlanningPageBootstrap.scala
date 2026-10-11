@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController}
+import com.leagueplans.ui.dom.plans.{LoadingStatus, PlanManager, PlanSwitcher}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -12,12 +13,13 @@ import com.leagueplans.ui.storage.local.{PlanLocalStorage, ViewerAccountStorage}
 import com.leagueplans.ui.storage.model.{Rename, StepUpdates}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, Popover, ToastHub, Tooltip}
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.airstream.state.Var
+import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
 
 
 object PlanningPageBootstrap {
   def apply(
+    manager: PlanManager,
     initialPlan: Plan,
     subscription: PlanSubscription,
     statusTracker: StatusTracker,
@@ -39,9 +41,21 @@ object PlanningPageBootstrap {
     val name = Var(initialPlan.name)
     val planStorage = PlanLocalStorage(subscription.planID)
 
+    // Once the user picks another plan, this one stays on the page, locked, until that one's ready
+    val locked = manager.state.map {
+      case PlanManager.State.Open(_, open) => open != subscription
+      case _ => true
+    }.distinct
+    // Names the plan being opened in its place, if there is one
+    val current = Signal.combine(manager.state, name.signal).map((state, ownName) =>
+      PlanSwitcher.toCurrent(state).filter((id, _) => id != subscription.planID).orElse(Some((subscription.planID, ownName)))
+    )
+
     PlanningPage(
       planStorage,
-      name.signal,
+      PlanSwitcher(manager, current, popover, tooltip),
+      locked,
+      LoadingStatus(manager.state, gameDataLoaded = Val(true)),
       settings.signal,
       account,
       forester,

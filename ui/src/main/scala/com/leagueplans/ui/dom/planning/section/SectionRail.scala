@@ -17,7 +17,7 @@ object SectionRail {
     viewed: Signal[Option[SectionKey]],
     select: Observer[SectionKey],
     tooltip: Tooltip
-  ): L.Element =
+  ): L.HtmlElement =
     L.navTag(
       L.cls(Styles.rail),
       L.aria.label("Sections"),

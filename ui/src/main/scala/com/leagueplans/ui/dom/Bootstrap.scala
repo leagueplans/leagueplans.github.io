@@ -73,7 +73,10 @@ object Bootstrap {
     val footer: String = js.native
   }
 
-  /** What the page shows: the planning page once a plan is open and the game data has loaded */
+  /** What the page shows: the planning page once a plan is open and the game data has loaded.
+    * While another plan opens, the plan that was open stays on the page, locked, rather than
+    * blinking out and back in.
+    */
   private enum PageKey {
     case Loading
     case Planning(subscription: PlanSubscription)
@@ -94,14 +97,12 @@ object Bootstrap {
     val cache = EventStream.fromJsPromise(loadCache(toastPublisher)).map(Some(_)).toSignal(None)
     val gameDataLoaded = cache.map(_.nonEmpty).distinct
 
-    Signal.combine(manager.state, cache).splitOne {
-      case (PlanManager.State.Open(_, subscription), Some(_)) => PageKey.Planning(subscription)
-      case (PlanManager.State.Picker(notice), _) => PageKey.Picker(notice)
-      case (PlanManager.State.Welcome, _) => PageKey.Welcome
-      case _ => PageKey.Loading
-    } {
-      case (PageKey.Planning(subscription), (PlanManager.State.Open(plan, _), Some(cache)), _) =>
+    Signal.combine(manager.state, cache)
+      .scanLeft(next => (toPageKey(None, next), next))((previous, next) => (toPageKey(Some(previous._1), next), next))
+      .splitOne((key, _) => key) {
+      case (PageKey.Planning(subscription), (_, (PlanManager.State.Open(plan, _), Some(cache))), _) =>
         PlanningPageBootstrap(
+          manager,
           plan,
           subscription,
           statusTracker,
@@ -126,9 +127,21 @@ object Bootstrap {
         }
 
       case (_, _, signal) =>
-        LoadingPage(signal.map((state, _) => state), gameDataLoaded)
+        LoadingPage(manager, signal.map { case (_, (state, _)) => state }, gameDataLoaded, popover, tooltipController)
     }
   }
+
+  private def toPageKey(previous: Option[PageKey], next: (PlanManager.State, Option[Cache])): PageKey =
+    next match {
+      case (PlanManager.State.Open(_, subscription), Some(_)) => PageKey.Planning(subscription)
+      case (PlanManager.State.Picker(notice), _) => PageKey.Picker(notice)
+      case (PlanManager.State.Welcome, _) => PageKey.Welcome
+      case _ =>
+        previous match {
+          case Some(planning: PageKey.Planning) => planning
+          case _ => PageKey.Loading
+        }
+    }
 
   /** Asks the browser to warn before the tab is closed while changes are being saved */
   private def warnBeforeClosing(hasUnsavedChanges: Boolean): Unit =

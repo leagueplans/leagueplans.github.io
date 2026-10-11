@@ -18,6 +18,8 @@ import com.raquo.laminar.api.L
   * @param visibleIn whether the section applies to plans with the given settings
   * @param render builds the section, or is empty for a section that's planned but not built yet.
   *               Planned sections are shown greyed out in the rail and can't be opened.
+  * @param fullWidth whether the section isn't about the focused step, so the plan and the step
+  *                  details are hidden while it's open
   * @param note added to the section's title in the rail's tooltip and in its name for screen
   *             readers, such as that there are new changes
   */
@@ -28,5 +30,6 @@ final case class SectionDef(
   icon: () => L.Element,
   visibleIn: Plan.Settings => Boolean,
   render: Option[SectionContext => L.HtmlElement],
+  fullWidth: Boolean = false,
   note: Signal[Option[String]] = Val(None)
 )

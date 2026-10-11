@@ -3,13 +3,15 @@ package com.leagueplans.ui.dom.planning.plan
 import com.leagueplans.ui.dom.planning.details.RowSelection
 import com.leagueplans.ui.dom.planning.plan.history.UndoController
 import com.leagueplans.ui.model.plan.Step
-import com.raquo.airstream.core.Signal
+import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier}
 import com.raquo.laminar.modifiers.Binder
 import org.scalajs.dom.{Element, HTMLElement, KeyValue, KeyboardEvent, document, window}
 
 object HotkeyModifiers {
+  /** @param enabled whether the shortcuts act, which they shouldn't while the plan is hidden */
   def apply(
+    enabled: Signal[Boolean],
     focus: Signal[Option[Step.ID]],
     focusController: FocusController,
     stepMover: StepMover,
@@ -21,29 +23,38 @@ object HotkeyModifiers {
     rowSelection: RowSelection
   ): L.Modifier[L.Element] =
     List(
-      toFocusChangeListener(focusController),
-      toStepMovementListener(focus, stepMover),
-      toClipboardListener(focus, stepClipboard),
-      toStepModifierListeners(focus, newStepDraft, stepDeleter, editDescription, rowSelection),
-      toRowEditListener(rowSelection),
-      toHistoryListener(undoController)
+      toFocusChangeListener(enabled, focusController),
+      toStepMovementListener(enabled, focus, stepMover),
+      toClipboardListener(enabled, focus, stepClipboard),
+      toStepModifierListeners(enabled, focus, newStepDraft, stepDeleter, editDescription, rowSelection),
+      toRowEditListener(enabled, rowSelection),
+      toHistoryListener(enabled, undoController)
     )
 
   /** D shows or hides the step details */
   def detailsToggle(enabled: Signal[Boolean], toggle: () => Unit): Binder.Base =
-    L.documentEvents(_.onKeyUp)
+    keyUps(enabled)
       .filterNot(shouldIgnore)
       .filter(event => !event.ctrlKey && !event.metaKey && !event.altKey)
-      .filter(_.key.toLowerCase == "d")
-      .compose(_.withCurrentValueOf(enabled)) --> { (_, isEnabled) => if (isEnabled) toggle() }
+      .filter(_.key.toLowerCase == "d") --> (_ => toggle())
+
+  private def keyDowns(enabled: Signal[Boolean]): EventStream[KeyboardEvent] =
+    L.documentEvents(_.onKeyDown).compose(whileEnabled(enabled))
+
+  private def keyUps(enabled: Signal[Boolean]): EventStream[KeyboardEvent] =
+    L.documentEvents(_.onKeyUp).compose(whileEnabled(enabled))
+
+  private def whileEnabled(enabled: Signal[Boolean])(events: EventStream[KeyboardEvent]): EventStream[KeyboardEvent] =
+    events.withCurrentValueOf(enabled).collect { case (event, true) => event }
 
   // Listens on keydown, because writing to the clipboard requires a user activation,
   // which keyup doesn't grant
   private def toClipboardListener(
+    enabled: Signal[Boolean],
     focusSignal: Signal[Option[Step.ID]],
     stepClipboard: StepClipboard
   ): Binder.Base =
-    L.documentEvents(_.onKeyDown)
+    keyDowns(enabled)
       .filterNot(shouldIgnore)
       .filter(event => (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey)
       .filter(_ => stepClipboard.isSupported)
@@ -66,8 +77,8 @@ object HotkeyModifiers {
   private def hasTextSelection: Boolean =
     Option(window.getSelection()).exists(!_.isCollapsed)
 
-  private def toFocusChangeListener(controller: FocusController): Binder.Base =
-    L.documentEvents(_.onKeyDown).filterNot(shouldIgnore).filter(_.ctrlKey) --> (event =>
+  private def toFocusChangeListener(enabled: Signal[Boolean], controller: FocusController): Binder.Base =
+    keyDowns(enabled).filterNot(shouldIgnore).filter(_.ctrlKey) --> (event =>
       event.key match {
         case KeyValue.ArrowRight => controller.firstChild()
         case KeyValue.ArrowLeft => controller.parent()
@@ -78,10 +89,11 @@ object HotkeyModifiers {
     )
 
   private def toStepMovementListener(
+    enabled: Signal[Boolean],
     focusSignal: Signal[Option[Step.ID]],
     mover: StepMover
   ): Binder.Base =
-    L.documentEvents(_.onKeyDown)
+    keyDowns(enabled)
       .filterNot(shouldIgnore)
       .filter(event => event.altKey && !event.ctrlKey)
       .compose(_.withCurrentValueOf(focusSignal)) --> {
@@ -102,13 +114,14 @@ object HotkeyModifiers {
       }
 
   private def toStepModifierListeners(
+    enabled: Signal[Boolean],
     focusSignal: Signal[Option[Step.ID]],
     newStepDraft: NewStepDraft,
     stepDeleter: StepDeleter,
     editDescription: Step.ID => Unit,
     rowSelection: RowSelection
   ): Binder.Base =
-    L.documentEvents(_.onKeyUp)
+    keyUps(enabled)
       .filterNot(shouldIgnore)
       .map(_.key)
       .compose(_.withCurrentValueOf(focusSignal)) --> {
@@ -121,8 +134,8 @@ object HotkeyModifiers {
 
   /** Enter edits the selected effect or requirement's amount. Enter on a button or a step keeps
     * its usual meaning. */
-  private def toRowEditListener(rowSelection: RowSelection): Binder.Base =
-    L.documentEvents(_.onKeyDown)
+  private def toRowEditListener(enabled: Signal[Boolean], rowSelection: RowSelection): Binder.Base =
+    keyDowns(enabled)
       .filterNot(shouldIgnore)
       .filter(event => event.key == KeyValue.Enter && !event.altKey && !event.ctrlKey && !event.metaKey)
       .filter(event =>
@@ -135,8 +148,8 @@ object HotkeyModifiers {
 
   // Listens on keydown, so that holding the keys repeats the undo or redo, as it does in text
   // boxes. Text boxes are ignored, so they keep their own undo history.
-  private def toHistoryListener(controller: UndoController): Binder.Base =
-    L.documentEvents(_.onKeyDown)
+  private def toHistoryListener(enabled: Signal[Boolean], controller: UndoController): Binder.Base =
+    keyDowns(enabled)
       .filterNot(shouldIgnore)
       .filter(event => (event.ctrlKey || event.metaKey) && !event.altKey) --> { event =>
         (event.key.toLowerCase, event.shiftKey) match {

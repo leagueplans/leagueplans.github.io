@@ -33,6 +33,40 @@
   }
 }
 
+/* Sections that aren't about the focused step hide the plan and the step details. They stay in
+ * the page, so that they keep their state. */
+.page.fullWidth {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "banner"
+    "state";
+}
+
+.fullWidth .plan, .fullWidth .details {
+  display: none;
+}
+
+/* While another plan opens, this one stays, dimmed, with how the other's coming along over it */
+.page.locked {
+  position: relative;
+}
+
+/* Darkened rather than faded, so that what's behind doesn't show through */
+.locked [inert] {
+  filter: brightness(0.45);
+  transition: filter 150ms;
+}
+
+.loadingStatus {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
 .banner {
   grid-area: banner;
 }

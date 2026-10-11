@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, FocusController, HotkeyModifiers, PlanElement}
 import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.dom.planning.player.Visualiser
-import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, SectionKey, Sections, SelectedSection}
+import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContext, SectionDef, SectionKey, Sections, SelectedSection}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
@@ -19,14 +19,23 @@ import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, enrichSource}
+import com.raquo.laminar.codecs.BooleanAsAttrPresenceCodec
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object PlanningPage {
+  /** @param planSwitcher names the plan and opens a list of plans to switch to. It starts the
+    *                     sections' header.
+    * @param locked whether the page is waiting to be replaced by another plan, which is being
+    *               opened. Everything but the plan switcher is dimmed and can't be used.
+    * @param loadingStatus says how the other plan is coming along, while the page is locked
+    */
   def apply(
     planStorage: PlanLocalStorage,
-    name: Signal[String],
+    planSwitcher: L.Element,
+    locked: Signal[Boolean],
+    loadingStatus: L.Element,
     settings: Signal[Plan.Settings],
     account: Var[ViewerAccount],
     forester: Forester[Step.ID, Step],
@@ -49,12 +58,17 @@ object PlanningPage {
     val fieldEditRequests = EventBus[EditRequest]()
     val rowSelection = RowSelection()
     val sectionRequests = EventBus[SectionKey]()
+    val viewedSection = Var(Option.empty[SectionDef])
+    // The plan and step details stay mounted while hidden, so that the step tree keeps its scroll
+    // position, and any drafts
+    val isFullWidth = viewedSection.signal.map(_.exists(_.fullWidth)).distinct
+    val hotkeysEnabled = Signal.combine(isFullWidth, locked).map(!_ && !_)
     val dragSession = DragSession()
     val stepEditor = StepEditor(forester, focusContext, cache.items)
 
     val planElement =
       PlanElement(
-        name,
+        hotkeysEnabled,
         forester,
         focusContext,
         focusController,
@@ -109,7 +123,12 @@ object PlanningPage {
         SelectedSection.load(planStorage),
         sectionRequests.events,
         Observer(SelectedSection.save(planStorage, _)),
-        L.child <-- renderModeControl,
+        viewedSection.writer,
+        locked,
+        planSwitcher,
+        L.child <-- isFullWidth.flatMapSwitch(isFullWidth =>
+          if (isFullWidth) Val(L.emptyNode) else renderModeControl
+        ),
         tooltip
       )
 
@@ -153,6 +172,8 @@ object PlanningPage {
 
     L.div(
       L.cls(Styles.page),
+      L.cls(Styles.fullWidth) <-- isFullWidth,
+      L.cls(Styles.locked) <-- locked,
       // One duration for the details' slides and fades, in the stylesheets and DetailsColumn
       L.onMountCallback { ctx =>
         ctx.thisNode.ref.style.setProperty("--details-animation", s"${ColumnLayout.detailsAnimation.toMillis}ms")
@@ -167,30 +188,43 @@ object PlanningPage {
       hasFocus --> (focused => if (!focused) layout.collapseDetails()),
       dragSession.binder,
       stepEditor.binder,
-      HotkeyModifiers.detailsToggle(hasFocus, () => layout.toggleDetails()),
-      L.child.maybe <-- storageStatus.map(toStorageFailureBanner(_).map(_.amend(L.cls(Styles.banner)))),
+      HotkeyModifiers.detailsToggle(
+        Signal.combine(hasFocus, hotkeysEnabled).map(_ && _),
+        () => layout.toggleDetails()
+      ),
+      // The plan's storage is closed once another plan's picked, which isn't a problem to report
+      L.child.maybe <-- Signal.combine(storageStatus, locked).map((status, locked) =>
+        Option.unless(locked)(status).flatMap(toStorageFailureBanner).map(_.amend(L.cls(Styles.banner)))
+      ),
       visualiser.amend(L.cls(Styles.state)),
       planElement.amend(
         L.cls(Styles.plan),
+        inert <-- locked,
         Splitter(
           () => layout.currentPlanWidth(),
           Observer(layout.resizePlan),
           onRelease = Observer(_ => layout.save())
         )
       ),
-      detailsColumn.amend(L.cls(Styles.details))
+      detailsColumn.amend(L.cls(Styles.details), inert <-- locked),
+      L.child.maybe <-- locked.map(Option.when(_)(L.div(L.cls(Styles.loadingStatus), loadingStatus)))
     )
   }
 
   @js.native @JSImport("/styles/planning/planningPage.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val page: String = js.native
+    val fullWidth: String = js.native
+    val locked: String = js.native
+    val loadingStatus: String = js.native
     val banner: String = js.native
     val state: String = js.native
     val plan: String = js.native
     val details: String = js.native
     val editor: String = js.native
   }
+
+  private val inert = L.htmlAttr("inert", BooleanAsAttrPresenceCodec)
 
   private def toStorageFailureBanner(status: StatusTracker.Status): Option[L.Div] =
     status match {

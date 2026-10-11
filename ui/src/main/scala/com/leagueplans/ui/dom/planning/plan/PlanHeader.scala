@@ -17,7 +17,6 @@ import scala.scalajs.js.annotation.JSImport
 
 object PlanHeader {
   def apply(
-    planName: Signal[String],
     focus: Signal[Option[Step.ID]],
     tooltip: Tooltip,
     modal: Modal,
@@ -27,15 +26,14 @@ object PlanHeader {
   ): L.Div =
     L.div(
       L.cls(Styles.header),
-      showShortcutsButton(tooltip, modal),
-      L.span(L.cls(Styles.name), L.text <-- planName),
       toHistoryButton(undoIcon, "Undo", "Ctrl+Z", undoController.undoLabel, tooltip)(
         undoController.undo()
       ),
       toHistoryButton(redoIcon, "Redo", "Ctrl+Shift+Z", undoController.redoLabel, tooltip)(
         undoController.redo()
       ),
-      L.span(L.cls(Styles.separator)),
+      showShortcutsButton(tooltip, modal),
+      L.span(L.cls(Styles.spacer)),
       toAddStepButton(focus, newStepDraft, tooltip),
       L.child <-- toDeleteStepButton(focus, stepDeleter, tooltip)
     )
@@ -45,8 +43,7 @@ object PlanHeader {
     val header: String = js.native
     val iconButton: String = js.native
     val icon: String = js.native
-    val name: String = js.native
-    val separator: String = js.native
+    val spacer: String = js.native
     val textButton: String = js.native
     val textButtonIcon: String = js.native
     val addStepButton: String = js.native

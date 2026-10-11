@@ -1,0 +1,126 @@
+/* The plan's name, at the start of the sections' header */
+.button {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 340px;
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  /* As large as the section's title beside it */
+  font-size: 1.05rem;
+  /* The heaviest weight the page loads. Heavier weights are faked by the browser, and blur. */
+  font-weight: 500;
+  text-align: left;
+  text-shadow: 1px 1px black;
+}
+
+.button:hover, .button:focus-visible, .open {
+  border-color: #7d7263;
+  background-color: #5a4f40;
+}
+
+.buttonName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  color: var(--text-muted);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: min(390px, calc(100vw - 16px));
+  font-size: 0.8125rem;
+}
+
+.list {
+  max-height: 400px;
+  overflow: auto;
+  padding: 6px;
+  scrollbar-color: var(--navy-border) var(--navy-deep);
+}
+
+.label {
+  padding: 6px 8px 4px;
+  color: var(--text-dim);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The open plan gets a slot of its own, so that it can't be mistaken for one to switch to */
+.current {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 8px 10px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 6px;
+  background-color: var(--navy-bar);
+}
+
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.meta {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.separator {
+  height: 0;
+  margin: 8px 4px 2px;
+  border: 0;
+  border-top: 1px solid var(--navy-line);
+}
+
+.row {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 6px;
+  padding: 7px 8px;
+
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-bright);
+  font: inherit;
+  text-align: left;
+}
+
+.row:hover, .row:focus-visible {
+  background-color: var(--navy-bar);
+}
+
+.rowText {
+  min-width: 0;
+  display: grid;
+}

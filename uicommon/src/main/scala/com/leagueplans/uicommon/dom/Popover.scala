@@ -49,11 +49,22 @@ final class Popover private[Popover](status: Var[Option[Popover.Open]]) {
     * @param boundary the area the card should prefer to stay within, such as the column the
     *                 anchor sits in, so that the card doesn't cover the rest of the page
     * @param below whether to open below the anchor rather than beside it
+    * @param alignStart whether a card opened below the anchor lines up with the anchor's left
+    *                   edge, rather than its right
+    * @param immediately opens the card now, rather than deferring, for when it isn't opened by a click
     */
-  def open(anchor: Element, contents: L.HtmlElement, boundary: Option[Element] = None, below: Boolean = false): Unit =
-    js.timers.setTimeout(0)(
-      status.set(Some(Popover.Open(anchor, decorate(anchor, contents, boundary, below))))
-    ): Unit
+  def open(
+    anchor: Element,
+    contents: L.HtmlElement,
+    boundary: Option[Element] = None,
+    below: Boolean = false,
+    alignStart: Boolean = false,
+    immediately: Boolean = false
+  ): Unit = {
+    def show(): Unit =
+      status.set(Some(Popover.Open(anchor, decorate(anchor, contents, boundary, below, alignStart))))
+    if (immediately) show() else js.timers.setTimeout(0)(show()): Unit
+  }
 
   def close(): Unit =
     status.set(None)
@@ -71,17 +82,31 @@ final class Popover private[Popover](status: Var[Option[Popover.Open]]) {
       if (isOpenOn(element.ref)) close()
     )
 
-  private def decorate(anchor: Element, contents: L.HtmlElement, maybeBoundary: Option[Element], below: Boolean): L.HtmlElement = {
+  private def decorate(
+    anchor: Element,
+    contents: L.HtmlElement,
+    maybeBoundary: Option[Element],
+    below: Boolean,
+    alignStart: Boolean
+  ): L.HtmlElement = {
     val flipBoundary: js.UndefOr[Boundary] = maybeBoundary match {
       case Some(element) => element
       case None => js.undefined
     }
     val config =
       FloatingConfig(
-        placement = Some(if (below) Placement.bottomEnd else Placement.rightStart),
+        placement = Some(
+          if (!below) Placement.rightStart
+          else if (alignStart) Placement.bottomStart
+          else Placement.bottomEnd
+        ),
         offset = Some(new OffsetOptions { mainAxis = if (below) 4 else 8 }),
         flip = Some(new FlipOptions {
-          fallbackPlacements = js.Array(if (below) Placement.topEnd else Placement.leftStart)
+          fallbackPlacements = js.Array(
+            if (!below) Placement.leftStart
+            else if (alignStart) Placement.topStart
+            else Placement.topEnd
+          )
           boundary = flipBoundary
         }),
         shift = Some(new ShiftOptions { padding = 8 }),
