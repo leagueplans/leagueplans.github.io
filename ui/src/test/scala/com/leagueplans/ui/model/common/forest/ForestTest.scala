@@ -165,6 +165,26 @@ final class ForestTest extends CodecSpec {
       }
     }
 
+    "children" - {
+      val forest = Forest.from(
+        nodes = Map(1 -> "root", 2 -> "child1", 3 -> "child2", 4 -> "grandchild"),
+        parentsToChildren = Map(1 -> List(2, 3), 2 -> List(4)),
+        roots = List(1)
+      )
+
+      "a node returns its children in order, excluding further descendants" in {
+        forest.children(1) shouldEqual List("child1", "child2")
+      }
+
+      "a leaf returns an empty list" in {
+        forest.children(4) shouldEqual List.empty
+      }
+
+      "an ID not in the forest returns an empty list" in {
+        forest.children(99) shouldEqual List.empty
+      }
+    }
+
     "siblings" - {
       val forest = Forest.from(
         nodes = Map(1 -> "root1", 2 -> "root2", 3 -> "child1", 4 -> "child2", 5 -> "grandchild"),

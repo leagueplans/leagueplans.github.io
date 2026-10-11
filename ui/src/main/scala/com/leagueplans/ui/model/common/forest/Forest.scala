@@ -158,8 +158,10 @@ final class Forest[ID, T] private[forest](
       roots
     )
 
+  /** Empty for a node that isn't in the forest, so that a view of a node can outlive the node's
+    * removal by a moment without failing */
   def children(id: ID): List[T] =
-    toChildren(id).flatMap(get)
+    toChildren.get(id).toList.flatten.flatMap(get)
 
   def siblings(childID: ID): List[ID] =
     toParent.get(childID) match {
