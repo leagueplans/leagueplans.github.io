@@ -127,3 +127,18 @@
   width: max-content;
   text-align: center;
 }
+
+/* While a tip asks a newcomer to click their step, the steps glow, gently (PlanTips) */
+:global([data-tip-select-step]) .header {
+  animation: beckon 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes beckon {
+  from {
+    box-shadow: inset 0 0 0 1px rgb(91 124 198 / 0.4);
+  }
+  to {
+    box-shadow: inset 0 0 0 2px rgb(120 152 224);
+    background-color: rgb(91 124 198 / 0.22);
+  }
+}

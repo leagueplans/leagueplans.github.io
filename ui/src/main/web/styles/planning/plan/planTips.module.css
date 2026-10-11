@@ -1,0 +1,19 @@
+/* Where the plan column's tips sit. They look like every other tip (tip.module.css). */
+
+/* Over the empty step list, in the same cell, at the top, where the first step will go. Without
+ * the column, the grid would add a column for it beside the list. */
+.empty {
+  position: relative;
+  z-index: 1;
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  margin: 10px;
+}
+
+/* Under the steps, in the plan's third row */
+.underSteps {
+  grid-row: 3;
+  grid-column: 1;
+  margin: 0 10px 10px;
+}

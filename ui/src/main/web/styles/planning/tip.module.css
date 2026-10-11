@@ -1,0 +1,83 @@
+/* A hint for newcomers (Tip.scala). Where it sits is up to the stylesheet of whatever shows it. */
+.tip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 6px;
+  background-color: #16202f;
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  color: var(--text-bright);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.text, .aside {
+  margin: 0;
+  color: #b9c6e0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+  background-color: var(--navy-bar);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.button:hover, .button:focus-visible {
+  background-color: var(--navy-bar-hover);
+}
+
+/* Like the keys in the keyboard shortcuts dialog */
+.key {
+  padding: 0 4px;
+
+  border: 1px solid var(--navy-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background-color: var(--navy-well);
+  color: var(--text-bright);
+  font: 500 0.7rem/16px ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.hide {
+  flex: none;
+  padding: 0;
+
+  border: 0;
+  background: none;
+  color: #8f9cb8;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  text-decoration: underline;
+}
+
+.hide:hover, .hide:focus-visible {
+  color: var(--text-bright);
+}

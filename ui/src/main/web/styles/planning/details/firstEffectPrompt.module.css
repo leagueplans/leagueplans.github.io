@@ -1,0 +1,25 @@
+/* The prompt is a tip (tip.module.css). This lays out its sections: a button for each, with what it
+ * adds beside it. The buttons share a column, so the descriptions line up. */
+.options {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.option {
+  display: contents;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.icon img {
+  max-width: 16px;
+  max-height: 16px;
+  object-fit: contain;
+}

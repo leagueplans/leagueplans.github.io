@@ -68,10 +68,16 @@ object PlanningPage {
     val hotkeysEnabled = Signal.combine(isFullWidth, locked).map(!_ && !_)
     val dragSession = DragSession()
     val stepEditor = StepEditor(forester, focusContext, cache.items)
+    val tips = PlanningTips.load()
+    // The newcomers' hints read this, so the steps are only searched once per change
+    val planHasEffects =
+      forester.signal.map(_.nodes.valuesIterator.exists(_.directEffects.underlying.nonEmpty)).distinct
 
     val planElement =
       PlanElement(
         hotkeysEnabled,
+        tips,
+        planHasEffects,
         forester,
         focusContext,
         focusController,
@@ -83,6 +89,7 @@ object PlanningPage {
           // Waits for the details to render, in case they were collapsed
           js.timers.setTimeout(0)(fieldEditRequests.emit(request)): Unit
         },
+        layout.detailsCollapsed,
         rowSelection,
         dragSession,
         stepEditor,
@@ -159,7 +166,10 @@ object PlanningPage {
             focusContext.playerAfterAllRepsOfCurrentFocus,
             fieldEditRequests.events,
             contextMenu,
-            tooltip
+            tooltip,
+            tips,
+            planHasEffects,
+            sectionRequests.writer
           ).amend(L.cls(Styles.editor)),
         ifEmpty = L.emptyNode
       )

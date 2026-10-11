@@ -128,3 +128,19 @@
     justify-content: center;
   }
 }
+
+/* While a tip asks a newcomer to add a step, it glows, gently (PlanTips) */
+:global([data-tip-add-first-step]) .addStepButton,
+:global([data-tip-add-next-step]) .addStepButton {
+  animation: beckon 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes beckon {
+  from {
+    box-shadow: 0 0 0 1px rgb(91 124 198 / 0.4);
+  }
+  to {
+    box-shadow: 0 0 0 2px rgb(120 152 224), 0 0 8px rgb(120 152 224 / 0.6);
+    background-color: rgb(91 124 198 / 0.35);
+  }
+}

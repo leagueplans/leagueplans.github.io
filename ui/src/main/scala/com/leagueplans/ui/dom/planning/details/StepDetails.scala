@@ -1,11 +1,12 @@
 package com.leagueplans.ui.dom.planning.details
 
-import com.leagueplans.ui.dom.planning.StepEditor
+import com.leagueplans.ui.dom.planning.{PlanningTips, StepEditor}
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.FocusController
+import com.leagueplans.ui.dom.planning.section.SectionKey
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.{EffectResolver, TimeKeeper}
@@ -25,6 +26,9 @@ import scala.scalajs.js.annotation.JSImport
 object StepDetails {
   /** @param settings the plan's settings, which say how effects apply
     * @param stepEditor changes the step's effects and requirements
+    * @param tips whether to show the hints for newcomers
+    * @param planHasEffects whether any step in the plan has an effect
+    * @param openSection switches the planning page to a section, as if its icon in the rail were clicked
     */
   def apply(
     cache: Cache,
@@ -41,7 +45,10 @@ object StepDetails {
     playerAfterAll: Signal[Player],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
-    tooltip: Tooltip
+    tooltip: Tooltip,
+    tips: PlanningTips,
+    planHasEffects: Signal[Boolean],
+    openSection: Observer[SectionKey]
   ): L.Div = {
     val effects = stepSignal.map(_.directEffects.underlying)
     val requirements = stepSignal.map(_.requirements)
@@ -131,7 +138,8 @@ object StepDetails {
           ),
           emptyText = "No effects",
           tooltip
-        )
+        ),
+        FirstEffectPrompt(effects.map(_.isEmpty).distinct, planHasEffects, tips, openSection)
       ),
       L.sectionTag(
         L.cls(Styles.section),

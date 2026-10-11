@@ -1,6 +1,6 @@
 package com.leagueplans.ui.dom.planning.plan
 
-import com.leagueplans.ui.dom.planning.StepEditor
+import com.leagueplans.ui.dom.planning.{PlanningTips, StepEditor}
 import com.leagueplans.ui.dom.planning.details.{EditRequest, RowSelection}
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.Forester
@@ -18,9 +18,15 @@ import scala.scalajs.js.annotation.JSImport
 object PlanElement {
   /** @param hotkeysEnabled whether the keyboard shortcuts act, which they shouldn't while the plan
     *                       is hidden
+    * @param tips whether to show the hints for newcomers
+    * @param planHasEffects whether any step in the plan has an effect
+    * @param detailsCollapsed whether the step details are folded away, which a newcomer is asked to
+    *                         open once they've selected a step
     */
   def apply(
     hotkeysEnabled: Signal[Boolean],
+    tips: PlanningTips,
+    planHasEffects: Signal[Boolean],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     focusController: FocusController,
@@ -28,6 +34,7 @@ object PlanElement {
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     editInDetails: EditRequest => Unit,
+    detailsCollapsed: Signal[Boolean],
     rowSelection: RowSelection,
     dragSession: DragSession,
     stepEditor: StepEditor,
@@ -66,6 +73,16 @@ object PlanElement {
         editInDetails,
         newStepDraft
       ).amend(L.cls(Styles.steps)),
+      PlanTips.emptyPlan(forester.signal, newStepDraft.position.map(_.nonEmpty)),
+      PlanTips.firstStep(
+        forester.signal,
+        planHasEffects,
+        newStepDraft.position.map(_.nonEmpty),
+        focusContext.focusID.map(_.nonEmpty).distinct,
+        detailsCollapsed,
+        tips
+      ),
+      PlanTips.nextSteps(forester.signal, planHasEffects, tips),
       HotkeyModifiers(
         hotkeysEnabled,
         focusContext.focusID,

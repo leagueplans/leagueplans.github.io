@@ -164,3 +164,19 @@
     transform: none;
   }
 }
+
+/* While a tip asks a newcomer to open the step details, the folded panel glows, gently. The tip
+ * is in the plan column, beside this one (PlanTips). */
+:global(body:has([data-tip-open-details])) .strip {
+  animation: beckon 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes beckon {
+  from {
+    box-shadow: inset 0 0 0 1px rgb(91 124 198 / 0.4);
+  }
+  to {
+    box-shadow: inset 0 0 0 2px rgb(120 152 224);
+    background-color: rgb(91 124 198 / 0.35);
+  }
+}
