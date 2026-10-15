@@ -4,7 +4,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.player.mode.Armageddon
 import com.leagueplans.ui.storage.model.errors.SubscriptionError
-import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, Rename, StepUpdates}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanID, PlanList, Rename, StepUpdates}
 import com.leagueplans.ui.storage.worker.StorageProtocol.{ToClient, ToCoordinator, WireUpdate}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -19,6 +19,11 @@ final class StorageProtocolTest extends AnyFreeSpec with Matchers {
   "StorageProtocol" - {
     "round-trips cancellations" in {
       val message: ToCoordinator = ToCoordinator.CancelSubscribe(7)
+      roundTrip(message) shouldEqual message
+    }
+
+    "round-trips plans that couldn't be read" in {
+      val message: ToClient = ToClient.Plans(7, PlanList(Map.empty, Set(planID)))
       roundTrip(message) shouldEqual message
     }
 

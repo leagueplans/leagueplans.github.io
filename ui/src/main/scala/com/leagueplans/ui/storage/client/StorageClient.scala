@@ -58,6 +58,7 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
 
   private val subscriptionBus = EventBus[(PlanID, PlanSubscription.Message) | PlanSubscription.Message]()
   private val plansVar = Var[Map[PlanID, PlanMetadata]](Map.empty)
+  private val unreadablePlansVar = Var(Set.empty[PlanID])
   private val statusVar = Var[StatusTracker.Status](StatusTracker.Status.Idle).distinct
 
   private def setBusy(): Unit =
@@ -81,6 +82,10 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
 
   val plansSignal: StrictSignal[Map[PlanID, PlanMetadata]] =
     plansVar.signal
+
+  /** Plans whose metadata couldn't be read, which can't be opened but can be downloaded */
+  val unreadablePlansSignal: StrictSignal[Set[PlanID]] =
+    unreadablePlansVar.signal
 
   val status: Signal[StatusTracker.Status] =
     statusVar.signal.distinct
@@ -150,8 +155,9 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
 
   coordinator.setMessageHandler {
     // The plans are updated first, so that they're current for whoever's waiting on the refresh
-    case ToClient.Plans(requestID, data) =>
-      plansVar.writer.onNext(data)
+    case ToClient.Plans(requestID, plans) =>
+      unreadablePlansVar.set(plans.unreadable)
+      plansVar.writer.onNext(plans.readable)
       requests.refreshPlans.remove(requestID).foreach { observer =>
         observer.onNext(Right(()))
         updateStatus()

@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.worker
 
 import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata, Rename, StepUpdates}
+import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanList, PlanMetadata, Rename, StepUpdates}
 import com.leagueplans.ui.storage.model.errors.FileSystemError as UIError
 import com.leagueplans.ui.storage.opfs.{PlansDirectory, RootDirectory}
 import com.leagueplans.ui.storage.worker.PlanStorage.convert
@@ -42,7 +42,7 @@ private object PlanStorage {
 private final class PlanStorage(scope: WorkerScope) {
   private var plansDirectory: Option[PlansDirectory[DirectoryHandle]] = None
 
-  def listPlans(): EventStream[Either[UIError, Map[PlanID, PlanMetadata]]] =
+  def listPlans(): EventStream[Either[UIError, PlanList]] =
     withDirectory(_.listPlans())
 
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[UIError, PlanID]] =

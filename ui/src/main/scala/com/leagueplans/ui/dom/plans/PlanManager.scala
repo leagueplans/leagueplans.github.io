@@ -75,6 +75,9 @@ final class PlanManager(val storage: StorageClient, val toasts: ToastHub.Publish
 
   val plans: StrictSignal[Map[PlanID, PlanMetadata]] = storage.plansSignal
 
+  /** Plans that couldn't be read, which can't be opened, but whose files can be downloaded */
+  val unreadablePlans: StrictSignal[Set[PlanID]] = storage.unreadablePlansSignal
+
   private val waitingForSavesVar = Var(Option.empty[PlanID])
   /** The plan the user picked, while the open plan finishes saving its changes */
   val waitingForSaves: StrictSignal[Option[PlanID]] = waitingForSavesVar.signal
@@ -112,13 +115,29 @@ final class PlanManager(val storage: StorageClient, val toasts: ToastHub.Publish
           case Left(error) =>
             stateVar.set(State.Picker(Some(Notice.Problem("Couldn't read your plans", error.message))))
           case Right(()) =>
+            val unreadable = unreadablePlans.now().size
             choose(plans.now(), LocalStorage.get(lastPlanKey).map(PlanID.fromString)) match {
-              case Some(planID) => open(planID)
+              case Some(planID) =>
+                if (unreadable == 1)
+                  warnOfUnreadablePlans("Couldn't read one of your plans", "its file")
+                else if (unreadable > 1)
+                  warnOfUnreadablePlans(s"Couldn't read $unreadable of your plans", "their files")
+                open(planID)
+              // The plan picker lists plans that couldn't be read, so that they don't look lost
+              case None if unreadable > 0 => stateVar.set(State.Picker(None))
               case None => stateVar.set(State.Welcome)
             }
         }
     }
   }
+
+  private def warnOfUnreadablePlans(title: String, files: String): Unit =
+    toasts.publish(
+      ToastHub.Type.Warning,
+      20.seconds,
+      title,
+      Some(s"You can download $files from the plan list, to share when asking for help.")
+    )
 
   /** Re-reads the list of plans, which doesn't hear about plans that other tabs create */
   def refreshPlans(): Unit =
@@ -183,7 +202,7 @@ final class PlanManager(val storage: StorageClient, val toasts: ToastHub.Publish
           }
           if (request == currentRequest)
             stateVar.set(result match {
-              case Right(()) if plans.now().keySet == Set(planID) || plans.now().isEmpty => State.Welcome
+              case Right(()) if (plans.now().keySet - planID).isEmpty && unreadablePlans.now().isEmpty => State.Welcome
               case Right(()) => State.Picker(Some(Notice.Info(s"Deleted “$name”.")))
               case Left(error) => State.Picker(Some(Notice.Problem(s"Couldn't delete “$name”", error.message)))
             })

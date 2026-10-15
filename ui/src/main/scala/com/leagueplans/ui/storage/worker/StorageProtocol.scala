@@ -4,7 +4,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError, UpdateError}
-import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanMetadata, Rename, StepUpdates}
+import com.leagueplans.ui.storage.model.{LamportTimestamp, PlanExport, PlanID, PlanList, PlanMetadata, Rename, StepUpdates}
 
 object StorageProtocol {
   /** [[StepUpdates]], [[Plan.Settings]] and [[Rename]] as a type that the codec can derive */
@@ -80,7 +80,7 @@ object StorageProtocol {
   sealed trait ToClient
 
   object ToClient {
-    final case class Plans(requestID: Long, data: Map[PlanID, PlanMetadata]) extends ToClient
+    final case class Plans(requestID: Long, plans: PlanList) extends ToClient
     final case class ListPlansFailed(requestID: Long, reason: FileSystemError) extends ToClient
 
     final case class CreateSucceeded(requestID: Long, planID: PlanID) extends ToClient

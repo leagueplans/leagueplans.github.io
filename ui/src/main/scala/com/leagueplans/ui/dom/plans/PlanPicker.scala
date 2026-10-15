@@ -6,15 +6,16 @@ import com.leagueplans.ui.storage.model.{PlanID, PlanMetadata}
 import com.leagueplans.uicommon.dom.{Button, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.raquo.airstream.core.{Observer, Signal}
-import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, optionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 /** Shown when no plan is open: after one was deleted, or when one couldn't be opened. Lists the
-  * plans to open, with a note saying what happened. Each plan's file can be downloaded from here,
-  * so that one that won't open can still be shared when asking for help.
+  * plans to open, with a note saying what happened, and apart from them any plans that couldn't be
+  * read. Each plan's file can be downloaded from here, so that one that won't open can still be
+  * shared when asking for help.
   */
 object PlanPicker {
   /** @param notice what happened, if anything
@@ -47,6 +48,10 @@ object PlanPicker {
           toActionButton("+ New plan", onNewPlan),
           toActionButton("Import a plan file", onImport)
         ),
+        L.children <-- manager.unreadablePlans.map(_.toList.sortBy(id => id: String)).distinct.map(unreadable =>
+          if (unreadable.isEmpty) List.empty
+          else toUnreadableSection(manager, unreadable, tooltip)
+        ),
         L.p(L.cls(Styles.muted), "Plans are saved in this browser only. Clearing this site's data deletes them.")
       )
     )
@@ -60,7 +65,9 @@ object PlanPicker {
     val problem: String = js.native
     val noticeIcon: String = js.native
     val title: String = js.native
+    val subtitle: String = js.native
     val list: String = js.native
+    val unreadableList: String = js.native
     val entry: String = js.native
     val row: String = js.native
     val rowText: String = js.native
@@ -73,7 +80,10 @@ object PlanPicker {
     val muted: String = js.native
   }
 
-  private val ariaHidden = L.svg.svgAttr("aria-hidden", StringAsIsCodec, namespace = None)
+  private def rowClasses: PlanRow.Classes =
+    PlanRow.Classes(Styles.row, Styles.rowText, Styles.name, Styles.meta)
+
+  private val ariaHidden =L.svg.svgAttr("aria-hidden", StringAsIsCodec, namespace = None)
 
   private def toNotice(notice: Notice): L.Div =
     notice match {
@@ -112,7 +122,7 @@ object PlanPicker {
         // The download button sits beside the row, since buttons can't hold buttons
         L.div(
           L.cls(Styles.entry),
-          PlanRow(manager, id, initial._2, entry.map(_._2), tooltip, PlanRow.Classes(Styles.row, Styles.rowText, Styles.name, Styles.meta)),
+          PlanRow(manager, id, initial._2, entry.map(_._2), tooltip, rowClasses),
           DownloadButton.icon(
             id,
             () => manager.plans.now().get(id).fold(initial._2.name)(_.name),
@@ -122,6 +132,27 @@ object PlanPicker {
           ).amend(L.cls(Styles.download))
         )
       }
+    )
+
+  private def toUnreadableSection(
+    manager: PlanManager,
+    unreadable: List[PlanID],
+    tooltip: Tooltip
+  ): List[L.HtmlElement] =
+    List(
+      L.h2(L.cls(Styles.subtitle), "Plans that couldn't be read"),
+      L.p(L.cls(Styles.muted), UnreadablePlans.note),
+      L.div(
+        L.cls(Styles.list),
+        L.cls(Styles.unreadableList),
+        unreadable.map(id =>
+          L.div(
+            L.cls(Styles.entry),
+            L.div(L.cls(Styles.row), UnreadablePlans.describe(id, rowClasses)),
+            UnreadablePlans.downloadButton(manager, id, tooltip).amend(L.cls(Styles.download))
+          )
+        )
+      )
     )
 
   private def toActionButton(label: String, onClick: () => Unit): L.Button =

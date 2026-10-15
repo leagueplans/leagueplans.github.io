@@ -127,6 +127,8 @@ object PlanSwitcher {
     val separator: String = js.native
     val row: String = js.native
     val rowText: String = js.native
+    val note: String = js.native
+    val download: String = js.native
     val footer: String = js.native
     val footerButton: String = js.native
   }
@@ -188,7 +190,22 @@ object PlanSwitcher {
         L.child.maybe <-- hasOthers.map(Option.when(_)(L.div(L.cls(Styles.label), "Switch to"))),
         L.children <-- others.split(_._1) { (id, initial, entry) =>
           PlanRow(manager, id, initial._2, entry.map(_._2), tooltip, rowClasses)
-        }
+        },
+        L.children <-- manager.unreadablePlans.map(_.toList.sortBy(id => id: String)).distinct.map(unreadable =>
+          if (unreadable.isEmpty) List.empty
+          else
+            List(
+              L.hr(L.cls(Styles.separator)),
+              L.div(L.cls(Styles.label), "Couldn't be read"),
+              L.p(L.cls(Styles.note), UnreadablePlans.note)
+            ) ++ unreadable.map(id =>
+              L.div(
+                L.cls(Styles.row),
+                UnreadablePlans.describe(id, rowClasses),
+                UnreadablePlans.downloadButton(manager, id, tooltip).amend(L.cls(Styles.download))
+              )
+            )
+        )
       ),
       L.div(
         L.cls(Styles.footer),

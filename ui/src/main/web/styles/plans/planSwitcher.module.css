@@ -125,6 +125,38 @@
   display: grid;
 }
 
+/* Explains the plans that couldn't be read */
+.note {
+  margin: 0;
+  padding: 0 8px 4px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.download {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-dim);
+}
+
+.download:hover, .download:focus-visible {
+  border-color: var(--navy-border);
+  color: var(--text-bright);
+}
+
+.download svg {
+  width: 12px;
+  height: 12px;
+}
+
 .footer {
   display: flex;
   flex-wrap: wrap;

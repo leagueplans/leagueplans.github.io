@@ -61,9 +61,23 @@
   font-weight: 600;
 }
 
+/* Heads the plans that couldn't be read */
+.subtitle {
+  margin: 8px 0 -8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
 .content > .list {
   /* Takes the height that's left */
   flex: 0 1 auto;
+}
+
+/* There are rarely more than one or two plans that couldn't be read, so their list keeps its
+ * height, unless there are many */
+.content > .unreadableList {
+  flex: none;
+  max-height: 10rem;
 }
 
 .list {

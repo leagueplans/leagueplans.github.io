@@ -1,7 +1,7 @@
 package com.leagueplans.ui.storage.opfs
 
 import com.leagueplans.ui.model.plan.Plan
-import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanMetadata, Rename, StepUpdates}
+import com.leagueplans.ui.storage.model.{PlanExport, PlanID, PlanList, PlanMetadata, Rename, StepUpdates}
 import com.leagueplans.uicommon.utils.airstream.EventStreamOps.{andThen, safeSequence}
 import com.leagueplans.uicommon.wrappers.opfs.FileSystemError.*
 import com.leagueplans.uicommon.wrappers.opfs.{DirectoryHandleLike, FileSystemError}
@@ -10,13 +10,17 @@ import com.raquo.airstream.core.EventStream
 import scala.util.chaining.scalaUtilChainingOps
 
 final class PlansDirectory[T : DirectoryHandleLike](underlying: T) {
-  def listPlans(): EventStream[Either[UnexpectedFileSystemError, Map[PlanID, PlanMetadata]]] =
+  def listPlans(): EventStream[Either[UnexpectedFileSystemError, PlanList]] =
     underlying.listSubDirectories().andThen(handles =>
       handles
-        .map((planID, handle) => PlanDirectory(handle).readMetadata().map(planID -> _))
+        .map((planID, handle) => PlanDirectory(handle).readMetadata().map(PlanID.fromString(planID) -> _))
         .pipe(EventStream.safeSequence)
-        .map(_.collect { case (planID, Right(metadata)) => PlanID.fromString(planID) -> metadata }.toMap)
-        .map(Right(_))
+        .map(results =>
+          Right(PlanList(
+            results.collect { case (planID, Right(metadata)) => planID -> metadata }.toMap,
+            results.collect { case (planID, Left(_)) => planID }.toSet
+          ))
+        )
     )
 
   def create(metadata: PlanMetadata, plan: Plan): EventStream[Either[FileSystemError, PlanID]] = {
