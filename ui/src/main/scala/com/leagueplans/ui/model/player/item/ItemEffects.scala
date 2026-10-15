@@ -98,16 +98,36 @@ object ItemEffects {
         if (stacksInBank(item)) Option.when(!alreadyHeld && free == 0)(0)
         else Some(free)
       case Kind.Inventory =>
-        val used = depository.contents.toList.map { case ((id, isNoted), n) =>
-          if (items(id).stackable || isNoted) 1 else n
-        }.sum
-        val free = math.max(Kind.Inventory.capacity - used, 0)
+        val free = freeInventorySlots(player, items)
         if (item.stackable || noted) Option.when(!alreadyHeld && free == 0)(0)
         else Some(free)
       case _: EquipmentSlot =>
         if (depository.contents.isEmpty) Option.when(!item.stackable)(1)
         else if (item.stackable && alreadyHeld) None
         else Some(0)
+    }
+  }
+
+  /** How many inventory slots are empty. Each unstacked item takes a slot of its own. */
+  def freeInventorySlots(player: Player, items: Item.ID => Item): Int = {
+    val used = player.get(Kind.Inventory).contents.toList.map { case ((id, noted), n) =>
+      if (items(id).stackable || noted) 1 else n
+    }.sum
+    math.max(Kind.Inventory.capacity - used, 0)
+  }
+
+  /** How many more of an item an effect tries to take from a place than the place holds, keyed by
+    * the item, the place, and whether it's noted. The effect takes what's there, and the plan shows
+    * the rest as a problem. */
+  def shortfall(effect: Change, player: Player): Option[((Item.ID, Depository.Kind, Boolean), Int)] = {
+    def missing(item: Item.ID, place: Depository.Kind, noted: Boolean, wanted: Int) = {
+      val n = wanted - player.get(place).count(item, noted)
+      Option.when(n > 0)((item, place, noted) -> n)
+    }
+    effect match {
+      case AddItem(item, ItemChange.By(amount), target, note) if amount < 0 => missing(item, target, note, -amount)
+      case MoveItem(item, ItemQuantity.Exact(n), source, notedInSource, _, _) => missing(item, source, notedInSource, n)
+      case _ => None
     }
   }
 
