@@ -524,6 +524,15 @@ final class StopConditionsTest extends AnyFreeSpec with Matchers {
           "the inventory's free slots above 4"
       }
 
+      "time passing" in {
+        describe(TimeElapsed(TimeOrigin.StepStart, com.leagueplans.ui.model.plan.Duration.seconds(5400), stopBefore = false)) shouldBe
+          "this step has taken 1h 30m"
+        describe(TimeElapsed(TimeOrigin.PlanStart, com.leagueplans.ui.model.plan.Duration.seconds(90061), stopBefore = false)) shouldBe
+          "the plan reaches 25h 1m 1s"
+        describe(TimeElapsed(TimeOrigin.StepStart, com.leagueplans.ui.model.plan.Duration.ticks(1), stopBefore = false)) shouldBe
+          "this step has taken 1 tick"
+      }
+
       "at least no free inventory slots is not special" in {
         describe(freeSlots(Comparison.AtLeast, 0)) shouldBe "the inventory has at least 0 free slots"
       }

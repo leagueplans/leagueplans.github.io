@@ -268,6 +268,45 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       )
     }
 
+    "repeats until enough time has passed in the step" in {
+      val first = step("first", Repetitions.once).deepCopy(duration = Duration.seconds(600))
+      val inStep = StopCondition.TimeElapsed(StopCondition.TimeOrigin.StepStart, Duration.seconds(300), stopBefore = false)
+      val loop = step("loop", until(inStep)).deepCopy(duration = Duration.seconds(60))
+      find(forest(first -> None, loop -> None)).map(
+        _.loops(loop.id) shouldBe List(LoopRun(5, LoopRun.Outcome.Met, List.empty))
+      )
+    }
+
+    "repeats until the plan reaches a time, stopping before it would pass it" in {
+      // Starts at 10 minutes, 2 minutes a rep: a second rep would end at 14
+      val first = step("first", Repetitions.once).deepCopy(duration = Duration.seconds(600))
+      val inPlan = StopCondition.TimeElapsed(StopCondition.TimeOrigin.PlanStart, Duration.seconds(780), stopBefore = true)
+      val loop = step("loop", until(inPlan)).deepCopy(duration = Duration.seconds(120))
+      val after = step("after", Repetitions.once)
+      find(forest(first -> None, loop -> None, after -> None)).map { findings =>
+        findings.loops(loop.id) shouldBe List(LoopRun(1, LoopRun.Outcome.StoppedBefore(List(inPlan)), List.empty))
+        findings.timings(after.id).start shouldBe Some(12.minutes)
+      }
+    }
+
+    "counts a substep's time as time in the step" in {
+      val inStep = StopCondition.TimeElapsed(StopCondition.TimeOrigin.StepStart, Duration.seconds(300), stopBefore = false)
+      val loop = step("loop", until(inStep))
+      val child = step("child", Repetitions.once).deepCopy(duration = Duration.seconds(120))
+      find(forest(loop -> None, child -> Some(loop))).map(
+        // 2, 4, then 6 minutes
+        _.loops(loop.id) shouldBe List(LoopRun(3, LoopRun.Outcome.Met, List.empty))
+      )
+    }
+
+    "plays a step that takes no time once when repeating until time passes" in {
+      val inStep = StopCondition.TimeElapsed(StopCondition.TimeOrigin.StepStart, Duration.seconds(300), stopBefore = false)
+      val loop = step("loop", until(inStep))
+      find(forest(loop -> None)).map(
+        _.loops(loop.id) shouldBe List(LoopRun(1, LoopRun.Outcome.NoProgress, List.empty))
+      )
+    }
+
     "projects one pass of a step whose condition is already met, for context" in {
       val stock = step("stock", Repetitions.once, fishing(100))
       val loop = step("loop", until(fishingLevel(2)))

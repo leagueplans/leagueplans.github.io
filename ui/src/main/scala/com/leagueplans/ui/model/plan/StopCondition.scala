@@ -29,6 +29,10 @@ enum StopCondition {
 
   case And(left: StopCondition, right: StopCondition)
   case Or(left: StopCondition, right: StopCondition)
+
+  /** At least this much time has passed, since the step started or since the plan did. The second
+    * is for events held at a set time. */
+  case TimeElapsed(since: StopCondition.TimeOrigin, atLeast: Duration, stopBefore: Boolean)
 }
 
 object StopCondition {
@@ -53,6 +57,15 @@ object StopCondition {
   object ItemForms {
     given Encoder[ItemForms] = Encoder.derived
     given Decoder[ItemForms] = Decoder.derived
+  }
+
+  enum TimeOrigin {
+    case StepStart, PlanStart
+  }
+
+  object TimeOrigin {
+    given Encoder[TimeOrigin] = Encoder.derived
+    given Decoder[TimeOrigin] = Decoder.derived
   }
 
   enum Comparison {

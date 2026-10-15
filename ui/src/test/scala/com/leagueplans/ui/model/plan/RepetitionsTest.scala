@@ -5,7 +5,7 @@ import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.common.model.{Item, Skill}
 import com.leagueplans.ui.model.player.skill.Level
-import com.leagueplans.ui.model.plan.StopCondition.{Comparison, ItemForms, ItemLocation}
+import com.leagueplans.ui.model.plan.StopCondition.{Comparison, ItemForms, ItemLocation, TimeOrigin}
 import org.scalatest.Assertion
 
 // Saved plans, and ItemIDMigrator, refer to each case by its position. The tests below spell
@@ -17,6 +17,7 @@ final class RepetitionsTest extends CodecSpec {
       Item.ID(314), ItemLocation.Inventory, ItemForms.Unnoted, Comparison.AtMost, 0, stopBefore = true
     )
     val slots = StopCondition.FreeInventorySlots(Comparison.AtMost, 0, stopBefore = false)
+    val time = StopCondition.TimeElapsed(TimeOrigin.PlanStart, Duration.seconds(5400), stopBefore = true)
 
     // An embedded message is its field's tag, its length, and then its bytes
     def message(tag: Int, bytes: Array[Byte]): Array[Byte] = {
@@ -108,6 +109,14 @@ final class RepetitionsTest extends CodecSpec {
           )
         )
 
+        "TimeElapsed" in test(
+          time,
+          enumCase(5,
+            message(0b100, encoded(TimeOrigin.PlanStart)) ++
+              message(0b1100, encoded(Duration.seconds(5400))) ++
+              Array[Byte](0b10000) ++ encoded(true)
+          )
+        )
       }
 
       "ItemLocation" - {
@@ -138,6 +147,16 @@ final class RepetitionsTest extends CodecSpec {
 
           "AtLeast" in test(Comparison.AtLeast, 0)
           "AtMost" in test(Comparison.AtMost, 0b1)
+        }
+      }
+
+      "TimeOrigin" - {
+        "encoding values to and decoding values from an expected encoding" - {
+          def test(origin: TimeOrigin, discriminant: Byte): Assertion =
+            testRoundTripSerialisation(origin, Decoder.decodeMessage, Array(0, discriminant, 0b1100, 0))
+
+          "StepStart" in test(TimeOrigin.StepStart, 0)
+          "PlanStart" in test(TimeOrigin.PlanStart, 0b1)
         }
       }
     }

@@ -243,7 +243,7 @@ private[calculation] object ForestFolder {
 
           case Frame.StartLoop(id, value, condition, max) =>
             val limit = max.fold(loopCap)(math.min(_, loopCap))
-            if (StopConditions.met(condition, looping.context(state.acc, Shortfalls.none))) {
+            if (StopConditions.met(condition, contextOf(state, Shortfalls.none))) {
               state = state.record(id, LoopRun(0, LoopRun.Outcome.AlreadyMet, List.empty))
               remaining = t
             } else if (limit <= 0) {
@@ -313,8 +313,8 @@ private[calculation] object ForestFolder {
     ): (State[ID, Acc], List[Frame[ID, T, Acc]]) = {
       import check.*
       val (tally, outerTallies) = (state.tallies.head._2, state.tallies.tail)
-      val beforeContext = looping.context(before.acc, beforeShortfalls)
-      val afterContext = looping.context(state.acc, tally)
+      val beforeContext = contextOf(before, beforeShortfalls)
+      val afterContext = contextOf(state, tally)
       val passing = StopConditions.passed(condition, beforeContext, afterContext)
 
       if (StopConditions.metBefore(condition, beforeContext, afterContext)) {
@@ -352,6 +352,13 @@ private[calculation] object ForestFolder {
             (started, body :+ nextCheck)
         }
       }
+    }
+
+    /** For the step that repeats, whose pass is the innermost one open */
+    private def contextOf(state: State[ID, Acc], shortfalls: Shortfalls): LoopContext = {
+      val now = state.now.getOrElse(Duration.Zero)
+      val stepStart = state.open.headOption.flatMap(_.start).getOrElse(Duration.Zero)
+      looping.context(state.acc, shortfalls).copy(inStep = now - stepStart, inPlan = now)
     }
 
     private def enter(state: State[ID, Acc], id: ID): State[ID, Acc] = {

@@ -1,7 +1,7 @@
 package com.leagueplans.ui.projection.calculation.loops
 
 import com.leagueplans.common.model.Item
-import com.leagueplans.ui.model.plan.{ExpTarget, StopCondition}
+import com.leagueplans.ui.model.plan.{Duration, ExpTarget, StopCondition}
 import com.leagueplans.ui.model.plan.StopCondition.*
 import com.leagueplans.ui.model.player.item.{Depository, ItemEffects}
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
@@ -13,7 +13,7 @@ import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
   * nothing means the player has gone past it.
   */
 object StopConditions {
-  type Leaf = SkillReaches | ItemCount | FreeInventorySlots
+  type Leaf = SkillReaches | ItemCount | FreeInventorySlots | TimeElapsed
 
   def leaves(condition: StopCondition): List[Leaf] =
     condition match {
@@ -30,6 +30,13 @@ object StopConditions {
         compare(comparison, count(item, where, forms, context), quantity)
       case FreeInventorySlots(comparison, slots, _) =>
         compare(comparison, ItemEffects.freeInventorySlots(context.player, context.items).toLong, slots)
+      // In milliseconds
+      case TimeElapsed(since, atLeast, _) =>
+        val elapsed = since match {
+          case TimeOrigin.StepStart => context.inStep
+          case TimeOrigin.PlanStart => context.inPlan
+        }
+        if (elapsed.isFinite) atLeast.asScala.toMillis - elapsed.toMillis else -1
     }
 
   private def compare(comparison: Comparison, actual: Long, threshold: Int): Long =
@@ -85,6 +92,7 @@ object StopConditions {
       case l: SkillReaches => l.stopBefore
       case l: ItemCount => l.stopBefore
       case l: FreeInventorySlots => l.stopBefore
+      case l: TimeElapsed => l.stopBefore
     }
 
   /** Whether a repetition brought the condition closer to being met. Conditions combined with "and"
@@ -153,6 +161,10 @@ object StopConditions {
         "the inventory is full"
       case FreeInventorySlots(comparison, slots, _) =>
         s"the inventory has ${describe(comparison)} ${slots.withCommas} free ${if (slots == 1) "slot" else "slots"}"
+      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
+        s"this step has taken ${describe(atLeast)}"
+      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
+        s"the plan reaches ${describe(atLeast)}"
     }
 
   /** Such as "Feather in the inventory below 0", for a repetition that takes a condition past its
@@ -167,6 +179,21 @@ object StopConditions {
         s"${name(item, forms, items)} ${describe(where)} ${direction(comparison)} ${quantity.withCommas}"
       case FreeInventorySlots(comparison, slots, _) =>
         s"the inventory's free slots ${direction(comparison)} ${slots.withCommas}"
+      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
+        s"the time in this step past ${describe(atLeast)}"
+      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
+        s"the plan past ${describe(atLeast)}"
+    }
+
+  /** Such as "1h 30m" or "45 ticks" */
+  private def describe(duration: Duration): String =
+    duration.unit match {
+      case Duration.Unit.Ticks =>
+        s"${duration.length.withCommas} ${if (duration.length == 1) "tick" else "ticks"}"
+      case Duration.Unit.Seconds =>
+        val (h, m, s) = (duration.length / 3600, duration.length / 60 % 60, duration.length % 60)
+        List(Option.when(h > 0)(s"${h.withCommas}h"), Option.when(m > 0)(s"${m}m"), Option.when(s > 0 || duration.length == 0)(s"${s}s"))
+          .flatten.mkString(" ")
     }
 
   private def name(item: Item.ID, forms: ItemForms, items: Item.ID => Item): String =
