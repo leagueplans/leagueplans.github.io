@@ -1,5 +1,7 @@
 package com.leagueplans.ui.storage.client
 
+import com.leagueplans.codec.decoding.DecodingFailure
+import com.leagueplans.codec.parsing.ParsingFailure
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.storage.model.errors.{DeletionError, FileSystemError, SubscriptionError}
@@ -10,6 +12,7 @@ import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.{StrictSignal, Var}
+import org.scalajs.dom.console
 
 import scala.collection.mutable
 
@@ -144,6 +147,43 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
       updateStatus()
     }
 
+  // A message that can't be decoded can't be matched to its request, so every request still
+  // waiting fails, rather than waiting forever. Their replies are ignored if they arrive later.
+  // The message may have been a plan this tab asked for, which the coordinator now counts it as
+  // subscribed to, so plans being asked for are given back.
+  private def failWaitingRequests(failure: ParsingFailure | DecodingFailure): Unit = {
+    console.error(s"Couldn't decode a message from storage: ${failure.getMessage}")
+    val error = FileSystemError.Unexpected(s"Couldn't read a reply from storage: [${failure.getMessage}]")
+
+    // Taken all at once, since failing a request may lead to new ones
+    val refreshPlans = takeAll(requests.refreshPlans)
+    val creates = takeAll(requests.creates)
+    val fetches = takeAll(requests.fetches)
+    val deletes = takeAll(requests.deletes)
+    val subscriptions = takeAll(requests.subscriptions)
+
+    subscriptions.foreach { (requestID, _) =>
+      requests.cancelledSubscriptions += requestID
+      coordinator.send(ToCoordinator.CancelSubscribe(requestID))
+    }
+    subscriptions.map(_._2.planID).distinct.foreach(planID =>
+      coordinator.send(ToCoordinator.Unsubscribe(nextID(), planID))
+    )
+
+    updateStatus(failureReason = Some(error.message))
+    refreshPlans.foreach(_._2.onNext(Left(error)))
+    creates.foreach(_._2.onNext(Left(error)))
+    fetches.foreach(_._2.onNext(Left(error)))
+    deletes.foreach(_._2.onNext(Left(DeletionError.FileSystem(error))))
+    subscriptions.foreach(_._2.result.set(Some(Left(SubscriptionError.FileSystem(error)))))
+  }
+
+  private def takeAll[T](waiting: mutable.Map[Long, T]): List[(Long, T)] = {
+    val taken = waiting.toList
+    waiting.clear()
+    taken
+  }
+
   private def triggerPlansRefresh(): StrictSignal[Option[Either[FileSystemError, Unit]]] = {
     val requestID = nextID()
     val promise = Var[Option[Either[FileSystemError, Unit]]](None)
@@ -153,7 +193,9 @@ final class StorageClient(coordinator: MessagePortClient[ToCoordinator, ToClient
     promise.signal
   }
 
-  coordinator.setMessageHandler {
+  coordinator.setMessageHandler(handle, failWaitingRequests)
+
+  private def handle(message: ToClient): Unit = message match {
     // The plans are updated first, so that they're current for whoever's waiting on the refresh
     case ToClient.Plans(requestID, plans) =>
       unreadablePlansVar.set(plans.unreadable)

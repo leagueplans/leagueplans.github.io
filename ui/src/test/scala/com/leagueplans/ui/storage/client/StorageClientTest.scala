@@ -1,5 +1,7 @@
 package com.leagueplans.ui.storage.client
 
+import com.leagueplans.codec.decoding.DecodingFailure
+import com.leagueplans.codec.parsing.ParsingFailure
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Plan
 import com.leagueplans.ui.model.player.mode.Armageddon
@@ -21,12 +23,20 @@ final class StorageClientTest extends AnyFreeSpec with Matchers {
   private final class FakeCoordinator extends MessagePortClient[ToCoordinator, ToClient] {
     val sent = mutable.ListBuffer.empty[ToCoordinator]
     private var handler: ToClient => ? = _ => ()
+    private var undecodableHandler: (ParsingFailure | DecodingFailure) => ? = _ => ()
 
-    def setMessageHandler(f: ToClient => ?): Unit = handler = f
+    def setMessageHandler(
+      onMessage: ToClient => ?,
+      onUndecodable: (ParsingFailure | DecodingFailure) => ?
+    ): Unit = {
+      handler = onMessage
+      undecodableHandler = onUndecodable
+    }
     def send(message: ToCoordinator): Unit = sent += message
     def close(): Unit = ()
 
     def reply(message: ToClient): Unit = handler(message): Unit
+    def replyUndecodably(): Unit = undecodableHandler(DecodingFailure("Unexpected field")): Unit
 
     def subscribeIDs: List[Long] =
       sent.toList.collect { case ToCoordinator.Subscribe(id, _) => id }
@@ -140,6 +150,40 @@ final class StorageClientTest extends AnyFreeSpec with Matchers {
         pending.result.now() shouldEqual Some(Left(error))
         status.now() shouldEqual Status.Failed(error.message)
         owner.killSubscriptions()
+      }
+    }
+
+    "a message that can't be decoded" - {
+      "fails every request still waiting, and gives back the plans being asked for" in test { (client, coordinator) =>
+        val owner = new ManualOwner
+        val status = client.status.observe(using owner)
+        val pending = client.subscribe(planID)
+        val refresh = client.refreshPlans()
+        val id = coordinator.subscribeIDs.head
+        val sentBefore = coordinator.sent.size
+
+        coordinator.replyUndecodably()
+        pending.result.now() should matchPattern { case Some(Left(SubscriptionError.FileSystem(_))) => }
+        refresh.now() should matchPattern { case Some(Left(_)) => }
+        status.now() should matchPattern { case Status.Failed(_) => }
+        coordinator.sent.drop(sentBefore).toList should matchPattern {
+          case List(ToCoordinator.CancelSubscribe(`id`), ToCoordinator.Unsubscribe(_, `planID`)) =>
+        }
+        owner.killSubscriptions()
+      }
+
+      "ignores the replies that arrive afterwards" in test { (client, coordinator) =>
+        val pending = client.subscribe(planID)
+        val id = coordinator.subscribeIDs.head
+        coordinator.replyUndecodably()
+        val failed = pending.result.now()
+        val sentBefore = coordinator.sent.size
+
+        coordinator.reply(ToClient.Subscription(id, planID, LamportTimestamp.initial, plan))
+        pending.result.now() shouldEqual failed
+        coordinator.sent.drop(sentBefore).toList should matchPattern {
+          case List(ToCoordinator.Unsubscribe(_, `planID`)) =>
+        }
       }
     }
   }
