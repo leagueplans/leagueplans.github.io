@@ -24,6 +24,7 @@ final class SchemaVersionTest extends CodecSpec {
       "V8" in test(SchemaVersion.V8, 7)
       "V9" in test(SchemaVersion.V9, 8)
       "V10" in test(SchemaVersion.V10, 9)
+      "V11" in test(SchemaVersion.V11, 10)
     }
   }
 }

@@ -27,11 +27,11 @@ object SubstepSummaryElement {
   ): L.Div = {
     val title =
       Signal.combine(stepSignal, forestSignal).map { (step, forest) =>
-        val inLoop = forest.ancestors(step.id).flatMap(forest.get).exists(_.repetitions > 1)
+        val inLoop = forest.ancestors(step.id).flatMap(forest.get).exists(_.repetitions.assumed > 1)
         val hasSubsteps = forest.children(step.id).nonEmpty
         if (inLoop) None
         else if (hasSubsteps) Some("Including substeps")
-        else Option.when(step.repetitions > 1)("Including repetitions")
+        else Option.when(step.repetitions.assumed > 1)("Including repetitions")
       }.distinct
 
     L.div(

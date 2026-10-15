@@ -9,7 +9,7 @@ object StepDetails {
       description,
       EffectList.empty,
       requirements = List.empty,
-      repetitions = 1,
+      repetitions = Repetitions.once,
       duration = Duration.ticks(0)
     )
   
@@ -21,6 +21,6 @@ final case class StepDetails(
   description: String,
   directEffects: EffectList,
   requirements: List[Requirement],
-  repetitions: Int,
+  repetitions: Repetitions,
   duration: Duration
 )

@@ -32,6 +32,8 @@ enum SchemaVersion(val date: Date) {
   case V9 extends SchemaVersion(new Date(2026, 9, 5))
   /** Exp effects always hold their actions and the exp each gives */
   case V10 extends SchemaVersion(new Date(2026, 9, 9))
+  /** Steps can repeat until a condition is met, as well as a fixed number of times */
+  case V11 extends SchemaVersion(new Date(2026, 9, 15))
 
   def number: Int = ordinal + 1
 }

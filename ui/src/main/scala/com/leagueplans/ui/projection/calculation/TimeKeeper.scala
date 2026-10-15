@@ -48,7 +48,7 @@ object TimeKeeper {
         start = None,
         step.duration.toOption,
         totalChildDuration = None,
-        step.repetitions,
+        step.repetitions.assumed,
         insideLoop = false
       )
     )
@@ -100,13 +100,13 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
           state <- forest.get(root)
           finish <- state.finish
         } yield finish
-        val durationPerParentRep = data.duration.toOption.map(_.asScala.safeMul(data.repetitions))
+        val durationPerParentRep = data.duration.toOption.map(_.asScala.safeMul(data.repetitions.assumed))
         val effectiveStart = computeEffectiveStart(runningStart, durationPerParentRep)
         val initialState = State(
           effectiveStart,
           data.duration.toOption,
           totalChildDuration = None,
-          data.repetitions,
+          data.repetitions.assumed,
           insideLoop = false
         )
         val v = pendingVars.remove(id).getOrElse(stateVars.getOrElse(id, Var(initialState)))
@@ -159,8 +159,8 @@ final class TimeKeeper(private var forest: Forest[Step.ID, State]) {
       case Update.UpdateData(id, data) =>
         forest.get(id).foreach { old =>
           val newDuration = data.duration.toOption
-          if (old.stepDuration != newDuration || old.repetitions != data.repetitions) {
-            setState(id, old.copy(stepDuration = newDuration, repetitions = data.repetitions))
+          if (old.stepDuration != newDuration || old.repetitions != data.repetitions.assumed) {
+            setState(id, old.copy(stepDuration = newDuration, repetitions = data.repetitions.assumed))
             recomputeSubtreeStarts(id, runningStartFor(id))
             propagate(id)
           }

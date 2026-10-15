@@ -52,7 +52,7 @@ object StepHeader {
           whenFalse = _ => L.emptyNode
         ),
         L.child.maybe <-- Signal.combine(isCompletedSignal, hasErrorsSignal).distinct.map(toStateIcon),
-        L.child.maybe <-- stepSignal.map(_.repetitions).distinct.map(repetitions =>
+        L.child.maybe <-- stepSignal.map(_.repetitions.assumed).distinct.map(repetitions =>
           Option.when(repetitions > 1)(toRepetitionsBadge(repetitions, editRepetitions, tooltip))
         ),
         L.p(
@@ -159,7 +159,7 @@ object StepHeader {
               L.span(
                 L.cls(Styles.timing),
                 FontAwesome.icon(FreeSolid.faHourglass).amend(L.svg.cls(Styles.timingIcon)),
-                L.span(s"${format(f)}${if (step.repetitions > 1) " each" else "" }")
+                L.span(s"${format(f)}${if (step.repetitions.assumed > 1) " each" else "" }")
               )
             )
           else

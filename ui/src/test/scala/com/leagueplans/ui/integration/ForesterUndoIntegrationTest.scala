@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.forest.Forester.HistoryOutcome
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
-import com.leagueplans.ui.model.plan.{Duration, Plan, Step}
+import com.leagueplans.ui.model.plan.{Duration, Plan, Repetitions, Step}
 import com.leagueplans.ui.model.player.mode.Armageddon
 import com.leagueplans.ui.storage.model.{PlanMetadata, StepUpdates}
 import com.leagueplans.ui.storage.opfs.PlanDirectory
@@ -146,7 +146,7 @@ final class ForesterUndoIntegrationTest
     "Updating" - {
       "a description" in roundTrip(_.update(stepD.id, _.deepCopy(description = "updated")))
       "a duration" in roundTrip(_.update(stepD.id, _.deepCopy(duration = Duration.ticks(10))))
-      "repetitions" in roundTrip(_.update(stepD.id, _.deepCopy(repetitions = 3)))
+      "repetitions" in roundTrip(_.update(stepD.id, _.deepCopy(repetitions = Repetitions.Fixed(3))))
     }
 
     "Reordering" - {

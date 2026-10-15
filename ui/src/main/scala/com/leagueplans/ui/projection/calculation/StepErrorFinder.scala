@@ -24,7 +24,7 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
       forest,
       (Map.empty[Step.ID, List[StepError]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], initialPlayer),
       signal,
-      _.repetitions
+      _.repetitions.assumed
     ) { case ((errors, completionOwners, processedReps, player), step, reps) =>
       val priorReps = processedReps.getOrElse(step.id, 0)
       val newProcessedReps = processedReps + (step.id -> (priorReps + reps))

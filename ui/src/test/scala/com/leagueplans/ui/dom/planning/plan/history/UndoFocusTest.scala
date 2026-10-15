@@ -3,7 +3,7 @@ package com.leagueplans.ui.dom.planning.plan.history
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.ForestHistory.Entry
 import com.leagueplans.ui.model.common.forest.{Forest, ForestHistory, ForestInterpreter, ForestResolver, Touched}
-import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.model.plan.{Repetitions, Step}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -75,7 +75,7 @@ final class UndoFocusTest extends AnyFreeSpec with Matchers {
     }
 
     "Undoing an edit focuses the edited step" in {
-      afterUndo(focus = Some(stepB))(_.update(stepD.id, _.deepCopy(repetitions = 2))) shouldEqual Some(stepD.id)
+      afterUndo(focus = Some(stepB))(_.update(stepD.id, _.deepCopy(repetitions = Repetitions.Fixed(2)))) shouldEqual Some(stepD.id)
     }
 
     "Undoing a move focuses the moved step" in {

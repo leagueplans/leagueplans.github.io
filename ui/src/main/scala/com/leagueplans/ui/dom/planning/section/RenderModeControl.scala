@@ -25,7 +25,7 @@ object RenderModeControl {
     val shape =
       Signal.combine(stepSignal, forester.signal).map { (step, forest) =>
         Shape(
-          repeats = forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions).product * step.repetitions > 1,
+          repeats = forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions.assumed).product * step.repetitions.assumed > 1,
           hasSubsteps = forest.children(step.id).nonEmpty
         )
       }.distinct

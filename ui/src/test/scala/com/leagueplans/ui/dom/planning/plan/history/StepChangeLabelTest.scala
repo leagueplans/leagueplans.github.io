@@ -4,7 +4,7 @@ import com.leagueplans.common.model.Skill
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.{Forest, ForestHistory, ForestInterpreter, ForestResolver, Touched}
 import com.leagueplans.ui.model.plan.Effect.GainExp
-import com.leagueplans.ui.model.plan.{Duration, EffectList, Requirement, Step}
+import com.leagueplans.ui.model.plan.{Duration, EffectList, Repetitions, Requirement, Step}
 import com.leagueplans.ui.model.player.skill.{Exp, Level}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -82,7 +82,7 @@ final class StepChangeLabelTest extends AnyFreeSpec with Matchers {
       }
 
       "repetitions" in {
-        edit(_.deepCopy(repetitions = 3)) shouldEqual "Edit repetitions on \"Kill the Kalphite Queen\""
+        edit(_.deepCopy(repetitions = Repetitions.Fixed(3))) shouldEqual "Edit repetitions on \"Kill the Kalphite Queen\""
       }
 
       "a duration" in {
@@ -90,7 +90,7 @@ final class StepChangeLabelTest extends AnyFreeSpec with Matchers {
       }
 
       "several fields" in {
-        edit(_.deepCopy(repetitions = 3, duration = Duration.ticks(10))) shouldEqual
+        edit(_.deepCopy(repetitions = Repetitions.Fixed(3), duration = Duration.ticks(10))) shouldEqual
           "Edit step on \"Kill the Kalphite Queen\""
       }
 
@@ -101,13 +101,13 @@ final class StepChangeLabelTest extends AnyFreeSpec with Matchers {
 
       "several steps" in {
         label(interpreter =>
-          interpreter.update(stepB.id, _.deepCopy(repetitions = 2)) ++
-            interpreter.update(stepC.id, _.deepCopy(repetitions = 2))
+          interpreter.update(stepB.id, _.deepCopy(repetitions = Repetitions.Fixed(2))) ++
+            interpreter.update(stepC.id, _.deepCopy(repetitions = Repetitions.Fixed(2)))
         ) shouldEqual "Edit 2 steps"
       }
 
       "and moving a step" in {
-        label(_.addOption(stepD.deepCopy(repetitions = 2), Some(stepB.id))) shouldEqual "Edit step"
+        label(_.addOption(stepD.deepCopy(repetitions = Repetitions.Fixed(2)), Some(stepB.id))) shouldEqual "Edit step"
       }
     }
   }

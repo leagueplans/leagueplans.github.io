@@ -1,7 +1,7 @@
 package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
-import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.model.plan.{Repetitions, Step}
 import com.leagueplans.ui.model.player.Player
 import com.leagueplans.ui.projection.model.Projection
 import org.scalajs.dom
@@ -67,7 +67,7 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver) {
           case Some(focus) =>
             val ancestors = containingTree.ancestors(focus)
             containingTree.takeUntil(focus).map((id, step) =>
-              if (ancestors.contains(id)) step.deepCopy(repetitions = Math.min(step.repetitions, 1))
+              if (ancestors.contains(id)) step.deepCopy(repetitions = Repetitions.Fixed(Math.min(step.repetitions.assumed, 1)))
               else step
             )
         }
@@ -95,14 +95,14 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver) {
                   val ancestorSubtree = containingTree.subtree(ancestorId)
                   val reducedSubtree = ancestorSubtree.map((id, step) =>
                     if (id == ancestorId)
-                      step.deepCopy(repetitions = Math.max(0, step.repetitions - 1))
+                      step.deepCopy(repetitions = Repetitions.Fixed(Math.max(0, step.repetitions.assumed - 1)))
                     else step
                   )
                   foldLeftAsync(reducedSubtree, player, signal)(resolvePlayer).flatMap {
                     case None => Future.successful(None)
                     case Some(playerAfterAncestorReps) =>
                       val prefix = ancestorSubtree.takeUntil(nextId).map((id, step) =>
-                        if (id == ancestorId) step.deepCopy(repetitions = 1) else step
+                        if (id == ancestorId) step.deepCopy(repetitions = Repetitions.once) else step
                       )
                       foldLeftAsync(prefix, playerAfterAncestorReps, signal)(resolvePlayer)
                   }
@@ -129,5 +129,5 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver) {
     acc: Acc,
     signal: dom.AbortSignal
   )(f: (Acc, Step, Int) => Acc): Future[Option[Acc]] =
-    ForestFolder.foldLeftAsync(forest, acc, signal, _.repetitions)(f)
+    ForestFolder.foldLeftAsync(forest, acc, signal, _.repetitions.assumed)(f)
 }

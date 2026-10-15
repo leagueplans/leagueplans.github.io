@@ -4,11 +4,11 @@ import com.leagueplans.codec.Encoding
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
 
-/** Rewrites the item IDs held by a step's effects and requirements.
+/** Rewrites the item IDs held by a step's effects, requirements and repetitions.
   *
-  * Works on the effect and requirement lists rather than on whole steps, since the shape
-  * of a step has changed between schema versions while these two have not. Each migration
-  * decodes its own version's step and hands the lists over.
+  * Works on those fields rather than on whole steps, since the shape of a step has changed
+  * between schema versions while these have not. Each migration decodes its own version's
+  * step and hands the fields over. Repetitions only hold item IDs from V11 onwards.
   *
   * @param oldToNewIDs items folded into another, whose references move to the survivor
   * @param removedIDs items that no longer exist, whose references are dropped. The app
@@ -28,6 +28,25 @@ private[migrations] final class ItemIDMigrator(
 
   def requirements(requirements: List[Encoding]): MigrationResult[List[Encoding]] =
     migrateList(requirements)(migrateRequirement).map(_.flatten)
+
+  /** A stop condition on a removed item is dropped, as a requirement is. A step left with no
+    * condition at all repeats once.
+    */
+  def repetitions(repetitions: Encoding): MigrationResult[Encoding] =
+    decodeOrdinal(repetitions).flatMap {
+      case (ordinal @ 1, until) =>
+        for {
+          (condition, max) <- until.as[(Encoding, Option[Encoding])]
+          updatedCondition <- migrateStopCondition(condition)
+        } yield updatedCondition match {
+          case Some(c) => encodeCoproduct(ordinal, (c, max))
+          // A fixed count is a signed int, unlike the item IDs this class is set up for
+          case None => encodeCoproduct(0, Tuple1(Encoder.encode(1)(using Encoder.intEncoder)))
+        }
+
+      case _ =>
+        Right(repetitions)
+    }
 
   private def migrateID(id: Int): Option[Int] =
     Option.unless(removedIDs.contains(id))(oldToNewIDs.getOrElse(id, id))
@@ -78,5 +97,30 @@ private[migrations] final class ItemIDMigrator(
 
       case _ =>
         Right(Some(requirement))
+    }
+
+  private def migrateStopCondition(condition: Encoding): MigrationResult[Option[Encoding]] =
+    decodeOrdinal(condition).flatMap {
+      case (ordinal @ 1, itemCount) =>
+        itemCount.as[(Int, Encoding, Encoding, Encoding, Encoding, Encoding)].map(
+          (id, where, forms, comparison, quantity, stopBefore) =>
+            migrateID(id).map(newID =>
+              encodeCoproduct(ordinal, Encoder.encode((newID, where, forms, comparison, quantity, stopBefore)))
+            )
+        )
+
+      case (ordinal @ (3 | 4), andOr) =>
+        for {
+          (left, right) <- andOr.as[(Encoding, Encoding)]
+          updatedLeft <- migrateStopCondition(left)
+          updatedRight <- migrateStopCondition(right)
+        } yield (updatedLeft, updatedRight) match {
+          case (Some(l), Some(r)) => Some(encodeCoproduct(ordinal, Encoder.encode((l, r))))
+          case (onlyOne, None) => onlyOne
+          case (None, onlyOne) => onlyOne
+        }
+
+      case _ =>
+        Right(Some(condition))
     }
 }

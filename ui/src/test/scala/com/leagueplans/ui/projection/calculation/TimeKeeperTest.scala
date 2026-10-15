@@ -2,7 +2,7 @@ package com.leagueplans.ui.projection.calculation
 
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.common.forest.Forest.Update
-import com.leagueplans.ui.model.plan.{Duration as StepDuration, EffectList, Step, StepDetails}
+import com.leagueplans.ui.model.plan.{Duration as StepDuration, EffectList, Repetitions, Step, StepDetails}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -13,7 +13,7 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
   // ---- helpers ----
 
   private def step(id: String, reps: Int = 1, dur: StepDuration = StepDuration.ticks(0)): Step =
-    Step(Step.ID.fromString(id), StepDetails("", EffectList(List.empty), List.empty, reps, dur))
+    Step(Step.ID.fromString(id), StepDetails("", EffectList(List.empty), List.empty, Repetitions.Fixed(reps), dur))
 
   private def forest(
     nodes: Map[Step.ID, Step],

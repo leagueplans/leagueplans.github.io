@@ -61,7 +61,7 @@ final class PlanTest extends CodecSpec {
           description = "Chop a tree",
           directEffects = EffectList(List(Effect.GainExp(Skill.Woodcutting, 1, Exp(25)))),
           requirements = List(Requirement.Holds(Item.ID(241), Requirement.Where.Equipped)),
-          repetitions = 2,
+          repetitions = Repetitions.Fixed(2),
           duration = Duration.seconds(15)
         )
       )
@@ -76,7 +76,7 @@ final class PlanTest extends CodecSpec {
         Plan(name, forest, deferredSettings),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b11000) ++ Encoder.encode(name).getBytes ++
-          Array[Byte](0b1100, 0b1010001) ++ Encoder.encode(forest).getBytes ++
+          Array[Byte](0b1100, 0b1010111) ++ Encoder.encode(forest).getBytes ++
           Array[Byte](0b10100, 0b1111) ++ Encoder.encode[Plan.Settings](deferredSettings).getBytes
       )
     }

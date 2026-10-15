@@ -4,7 +4,7 @@ import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer
 import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.LazyNode
 import com.leagueplans.ui.model.common.forest.Forest.Update
 import com.leagueplans.ui.model.common.forest.ForestPropertyTest.*
-import com.leagueplans.ui.model.plan.{Duration, Plan, Step, StepDetails}
+import com.leagueplans.ui.model.plan.{Duration, Plan, Repetitions, Step, StepDetails}
 import com.leagueplans.ui.model.player.mode.Armageddon
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.storage.model.{PlanMetadata, StepUpdates}
@@ -160,7 +160,7 @@ private object ForestPropertyTest {
     Gen.choose(0, 40).flatMap(Gen.listOfN(_, opGen))
 
   private def step(id: Step.ID, variant: Variant): Step =
-    Step(id, StepDetails(variant.toString).copy(repetitions = variant.repetitions, duration = variant.duration))
+    Step(id, StepDetails(variant.toString).copy(repetitions = Repetitions.Fixed(variant.repetitions), duration = variant.duration))
 
   def resolveAll(ops: List[Op]): Forest[Step.ID, Step] =
     resolveAll(Forest.empty, ops)

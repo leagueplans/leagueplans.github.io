@@ -31,7 +31,8 @@ object Migrator {
       case SchemaVersion.V7 => Some(dynamicImport(V8PlanMigration))
       case SchemaVersion.V8 => Some(dynamicImport(V9PlanMigration))
       case SchemaVersion.V9 => Some(dynamicImport(V10PlanMigration))
-      case SchemaVersion.V10 => None
+      case SchemaVersion.V10 => Some(dynamicImport(V11PlanMigration))
+      case SchemaVersion.V11 => None
     }
 
   private def run(

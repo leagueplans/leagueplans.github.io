@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.model.plan.{Duration, Step}
+import com.leagueplans.ui.model.plan.{Duration, Repetitions, Step}
 import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.uicommon.dom.{ArrowText, Button, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -33,7 +33,7 @@ object TimingRows {
     val stepID = stepSignal.map(_.id).distinct
     val ancestorReps =
       Signal.combine(stepID, forester.signal).map((id, forest) =>
-        forest.ancestors(id).flatMap(forest.get).foldLeft(1)(_ * _.repetitions)
+        forest.ancestors(id).flatMap(forest.get).foldLeft(1)(_ * _.repetitions.assumed)
       ).distinct
     val hasSubsteps =
       Signal.combine(stepID, forester.signal).map((id, forest) => forest.children(id).nonEmpty).distinct
@@ -68,10 +68,10 @@ object TimingRows {
     editableRow[Int](
       icon("M3 7V6a2 2 0 0 1 2-2h8l-2-2M13 9v1a2 2 0 0 1-2 2H3l2 2"),
       label = "Repeat",
-      value = stepSignal.map(_.repetitions),
+      value = stepSignal.map(_.repetitions.assumed),
       display = Signal.combine(stepSignal, ancestorReps).map((step, ancestors) =>
-        L.b(L.cls(Styles.value), s"×${step.repetitions}") ::
-          Option.when(ancestors > 1)(L.span(L.cls(Styles.note), s"×${step.repetitions * ancestors} in its loop")).toList
+        L.b(L.cls(Styles.value), s"×${step.repetitions.assumed}") ::
+          Option.when(ancestors > 1)(L.span(L.cls(Styles.note), s"×${step.repetitions.assumed * ancestors} in its loop")).toList
       ),
       toText = _.toString,
       parse = parseRepetitions,
@@ -84,7 +84,7 @@ object TimingRows {
       tooltip
     ).amend(
       commits.events.withCurrentValueOf(stepSignal) --> { (reps, step) =>
-        if (reps != step.repetitions) forester.update(step.id, _.deepCopy(repetitions = reps))
+        if (reps != step.repetitions.assumed) forester.update(step.id, _.deepCopy(repetitions = Repetitions.Fixed(reps)))
       }
     )
   }
@@ -105,7 +105,7 @@ object TimingRows {
           List(L.b(L.cls(Styles.value), "—"))
         else
           L.b(L.cls(Styles.value), DurationText.format(step.duration)) ::
-            Option.when(step.repetitions * ancestors > 1)(L.span(L.cls(Styles.note), "each")).toList
+            Option.when(step.repetitions.assumed * ancestors > 1)(L.span(L.cls(Styles.note), "each")).toList
       ),
       toText = duration => if (duration.length == 0) "" else DurationText.format(duration).replace(" ", ""),
       parse = DurationText.parse,
@@ -188,7 +188,7 @@ object TimingRows {
     tooltip: Tooltip
   ): Option[L.Div] = {
     val total = timing.durationPerParentRep.getOrElse(ScalaDuration.Zero).safeMul(ancestorReps)
-    val reps = step.repetitions * ancestorReps
+    val reps = step.repetitions.assumed * ancestorReps
     Option.when(total != ScalaDuration.Zero && total != step.duration.asScala)(
       readOnlyRow(
         icon("M3 4h10M3 8h10M3 12h6"),
