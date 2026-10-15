@@ -5,7 +5,7 @@ import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.ViewerAccount
-import com.leagueplans.ui.projection.model.{Projection, StepError}
+import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError}
 
 object ProjectionProtocol {
   sealed trait Inbound {
@@ -50,7 +50,13 @@ object ProjectionProtocol {
   object Outbound {
     final case class Computed(id: Long, result: Projection) extends Outbound
     final case class ComputeFailed(id: Long, message: String) extends Outbound
-    final case class ErrorsComputed(id: Long, errors: Map[Step.ID, List[StepError]]) extends Outbound
+    /** @param loops how each pass of each step that repeats until a condition is met played out,
+      *              which is worked out alongside the errors */
+    final case class ErrorsComputed(
+      id: Long,
+      errors: Map[Step.ID, List[StepError]],
+      loops: Map[Step.ID, List[LoopRun]]
+    ) extends Outbound
     final case class ErrorDetectionSkipped(id: Long) extends Outbound
     final case class ErrorDetectionFailed(id: Long, message: String) extends Outbound
 

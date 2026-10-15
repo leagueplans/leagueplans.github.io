@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.ViewerAccount
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.model.{Projection, StepError}
+import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
@@ -30,6 +30,7 @@ object ProjectionClient {
       port,
       Var(Projection(initialAccount.applyTo(initialSettings.initialPlayer))).distinct,
       _stepsWithErrors = Var(Map.empty).distinct,
+      _loops = Var(Map.empty).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       lastSentID = 0L,
@@ -44,6 +45,7 @@ final class ProjectionClient(
   port: MessagePortClient[Inbound, Outbound],
   _projection: Var[Projection],
   _stepsWithErrors: Var[Map[Step.ID, List[StepError]]],
+  _loops: Var[Map[Step.ID, List[LoopRun]]],
   _projectionStatus: Var[StatusTracker.Status],
   _errorDetectionStatus: Var[StatusTracker.Status],
   private var lastSentID: Long,
@@ -68,10 +70,11 @@ final class ProjectionClient(
       if (lastSentID == id)
         _projectionStatus.set(StatusTracker.Status.Failed(reason))
 
-    case Outbound.ErrorsComputed(id, errors) =>
+    case Outbound.ErrorsComputed(id, errors, loops) =>
       if (lastReceivedErrorID.forall(_ < id)) {
         lastReceivedErrorID = Some(id)
         _stepsWithErrors.set(errors)
+        _loops.set(loops)
       }
 
       if (lastSentID == id) {
@@ -104,6 +107,10 @@ final class ProjectionClient(
 
   val stepsWithErrors: StrictSignal[Map[Step.ID, List[StepError]]] =
     _stepsWithErrors.signal
+
+  /** How each pass of each step that repeats until a condition is met played out */
+  val loops: StrictSignal[Map[Step.ID, List[LoopRun]]] =
+    _loops.signal
 
   def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings, account: ViewerAccount): Unit =
     send(Inbound.Initialise(nextId(), forest, settings, account))

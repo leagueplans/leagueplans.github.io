@@ -126,7 +126,7 @@ private final class ProjectionWorker(
   private def calculators(settings: Plan.Settings, account: ViewerAccount): (Projector, StepErrorFinder) = {
     val resolver = EffectResolver(settings, cache)
     val initialPlayer = account.applyTo(settings.initialPlayer)
-    (new Projector(initialPlayer, resolver), new StepErrorFinder(settings, initialPlayer, resolver, cache))
+    (new Projector(initialPlayer, resolver, cache), new StepErrorFinder(settings, initialPlayer, resolver, cache))
   }
 
   private def scheduleComputation(): Unit =
@@ -168,9 +168,9 @@ private final class ProjectionWorker(
       s.errorFinder
         .findAsync(s.forest, signal)
         .onComplete {
-          case Success(Some(errors)) =>
+          case Success(Some(findings)) =>
             state = state.map(s => s.copy(lastSuccessfulErrorID = Some(s.latestNonFocusID)))
-            port.send(Outbound.ErrorsComputed(s.latestID, errors))
+            port.send(Outbound.ErrorsComputed(s.latestID, findings.errors, findings.loops))
           case Success(None) => // aborted; newer computation pending
           case Failure(e) =>
             console.error("Failed to compute step errors", e)

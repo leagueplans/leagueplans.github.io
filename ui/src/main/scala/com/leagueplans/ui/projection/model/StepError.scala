@@ -2,7 +2,7 @@ package com.leagueplans.ui.projection.model
 
 import com.leagueplans.codec.decoding.Decoder
 import com.leagueplans.codec.encoding.Encoder
-import com.leagueplans.ui.model.plan.{Step, Effect as StepEffect, Requirement as StepRequirement}
+import com.leagueplans.ui.model.plan.{Step, Effect as StepEffect, Repetitions as StepRepetitions, Requirement as StepRequirement}
 
 object StepError {
   /** The effect or requirement on the step that the problem lies with.
@@ -17,12 +17,15 @@ object StepError {
   enum Source {
     case Effect(index: Int, effect: StepEffect)
     case Requirement(index: Int, requirement: StepRequirement)
+    /** How many times the step repeats, which has no position */
+    case Repetitions(repetitions: StepRepetitions)
 
     /** Whether the step still holds the effect or requirement at the same position */
     def isCurrentFor(step: Step): Boolean =
       this match {
         case Effect(index, effect) => step.directEffects.underlying.lift(index).contains(effect)
         case Requirement(index, requirement) => step.requirements.lift(index).contains(requirement)
+        case Repetitions(repetitions) => step.repetitions == repetitions
       }
   }
 

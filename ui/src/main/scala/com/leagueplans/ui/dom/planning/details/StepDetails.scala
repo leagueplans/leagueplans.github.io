@@ -87,6 +87,9 @@ object StepDetails {
             (effectErrors.updated(i, effectErrors.getOrElse(i, List.empty) :+ message), requirementErrors)
           case ((effectErrors, requirementErrors), StepError(StepError.Source.Requirement(i, _), message)) =>
             (effectErrors, requirementErrors.updated(i, requirementErrors.getOrElse(i, List.empty) :+ message))
+          // TODO: show these on the repeat row once it can edit a condition to repeat until
+          case (errors, StepError(StepError.Source.Repetitions(_), _)) =>
+            errors
         }
       )
 

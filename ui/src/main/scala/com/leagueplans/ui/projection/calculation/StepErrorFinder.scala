@@ -3,28 +3,37 @@ package com.leagueplans.ui.projection.calculation
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.{CompleteDiaryTask, CompleteGridTile, CompleteLeagueTask}
-import com.leagueplans.ui.model.plan.{Plan, Step}
+import com.leagueplans.ui.model.plan.{Plan, Repetitions, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.projection.calculation.StepErrorFinder.Findings
+import com.leagueplans.ui.projection.calculation.loops.LoopMessages
 import com.leagueplans.ui.projection.calculation.validation.{EffectValidator, RequirementValidator}
-import com.leagueplans.ui.projection.model.StepError
+import com.leagueplans.ui.projection.model.{LoopRun, StepError}
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
 
+object StepErrorFinder {
+  /** @param loops how each pass of each step that repeats until a condition is met played out */
+  final case class Findings(errors: Map[Step.ID, List[StepError]], loops: Map[Step.ID, List[LoopRun]])
+}
+
 /** @param initialPlayer the player before the plan's first step */
 final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, resolver: EffectResolver, cache: Cache) {
   private val maybeLeague = settings.maybeLeaguePointScoring.map(_.league)
+  private type Acc = (Map[Step.ID, List[StepError]], Map[Effect, Step.ID], Map[Step.ID, Int], Player)
+  private val looping = StepLooping[Acc](resolver, cache, _._4)
 
   def findAsync(
     forest: Forest[Step.ID, Step],
     signal: dom.AbortSignal
-  ): Future[Option[Map[Step.ID, List[StepError]]]] =
+  ): Future[Option[Findings]] =
     ForestFolder.foldLeftAsync(
       forest,
       (Map.empty[Step.ID, List[StepError]], Map.empty[Effect, Step.ID], Map.empty[Step.ID, Int], initialPlayer),
       signal,
-      _.repetitions.assumed
+      looping
     ) { case ((errors, completionOwners, processedReps, player), step, reps) =>
       val priorReps = processedReps.getOrElse(step.id, 0)
       val newProcessedReps = processedReps + (step.id -> (priorReps + reps))
@@ -44,7 +53,33 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
         }
       (finalErrors, finalOwners, newProcessedReps, finalPlayer)
     }
-    .map(_.map { case (errors, _, _, _) => errors })
+    .map(_.map { case ForestFolder.Result((errors, _, _, _), loops) =>
+      val loopErrors = loops.flatMap((id, runs) => forest.get(id).map(step => id -> loopProblems(step, runs)))
+      Findings(
+        errors = (errors.keySet ++ loopErrors.keySet).flatMap(id =>
+          Option((loopErrors.getOrElse(id, List.empty) ++ errors.getOrElse(id, List.empty)))
+            .filter(_.nonEmpty)
+            .map(id -> _)
+        ).toMap,
+        loops = loops.view.mapValues(_.toList).toMap
+      )
+    })
+
+  /** One problem for each different thing that went wrong, naming the pass it first went wrong on
+    * if the step is played more than once */
+  private def loopProblems(step: Step, runs: Vector[LoopRun]): List[StepError] =
+    step.repetitions match {
+      case Repetitions.Fixed(_) =>
+        List.empty
+      case until @ Repetitions.Until(condition, _) =>
+        runs.zipWithIndex
+          .flatMap((run, pass) => LoopMessages.problems(run, condition, cache.items).map(_ -> pass))
+          .distinctBy(_._1)
+          .map((message, pass) =>
+            StepError(StepError.Source.Repetitions(until), if (runs.size > 1) s"Pass ${pass + 1}: $message" else message)
+          )
+          .toList
+    }
 
   private def advancePlayer(player: Player, step: Step): Player =
     step.directEffects.underlying.foldLeft(player)(resolver.resolve)
