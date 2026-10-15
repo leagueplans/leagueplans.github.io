@@ -2,11 +2,11 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.{Duration, Repetitions, Step}
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.ui.projection.model.StepTiming
 import com.leagueplans.uicommon.dom.{ArrowText, Button, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
-import com.leagueplans.uicommon.utils.scala.DurationOps.safeMul
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
@@ -26,7 +26,7 @@ object TimingRows {
   def apply(
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     repetitionsEditRequests: EventStream[Unit],
     tooltip: Tooltip
   ): L.Div = {
@@ -37,14 +37,14 @@ object TimingRows {
       ).distinct
     val hasSubsteps =
       Signal.combine(stepID, forester.signal).map((id, forest) => forest.children(id).nonEmpty).distinct
-    val timing = stepID.flatMapSwitch(timeKeeper.get)
+    val timing = stepID.flatMapSwitch(timings.get)
 
     L.div(
       L.cls(Styles.rows),
       toRepeatRow(stepSignal, ancestorReps, forester, repetitionsEditRequests, tooltip),
       toDurationRow(stepSignal, ancestorReps, forester, tooltip),
-      L.child.maybe <-- Signal.combine(timing, ancestorReps).map(toScheduleRow(_, _, tooltip)),
-      L.child.maybe <-- Signal.combine(stepSignal, timing, ancestorReps, hasSubsteps).map(toTotalRow(_, _, _, _, tooltip))
+      L.child.maybe <-- timing.map(toScheduleRow(_, tooltip)),
+      L.child.maybe <-- Signal.combine(stepSignal, timing, hasSubsteps).map(toTotalRow(_, _, _, tooltip))
     )
   }
 
@@ -160,8 +160,8 @@ object TimingRows {
       )
     )
 
-  private def toScheduleRow(timing: TimeKeeper.State, ancestorReps: Int, tooltip: Tooltip): Option[L.Div] =
-    Option.when(ancestorReps == 1) {
+  private def toScheduleRow(timing: StepTiming, tooltip: Tooltip): Option[L.Div] =
+    Option.when(!timing.insideLoop) {
       val start = timing.start.getOrElse(ScalaDuration.Zero)
       val takesTime = timing.durationPerRep.exists(_ != ScalaDuration.Zero)
       readOnlyRow(
@@ -182,13 +182,12 @@ object TimingRows {
   /** Shown when substeps or repetitions make the step take longer than its own duration */
   private def toTotalRow(
     step: Step,
-    timing: TimeKeeper.State,
-    ancestorReps: Int,
+    timing: StepTiming,
     hasSubsteps: Boolean,
     tooltip: Tooltip
   ): Option[L.Div] = {
-    val total = timing.durationPerParentRep.getOrElse(ScalaDuration.Zero).safeMul(ancestorReps)
-    val reps = step.repetitions.assumed * ancestorReps
+    val total = timing.total.getOrElse(ScalaDuration.Zero)
+    val reps = timing.totalReps
     Option.when(total != ScalaDuration.Zero && total != step.duration.asScala)(
       readOnlyRow(
         icon("M3 4h10M3 8h10M3 12h6"),

@@ -170,7 +170,7 @@ private final class ProjectionWorker(
         .onComplete {
           case Success(Some(findings)) =>
             state = state.map(s => s.copy(lastSuccessfulErrorID = Some(s.latestNonFocusID)))
-            port.send(Outbound.ErrorsComputed(s.latestID, findings.errors, findings.loops))
+            port.send(Outbound.ErrorsComputed(s.latestID, findings.errors, findings.loops, findings.timings, findings.endTime))
           case Success(None) => // aborted; newer computation pending
           case Failure(e) =>
             console.error("Failed to compute step errors", e)

@@ -4,13 +4,15 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.ViewerAccount
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError}
+import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError, StepTiming}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
 import com.leagueplans.uicommon.wrappers.workers.MessagePortClient
 import com.raquo.airstream.state.{StrictSignal, Var}
 import org.scalajs.dom.console
+
+import scala.concurrent.duration.Duration
 
 object ProjectionClient {
   val projectionStatusKey = "projection-client-projection"
@@ -31,6 +33,8 @@ object ProjectionClient {
       Var(Projection(initialAccount.applyTo(initialSettings.initialPlayer))).distinct,
       _stepsWithErrors = Var(Map.empty).distinct,
       _loops = Var(Map.empty).distinct,
+      _timings = Var(Map.empty).distinct,
+      _endTime = Var(Duration.Zero).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       Var(StatusTracker.Status.Busy).distinct,
       lastSentID = 0L,
@@ -46,6 +50,8 @@ final class ProjectionClient(
   _projection: Var[Projection],
   _stepsWithErrors: Var[Map[Step.ID, List[StepError]]],
   _loops: Var[Map[Step.ID, List[LoopRun]]],
+  _timings: Var[Map[Step.ID, StepTiming]],
+  _endTime: Var[Duration],
   _projectionStatus: Var[StatusTracker.Status],
   _errorDetectionStatus: Var[StatusTracker.Status],
   private var lastSentID: Long,
@@ -70,11 +76,13 @@ final class ProjectionClient(
       if (lastSentID == id)
         _projectionStatus.set(StatusTracker.Status.Failed(reason))
 
-    case Outbound.ErrorsComputed(id, errors, loops) =>
+    case Outbound.ErrorsComputed(id, errors, loops, timings, endTime) =>
       if (lastReceivedErrorID.forall(_ < id)) {
         lastReceivedErrorID = Some(id)
         _stepsWithErrors.set(errors)
         _loops.set(loops)
+        _timings.set(timings)
+        _endTime.set(endTime)
       }
 
       if (lastSentID == id) {
@@ -111,6 +119,9 @@ final class ProjectionClient(
   /** How each pass of each step that repeats until a condition is met played out */
   val loops: StrictSignal[Map[Step.ID, List[LoopRun]]] =
     _loops.signal
+
+  val timings: StepTimings =
+    StepTimings(_timings.signal, _endTime.signal)
 
   def initialise(forest: Forest[Step.ID, Step], settings: Plan.Settings, account: ViewerAccount): Unit =
     send(Inbound.Initialise(nextId(), forest, settings, account))

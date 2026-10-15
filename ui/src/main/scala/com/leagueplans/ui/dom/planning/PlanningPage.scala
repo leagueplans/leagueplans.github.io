@@ -11,7 +11,7 @@ import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContex
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.local.PlanLocalStorage
@@ -43,7 +43,7 @@ object PlanningPage {
     account: Var[ViewerAccount],
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
     stepsWithErrors: Signal[Map[Step.ID, List[StepError]]],
@@ -93,7 +93,7 @@ object PlanningPage {
         rowSelection,
         dragSession,
         stepEditor,
-        timeKeeper,
+        timings,
         tooltip,
         contextMenu,
         modal,
@@ -157,7 +157,7 @@ object PlanningPage {
             ),
             forester,
             focusController,
-            timeKeeper,
+            timings,
             rowSelection,
             dragSession,
             settings,

@@ -6,7 +6,6 @@ import com.leagueplans.ui.dom.plans.{LoadingStatus, OpenPlan, PlanManager, PlanS
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.calculation.TimeKeeper
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.local.{PlanLocalStorage, ViewerAccountStorage}
@@ -37,7 +36,7 @@ object PlanningPageBootstrap {
   ): L.Div = {
     val account = Var(ViewerAccountStorage.load())
     val projectionClient = ProjectionClient(initialPlan.steps, initialPlan.settings, account.now())
-    val timeKeeper = TimeKeeper(initialPlan.steps)
+    val timings = projectionClient.timings
 
 
     val forester = Forester(initialPlan.steps, Observer(updates => subscription.save(StepUpdates(updates))))
@@ -89,7 +88,7 @@ object PlanningPageBootstrap {
         forester.signal,
         Signal.combine(projectionClient.projection, account.signal).map(_.withAccount(_))
       ),
-      timeKeeper,
+      timings,
       focusController,
       CollapsedSteps(planStorage, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,
@@ -116,8 +115,6 @@ object PlanningPageBootstrap {
       },
       projectionClient.projectionsStatus --> Observer(statusTracker.set(ProjectionClient.projectionStatusKey, _)),
       projectionClient.errorDetectionStatus --> Observer(statusTracker.set(ProjectionClient.errorDetectionStatusKey, _)),
-      // Timekeeping
-      forester.updates --> (_.foreach(timeKeeper.update)),
       // Clean up
       L.onUnmountCallback { _ =>
         subscription.close()

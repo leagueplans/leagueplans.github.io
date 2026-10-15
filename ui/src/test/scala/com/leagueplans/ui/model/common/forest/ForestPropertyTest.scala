@@ -102,7 +102,7 @@ final class ForestPropertyTest
   }
 }
 
-private object ForestPropertyTest {
+private[ui] object ForestPropertyTest {
   /** What the step tree gives each node it creates */
   final case class TreeNode(
     id: Step.ID,

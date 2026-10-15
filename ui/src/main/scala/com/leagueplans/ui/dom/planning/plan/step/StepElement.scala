@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.LazyNode
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, NewStepDraft, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
 import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -38,7 +38,7 @@ object StepElement {
     draggingStatus: Var[StepDraggingStatus],
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     stepClipboard: StepClipboard,
@@ -75,7 +75,7 @@ object StepElement {
         editInDetails(EditRequest.Repetitions)
       },
       animationController,
-      timeKeeper,
+      timings,
       positionOffset,
       tooltip
     )
@@ -149,7 +149,7 @@ object StepElement {
     isDraggable: Var[Boolean],
     editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     positionOffset: Signal[Int],
     tooltip: Tooltip
   ): L.Div =
@@ -163,7 +163,7 @@ object StepElement {
       isDraggable.writer,
       editRepetitions,
       animationController,
-      timeKeeper,
+      timings,
       tooltip
     ).amend(
       // Only the header, so that a step's state isn't mistaken for its substeps'

@@ -8,6 +8,7 @@ import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 /** @param initialPlayer the player before the plan's first step */
 final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cache: Cache) {
@@ -62,9 +63,9 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cac
     }
 
     // Phase 1
-    foldLeftAsync(precedingRootSteps, initialPlayer, signal)(resolvePlayer).flatMap {
+    foldLeftAsync(precedingRootSteps, (initialPlayer, None), signal).flatMap {
       case None => Future.successful(None)
-      case Some(playerAfterPreceding) =>
+      case Some(afterPreceding) =>
         // Phase 2: playerBeforeFocus
         val transformedContainingTree = focusID match {
           case None => Forest.empty
@@ -76,9 +77,9 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cac
             )
         }
 
-        foldLeftAsync(transformedContainingTree, playerAfterPreceding, signal)(resolvePlayer).flatMap {
+        foldLeftAsync(transformedContainingTree, afterPreceding, signal).flatMap {
           case None => Future.successful(None)
-          case Some(playerBeforeFocus) =>
+          case Some((playerBeforeFocus, _)) =>
             val playerAfterEffects = focusedStep match {
               case Some(step) => effectResolver.resolve(playerBeforeFocus, step.directEffects.underlying*)
               case None => playerBeforeFocus
@@ -91,11 +92,11 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cac
             //   Phase 3.2: fold the prefix of the ancestor subtree up to (not including) nextId once
             // Then fold the focus subtree.
             val playerAfterAllAncestorReps = ancestorPairs.foldLeft(
-              Future.successful(Option(playerAfterPreceding))
+              Future.successful(Option(afterPreceding))
             ) { case (futurePlayer, (ancestorId, nextId)) =>
               futurePlayer.flatMap {
                 case None => Future.successful(None)
-                case Some(player) =>
+                case Some(at) =>
                   val ancestorSubtree = containingTree.subtree(ancestorId)
                   // A repeat until a condition is met plays out in full, so that the condition is
                   // checked as in the rest of the plan, and its last repetition is withheld
@@ -105,22 +106,22 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cac
                       case _ => step
                     }
                   )
-                  foldLeftAsync(reducedSubtree, player, signal, withholdLastRepOf = Some(ancestorId))(resolvePlayer).flatMap {
+                  foldLeftAsync(reducedSubtree, at, signal, withholdLastRepOf = Some(ancestorId)).flatMap {
                     case None => Future.successful(None)
-                    case Some(playerAfterAncestorReps) =>
+                    case Some(afterAncestorReps) =>
                       val prefix = ancestorSubtree.takeUntil(nextId).map((id, step) =>
                         if (id == ancestorId) step.deepCopy(repetitions = Repetitions.once) else step
                       )
-                      foldLeftAsync(prefix, playerAfterAncestorReps, signal)(resolvePlayer)
+                      foldLeftAsync(prefix, afterAncestorReps, signal)
                   }
               }
             }
 
             playerAfterAllAncestorReps.flatMap {
               case None => Future.successful(None)
-              case Some(playerBeforeLastRep) =>
-                foldLeftAsync(focusSubtree, playerBeforeLastRep, signal)(resolvePlayer)
-                  .map(_.map(playerAfterAllReps =>
+              case Some(beforeLastRep) =>
+                foldLeftAsync(focusSubtree, beforeLastRep, signal)
+                  .map(_.map((playerAfterAllReps, _) =>
                     Projection(playerBeforeFocus, playerAfterEffects, playerAfterAllReps, focusID)
                   ))
             }
@@ -137,11 +138,13 @@ final class Projector(initialPlayer: Player, effectResolver: EffectResolver, cac
       case Repetitions.Until(_, _) => Repetitions.once
     }
 
+  /** Folds from a player, and how far into the plan they are, to the same after the steps */
   private def foldLeftAsync(
     forest: Forest[Step.ID, Step],
-    player: Player,
+    from: (Player, Option[Duration]),
     signal: dom.AbortSignal,
     withholdLastRepOf: Option[Step.ID] = None
-  )(f: (Player, Step, Int) => Player): Future[Option[Player]] =
-    ForestFolder.foldLeftAsync(forest, player, signal, looping, withholdLastRepOf)(f).map(_.map(_.acc))
+  ): Future[Option[(Player, Option[Duration])]] =
+    ForestFolder.foldLeftAsync(forest, from._1, signal, looping, from._2, withholdLastRepOf)(resolvePlayer)
+      .map(_.map(result => (result.acc, result.elapsed)))
 }

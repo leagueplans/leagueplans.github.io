@@ -1,7 +1,7 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.{Button, Tooltip}
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
 import com.leagueplans.uicommon.dom.collapse.{CollapseButton, InvertibleAnimationController}
@@ -38,7 +38,7 @@ object StepHeader {
     draggableObserver: Observer[Boolean],
     editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     tooltip: Tooltip
   ): L.Div =
     L.div(
@@ -59,7 +59,7 @@ object StepHeader {
           L.cls(Styles.description),
           L.text <-- stepSignal.map(_.description)
         ),
-        L.child.maybe <-- toTimingInfo(stepID, stepSignal, timeKeeper)
+        L.child.maybe <-- toTimingInfo(stepID, stepSignal, timings)
       )
     )
 
@@ -143,9 +143,9 @@ object StepHeader {
   private def toTimingInfo(
     stepID: Step.ID,
     stepSignal: Signal[Step],
-    timeKeeper: TimeKeeper
+    timings: StepTimings
   ): Signal[Option[L.Span]] =
-    Signal.combine(stepSignal, timeKeeper.get(stepID)).map((step, state) =>
+    Signal.combine(stepSignal, timings.get(stepID)).map((step, state) =>
       state.durationPerRep.flatMap {
         case Duration.Zero =>
           None

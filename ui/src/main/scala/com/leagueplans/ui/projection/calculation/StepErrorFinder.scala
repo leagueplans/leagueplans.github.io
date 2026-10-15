@@ -8,15 +8,33 @@ import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.StepErrorFinder.Findings
 import com.leagueplans.ui.projection.calculation.loops.LoopMessages
 import com.leagueplans.ui.projection.calculation.validation.{EffectValidator, RequirementValidator}
-import com.leagueplans.ui.projection.model.{LoopRun, StepError}
+import com.leagueplans.ui.projection.model.{LoopRun, StepError, StepTiming}
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 object StepErrorFinder {
-  /** @param loops how each pass of each step that repeats until a condition is met played out */
-  final case class Findings(errors: Map[Step.ID, List[StepError]], loops: Map[Step.ID, List[LoopRun]])
+  /** @param loops how each pass of each step that repeats until a condition is met played out
+    * @param timings when each step happens and how long it takes
+    * @param endTime how long the whole plan takes
+    */
+  final case class Findings(
+    errors: Map[Step.ID, List[StepError]],
+    loops: Map[Step.ID, List[LoopRun]],
+    timings: Map[Step.ID, StepTiming],
+    endTime: Duration
+  )
+
+  /** Whether a step that the step is part of plays more than one repetition at a time */
+  def insideLoop(forest: Forest[Step.ID, Step], loops: Map[Step.ID, Vector[LoopRun]], id: Step.ID): Boolean =
+    forest.ancestors(id).exists(ancestor =>
+      forest.get(ancestor).exists(_.repetitions match {
+        case Repetitions.Fixed(n) => n > 1
+        case Repetitions.Until(_, _) => loops.get(ancestor).exists(_.exists(_.reps > 1))
+      })
+    )
 }
 
 /** @param initialPlayer the player before the plan's first step */
@@ -53,7 +71,7 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
         }
       (finalErrors, finalOwners, newProcessedReps, finalPlayer)
     }
-    .map(_.map { case ForestFolder.Result((errors, _, _, _), loops) =>
+    .map(_.map { case ForestFolder.Result((errors, _, _, _), loops, timings, elapsed) =>
       val loopErrors = loops.flatMap((id, runs) => forest.get(id).map(step => id -> loopProblems(step, runs)))
       Findings(
         errors = (errors.keySet ++ loopErrors.keySet).flatMap(id =>
@@ -61,9 +79,12 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
             .filter(_.nonEmpty)
             .map(id -> _)
         ).toMap,
-        loops = loops.view.mapValues(_.toList).toMap
+        loops = loops.view.mapValues(_.toList).toMap,
+        timings = timings.map((id, timing) => id -> timing.copy(insideLoop = StepErrorFinder.insideLoop(forest, loops, id))),
+        endTime = elapsed.getOrElse(Duration.Zero)
       )
     })
+
 
   /** One problem for each different thing that went wrong, naming the pass it first went wrong on
     * if the step is played more than once */

@@ -9,7 +9,8 @@ import com.leagueplans.ui.dom.planning.plan.FocusController
 import com.leagueplans.ui.dom.planning.section.SectionKey
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.projection.calculation.{EffectResolver, TimeKeeper}
+import com.leagueplans.ui.projection.calculation.EffectResolver
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
@@ -36,7 +37,7 @@ object StepDetails {
     errorsSignal: Signal[List[StepError]],
     forester: Forester[Step.ID, Step],
     focusController: FocusController,
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     selection: RowSelection,
     dragSession: DragSession,
     settings: Signal[Plan.Settings],
@@ -109,7 +110,7 @@ object StepDetails {
         L.cls(Styles.header),
         Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
         DescriptionField(stepSignal, forester, fieldEditRequests.filter(_ == EditRequest.Description).mapToUnit),
-        TimingRows(stepSignal, forester, timeKeeper, fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit, tooltip)
+        TimingRows(stepSignal, forester, timings, fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit, tooltip)
       ),
       L.sectionTag(
         L.cls(Styles.section),

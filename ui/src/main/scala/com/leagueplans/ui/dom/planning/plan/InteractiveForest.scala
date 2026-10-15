@@ -8,7 +8,7 @@ import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -26,7 +26,7 @@ object InteractiveForest {
     focusContext: FocusContext,
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     focusController: FocusController,
@@ -88,7 +88,7 @@ object InteractiveForest {
             draggingStatus,
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)).distinct,
             editingEnabled,
-            timeKeeper,
+            timings,
             tooltip,
             contextMenu,
             stepClipboard,

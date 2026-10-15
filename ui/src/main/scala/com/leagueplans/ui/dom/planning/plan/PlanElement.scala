@@ -7,7 +7,7 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.{UndoController, UndoToasts}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
-import com.leagueplans.ui.projection.calculation.TimeKeeper
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
@@ -38,7 +38,7 @@ object PlanElement {
     rowSelection: RowSelection,
     dragSession: DragSession,
     stepEditor: StepEditor,
-    timeKeeper: TimeKeeper,
+    timings: StepTimings,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal,
@@ -61,7 +61,7 @@ object PlanElement {
         focusContext,
         editingEnabled,
         stepsWithErrorsSignal,
-        timeKeeper,
+        timings,
         tooltip,
         contextMenu,
         focusController,

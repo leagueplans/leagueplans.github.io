@@ -11,6 +11,9 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
+/** How the page timed steps before the projection worker took it over. It works the timings out
+  * from the shape of the plan alone, so it can't time steps that repeat until a condition is met,
+  * but it's kept to check the worker's timings against for every other step. */
 object TimeKeeper {
   final case class State(
     start: Option[Duration],

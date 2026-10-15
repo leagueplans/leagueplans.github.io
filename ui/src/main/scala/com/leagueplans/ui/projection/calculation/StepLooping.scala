@@ -5,12 +5,17 @@ import com.leagueplans.ui.model.player.item.ItemEffects
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.loops.{LoopContext, Shortfalls}
 
+import scala.concurrent.duration.Duration
+
 /** Plays steps that repeat until a condition is met, for folds whose accumulator holds a player */
 private[calculation] object StepLooping {
   def apply[Acc](resolver: EffectResolver, cache: Cache, player: Acc => Player): ForestFolder.Looping[Step, Acc] =
     new ForestFolder.Looping[Step, Acc] {
       def repetitions(step: Step): Repetitions =
         step.repetitions
+
+      def duration(step: Step): Option[Duration] =
+        step.duration.toOption.map(_.asScala)
 
       def context(acc: Acc, shortfalls: Shortfalls): LoopContext =
         LoopContext(player(acc), cache.items, shortfalls)

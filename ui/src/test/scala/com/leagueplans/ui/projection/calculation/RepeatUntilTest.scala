@@ -17,6 +17,7 @@ import org.scalatest.LoneElement
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.concurrent.duration.{Duration as ScalaDuration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement {
@@ -228,6 +229,43 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
         // 30 xp a rep: 3 reps
         project(f, focus).map(projection => fishingXp(projection.playerAfterAllReps) shouldBe 90)
       }
+    }
+
+    "times a step by the repetitions it plays" in {
+      // 3 reps of 1 minute, then a step after it
+      val loop = step("loop", until(fishingLevel(2))).deepCopy(directEffects = EffectList(List(fishing(30))), duration = Duration.seconds(60))
+      val after = step("after", Repetitions.once).deepCopy(duration = Duration.seconds(120))
+      find(forest(loop -> None, after -> None)).map { findings =>
+        val timing = findings.timings(loop.id)
+        timing.start shouldBe Some(ScalaDuration.Zero)
+        timing.durationPerRep shouldBe Some(1.minute)
+        timing.firstPass shouldBe Some(3.minutes)
+        timing.total shouldBe Some(3.minutes)
+        timing.totalReps shouldBe 3
+        findings.timings(after.id).start shouldBe Some(3.minutes)
+        findings.endTime shouldBe 5.minutes
+      }
+    }
+
+    "times a step inside another repeated step across each of its passes" in {
+      val trip = step("trip", Repetitions.Fixed(3))
+      val loop = step("loop", until(fishingLevel(2))).deepCopy(directEffects = EffectList(List(fishing(50))), duration = Duration.seconds(60))
+      find(forest(trip -> None, loop -> Some(trip))).map { findings =>
+        // 2 reps, then none on the next two passes
+        findings.timings(loop.id).firstPass shouldBe Some(2.minutes)
+        findings.timings(loop.id).total shouldBe Some(2.minutes)
+        findings.timings(loop.id).totalReps shouldBe 2
+        findings.timings(loop.id).insideLoop shouldBe true
+        findings.timings(trip.id).total shouldBe Some(2.minutes)
+      }
+    }
+
+    "doesn't count a repetition it stops before" in {
+      val stock = step("stock", Repetitions.once, addFeathers(10))
+      val loop = step("loop", until(feathersAtMost(0, stopBefore = true)), addFeathers(-3)).deepCopy(duration = Duration.seconds(60))
+      find(forest(stock -> None, loop -> None)).map(findings =>
+        findings.timings(loop.id).total shouldBe Some(3.minutes)
+      )
     }
 
     "projects one pass of a step whose condition is already met, for context" in {
