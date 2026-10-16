@@ -88,7 +88,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
         findings <- find(f)
         projection <- project(f, after)
       } yield {
-        findings.loops shouldBe Map(loop.id -> List(LoopRun(2, LoopRun.Outcome.Met, List.empty)))
+        findings.loops shouldBe Map(loop.id -> List(LoopRun(2, LoopRun.Outcome.Met(List(fishingLevel(2))), List.empty)))
         findings.errors shouldBe Map.empty
         fishingXp(projection.playerBeforeStep) shouldBe 100
       }
@@ -103,9 +103,9 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
         findings <- find(f)
         projection <- project(f, after)
       } yield {
-        findings.loops(loop.id) shouldBe List(LoopRun(0, LoopRun.Outcome.AlreadyMet, List.empty))
+        findings.loops(loop.id) shouldBe List(LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty))
         findings.errors(loop.id).map(_.message) shouldBe
-          List("This step repeats until Fishing reaches level 2, which is already true when it's reached, so it doesn't run")
+          List("Fishing is already level 2, so this step doesn't run")
         fishingXp(projection.playerBeforeStep) shouldBe 100
       }
     }
@@ -114,7 +114,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val loop = step("loop", until(fishingLevel(2)), Effect.GainExp(Skill.Cooking, 1, Exp(50)))
       find(forest(loop -> None)).map { findings =>
         findings.loops(loop.id) shouldBe List(LoopRun(1, LoopRun.Outcome.NoProgress, List.empty))
-        findings.errors(loop.id).map(_.message).loneElement should include("so it runs once")
+        findings.errors(loop.id).map(_.message).loneElement shouldBe "Running this step again doesn't bring Fishing closer to level 2"
       }
     }
 
@@ -140,7 +140,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val stock = step("stock", Repetitions.once, addFeathers(10))
       val loop = step("loop", until(feathersAtMost(0, stopBefore = false)), addFeathers(-3))
       find(forest(stock -> None, loop -> None)).map(
-        _.loops(loop.id) shouldBe List(LoopRun(4, LoopRun.Outcome.Met, List.empty))
+        _.loops(loop.id) shouldBe List(LoopRun(4, LoopRun.Outcome.Met(List(feathersAtMost(0, stopBefore = false))), List.empty))
       )
     }
 
@@ -170,9 +170,9 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val loop = step("loop", until(condition), addFeathers(-3), fishing(50))
       find(forest(stock -> None, loop -> None)).map { findings =>
         findings.loops(loop.id) shouldBe
-          List(LoopRun(4, LoopRun.Outcome.Met, List(LoopRun.Passed(2, List(feathersAtMost(0, stopBefore = true))))))
+          List(LoopRun(4, LoopRun.Outcome.Met(List(feathersAtMost(0, stopBefore = true), fishingLevel(3))), List(LoopRun.Passed(2, List(feathersAtMost(0, stopBefore = true))))))
         findings.errors(loop.id).map(_.message) should contain(
-          "Rep 2 takes Feather in the inventory below 0, which it should stop before"
+          "Rep 2 takes Feather in the inventory below 0"
         )
       }
     }
@@ -187,7 +187,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
         projection <- project(f, after)
       } yield {
         // 40 xp a rep
-        findings.loops(loop.id) shouldBe List(LoopRun(3, LoopRun.Outcome.Met, List.empty))
+        findings.loops(loop.id) shouldBe List(LoopRun(3, LoopRun.Outcome.Met(List(fishingLevel(2))), List.empty))
         fishingXp(projection.playerBeforeStep) shouldBe 120
       }
     }
@@ -198,11 +198,11 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val f = forest(trip -> None, loop -> Some(trip))
       find(f).map { findings =>
         findings.loops(loop.id) shouldBe List(
-          LoopRun(2, LoopRun.Outcome.Met, List.empty),
-          LoopRun(0, LoopRun.Outcome.AlreadyMet, List.empty),
-          LoopRun(0, LoopRun.Outcome.AlreadyMet, List.empty)
+          LoopRun(2, LoopRun.Outcome.Met(List(fishingLevel(2))), List.empty),
+          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty),
+          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty)
         )
-        findings.errors(loop.id).map(_.message).loneElement should startWith("Pass 2: This step repeats until")
+        findings.errors(loop.id).map(_.message).loneElement should startWith("Pass 2: Fishing is already level 2")
       }
     }
 
@@ -273,7 +273,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val inStep = StopCondition.TimeElapsed(StopCondition.TimeOrigin.StepStart, Duration.seconds(300), stopBefore = false)
       val loop = step("loop", until(inStep)).deepCopy(duration = Duration.seconds(60))
       find(forest(first -> None, loop -> None)).map(
-        _.loops(loop.id) shouldBe List(LoopRun(5, LoopRun.Outcome.Met, List.empty))
+        _.loops(loop.id) shouldBe List(LoopRun(5, LoopRun.Outcome.Met(List(inStep)), List.empty))
       )
     }
 
@@ -295,7 +295,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val child = step("child", Repetitions.once).deepCopy(duration = Duration.seconds(120))
       find(forest(loop -> None, child -> Some(loop))).map(
         // 2, 4, then 6 minutes
-        _.loops(loop.id) shouldBe List(LoopRun(3, LoopRun.Outcome.Met, List.empty))
+        _.loops(loop.id) shouldBe List(LoopRun(3, LoopRun.Outcome.Met(List(inStep)), List.empty))
       )
     }
 

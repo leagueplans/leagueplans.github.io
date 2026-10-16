@@ -75,7 +75,7 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
       val loopErrors = loops.flatMap((id, runs) => forest.get(id).map(step => id -> loopProblems(step, runs)))
       Findings(
         errors = (errors.keySet ++ loopErrors.keySet).flatMap(id =>
-          Option((loopErrors.getOrElse(id, List.empty) ++ errors.getOrElse(id, List.empty)))
+          Option(loopErrors.getOrElse(id, List.empty) ++ errors.getOrElse(id, List.empty))
             .filter(_.nonEmpty)
             .map(id -> _)
         ).toMap,
@@ -93,13 +93,7 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
       case Repetitions.Fixed(_) =>
         List.empty
       case until @ Repetitions.Until(condition, _) =>
-        runs.zipWithIndex
-          .flatMap((run, pass) => LoopMessages.problems(run, condition, cache.items).map(_ -> pass))
-          .distinctBy(_._1)
-          .map((message, pass) =>
-            StepError(StepError.Source.Repetitions(until), if (runs.size > 1) s"Pass ${pass + 1}: $message" else message)
-          )
-          .toList
+        LoopMessages.forPasses(runs.toList, condition, cache.items).map(StepError(StepError.Source.Repetitions(until), _))
     }
 
   private def advancePlayer(player: Player, step: Step): Player =

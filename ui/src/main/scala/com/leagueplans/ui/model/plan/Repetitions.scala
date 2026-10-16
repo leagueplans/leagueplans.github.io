@@ -30,6 +30,9 @@ enum Repetitions {
 object Repetitions {
   val once: Repetitions = Fixed(1)
 
+  /** The most repetitions a step that repeats until a condition is met can play */
+  val cap: Int = 100000
+
   given Encoder[Repetitions] = Encoder.derived
   given Decoder[Repetitions] = Decoder.derived
 }

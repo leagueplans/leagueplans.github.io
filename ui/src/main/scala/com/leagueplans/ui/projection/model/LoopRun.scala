@@ -20,9 +20,13 @@ final case class LoopRun(
 
 object LoopRun {
   enum Outcome {
-    /** Met before the first repetition, so the step isn't played */
-    case AlreadyMet
-    case Met
+    /** Met before the first repetition, so the step isn't played
+      *
+      * @param conditions the conditions that were met, of those making up the step's condition
+      */
+    case AlreadyMet(conditions: List[StopCondition])
+    /** @param conditions the conditions that were met, of those making up the step's condition */
+    case Met(conditions: List[StopCondition])
     /** The next repetition would have passed these conditions, so it isn't played */
     case StoppedBefore(conditions: List[StopCondition])
     /** A repetition brought the condition no closer, so it never would be met */

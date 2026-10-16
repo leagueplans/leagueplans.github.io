@@ -558,6 +558,53 @@ final class StopConditionsTest extends AnyFreeSpec with Matchers {
         describe(Or(And(a, b), c)) shouldBe "(Fishing reaches 1 xp and Hunter reaches 2 xp) or Mining reaches 3 xp"
         describe(Or(a, And(b, c))) shouldBe "Fishing reaches 1 xp or (Hunter reaches 2 xp and Mining reaches 3 xp)"
       }
+
+      "a condition already met" in {
+        StopConditions.describeAlreadyMet(SkillReaches(Skill.Agility, ExpTarget.AtLevel(Level.L40), stopBefore = false), lookup) shouldBe
+          "Agility is already level 40"
+        StopConditions.describeAlreadyMet(count(logs, ItemLocation.Bank, ItemForms.Unnoted, Comparison.AtLeast, 5), lookup) shouldBe
+          "the bank already holds at least 5 Logs"
+        StopConditions.describeAlreadyMet(freeSlots(Comparison.AtMost, 0), lookup) shouldBe "the inventory is already full"
+      }
+
+      "a condition a repetition should bring closer" in {
+        StopConditions.describeApproach(SkillReaches(Skill.Firemaking, ExpTarget.AtLevel(Level.L50), stopBefore = false), lookup) shouldBe
+          "Firemaking closer to level 50"
+        StopConditions.describeApproach(count(feathers, ItemLocation.Inventory, ItemForms.Unnoted, Comparison.AtMost, 0), lookup) shouldBe
+          "Feather in the inventory closer to 0"
+      }
+
+      "a condition a step stops before passing" in {
+        StopConditions.describeStoppingBefore(count(feathers, ItemLocation.Inventory, ItemForms.Unnoted, Comparison.AtMost, 0), lookup) shouldBe
+          "Feather runs out"
+        StopConditions.describeStoppingBefore(count(logs, ItemLocation.Bank, ItemForms.Noted, Comparison.AtLeast, 10), lookup) shouldBe
+          "Logs (noted) in the bank goes above 10"
+        StopConditions.describeStoppingBefore(
+          TimeElapsed(TimeOrigin.PlanStart, com.leagueplans.ui.model.plan.Duration.seconds(90000), stopBefore = true),
+          lookup
+        ) shouldBe "the plan passes 25h"
+      }
+    }
+
+    "metLeaves" - {
+      "lists the conditions that are met" in {
+        StopConditions.metLeaves(Or(goal100, hunter100), two(fishing = 1000, hunter = 0)) shouldBe List(goal100)
+        StopConditions.metLeaves(And(goal100, hunter100), two(fishing = 1000, hunter = 1000)) shouldBe List(goal100, hunter100)
+      }
+    }
+
+    "sufficientLeaves" - {
+      "is a lone condition" in {
+        StopConditions.sufficientLeaves(goal100) shouldBe List(goal100)
+      }
+
+      "is every condition combined with or" in {
+        StopConditions.sufficientLeaves(Or(goal100, hunter100)) shouldBe List(goal100, hunter100)
+      }
+
+      "leaves out conditions combined with and" in {
+        StopConditions.sufficientLeaves(Or(And(goal100, hunter100), goal100Before)) shouldBe List(goal100Before)
+      }
     }
   }
 }

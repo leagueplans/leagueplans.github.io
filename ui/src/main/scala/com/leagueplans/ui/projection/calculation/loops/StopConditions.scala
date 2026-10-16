@@ -72,6 +72,19 @@ object StopConditions {
       case leaf: Leaf => remaining(leaf, context) <= 0
     }
 
+  /** The conditions making up the condition that are met */
+  def metLeaves(condition: StopCondition, context: LoopContext): List[Leaf] =
+    leaves(condition).filter(remaining(_, context) <= 0)
+
+  /** The conditions making up the condition that are enough to meet it on their own: all of them
+    * when they're combined with "or", and only a lone condition otherwise */
+  def sufficientLeaves(condition: StopCondition): List[Leaf] =
+    condition match {
+      case Or(left, right) => sufficientLeaves(left) ++ sufficientLeaves(right)
+      case _: And => List.empty
+      case leaf: Leaf => List(leaf)
+    }
+
   /** Whether the condition is met before another repetition, counting a condition that asks to stop
     * before it's passed as met once the next repetition would pass it.
     */
@@ -183,6 +196,72 @@ object StopConditions {
         s"the time in this step past ${describe(atLeast)}"
       case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
         s"the plan past ${describe(atLeast)}"
+    }
+
+  /** Such as "Hunter is already level 60", for a condition met before the step's first repetition */
+  def describeAlreadyMet(leaf: Leaf, items: Item.ID => Item): String =
+    leaf match {
+      case SkillReaches(skill, ExpTarget.AtLevel(level), _) =>
+        s"$skill is already level $level"
+      case SkillReaches(skill, ExpTarget.AtExp(exp), _) =>
+        s"$skill already has ${(exp.raw / 10).withCommas} xp"
+      case ItemCount(item, where, forms, comparison, quantity, _) =>
+        val amount = s"${describe(comparison)} ${quantity.withCommas} ${name(item, forms, items)}"
+        where match {
+          case ItemLocation.Inventory => s"the inventory already holds $amount"
+          case ItemLocation.Bank => s"the bank already holds $amount"
+          case ItemLocation.Worn => s"$amount ${if (quantity == 1) "is" else "are"} already worn"
+        }
+      case FreeInventorySlots(Comparison.AtMost, 0, _) =>
+        "the inventory is already full"
+      case FreeInventorySlots(comparison, slots, _) =>
+        s"the inventory already has ${describe(comparison)} ${slots.withCommas} free ${if (slots == 1) "slot" else "slots"}"
+      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
+        s"this step has already taken ${describe(atLeast)}"
+      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
+        s"the plan has already reached ${describe(atLeast)}"
+    }
+
+  /** Such as "Hunter closer to level 60", for a repetition that doesn't bring a condition closer */
+  def describeApproach(leaf: Leaf, items: Item.ID => Item): String =
+    leaf match {
+      case SkillReaches(skill, ExpTarget.AtLevel(level), _) =>
+        s"$skill closer to level $level"
+      case SkillReaches(skill, ExpTarget.AtExp(exp), _) =>
+        s"$skill closer to ${(exp.raw / 10).withCommas} xp"
+      case ItemCount(item, where, forms, _, quantity, _) =>
+        s"${name(item, forms, items)} ${describe(where)} closer to ${quantity.withCommas}"
+      case FreeInventorySlots(Comparison.AtMost, 0, _) =>
+        "the inventory closer to being full"
+      case FreeInventorySlots(_, slots, _) =>
+        s"the inventory's free slots closer to ${slots.withCommas}"
+      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
+        s"this step closer to ${describe(atLeast)}"
+      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
+        s"the plan closer to ${describe(atLeast)}"
+    }
+
+  /** Such as "Feather runs out", for a step that stops before a repetition would pass a condition */
+  def describeStoppingBefore(leaf: Leaf, items: Item.ID => Item): String =
+    leaf match {
+      case SkillReaches(skill, ExpTarget.AtLevel(level), _) =>
+        s"$skill passes level $level"
+      case SkillReaches(skill, ExpTarget.AtExp(exp), _) =>
+        s"$skill passes ${(exp.raw / 10).withCommas} xp"
+      case ItemCount(item, ItemLocation.Inventory, forms, Comparison.AtMost, 0, _) =>
+        s"${name(item, forms, items)} runs out"
+      case ItemCount(item, where, forms, Comparison.AtMost, 0, _) =>
+        s"${name(item, forms, items)} ${describe(where)} runs out"
+      case ItemCount(item, where, forms, comparison, quantity, _) =>
+        s"${name(item, forms, items)} ${describe(where)} goes ${direction(comparison)} ${quantity.withCommas}"
+      case FreeInventorySlots(Comparison.AtMost, 0, _) =>
+        "the inventory runs out of space"
+      case FreeInventorySlots(comparison, slots, _) =>
+        s"the inventory's free slots go ${direction(comparison)} ${slots.withCommas}"
+      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
+        s"this step passes ${describe(atLeast)}"
+      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
+        s"the plan passes ${describe(atLeast)}"
     }
 
   /** Such as "1h 30m" or "45 ticks" */

@@ -15,8 +15,7 @@ import scala.concurrent.duration.Duration
 private[calculation] object ForestFolder {
   type Iteration[ID, T] = (id: ID, value: T, reps: Int)
 
-  /** The most repetitions a step that repeats until a condition is met can play */
-  val loopCap: Int = 100000
+  val loopCap: Int = Repetitions.cap
 
   /** What the folder needs to play steps that repeat until a condition is met, and to time them */
   trait Looping[T, Acc] {
@@ -243,8 +242,9 @@ private[calculation] object ForestFolder {
 
           case Frame.StartLoop(id, value, condition, max) =>
             val limit = max.fold(loopCap)(math.min(_, loopCap))
-            if (StopConditions.met(condition, contextOf(state, Shortfalls.none))) {
-              state = state.record(id, LoopRun(0, LoopRun.Outcome.AlreadyMet, List.empty))
+            val context = contextOf(state, Shortfalls.none)
+            if (StopConditions.met(condition, context)) {
+              state = state.record(id, LoopRun(0, LoopRun.Outcome.AlreadyMet(StopConditions.metLeaves(condition, context)), List.empty))
               remaining = t
             } else if (limit <= 0) {
               state = state.record(id, LoopRun(0, LoopRun.Outcome.ReachedMax(limit), List.empty))
@@ -332,7 +332,7 @@ private[calculation] object ForestFolder {
 
         lazy val estimate = StopConditions.estimate(condition, beforeContext, afterContext)
         val maybeOutcome =
-          if (StopConditions.met(condition, afterContext)) Some(LoopRun.Outcome.Met)
+          if (StopConditions.met(condition, afterContext)) Some(LoopRun.Outcome.Met(StopConditions.metLeaves(condition, afterContext)))
           else if (max.exists(reps >= _)) max.map(LoopRun.Outcome.ReachedMax(_))
           else if (reps >= loopCap) Some(LoopRun.Outcome.ReachedCap(loopCap))
           else if (!StopConditions.progressed(condition, beforeContext, afterContext)) Some(LoopRun.Outcome.NoProgress)
