@@ -10,7 +10,7 @@ import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.mode.MainGame
 import com.leagueplans.ui.model.player.skill.{Exp, Level, Stats}
 import com.leagueplans.ui.model.player.{Cache, GridStatus, Player}
-import com.leagueplans.ui.projection.model.{LoopRun, Projection}
+import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError}
 import org.scalajs.dom.AbortController
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor
 import org.scalatest.LoneElement
@@ -213,6 +213,44 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       find(forest(stock -> None, loop -> None)).map(
         _.errors(loop.id).map(_.message).loneElement should startWith("2nd time: ")
       )
+    }
+
+    "an effect gaining xp to a target" - {
+      def toLevel(level: Int): Effect.GainExpToTarget =
+        Effect.GainExpToTarget(Skill.Fishing, ExpTarget.AtLevel(Level(level)), expEach = None)
+
+      def conflicts(findings: StepErrorFinder.Findings, step: Step): List[StepError] =
+        findings.errors.getOrElse(step.id, List.empty).filter(_.message.startsWith("This reaches"))
+
+      "is a problem when it reaches the step's target on the first rep" in {
+        val effect = toLevel(3)
+        val loop = step("loop", until(fishingLevel(2)), effect)
+        find(forest(loop -> None)).map(
+          conflicts(_, loop) shouldBe List(
+            StepError(StepError.Source.Effect(0, effect), "This reaches level 2 the first time the step runs, so the step won't repeat")
+          )
+        )
+      }
+
+      "is a problem when the target stops the step on its own, among others" in {
+        val loop = step("loop", until(StopCondition.Or(feathersAtMost(0, stopBefore = false), fishingLevel(2))), toLevel(2))
+        find(forest(loop -> None)).map(conflicts(_, loop).size shouldBe 1)
+      }
+
+      "isn't a problem when it falls short of the step's target" in {
+        val loop = step("loop", until(fishingLevel(3)), toLevel(2))
+        find(forest(loop -> None)).map(conflicts(_, loop) shouldBe List.empty)
+      }
+
+      "isn't a problem when the target only stops the step along with another" in {
+        val loop = step("loop", until(StopCondition.And(feathersAtMost(0, stopBefore = false), fishingLevel(2))), toLevel(2))
+        find(forest(loop -> None)).map(conflicts(_, loop) shouldBe List.empty)
+      }
+
+      "isn't a problem for another skill" in {
+        val loop = step("loop", until(fishingLevel(2)), Effect.GainExpToTarget(Skill.Hunter, ExpTarget.AtLevel(Level(5)), None))
+        find(forest(loop -> None)).map(conflicts(_, loop) shouldBe List.empty)
+      }
     }
 
     "projects a step inside one that repeats until a condition is met" - {

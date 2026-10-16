@@ -3,13 +3,13 @@ package com.leagueplans.ui.projection.calculation
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.Effect
 import com.leagueplans.ui.model.plan.Effect.{CompleteDiaryTask, CompleteGridTile, CompleteLeagueTask}
-import com.leagueplans.ui.model.plan.{Plan, Repetitions, Step}
+import com.leagueplans.ui.model.plan.{ExpTarget, Plan, Repetitions, Step, StopCondition}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.StepErrorFinder.Findings
-import com.leagueplans.ui.projection.calculation.loops.LoopMessages
+import com.leagueplans.ui.projection.calculation.loops.{LoopMessages, StopConditions}
 import com.leagueplans.ui.projection.calculation.validation.{EffectValidator, RequirementValidator}
 import com.leagueplans.ui.projection.model.{LoopRun, StepError, StepTiming}
-import com.leagueplans.uicommon.utils.scala.IntOps.ordinal
+import com.leagueplans.uicommon.utils.scala.IntOps.{ordinal, withCommas}
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
@@ -74,9 +74,10 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
     }
     .map(_.map { case ForestFolder.Result((errors, _, _, _), loops, timings, elapsed) =>
       val loopErrors = loops.flatMap((id, runs) => forest.get(id).map(step => id -> loopProblems(step, runs)))
+      val conflicts = forest.nodes.map((id, step) => id -> targetConflicts(step)).filter(_._2.nonEmpty)
       Findings(
-        errors = (errors.keySet ++ loopErrors.keySet).flatMap(id =>
-          Option(loopErrors.getOrElse(id, List.empty) ++ errors.getOrElse(id, List.empty))
+        errors = (errors.keySet ++ loopErrors.keySet ++ conflicts.keySet).flatMap(id =>
+          Option(loopErrors.getOrElse(id, List.empty) ++ conflicts.getOrElse(id, List.empty) ++ errors.getOrElse(id, List.empty))
             .filter(_.nonEmpty)
             .map(id -> _)
         ).toMap,
@@ -95,6 +96,36 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
         List.empty
       case until @ Repetitions.Until(condition, _) =>
         LoopMessages.forPasses(runs.toList, condition, cache.items).map(StepError(StepError.Source.Repetitions(until), _))
+    }
+
+  /** Effects that take a skill to a target the step repeats until, or past it, in one repetition,
+    * which stops the step after its first. Only targets that stop the step on their own count. */
+  private def targetConflicts(step: Step): List[StepError] =
+    step.repetitions match {
+      case Repetitions.Fixed(_) =>
+        List.empty
+      case Repetitions.Until(condition, _) =>
+        val targets = StopConditions.sufficientLeaves(condition).collect {
+          case StopCondition.SkillReaches(skill, target, _) => (skill, target)
+        }
+        step.directEffects.underlying.zipWithIndex.flatMap {
+          case (effect @ Effect.GainExpToTarget(skill, reached, _), index) =>
+            targets.collectFirst {
+              case (`skill`, target) if reached.goal.raw >= target.goal.raw =>
+                StepError(
+                  StepError.Source.Effect(index, effect),
+                  s"This reaches ${describe(target)} the first time the step runs, so the step won't repeat"
+                )
+            }
+          case _ =>
+            None
+        }
+    }
+
+  private def describe(target: ExpTarget): String =
+    target match {
+      case ExpTarget.AtLevel(level) => s"level $level"
+      case ExpTarget.AtExp(exp) => s"${(exp.raw / 10).withCommas} xp"
     }
 
   private def advancePlayer(player: Player, step: Step): Player =
