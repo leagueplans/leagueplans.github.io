@@ -4,7 +4,7 @@ import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.ViewerAccount
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError, StepTiming}
+import com.leagueplans.ui.projection.model.{Projection, StepError, StepLoop, StepTiming}
 import com.leagueplans.ui.projection.worker.ProjectionProtocol
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.wrappers.workers.WorkerFactory
@@ -49,7 +49,7 @@ final class ProjectionClient(
   port: MessagePortClient[Inbound, Outbound],
   _projection: Var[Projection],
   _stepsWithErrors: Var[Map[Step.ID, List[StepError]]],
-  _loops: Var[Map[Step.ID, List[LoopRun]]],
+  _loops: Var[Map[Step.ID, StepLoop]],
   _timings: Var[Map[Step.ID, StepTiming]],
   _endTime: Var[Duration],
   _projectionStatus: Var[StatusTracker.Status],
@@ -117,8 +117,8 @@ final class ProjectionClient(
     _stepsWithErrors.signal
 
   /** How each pass of each step that repeats until a condition is met played out */
-  val loops: StrictSignal[Map[Step.ID, List[LoopRun]]] =
-    _loops.signal
+  val loops: StepLoops =
+    StepLoops(_loops.signal)
 
   val timings: StepTimings =
     StepTimings(_timings.signal, _endTime.signal)

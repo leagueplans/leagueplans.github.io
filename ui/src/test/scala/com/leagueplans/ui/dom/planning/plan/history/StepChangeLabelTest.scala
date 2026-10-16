@@ -82,7 +82,7 @@ final class StepChangeLabelTest extends AnyFreeSpec with Matchers {
       }
 
       "repetitions" in {
-        edit(_.deepCopy(repetitions = Repetitions.Fixed(3))) shouldEqual "Edit repetitions on \"Kill the Kalphite Queen\""
+        edit(_.deepCopy(repetitions = Repetitions.Fixed(3))) shouldEqual "Change how many times a step runs on \"Kill the Kalphite Queen\""
       }
 
       "a duration" in {

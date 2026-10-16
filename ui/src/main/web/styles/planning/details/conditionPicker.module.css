@@ -1,0 +1,148 @@
+.picker {
+  width: 268px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  outline: none;
+}
+
+.search {
+  margin: 2px 2px 4px;
+  padding: 3px 7px;
+
+  border: 1px solid var(--navy-accent);
+  border-radius: 4px;
+  background-color: var(--navy-panel);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+}
+
+.search:focus {
+  outline: none;
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-color: var(--navy-border) var(--navy-panel);
+  scrollbar-width: thin;
+}
+
+.heading {
+  padding: 4px 8px 1px;
+
+  color: var(--text-dim);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heading:not(:first-child) {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px solid var(--navy-line);
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-soft);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.highlighted {
+  background-color: var(--navy-bar-hover);
+  color: var(--text-bright);
+}
+
+/* As wide as the kinds' icons */
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  flex: none;
+  color: var(--text-muted);
+}
+
+.svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.two {
+  display: flex;
+  flex-direction: column;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  object-fit: contain;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aside {
+  margin-left: auto;
+  flex: none;
+  color: var(--text-dim);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.68rem;
+}
+
+.empty {
+  padding: 4px 8px;
+
+  color: var(--text-dim);
+  font-size: 0.76rem;
+}
+
+/* The kinds have no search, and need no scrolling */
+.kinds .entries {
+  max-height: none;
+}
+
+/* Item sprites are drawn at their natural size inside a wrapper; shrink them to read like the rest */
+.icon img {
+  display: block;
+  width: 19px;
+  height: auto;
+  max-width: none;
+}
+
+/* The wrapper also carries the stack icon's 36x32 box, which would otherwise win over .icon's size */
+div.icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}

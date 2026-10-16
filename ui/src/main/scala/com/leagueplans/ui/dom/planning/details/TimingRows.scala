@@ -1,10 +1,13 @@
 package com.leagueplans.ui.dom.planning.details
 
+import com.leagueplans.ui.dom.planning.details.repeat.RepeatRow
 import com.leagueplans.ui.dom.planning.forest.Forester
-import com.leagueplans.ui.model.plan.{Duration, Repetitions, Step}
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
+import com.leagueplans.ui.model.plan.{Duration, Step}
+import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.ui.projection.model.StepTiming
-import com.leagueplans.uicommon.dom.{ArrowText, Button, TextDraft, Tooltip}
+import com.leagueplans.uicommon.dom.{ArrowText, Button, Popover, TextDraft, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
@@ -18,8 +21,9 @@ import scala.concurrent.duration.Duration as ScalaDuration
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-/** Rows under the step's description: how often it repeats and how long it takes, which can be
-  * edited by clicking anywhere on their row, and when it happens in the plan, which can't */
+/** Rows under the step's description: how often it repeats (see [[RepeatRow]]) and how long it
+  * takes, which can be edited by clicking anywhere on its row, and when it happens in the plan,
+  * which can't */
 object TimingRows {
   val maxRepetitions: Int = 10000
 
@@ -27,22 +31,23 @@ object TimingRows {
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
     timings: StepTimings,
+    loops: StepLoops,
+    playerBefore: Signal[Player],
+    cache: Cache,
     repetitionsEditRequests: EventStream[Unit],
+    popover: Popover,
+    undoToasts: UndoToasts,
     tooltip: Tooltip
   ): L.Div = {
     val stepID = stepSignal.map(_.id).distinct
-    val ancestorReps =
-      Signal.combine(stepID, forester.signal).map((id, forest) =>
-        forest.ancestors(id).flatMap(forest.get).foldLeft(1)(_ * _.repetitions.assumed)
-      ).distinct
     val hasSubsteps =
       Signal.combine(stepID, forester.signal).map((id, forest) => forest.children(id).nonEmpty).distinct
     val timing = stepID.flatMapSwitch(timings.get)
 
     L.div(
       L.cls(Styles.rows),
-      toRepeatRow(stepSignal, ancestorReps, forester, repetitionsEditRequests, tooltip),
-      toDurationRow(stepSignal, ancestorReps, forester, tooltip),
+      RepeatRow(stepSignal, forester, timing, loops, playerBefore, cache, repetitionsEditRequests, popover, undoToasts, tooltip),
+      toDurationRow(stepSignal, timing, forester, tooltip),
       L.child.maybe <-- timing.map(toScheduleRow(_, tooltip)),
       L.child.maybe <-- Signal.combine(stepSignal, timing, hasSubsteps).map(toTotalRow(_, _, _, tooltip))
     )
@@ -50,48 +55,16 @@ object TimingRows {
 
   def parseRepetitions(text: String): Either[String, Int] =
     text.trim.stripPrefix("×").stripPrefix("x").trim.toIntOption match {
-      case None => Left("Type a whole number of repetitions")
+      case None => Left("Type a whole number of times")
       case Some(n) if n < 1 => Left("A step must happen at least once")
       case Some(n) if n > maxRepetitions =>
-        Left(s"High repetition counts slow the planner down (max ${maxRepetitions.withCommas})")
+        Left(s"Running a step this many times slows the planner down (max ${maxRepetitions.withCommas})")
       case Some(n) => Right(n)
     }
 
-  private def toRepeatRow(
-    stepSignal: Signal[Step],
-    ancestorReps: Signal[Int],
-    forester: Forester[Step.ID, Step],
-    editRequests: EventStream[Unit],
-    tooltip: Tooltip
-  ): L.Div = {
-    val commits = EventBus[Int]()
-    editableRow[Int](
-      icon("M3 7V6a2 2 0 0 1 2-2h8l-2-2M13 9v1a2 2 0 0 1-2 2H3l2 2"),
-      label = "Repeat",
-      value = stepSignal.map(_.repetitions.assumed),
-      display = Signal.combine(stepSignal, ancestorReps).map((step, ancestors) =>
-        L.b(L.cls(Styles.value), s"×${step.repetitions.assumed}") ::
-          Option.when(ancestors > 1)(L.span(L.cls(Styles.note), s"×${step.repetitions.assumed * ancestors} in its loop")).toList
-      ),
-      toText = _.toString,
-      parse = parseRepetitions,
-      describe = n => s"×$n",
-      onCommit = commits.writer,
-      editRequests,
-      inputMode = "numeric",
-      help = None,
-      tooltipContents = toTooltip("Repeat", "How many times this step and its substeps happen, one after another."),
-      tooltip
-    ).amend(
-      commits.events.withCurrentValueOf(stepSignal) --> { (reps, step) =>
-        if (reps != step.repetitions.assumed) forester.update(step.id, _.deepCopy(repetitions = Repetitions.Fixed(reps)))
-      }
-    )
-  }
-
   private def toDurationRow(
     stepSignal: Signal[Step],
-    ancestorReps: Signal[Int],
+    timing: Signal[StepTiming],
     forester: Forester[Step.ID, Step],
     tooltip: Tooltip
   ): L.Div = {
@@ -100,12 +73,12 @@ object TimingRows {
       icon("M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zM8 4.5V8l2.5 1.5"),
       label = "Takes",
       value = stepSignal.map(_.duration),
-      display = Signal.combine(stepSignal, ancestorReps).map((step, ancestors) =>
+      display = Signal.combine(stepSignal, timing).map((step, timing) =>
         if (step.duration.length == 0)
           List(L.b(L.cls(Styles.value), "—"))
         else
           L.b(L.cls(Styles.value), DurationText.format(step.duration)) ::
-            Option.when(step.repetitions.assumed * ancestors > 1)(L.span(L.cls(Styles.note), "each")).toList
+            Option.when(timing.totalReps > 1)(L.span(L.cls(Styles.note), "each")).toList
       ),
       toText = duration => if (duration.length == 0) "" else DurationText.format(duration).replace(" ", ""),
       parse = DurationText.parse,
@@ -116,7 +89,7 @@ object TimingRows {
       help = Some(durationHelp),
       tooltipContents = toTooltip(
         "Takes",
-        "How long this step takes on its own, not counting its substeps or repetitions."
+        "How long this step takes on its own, not counting its substeps or how many times it runs."
       ),
       tooltip
     ).amend(
@@ -196,10 +169,10 @@ object TimingRows {
           L.b(L.cls(Styles.value), DurationText.formatElapsed(total)),
           L.span(
             L.cls(Styles.note),
-            List(Option.when(reps > 1)(s"for $reps reps"), Option.when(hasSubsteps)("with substeps")).flatten.mkString(", ")
+            List(Option.when(reps > 1)(s"over $reps times"), Option.when(hasSubsteps)("with substeps")).flatten.mkString(", ")
           )
         ),
-        toTooltip("Total", "How much time this step adds to the plan, counting its substeps and repetitions."),
+        toTooltip("Total", "How much time this step adds to the plan, counting its substeps and every time it runs."),
         tooltip
       )
     )

@@ -89,6 +89,7 @@ object PlanningPageBootstrap {
         Signal.combine(projectionClient.projection, account.signal).map(_.withAccount(_))
       ),
       timings,
+      projectionClient.loops,
       focusController,
       CollapsedSteps(planStorage, initialPlan.steps.nodes.keySet),
       projectionClient.stepsWithErrors,

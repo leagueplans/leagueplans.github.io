@@ -211,7 +211,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val stock = step("stock", Repetitions.once, addFeathers(1))
       val loop = step("loop", until(fishingLevel(2)), fishing(50), addFeathers(-1))
       find(forest(stock -> None, loop -> None)).map(
-        _.errors(loop.id).map(_.message).loneElement should startWith("Rep 2: ")
+        _.errors(loop.id).map(_.message).loneElement should startWith("2nd time: ")
       )
     }
 

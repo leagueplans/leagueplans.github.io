@@ -3,6 +3,7 @@ package com.leagueplans.ui.dom.planning.section
 import com.leagueplans.ui.dom.planning.RenderMode
 import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.model.plan.Step
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.Tooltip
 import com.leagueplans.uicommon.dom.form.RadioGroup
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -19,21 +20,24 @@ object RenderModeControl {
   def apply(
     stepSignal: Signal[Step],
     forester: Forester[Step.ID, Step],
+    timings: StepTimings,
     renderMode: Var[RenderMode],
     tooltip: Tooltip
   ): L.Div = {
     val shape =
-      Signal.combine(stepSignal, forester.signal).map { (step, forest) =>
-        Shape(
-          repeats = forest.ancestors(step.id).flatMap(forest.get).map(_.repetitions.assumed).product * step.repetitions.assumed > 1,
-          hasSubsteps = forest.children(step.id).nonEmpty
+      Signal.combine(stepSignal.map(_.id).distinct, forester.signal).flatMapSwitch((id, forest) =>
+        timings.get(id).map(timing =>
+          Shape(
+            repeats = timing.insideLoop || timing.totalReps > 1,
+            hasSubsteps = forest.children(id).nonEmpty
+          )
         )
-      }.distinct
+      ).distinct
 
     val afterAllRepsLabel =
       shape.map(shape =>
         if (shape.repeats)
-          Some("After all reps")
+          Some("After the last time")
         else if (shape.hasSubsteps)
           Some("After its substeps")
         else

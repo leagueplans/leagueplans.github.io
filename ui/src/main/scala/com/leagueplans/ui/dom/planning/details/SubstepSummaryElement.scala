@@ -6,6 +6,7 @@ import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.item.ItemStack
 import com.leagueplans.ui.model.player.skill.Exp
 import com.leagueplans.ui.model.player.{Cache, Player}
+import com.leagueplans.ui.projection.client.StepTimings
 import com.leagueplans.uicommon.dom.ArrowText
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.raquo.airstream.core.Signal
@@ -22,17 +23,19 @@ object SubstepSummaryElement {
   def apply(
     stepSignal: Signal[Step],
     forestSignal: Signal[Forest[Step.ID, Step]],
+    timings: StepTimings,
     playersAround: Signal[Option[(Player, Player)]],
     cache: Cache
   ): L.Div = {
     val title =
-      Signal.combine(stepSignal, forestSignal).map { (step, forest) =>
-        val inLoop = forest.ancestors(step.id).flatMap(forest.get).exists(_.repetitions.assumed > 1)
-        val hasSubsteps = forest.children(step.id).nonEmpty
-        if (inLoop) None
-        else if (hasSubsteps) Some("Including substeps")
-        else Option.when(step.repetitions.assumed > 1)("Including repetitions")
-      }.distinct
+      Signal.combine(stepSignal.map(_.id).distinct, forestSignal).flatMapSwitch((id, forest) =>
+        timings.get(id).map { timing =>
+          val hasSubsteps = forest.children(id).nonEmpty
+          if (timing.insideLoop) None
+          else if (hasSubsteps) Some("Including substeps")
+          else Option.when(timing.totalReps > 1)("Total effects")
+        }
+      ).distinct
 
     L.div(
       L.child.maybe <-- title.map(_.map(title =>

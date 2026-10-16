@@ -5,7 +5,7 @@ import com.leagueplans.codec.encoding.Encoder
 import com.leagueplans.ui.model.common.forest.Forest
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.ViewerAccount
-import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError, StepTiming}
+import com.leagueplans.ui.projection.model.{Projection, StepError, StepLoop, StepTiming}
 import com.leagueplans.ui.projection.model.StepTiming.given
 
 import scala.concurrent.duration.Duration
@@ -58,7 +58,7 @@ object ProjectionProtocol {
     final case class ErrorsComputed(
       id: Long,
       errors: Map[Step.ID, List[StepError]],
-      loops: Map[Step.ID, List[LoopRun]],
+      loops: Map[Step.ID, StepLoop],
       timings: Map[Step.ID, StepTiming],
       endTime: Duration
     ) extends Outbound

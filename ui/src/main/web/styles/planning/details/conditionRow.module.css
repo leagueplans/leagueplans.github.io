@@ -1,0 +1,141 @@
+.condition {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+
+  border: 1px solid var(--navy-line);
+  border-radius: 5px;
+  background-color: var(--navy-panel);
+  color: var(--text-muted);
+  font-size: 0.79rem;
+}
+
+/* Not in the plan until its number is typed */
+.draft {
+  border-color: var(--navy-accent);
+  border-style: dashed;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+/* The skill or item, which opens a list to change it */
+.subject {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 6px;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.subject:hover, .subject:focus-visible, .subject.open {
+  border-color: var(--navy-accent);
+  background-color: var(--navy-bar);
+  outline: none;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.number {
+  width: 3.2rem;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 4px;
+  background-color: var(--navy-deep);
+  color: var(--text-bright);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.number::placeholder {
+  color: var(--text-dim);
+}
+
+.number:focus {
+  border-color: var(--navy-accent);
+  box-shadow: 0 0 0 1px var(--navy-accent);
+  outline: none;
+}
+
+.number[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.wide {
+  width: 5rem;
+}
+
+.remove {
+  margin-left: auto;
+  padding: 0 4px;
+
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.remove:hover, .remove:focus-visible {
+  color: var(--red);
+  outline: none;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.check input {
+  margin: 0;
+  accent-color: var(--navy-accent);
+}
+
+.error {
+  color: var(--red);
+  font-size: 0.72rem;
+}
+
+.pending {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+/* The limit stops the step whatever the conditions say */
+.or {
+  color: var(--text-bright);
+  font-weight: 600;
+}

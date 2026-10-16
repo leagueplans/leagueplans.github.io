@@ -9,6 +9,7 @@ import com.leagueplans.ui.projection.calculation.StepErrorFinder.Findings
 import com.leagueplans.ui.projection.calculation.loops.LoopMessages
 import com.leagueplans.ui.projection.calculation.validation.{EffectValidator, RequirementValidator}
 import com.leagueplans.ui.projection.model.{LoopRun, StepError, StepTiming}
+import com.leagueplans.uicommon.utils.scala.IntOps.ordinal
 import org.scalajs.dom
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
@@ -63,7 +64,7 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
           else {
             val (stepErrors, updatedPlayer, updatedOwners) = validateStep(step.id, repPlayer, step, owners)
             val prefixedErrors =
-              if (reps > 1 || overallReps > 1) stepErrors.map(e => e.copy(message = s"Rep $overallReps: ${e.message}"))
+              if (reps > 1 || overallReps > 1) stepErrors.map(e => e.copy(message = s"${overallReps.ordinal} time: ${e.message}"))
               else stepErrors
             val newErrors = if (prefixedErrors.isEmpty) errors else errors + (step.id -> prefixedErrors)
             (newErrors, updatedOwners, updatedPlayer)

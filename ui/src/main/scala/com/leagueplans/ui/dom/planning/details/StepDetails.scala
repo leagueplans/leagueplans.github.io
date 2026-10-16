@@ -10,7 +10,8 @@ import com.leagueplans.ui.dom.planning.section.SectionKey
 import com.leagueplans.ui.model.plan.{Effect, ExpMultiplier, Plan, Requirement, Step}
 import com.leagueplans.ui.model.player.{Cache, Player}
 import com.leagueplans.ui.projection.calculation.EffectResolver
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.uicommon.dom.*
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
@@ -38,6 +39,7 @@ object StepDetails {
     forester: Forester[Step.ID, Step],
     focusController: FocusController,
     timings: StepTimings,
+    loops: StepLoops,
     selection: RowSelection,
     dragSession: DragSession,
     settings: Signal[Plan.Settings],
@@ -46,6 +48,8 @@ object StepDetails {
     playersAround: Signal[Option[(Player, Player)]],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
+    popover: Popover,
+    undoToasts: UndoToasts,
     tooltip: Tooltip,
     tips: PlanningTips,
     planHasEffects: Signal[Boolean],
@@ -88,7 +92,7 @@ object StepDetails {
             (effectErrors.updated(i, effectErrors.getOrElse(i, List.empty) :+ message), requirementErrors)
           case ((effectErrors, requirementErrors), StepError(StepError.Source.Requirement(i, _), message)) =>
             (effectErrors, requirementErrors.updated(i, requirementErrors.getOrElse(i, List.empty) :+ message))
-          // TODO: show these on the repeat row once it can edit a condition to repeat until
+          // The repeat row words these from the loop's passes, which it keeps while they're recalculated
           case (errors, StepError(StepError.Source.Repetitions(_), _)) =>
             errors
         }
@@ -110,7 +114,18 @@ object StepDetails {
         L.cls(Styles.header),
         Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
         DescriptionField(stepSignal, forester, fieldEditRequests.filter(_ == EditRequest.Description).mapToUnit),
-        TimingRows(stepSignal, forester, timings, fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit, tooltip)
+        TimingRows(
+          stepSignal,
+          forester,
+          timings,
+          loops,
+          playerBefore,
+          cache,
+          fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit,
+          popover,
+          undoToasts,
+          tooltip
+        )
       ),
       L.sectionTag(
         L.cls(Styles.section),
@@ -168,7 +183,7 @@ object StepDetails {
           tooltip
         )
       ),
-      SubstepSummaryElement(stepSignal, forester.signal, playersAround, cache)
+      SubstepSummaryElement(stepSignal, forester.signal, timings, playersAround, cache)
     )
   }
 

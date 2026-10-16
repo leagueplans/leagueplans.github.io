@@ -1,0 +1,224 @@
+/* The first of the timing rows. Its top line matches theirs; the conditions open beneath it. */
+.repeat {
+  display: flex;
+  flex-direction: column;
+}
+
+/* As an effect row with a problem */
+.hasProblems {
+  background-color: var(--red-tint);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 10px;
+
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
+.label {
+  width: 44px;
+  flex: none;
+  white-space: nowrap;
+}
+
+/* ×N | Until, and all | any */
+.switch {
+  display: inline-flex;
+  flex: none;
+  overflow: hidden;
+
+  border: 1px solid var(--navy-border);
+  border-radius: 5px;
+}
+
+.switch button {
+  padding: 1px 8px;
+
+  border: 0;
+  background-color: var(--navy-bar);
+  color: var(--text-soft);
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.switch button + button {
+  border-left: 1px solid var(--navy-border);
+}
+
+.switch button:hover, .switch button:focus-visible {
+  background-color: var(--navy-bar-hover);
+  outline: none;
+}
+
+.switch .on, .switch .on:hover {
+  background-color: #2f4679;
+  color: var(--text-bright);
+}
+
+.count {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.countButton {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  padding: 2px 6px;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+}
+
+.countButton:hover, .countButton:focus-visible {
+  border-color: var(--navy-accent);
+  background-color: var(--navy-bar);
+  outline: none;
+}
+
+.value {
+  color: var(--text-bright);
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 500;
+}
+
+.note {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.countInput {
+  width: 5rem;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0 6px;
+
+  border: 1px solid var(--navy-accent);
+  border-radius: 4px;
+  background-color: var(--navy-deep);
+  color: var(--text-bright);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.countInput:focus {
+  outline: none;
+}
+
+.countInput[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.help {
+  padding: 6px 10px 8px 32px;
+
+  background-color: #121a2b;
+  font-size: 0.75rem;
+}
+
+.valid {
+  color: var(--green);
+}
+
+.invalid {
+  color: var(--red);
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 16rem;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px 10px;
+
+  border-top: 1px solid #1d2539;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.pending {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.nested {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.add {
+  align-self: flex-start;
+  padding: 3px 9px;
+
+  border: 1px dashed var(--navy-border);
+  border-radius: 4px;
+  background: none;
+  color: #8fb0ef;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.add:hover, .add:focus-visible, .add.open {
+  border-style: solid;
+  border-color: var(--navy-accent);
+  background-color: var(--navy-bar);
+  outline: none;
+}
+
+/* The loop ended as asked */
+.met {
+  color: var(--green);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+/* As an effect row's problems */
+.problems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  color: var(--red);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+/* Kept while the worker catches up with a change, rather than blanked */
+.stale {
+  opacity: 0.6;
+}

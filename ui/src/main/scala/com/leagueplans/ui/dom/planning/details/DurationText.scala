@@ -15,17 +15,35 @@ object DurationText {
   private val tickPattern = """(\d+)\s*(?:t|ticks?)""".r
   private val partPattern = """(\d+)\s*(h|m|s)""".r
 
-  def parse(text: String): Either[String, Duration] = {
+  def parse(text: String): Either[String, Duration] =
+    parse(text, toSeconds, toTicks)
+
+  /** Reads a span of time in the same way, without a step's limit, such as for a time in the plan */
+  def parseUncapped(text: String): Either[String, Duration] =
+    parse(
+      text,
+      seconds => Either.cond(seconds.isValidInt, Duration.seconds(seconds.toInt), "That's longer than any plan"),
+      ticks => BigInt(ticks) match {
+        case count if count.isValidInt => Right(Duration.ticks(count.toInt))
+        case _ => Left("That's longer than any plan")
+      }
+    )
+
+  private def parse(
+    text: String,
+    toSeconds: BigInt => Either[String, Duration],
+    toTicks: String => Either[String, Duration]
+  ): Either[String, Duration] = {
     val trimmed = text.trim.toLowerCase
     trimmed match {
       case "" | "0" => Right(Duration.seconds(0))
       case tickPattern(ticks) => toTicks(ticks)
       case bare if bare.forall(_.isDigit) => toSeconds(BigInt(bare))
-      case _ => parseParts(trimmed)
+      case _ => parseParts(trimmed, toSeconds)
     }
   }
 
-  private def parseParts(text: String): Either[String, Duration] = {
+  private def parseParts(text: String, toSeconds: BigInt => Either[String, Duration]): Either[String, Duration] = {
     val parts = partPattern.findAllMatchIn(text).toList
     val unmatched = partPattern.replaceAllIn(text, "").trim
     val units = parts.map(_.group(2))

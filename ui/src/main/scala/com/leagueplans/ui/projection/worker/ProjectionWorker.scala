@@ -4,6 +4,7 @@ import com.leagueplans.ui.model.common.forest.{Forest, ForestResolver}
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, ViewerAccount}
 import com.leagueplans.ui.projection.calculation.{EffectResolver, Projector, StepErrorFinder}
+import com.leagueplans.ui.projection.model.StepLoop
 import com.leagueplans.ui.projection.worker.ProjectionProtocol.{Inbound, Outbound}
 import com.leagueplans.ui.projection.worker.ProjectionWorker.State
 import com.leagueplans.uicommon.wrappers.workers.{DedicatedWorkerScope, MessagePortClient}
@@ -170,7 +171,8 @@ private final class ProjectionWorker(
         .onComplete {
           case Success(Some(findings)) =>
             state = state.map(s => s.copy(lastSuccessfulErrorID = Some(s.latestNonFocusID)))
-            port.send(Outbound.ErrorsComputed(s.latestID, findings.errors, findings.loops, findings.timings, findings.endTime))
+            val loops = findings.loops.flatMap((id, passes) => s.forest.get(id).map(step => id -> StepLoop(step.repetitions, passes)))
+            port.send(Outbound.ErrorsComputed(s.latestID, findings.errors, loops, findings.timings, findings.endTime))
           case Success(None) => // aborted; newer computation pending
           case Failure(e) =>
             console.error("Failed to compute step errors", e)

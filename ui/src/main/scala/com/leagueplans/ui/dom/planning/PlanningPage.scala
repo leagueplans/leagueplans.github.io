@@ -11,7 +11,7 @@ import com.leagueplans.ui.dom.planning.section.{RenderModeControl, SectionContex
 import com.leagueplans.ui.model.plan.{Plan, Step}
 import com.leagueplans.ui.model.player.{Cache, FocusContext, ViewerAccount}
 import com.leagueplans.ui.model.status.StatusTracker
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.ui.projection.model.StepError
 import com.leagueplans.ui.storage.client.PlanSubscription
 import com.leagueplans.ui.storage.local.PlanLocalStorage
@@ -44,6 +44,7 @@ object PlanningPage {
     forester: Forester[Step.ID, Step],
     focusContext: FocusContext,
     timings: StepTimings,
+    loops: StepLoops,
     focusController: FocusController,
     collapsedSteps: CollapsedSteps,
     stepsWithErrors: Signal[Map[Step.ID, List[StepError]]],
@@ -68,6 +69,7 @@ object PlanningPage {
     val hotkeysEnabled = Signal.combine(isFullWidth, locked).map(!_ && !_)
     val dragSession = DragSession()
     val stepEditor = StepEditor(forester, focusContext, cache.items)
+    val undoToasts = UndoToasts(forester, toastPublisher)
     val tips = PlanningTips.load()
     // The newcomers' hints read this, so the steps are only searched once per change
     val planHasEffects =
@@ -102,7 +104,7 @@ object PlanningPage {
 
     val renderModeControl =
       focusContext.focus.splitOption(
-        project = (_, stepSignal) => RenderModeControl(stepSignal, forester, displayedState.renderMode, tooltip),
+        project = (_, stepSignal) => RenderModeControl(stepSignal, forester, timings, displayedState.renderMode, tooltip),
         ifEmpty = L.emptyNode
       )
 
@@ -125,7 +127,7 @@ object PlanningPage {
           popover,
           modal,
           toastPublisher,
-          UndoToasts(forester, toastPublisher),
+          undoToasts,
           dragSession,
           sectionRequests.writer,
           projectionStatus.map(_ == StatusTracker.Status.Busy).distinct,
@@ -158,6 +160,7 @@ object PlanningPage {
             forester,
             focusController,
             timings,
+            loops,
             rowSelection,
             dragSession,
             settings,
@@ -166,6 +169,8 @@ object PlanningPage {
             focusContext.playersAroundFocusIfCurrent,
             fieldEditRequests.events,
             contextMenu,
+            popover,
+            undoToasts,
             tooltip,
             tips,
             planHasEffects,

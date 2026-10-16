@@ -37,7 +37,7 @@ object StepChangeLabel {
       Option.when(before.description != after.description)("Edit description"),
       Option.when(before.directEffects != after.directEffects)("Edit effects"),
       Option.when(before.requirements != after.requirements)("Edit requirements"),
-      Option.when(before.repetitions != after.repetitions)("Edit repetitions"),
+      Option.when(before.repetitions != after.repetitions)("Change how many times a step runs"),
       Option.when(before.duration != after.duration)("Edit duration")
     ).flatten match {
       case List(label) => label
