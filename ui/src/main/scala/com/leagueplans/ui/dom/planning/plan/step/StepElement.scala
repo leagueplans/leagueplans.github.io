@@ -1,12 +1,12 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.ForestUpdateConsumer.LazyNode
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDragSource, StepDraggingStatus}
 import com.leagueplans.ui.dom.planning.plan.{CollapsedSteps, CompletedStep, FocusController, NewStepDraft, StepClipboard}
 import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.common.model.Item
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.uicommon.dom.collapse.{HeightMask, InvertibleAnimationController}
 import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -39,11 +39,12 @@ object StepElement {
     hasErrorsSignal: Signal[Boolean],
     editingEnabledSignal: Signal[Boolean],
     timings: StepTimings,
+    loops: StepLoops,
+    items: Item.ID => Item,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     stepClipboard: StepClipboard,
     dragSession: DragSession,
-    editInDetails: EditRequest => Unit,
     newStepDraft: NewStepDraft
   ): (L.Div, Signal[Int]) = {
     val isCompleted = completionController.signalFor(stepID)
@@ -70,12 +71,10 @@ object StepElement {
       hasErrorsSignal,
       isHovering.signal,
       isDraggable,
-      editRepetitions = () => {
-        focusController.set(stepID)
-        editInDetails(EditRequest.Repetitions)
-      },
       animationController,
       timings,
+      loops,
+      items,
       positionOffset,
       tooltip
     )
@@ -147,9 +146,10 @@ object StepElement {
     hasErrors: Signal[Boolean],
     isHovering: Signal[Boolean],
     isDraggable: Var[Boolean],
-    editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
     timings: StepTimings,
+    loops: StepLoops,
+    items: Item.ID => Item,
     positionOffset: Signal[Int],
     tooltip: Tooltip
   ): L.Div =
@@ -161,9 +161,10 @@ object StepElement {
       isCompleted,
       hasErrors,
       isDraggable.writer,
-      editRepetitions,
       animationController,
       timings,
+      loops,
+      items,
       tooltip
     ).amend(
       // Only the header, so that a step's state isn't mistaken for its substeps'

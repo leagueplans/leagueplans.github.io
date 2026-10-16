@@ -90,11 +90,11 @@
   line-height: 16px;
 }
 
-/* Opens the repetitions in the step details */
-.repBadge:hover, .repBadge:focus-visible {
-  border-color: var(--navy-accent);
-  outline: none;
+/* A count being worked out again keeps its last value, dimmed */
+.stale {
+  opacity: 0.6;
 }
+
 .description {
   flex-grow: 1;
   min-width: 0;

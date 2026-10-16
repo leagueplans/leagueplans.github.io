@@ -121,7 +121,6 @@ object StepDetails {
           loops,
           playerBefore,
           cache,
-          fieldEditRequests.filter(_ == EditRequest.Repetitions).mapToUnit,
           popover,
           undoToasts,
           tooltip

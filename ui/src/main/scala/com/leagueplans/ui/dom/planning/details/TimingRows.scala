@@ -34,7 +34,6 @@ object TimingRows {
     loops: StepLoops,
     playerBefore: Signal[Player],
     cache: Cache,
-    repetitionsEditRequests: EventStream[Unit],
     popover: Popover,
     undoToasts: UndoToasts,
     tooltip: Tooltip
@@ -46,7 +45,7 @@ object TimingRows {
 
     L.div(
       L.cls(Styles.rows),
-      RepeatRow(stepSignal, forester, timing, loops, playerBefore, cache, repetitionsEditRequests, popover, undoToasts, tooltip),
+      RepeatRow(stepSignal, forester, timing, loops, playerBefore, cache, popover, undoToasts, tooltip),
       toDurationRow(stepSignal, timing, forester, tooltip),
       L.child.maybe <-- timing.map(toScheduleRow(_, tooltip)),
       L.child.maybe <-- Signal.combine(stepSignal, timing, hasSubsteps).map(toTotalRow(_, _, _, tooltip))

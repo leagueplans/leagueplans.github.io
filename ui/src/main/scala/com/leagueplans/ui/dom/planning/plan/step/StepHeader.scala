@@ -1,9 +1,11 @@
 package com.leagueplans.ui.dom.planning.plan.step
 
-import com.leagueplans.ui.model.plan.Step
-import com.leagueplans.ui.projection.client.StepTimings
-import com.leagueplans.uicommon.dom.{Button, Tooltip}
-import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handled
+import com.leagueplans.common.model.Item
+import com.leagueplans.ui.dom.planning.details.repeat.LoopSummary
+import com.leagueplans.ui.model.plan.{Repetitions, Step, StopCondition}
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
+import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.dom.collapse.{CollapseButton, InvertibleAnimationController}
 import com.leagueplans.uicommon.facades.animation.KeyframeAnimationOptions
 import com.leagueplans.uicommon.facades.floatingui.Placement
@@ -36,9 +38,10 @@ object StepHeader {
     isCompletedSignal: Signal[Boolean],
     hasErrorsSignal: Signal[Boolean],
     draggableObserver: Observer[Boolean],
-    editRepetitions: () => Unit,
     animationController: InvertibleAnimationController,
     timings: StepTimings,
+    loops: StepLoops,
+    items: Item.ID => Item,
     tooltip: Tooltip
   ): L.Div =
     L.div(
@@ -52,14 +55,17 @@ object StepHeader {
           whenFalse = _ => L.emptyNode
         ),
         L.child.maybe <-- Signal.combine(isCompletedSignal, hasErrorsSignal).distinct.map(toStateIcon),
-        L.child.maybe <-- stepSignal.map(_.repetitions.assumed).distinct.map(repetitions =>
-          Option.when(repetitions > 1)(toRepetitionsBadge(repetitions, editRepetitions, tooltip))
-        ),
+        L.child.maybe <-- stepSignal.map(_.repetitions).distinct.map {
+          case Repetitions.Fixed(count) =>
+            Option.when(count > 1)(toRepetitionsBadge(count, tooltip))
+          case Repetitions.Until(condition, _) =>
+            Some(toLoopBadge(condition, loops.get(stepSignal), items, tooltip))
+        },
         L.p(
           L.cls(Styles.description),
           L.text <-- stepSignal.map(_.description)
         ),
-        L.child.maybe <-- toTimingInfo(stepID, stepSignal, timings)
+        L.child.maybe <-- toTimingInfo(stepID, timings)
       )
     )
 
@@ -73,6 +79,7 @@ object StepHeader {
     val errorIcon: String = js.native
     val completeIcon: String = js.native
     val repBadge: String = js.native
+    val stale: String = js.native
     val description: String = js.native
     val timing: String = js.native
     val timingIcon: String = js.native
@@ -120,13 +127,34 @@ object StepHeader {
       )
     )
 
-  /** Focuses the step, rather than toggling its focus as a click elsewhere on the step would */
-  private def toRepetitionsBadge(repetitions: Int, editRepetitions: () => Unit, tooltip: Tooltip): L.Button =
-    Button(_.handled --> (_ => editRepetitions())).amend(
+  /** Not a button: a click on it is a click on the step */
+  private def toRepetitionsBadge(repetitions: Int, tooltip: Tooltip): L.Span =
+    L.span(
       L.cls(Styles.repBadge),
       s"$repetitions×",
       tooltip.register(
-        L.span(L.cls(Styles.tooltip), "Change how often this step repeats"),
+        L.span(L.cls(Styles.tooltip), s"Runs ${repetitions.withCommas} times"),
+        FloatingConfig.basicTooltip(placement = Placement.top)
+      )
+    )
+
+  /** For a step that repeats until a condition is met: the reps it plays, as last worked out, which
+    * stay, dimmed, while they're worked out again, so that they don't flicker. "…" is a step whose
+    * reps haven't been worked out yet. Across the passes of an outer loop, it's a range.
+    *
+    * Not a button: a click on it is a click on the step. */
+  private def toLoopBadge(
+    condition: StopCondition,
+    known: Signal[Option[StepLoops.Known]],
+    items: Item.ID => Item,
+    tooltip: Tooltip
+  ): L.Span =
+    L.span(
+      L.cls(Styles.repBadge),
+      L.cls(Styles.stale) <-- known.map(_.exists(!_.current)),
+      L.text <-- known.map(known => s"${known.fold("…")(k => LoopSummary.count(k.loop.passes))}×"),
+      tooltip.register(
+        L.span(L.cls(Styles.tooltip), L.text <-- known.map(known => LoopSummary.tooltip(condition, known.map(_.loop.passes), items))),
         FloatingConfig.basicTooltip(placement = Placement.top)
       )
     )
@@ -142,10 +170,9 @@ object StepHeader {
 
   private def toTimingInfo(
     stepID: Step.ID,
-    stepSignal: Signal[Step],
     timings: StepTimings
   ): Signal[Option[L.Span]] =
-    Signal.combine(stepSignal, timings.get(stepID)).map((step, state) =>
+    timings.get(stepID).map(state =>
       state.durationPerRep.flatMap {
         case Duration.Zero =>
           None
@@ -159,7 +186,7 @@ object StepHeader {
               L.span(
                 L.cls(Styles.timing),
                 FontAwesome.icon(FreeSolid.faHourglass).amend(L.svg.cls(Styles.timingIcon)),
-                L.span(s"${format(f)}${if (step.repetitions.assumed > 1) " each" else "" }")
+                L.span(s"${format(f)}${if (state.totalReps > 1) " each" else "" }")
               )
             )
           else

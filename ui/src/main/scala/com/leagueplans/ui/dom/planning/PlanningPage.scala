@@ -96,6 +96,8 @@ object PlanningPage {
         dragSession,
         stepEditor,
         timings,
+        loops,
+        cache.items,
         tooltip,
         contextMenu,
         modal,

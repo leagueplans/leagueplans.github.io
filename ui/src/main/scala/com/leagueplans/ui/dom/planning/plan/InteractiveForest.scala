@@ -1,14 +1,14 @@
 package com.leagueplans.ui.dom.planning.plan
 
 import com.leagueplans.ui.dom.planning.StepEditor
-import com.leagueplans.ui.dom.planning.details.EditRequest
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.forest.{ForestUpdateConsumer, Forester}
 import com.leagueplans.ui.dom.planning.plan.step.StepElement
 import com.leagueplans.ui.dom.planning.plan.step.drag.{PlanDropZone, StepDraggingStatus, StepDropLocationIndicator}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.common.model.Item
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.uicommon.dom.{ContextMenu, Tooltip}
 import com.raquo.airstream.core.{EventStream, Signal}
 import com.raquo.airstream.state.Var
@@ -27,6 +27,8 @@ object InteractiveForest {
     editingEnabled: Signal[Boolean],
     stepsWithErrorsSignal: Signal[Set[Step.ID]],
     timings: StepTimings,
+    loops: StepLoops,
+    items: Item.ID => Item,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     focusController: FocusController,
@@ -35,7 +37,6 @@ object InteractiveForest {
     stepClipboard: StepClipboard,
     dragSession: DragSession,
     stepEditor: StepEditor,
-    editInDetails: EditRequest => Unit,
     newStepDraft: NewStepDraft
   ): ReactiveHtmlElement[OList] = {
     val (completedStepBinder, completionController) = CompletedStep(forester.signal)
@@ -89,11 +90,12 @@ object InteractiveForest {
             hasErrorsSignal = stepsWithErrorsSignal.map(_.contains(stepID)).distinct,
             editingEnabled,
             timings,
+            loops,
+            items,
             tooltip,
             contextMenu,
             stepClipboard,
             dragSession,
-            editInDetails,
             newStepDraft
           )
       )

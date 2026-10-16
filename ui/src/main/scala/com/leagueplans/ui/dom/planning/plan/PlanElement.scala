@@ -7,7 +7,8 @@ import com.leagueplans.ui.dom.planning.forest.Forester
 import com.leagueplans.ui.dom.planning.plan.history.{UndoController, UndoToasts}
 import com.leagueplans.ui.model.plan.Step
 import com.leagueplans.ui.model.player.FocusContext
-import com.leagueplans.ui.projection.client.StepTimings
+import com.leagueplans.common.model.Item
+import com.leagueplans.ui.projection.client.{StepLoops, StepTimings}
 import com.leagueplans.uicommon.dom.{ContextMenu, Modal, ToastHub, Tooltip}
 import com.raquo.airstream.core.Signal
 import com.raquo.laminar.api.L
@@ -39,6 +40,8 @@ object PlanElement {
     dragSession: DragSession,
     stepEditor: StepEditor,
     timings: StepTimings,
+    loops: StepLoops,
+    items: Item.ID => Item,
     tooltip: Tooltip,
     contextMenu: ContextMenu,
     modal: Modal,
@@ -62,6 +65,8 @@ object PlanElement {
         editingEnabled,
         stepsWithErrorsSignal,
         timings,
+        loops,
+        items,
         tooltip,
         contextMenu,
         focusController,
@@ -70,7 +75,6 @@ object PlanElement {
         stepClipboard,
         dragSession,
         stepEditor,
-        editInDetails,
         newStepDraft
       ).amend(L.cls(Styles.steps)),
       PlanTips.emptyPlan(forester.signal, newStepDraft.position.map(_.nonEmpty)),

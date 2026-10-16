@@ -15,7 +15,7 @@ import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.utils.laminar.EventProcessorOps.handledWith
 import com.leagueplans.uicommon.utils.scala.IntOps.withCommas
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.{EventStream, Observer, Signal}
+import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
 import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
@@ -77,7 +77,6 @@ object RepeatRow {
     loops: StepLoops,
     playerBefore: Signal[Player],
     cache: Cache,
-    editRequests: EventStream[Unit],
     popover: Popover,
     undoToasts: UndoToasts,
     tooltip: Tooltip
@@ -278,7 +277,7 @@ object RepeatRow {
         }
       },
       playerBefore --> (p => player = Some(p)),
-      toTopRow(stepSignal, timing, showsUntil, forester, editRequests, switchTo, tooltip),
+      toTopRow(stepSignal, timing, showsUntil, forester, switchTo, tooltip),
       L.child.maybe <-- showsUntil.map(Option.when(_)(
         L.div(
           L.cls(Styles.editor),
@@ -358,7 +357,6 @@ object RepeatRow {
     timing: Signal[StepTiming],
     showsUntil: Signal[Boolean],
     forester: Forester[Step.ID, Step],
-    editRequests: EventStream[Unit],
     switchTo: Boolean => Unit,
     tooltip: Tooltip
   ): L.Div = {
@@ -373,7 +371,6 @@ object RepeatRow {
       commits.events.withCurrentValueOf(stepSignal) --> { (reps, step) =>
         if (step.repetitions != Repetitions.Fixed(reps)) forester.update(step.id, _.deepCopy(repetitions = Repetitions.Fixed(reps)))
       },
-      editRequests.sample(stepSignal).collect(_.repetitions match { case Repetitions.Fixed(n) => n }) --> draft.start,
       L.div(
         L.cls(Styles.top),
         icon(loopIconPath).amend(L.svg.cls(Styles.icon)),
