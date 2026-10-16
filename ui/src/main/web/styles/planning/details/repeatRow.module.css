@@ -218,6 +218,20 @@
   line-height: 1.4;
 }
 
+/* A problem inside other loops, whose tooltip says where it happens */
+.placed {
+  cursor: help;
+}
+
+.placed:focus-visible {
+  outline: 1px solid var(--navy-accent);
+  outline-offset: 1px;
+}
+
+.hint {
+  color: var(--text-dim);
+}
+
 /* Kept while the worker catches up with a change, rather than blanked */
 .stale {
   opacity: 0.6;

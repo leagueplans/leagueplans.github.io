@@ -6,7 +6,7 @@ import com.leagueplans.ui.dom.planning.plan.history.UndoToasts
 import com.leagueplans.ui.model.plan.{Repetitions, Step, StopCondition}
 import com.leagueplans.ui.model.player.item.ItemMatcher
 import com.leagueplans.ui.model.player.{Cache, Player}
-import com.leagueplans.ui.projection.calculation.loops.StopConditions
+import com.leagueplans.ui.projection.calculation.loops.{LoopMessages, StopConditions}
 import com.leagueplans.ui.projection.calculation.loops.StopConditions.Leaf
 import com.leagueplans.ui.projection.client.StepLoops
 import com.leagueplans.ui.projection.model.StepTiming
@@ -18,7 +18,7 @@ import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
 import com.raquo.airstream.core.{Observer, Signal}
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.state.Var
-import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, seqToModifier, textToTextNode}
+import com.raquo.laminar.api.{L, enrichSource, eventPropToProcessor, nodeOptionToModifier, seqToModifier, textToTextNode}
 import com.raquo.laminar.codecs.StringAsIsCodec
 
 import scala.collection.mutable
@@ -104,11 +104,11 @@ object RepeatRow {
         case Repetitions.Fixed(_) => (Some((List.empty, Combinator.All)), None)
       }).distinct
     val result =
-      Signal.combine(stepSignal.map(_.repetitions.isInstanceOf[Repetitions.Until]).distinct, loops.get(stepSignal)).map {
-        case (false, _) => None
-        case (true, None) => Some(None)
-        case (true, Some(known)) => Some(Some((LoopSummary.result(known.loop, cache.items), known.current)))
-      }
+      Signal.combine(stepSignal, loops.get(stepSignal)).map {
+        case (step, _) if !step.repetitions.isInstanceOf[Repetitions.Until] => None
+        case (_, None) => Some(None)
+        case (step, Some(known)) => Some(Some((LoopSummary.result(known.loop, step.description, cache.items), known.current)))
+      }.distinct
     val hasProblems = result.map(_.flatten.exists(_._1.isInstanceOf[LoopSummary.Result.Problems])).distinct
 
     def saveGroup(leaves: List[Leaf], combinator: Combinator, max: Option[Int]): Unit =
@@ -281,7 +281,7 @@ object RepeatRow {
       L.child.maybe <-- showsUntil.map(Option.when(_)(
         L.div(
           L.cls(Styles.editor),
-          L.child.maybe <-- result.map(_.map(toResultLine)),
+          L.child.maybe <-- result.map(_.map(toResultLine(_, tooltip))),
           L.child.maybe <-- group.map((group, _) => group.filter(_._1.size >= 2).map((_, combinator) =>
             toCombinatorLine(combinator, picked => editGroup((leaves, _, max) => (leaves, picked, max)))
           )),
@@ -452,14 +452,40 @@ object RepeatRow {
       "are true"
     )
 
-  private def toResultLine(result: Option[(LoopSummary.Result, Boolean)]): L.Div =
+  private val maxPlacesShown = 5
+
+  private def toResultLine(result: Option[(LoopSummary.Result, Boolean)], tooltip: Tooltip): L.Div =
     result match {
       case None =>
         L.div(L.cls(Styles.pending), "Working out how many times that takes…")
       case Some((LoopSummary.Result.Stops(text), current)) =>
         L.div(L.cls(Styles.met), L.when(!current)(L.cls(Styles.stale)), s"✓ $text")
-      case Some((LoopSummary.Result.Problems(messages), current)) =>
-        L.div(L.cls(Styles.problems), L.when(!current)(L.cls(Styles.stale)), messages.map(L.p(_)))
+      case Some((LoopSummary.Result.Problems(problems), current)) =>
+        L.div(L.cls(Styles.problems), L.when(!current)(L.cls(Styles.stale)), problems.map(toProblem(_, tooltip)))
+    }
+
+  /** A problem with a step inside others that repeat says where it happened in its tooltip */
+  private def toProblem(problem: LoopMessages.Problem, tooltip: Tooltip): L.HtmlElement =
+    if (problem.where.isEmpty)
+      L.p(problem.message)
+    else {
+      val shown = problem.where.take(maxPlacesShown)
+      val more = problem.where.size - shown.size
+      L.p(
+        L.cls(Styles.placed),
+        L.tabIndex(0),
+        problem.message,
+        L.span(L.cls(Styles.hint), " (hover for where)"),
+        tooltip.register(
+          L.span(
+            L.cls(Styles.tooltip),
+            L.strong("Where this happens"),
+            shown.map(L.span(_)),
+            Option.when(more > 0)(L.span(s"and ${more.withCommas} more"))
+          ),
+          FloatingConfig.basicTooltip(Placement.left)
+        )
+      )
     }
 
   /** The repeat row's arrows */
@@ -507,6 +533,8 @@ object RepeatRow {
     val open: String = js.native
     val met: String = js.native
     val problems: String = js.native
+    val placed: String = js.native
+    val hint: String = js.native
     val stale: String = js.native
   }
 }

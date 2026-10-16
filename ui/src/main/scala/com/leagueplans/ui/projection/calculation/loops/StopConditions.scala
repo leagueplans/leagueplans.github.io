@@ -180,24 +180,6 @@ object StopConditions {
         s"the plan reaches ${describe(atLeast)}"
     }
 
-  /** Such as "Feather in the inventory below 0", for a repetition that takes a condition past its
-    * threshold */
-  def describePassing(leaf: Leaf, items: Item.ID => Item): String =
-    leaf match {
-      case SkillReaches(skill, ExpTarget.AtLevel(level), _) =>
-        s"$skill past level $level"
-      case SkillReaches(skill, ExpTarget.AtExp(exp), _) =>
-        s"$skill past ${(exp.raw / 10).withCommas} xp"
-      case ItemCount(item, where, forms, comparison, quantity, _) =>
-        s"${name(item, forms, items)} ${describe(where)} ${direction(comparison)} ${quantity.withCommas}"
-      case FreeInventorySlots(comparison, slots, _) =>
-        s"the inventory's free slots ${direction(comparison)} ${slots.withCommas}"
-      case TimeElapsed(TimeOrigin.StepStart, atLeast, _) =>
-        s"the time in this step past ${describe(atLeast)}"
-      case TimeElapsed(TimeOrigin.PlanStart, atLeast, _) =>
-        s"the plan past ${describe(atLeast)}"
-    }
-
   /** Such as "Hunter is already level 60", for a condition met before the step's first repetition */
   def describeAlreadyMet(leaf: Leaf, items: Item.ID => Item): String =
     leaf match {
@@ -205,6 +187,10 @@ object StopConditions {
         s"$skill is already level $level"
       case SkillReaches(skill, ExpTarget.AtExp(exp), _) =>
         s"$skill already has ${(exp.raw / 10).withCommas} xp"
+      case ItemCount(item, ItemLocation.Inventory, forms, Comparison.AtMost, 0, _) =>
+        s"${name(item, forms, items)} has already run out"
+      case ItemCount(item, where, forms, Comparison.AtMost, 0, _) =>
+        s"${name(item, forms, items)} ${describe(where)} has already run out"
       case ItemCount(item, where, forms, comparison, quantity, _) =>
         val amount = s"${describe(comparison)} ${quantity.withCommas} ${name(item, forms, items)}"
         where match {

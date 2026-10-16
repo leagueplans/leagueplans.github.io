@@ -10,6 +10,7 @@ import com.leagueplans.ui.model.player.league.LeagueStatus
 import com.leagueplans.ui.model.player.mode.MainGame
 import com.leagueplans.ui.model.player.skill.{Exp, Level, Stats}
 import com.leagueplans.ui.model.player.{Cache, GridStatus, Player}
+import com.leagueplans.ui.projection.calculation.loops.LoopMessages
 import com.leagueplans.ui.projection.model.{LoopRun, Projection, StepError}
 import org.scalajs.dom.AbortController
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor
@@ -122,7 +123,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val loop = step("loop", until(fishingLevel(99)), fishing(1))
       find(forest(loop -> None)).map { findings =>
         findings.loops(loop.id).loneElement should matchPattern {
-          case LoopRun(1, LoopRun.Outcome.TooSlow(_), Nil) =>
+          case LoopRun(1, LoopRun.Outcome.TooSlow(_), Nil, Nil) =>
         }
       }
     }
@@ -172,7 +173,7 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
         findings.loops(loop.id) shouldBe
           List(LoopRun(4, LoopRun.Outcome.Met(List(feathersAtMost(0, stopBefore = true), fishingLevel(3))), List(LoopRun.Passed(2, List(feathersAtMost(0, stopBefore = true))))))
         findings.errors(loop.id).map(_.message) should contain(
-          "Rep 2 takes Feather in the inventory below 0"
+          "Feather runs out the 2nd time this step runs"
         )
       }
     }
@@ -198,12 +199,38 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val f = forest(trip -> None, loop -> Some(trip))
       find(f).map { findings =>
         findings.loops(loop.id) shouldBe List(
-          LoopRun(2, LoopRun.Outcome.Met(List(fishingLevel(2))), List.empty),
-          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty),
-          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty)
+          LoopRun(2, LoopRun.Outcome.Met(List(fishingLevel(2))), List.empty, List(LoopRun.Place("trip", 1))),
+          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty, List(LoopRun.Place("trip", 2))),
+          LoopRun(0, LoopRun.Outcome.AlreadyMet(List(fishingLevel(2))), List.empty, List(LoopRun.Place("trip", 3)))
         )
-        findings.errors(loop.id).map(_.message).loneElement should startWith("Pass 2: Fishing is already level 2")
+        // Not naming a pass, as it can happen on any
+        findings.errors(loop.id).map(_.message).loneElement shouldBe "Fishing is already level 2, so this step doesn't run"
       }
+    }
+
+    "says where a problem with a step inside another repeated step happened" in {
+      // 5 feathers, 3 a rep. Level 3 is 174 xp, met on the fourth rep of 50 xp, by when the
+      // second rep has taken the feathers below zero. The second trip finds level 3 already met.
+      val stock = step("stock", Repetitions.once, addFeathers(5))
+      val trip = step("trip", Repetitions.Fixed(2))
+      val condition = StopCondition.And(feathersAtMost(0, stopBefore = true), fishingLevel(3))
+      val loop = step("loop", until(condition), addFeathers(-3), fishing(50))
+      find(forest(stock -> None, trip -> None, loop -> Some(trip))).map { findings =>
+        LoopMessages.forPasses(findings.loops(loop.id), condition, "loop", cache.items) shouldBe List(
+          LoopMessages.Problem("Feather runs out before this step stops", List("trip (1st time) › loop (2nd time)")),
+          LoopMessages.Problem(
+            "Feather has already run out and Fishing is already level 3, so this step doesn't run",
+            List("trip (2nd time)")
+          )
+        )
+      }
+    }
+
+    "doesn't say where a problem with a step that isn't inside another repeated step happened" in {
+      val loop = step("loop", until(fishingLevel(2)), Effect.GainExp(Skill.Cooking, 1, Exp(50)))
+      find(forest(loop -> None)).map(findings =>
+        LoopMessages.forPasses(findings.loops(loop.id), fishingLevel(2), "loop", cache.items).map(_.where) shouldBe List(List.empty)
+      )
     }
 
     "prefixes a repeated step's own problems with the repetition they're on" in {

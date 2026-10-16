@@ -33,6 +33,8 @@ private[calculation] object ForestFolder {
 
   /** @param loops each pass of each step that repeats until a condition is met, in the order
     *              they were played
+    * @param loopPlaces where each of those passes was played: the steps it was part of, outermost
+    *                   first, with the repetition each was on
     * @param timings when each step happens and how long it takes, apart from whether it's inside a
     *                loop, which isn't worked out here
     * @param elapsed how far into the plan the fold ended
@@ -40,6 +42,7 @@ private[calculation] object ForestFolder {
   final case class Result[ID, Acc](
     acc: Acc,
     loops: Map[ID, Vector[LoopRun]],
+    loopPlaces: Map[ID, Vector[List[(ID, Int)]]],
     timings: Map[ID, StepTiming],
     elapsed: Option[Duration]
   )
@@ -70,9 +73,9 @@ private[calculation] object ForestFolder {
     yieldInterval: Int = 500
   )(f: (Acc, T, Int) => Acc): Future[Option[Result[ID, Acc]]] = {
     val runner = Runner(forest, looping, withholdLastRepOf, yieldInterval, f)
-    val initialState = State[ID, Acc](initialAcc, Map.empty, List.empty, elapsed, List.empty, Map.empty)
+    val initialState = State[ID, Acc](initialAcc, Map.empty, List.empty, elapsed, List.empty, Map.empty, Map.empty)
     runner.run(initialState, forest.roots.flatMap(runner.framesFor), signal).map(_.map(state =>
-      Result(state.acc, state.loops, state.timings, state.elapsed)
+      Result(state.acc, state.loops, state.loopPlaces, state.timings, state.elapsed)
     ))
   }
 
@@ -93,7 +96,7 @@ private[calculation] object ForestFolder {
     }
     val runner = Runner[Iteration[ID, T], ID, Acc](forest, looping, None, yieldInterval, (acc, it, n) => f(acc, it.value, n))
     val remaining = initialRemaining.flatMap(it => runner.framesFor(it.id, it, Repetitions.Fixed(it.reps)))
-    val initialState = State[ID, Acc](initialAcc, Map.empty, List.empty, None, List.empty, Map.empty)
+    val initialState = State[ID, Acc](initialAcc, Map.empty, List.empty, None, List.empty, Map.empty, Map.empty)
     runner.run(initialState, remaining, signal).map(_.map(_.acc))
   }
 
@@ -102,18 +105,21 @@ private[calculation] object ForestFolder {
     * @param start when the pass started
     * @param taken how long the pass has taken so far
     * @param firstRep how long the pass's first repetition took, once it has finished
+    * @param rep the repetition the pass is on, counting from 1, for a step with substeps
     */
   private final case class Open[ID](
     id: ID,
     start: Option[Duration],
     taken: Option[Duration],
-    firstRep: Option[Option[Duration]]
+    firstRep: Option[Option[Duration]],
+    rep: Int = 0
   )
 
   /** @param tallies the items that each repetition in progress has tried to take but not found,
     *                innermost first, alongside whether its condition needs them
     * @param elapsed how far into the plan the fold is, outside of any open pass
     * @param open the passes in progress, innermost first
+    * @param loopPlaces where each pass in [[loops]] was played
     */
   private final case class State[ID, Acc](
     acc: Acc,
@@ -121,10 +127,24 @@ private[calculation] object ForestFolder {
     tallies: List[(Boolean, Shortfalls)],
     elapsed: Option[Duration],
     open: List[Open[ID]],
-    timings: Map[ID, StepTiming]
+    timings: Map[ID, StepTiming],
+    loopPlaces: Map[ID, Vector[List[(ID, Int)]]]
   ) {
-    def record(id: ID, run: LoopRun): State[ID, Acc] =
-      copy(loops = loops.updated(id, loops.getOrElse(id, Vector.empty) :+ run))
+    /** Records a pass of the step whose pass is the innermost one open */
+    def record(id: ID, run: LoopRun): State[ID, Acc] = {
+      val place = open.drop(1).reverse.map(pass => (pass.id, pass.rep))
+      copy(
+        loops = loops.updated(id, loops.getOrElse(id, Vector.empty) :+ run),
+        loopPlaces = loopPlaces.updated(id, loopPlaces.getOrElse(id, Vector.empty) :+ place)
+      )
+    }
+
+    /** Moves the innermost open pass on to a repetition */
+    def onRep(rep: Int): State[ID, Acc] =
+      copy(open = open match {
+        case pass :: outer => pass.copy(rep = rep) :: outer
+        case Nil => Nil
+      })
 
     /** How far into the plan the fold is */
     def now: Option[Duration] =
@@ -234,7 +254,7 @@ private[calculation] object ForestFolder {
               remaining = if (batch < reps) Frame.Visit(id, value, reps - batch, played + batch) +: t else t
               repsUntilYield -= batch
             } else {
-              state = play(state, value, 1)
+              state = play(state.onRep(played + 1), value, 1)
               val marker = Option.when(played == 0)(Frame.FirstRepDone[ID, T, Acc]()).toList
               remaining = children.flatMap(framesFor) ++ marker ++ (Frame.Visit(id, value, reps - 1, played + 1) +: t)
               repsUntilYield -= 1
@@ -251,7 +271,7 @@ private[calculation] object ForestFolder {
               remaining = t
             } else {
               val check = Frame.CheckRep(id, value, condition, max, 0, state, Shortfalls.none, None, List.empty)
-              val (started, body) = startRep(state, id, value, condition, first = true)
+              val (started, body) = startRep(state.onRep(1), id, value, condition, first = true)
               state = started
               remaining = body ++ (check +: t)
               repsUntilYield -= 1
@@ -348,7 +368,7 @@ private[calculation] object ForestFolder {
 
           case None =>
             val nextCheck = Frame.CheckRep(id, value, condition, max, reps, accepted, tally, Some(before), updatedPassedOn)
-            val (started, body) = startRep(accepted, id, value, condition, first = false)
+            val (started, body) = startRep(accepted.onRep(reps + 1), id, value, condition, first = false)
             (started, body :+ nextCheck)
         }
       }

@@ -6,6 +6,7 @@ import com.leagueplans.ui.dom.planning.details.repeat.LoopSummary.Result
 import com.leagueplans.ui.model.plan.StopCondition.{Comparison, ItemForms, ItemLocation}
 import com.leagueplans.ui.model.plan.{ExpTarget, Repetitions, StopCondition}
 import com.leagueplans.ui.model.player.skill.Level
+import com.leagueplans.ui.projection.calculation.loops.LoopMessages
 import com.leagueplans.ui.projection.model.{LoopRun, StepLoop}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -34,7 +35,7 @@ final class LoopSummaryTest extends AnyFreeSpec with Matchers {
       LoopRun(reps, outcome, List.empty)
 
     def result(condition: StopCondition, passes: LoopRun*): Result =
-      LoopSummary.result(StepLoop(Repetitions.Until(condition, None), passes.toList), items)
+      LoopSummary.result(StepLoop(Repetitions.Until(condition, None), passes.toList), "Catch red salamanders", items)
 
     "count" - {
       "is how many times a step ran" in {
@@ -118,7 +119,7 @@ final class LoopSummaryTest extends AnyFreeSpec with Matchers {
 
       "gives a loop's problems" in {
         result(hunter60, run(0, LoopRun.Outcome.AlreadyMet(List(hunter60)))) shouldBe
-          Result.Problems(List("Hunter is already level 60, so this step doesn't run"))
+          Result.Problems(List(LoopMessages.Problem("Hunter is already level 60, so this step doesn't run", List.empty)))
       }
     }
   }

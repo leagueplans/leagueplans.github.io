@@ -13,7 +13,7 @@ object LoopSummary {
     /** The loop ended as asked, such as "Stops after running 412 times" */
     case Stops(text: String)
     /** What went wrong, as the step's problems say it */
-    case Problems(messages: List[String])
+    case Problems(problems: List[LoopMessages.Problem])
   }
 
   /** How many times the step ran, such as "412", or "21–27" when that differs between the times the plan reaches it */
@@ -38,12 +38,13 @@ object LoopSummary {
     }
   }
 
-  def result(loop: StepLoop, items: Item.ID => Item): Result =
+  /** @param step the step's description */
+  def result(loop: StepLoop, step: String, items: Item.ID => Item): Result =
     loop.repetitions match {
       case Repetitions.Fixed(_) =>
         Result.Stops(s"Stops after running ${times(loop.passes.map(_.reps).sum)}")
       case Repetitions.Until(condition, _) =>
-        LoopMessages.forPasses(loop.passes, condition, items) match {
+        LoopMessages.forPasses(loop.passes, condition, step, items) match {
           case Nil => Result.Stops(stops(loop.passes, condition, items))
           case problems => Result.Problems(problems)
         }

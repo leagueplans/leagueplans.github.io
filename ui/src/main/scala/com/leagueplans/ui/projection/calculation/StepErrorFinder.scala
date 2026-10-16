@@ -30,12 +30,14 @@ object StepErrorFinder {
 
   /** Whether a step that the step is part of plays more than one repetition at a time */
   def insideLoop(forest: Forest[Step.ID, Step], loops: Map[Step.ID, Vector[LoopRun]], id: Step.ID): Boolean =
-    forest.ancestors(id).exists(ancestor =>
-      forest.get(ancestor).exists(_.repetitions match {
-        case Repetitions.Fixed(n) => n > 1
-        case Repetitions.Until(_, _) => loops.get(ancestor).exists(_.exists(_.reps > 1))
-      })
-    )
+    forest.ancestors(id).exists(repeats(forest, loops, _))
+
+  /** Whether the step plays more than one repetition at a time */
+  private def repeats(forest: Forest[Step.ID, Step], loops: Map[Step.ID, Vector[LoopRun]], id: Step.ID): Boolean =
+    forest.get(id).exists(_.repetitions match {
+      case Repetitions.Fixed(n) => n > 1
+      case Repetitions.Until(_, _) => loops.get(id).exists(_.exists(_.reps > 1))
+    })
 }
 
 /** @param initialPlayer the player before the plan's first step */
@@ -72,7 +74,8 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
         }
       (finalErrors, finalOwners, newProcessedReps, finalPlayer)
     }
-    .map(_.map { case ForestFolder.Result((errors, _, _, _), loops, timings, elapsed) =>
+    .map(_.map { case ForestFolder.Result((errors, _, _, _), unplaced, places, timings, elapsed) =>
+      val loops = unplaced.map((id, runs) => id -> placed(forest, unplaced, runs, places.getOrElse(id, Vector.empty)))
       val loopErrors = loops.flatMap((id, runs) => forest.get(id).map(step => id -> loopProblems(step, runs)))
       val conflicts = forest.nodes.map((id, step) => id -> targetConflicts(step)).filter(_._2.nonEmpty)
       Findings(
@@ -82,20 +85,33 @@ final class StepErrorFinder(settings: Plan.Settings, initialPlayer: Player, reso
             .map(id -> _)
         ).toMap,
         loops = loops.view.mapValues(_.toList).toMap,
-        timings = timings.map((id, timing) => id -> timing.copy(insideLoop = StepErrorFinder.insideLoop(forest, loops, id))),
+        timings = timings.map((id, timing) => id -> timing.copy(insideLoop = StepErrorFinder.insideLoop(forest, unplaced, id))),
         endTime = elapsed.getOrElse(Duration.Zero)
       )
     })
 
 
-  /** One problem for each different thing that went wrong, naming the pass it first went wrong on
-    * if the step is played more than once */
+  /** Names where each pass was played, by the repetitions of the steps around it that repeat */
+  private def placed(
+    forest: Forest[Step.ID, Step],
+    loops: Map[Step.ID, Vector[LoopRun]],
+    runs: Vector[LoopRun],
+    places: Vector[List[(Step.ID, Int)]]
+  ): Vector[LoopRun] =
+    runs.zipWithIndex.map((run, index) =>
+      run.copy(where = places.lift(index).getOrElse(List.empty).collect {
+        case (id, rep) if StepErrorFinder.repeats(forest, loops, id) => LoopRun.Place(forest.get(id).fold("")(_.description), rep)
+      })
+    )
+
+  /** One problem for each different thing that went wrong */
   private def loopProblems(step: Step, runs: Vector[LoopRun]): List[StepError] =
     step.repetitions match {
       case Repetitions.Fixed(_) =>
         List.empty
       case until @ Repetitions.Until(condition, _) =>
-        LoopMessages.forPasses(runs.toList, condition, cache.items).map(StepError(StepError.Source.Repetitions(until), _))
+        LoopMessages.forPasses(runs.toList, condition, step.description, cache.items)
+          .map(problem => StepError(StepError.Source.Repetitions(until), problem.message))
     }
 
   /** Effects that take a skill to a target the step repeats until, or past it, in one repetition,

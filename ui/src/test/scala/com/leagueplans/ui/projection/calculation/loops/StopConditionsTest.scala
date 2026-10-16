@@ -515,15 +515,6 @@ final class StopConditionsTest extends AnyFreeSpec with Matchers {
         describe(freeSlots(Comparison.AtMost, 0)) shouldBe "the inventory is full"
       }
 
-      "a repetition going past a condition" in {
-        StopConditions.describePassing(new SkillReaches(Skill.Hunter, ExpTarget.AtLevel(Level.L60), stopBefore = true), lookup) shouldBe
-          "Hunter past level 60"
-        StopConditions.describePassing(new ItemCount(logs, ItemLocation.Bank, ItemForms.Noted, Comparison.AtMost, 0, stopBefore = true), lookup) shouldBe
-          "Logs (noted) in the bank below 0"
-        StopConditions.describePassing(new FreeInventorySlots(Comparison.AtLeast, 4, stopBefore = true), lookup) shouldBe
-          "the inventory's free slots above 4"
-      }
-
       "time passing" in {
         describe(TimeElapsed(TimeOrigin.StepStart, com.leagueplans.ui.model.plan.Duration.seconds(5400), stopBefore = false)) shouldBe
           "this step has taken 1h 30m"
@@ -565,6 +556,8 @@ final class StopConditionsTest extends AnyFreeSpec with Matchers {
         StopConditions.describeAlreadyMet(count(logs, ItemLocation.Bank, ItemForms.Unnoted, Comparison.AtLeast, 5), lookup) shouldBe
           "the bank already holds at least 5 Logs"
         StopConditions.describeAlreadyMet(freeSlots(Comparison.AtMost, 0), lookup) shouldBe "the inventory is already full"
+        StopConditions.describeAlreadyMet(count(feathers, ItemLocation.Inventory, ItemForms.Unnoted, Comparison.AtMost, 0), lookup) shouldBe
+          "Feather has already run out"
       }
 
       "a condition a repetition should bring closer" in {

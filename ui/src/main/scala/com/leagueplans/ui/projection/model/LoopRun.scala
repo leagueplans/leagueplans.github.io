@@ -11,11 +11,14 @@ import com.leagueplans.ui.model.plan.StopCondition
   * @param passedOn the repetitions that took a condition asking to stop before it's passed past its
   *                 threshold, which happens when conditions combined with "and" carry on because
   *                 the others haven't been met
+  * @param where for a step inside others that repeat, the repetition of each of those that the
+  *              pass was played on, outermost first
   */
 final case class LoopRun(
   reps: Int,
   outcome: LoopRun.Outcome,
-  passedOn: List[LoopRun.Passed]
+  passedOn: List[LoopRun.Passed],
+  where: List[LoopRun.Place] = List.empty
 )
 
 object LoopRun {
@@ -50,6 +53,14 @@ object LoopRun {
   object Passed {
     given Encoder[Passed] = Encoder.derived
     given Decoder[Passed] = Decoder.derived
+  }
+
+  /** A repetition of a step, named by its description */
+  final case class Place(step: String, rep: Int)
+
+  object Place {
+    given Encoder[Place] = Encoder.derived
+    given Decoder[Place] = Decoder.derived
   }
 
   given Encoder[LoopRun] = Encoder.derived
