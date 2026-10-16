@@ -17,7 +17,7 @@ object StepLoops {
 
 /** How each pass of each step that repeats until a condition is met played out, as last worked out
   * by the projection worker. The passes catch up with the plan a moment after it changes. */
-final class StepLoops(all: Signal[Map[Step.ID, StepLoop]]) {
+final class StepLoops(val all: Signal[Map[Step.ID, StepLoop]]) {
   /** The step's passes as last worked out, or None if they never have been while it repeated
     * until a condition */
   def get(step: Signal[Step]): Signal[Option[Known]] =

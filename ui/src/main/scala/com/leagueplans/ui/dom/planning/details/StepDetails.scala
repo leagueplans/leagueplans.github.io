@@ -2,6 +2,7 @@ package com.leagueplans.ui.dom.planning.details
 
 import com.leagueplans.ui.dom.planning.{PlanningTips, StepEditor}
 import com.leagueplans.ui.dom.planning.details.RowSelection.{Command, Kind, Row}
+import com.leagueplans.ui.dom.planning.details.repeat.NotRunNotice
 import com.leagueplans.ui.dom.planning.drag.DragSession
 import com.leagueplans.ui.dom.planning.drag.DragSession.Dragged
 import com.leagueplans.ui.dom.planning.forest.Forester
@@ -114,6 +115,7 @@ object StepDetails {
         L.cls(Styles.header),
         Breadcrumbs(stepSignal, forester.signal, focusController, tooltip),
         DescriptionField(stepSignal, forester, fieldEditRequests.filter(_ == EditRequest.Description).mapToUnit),
+        NotRunNotice(stepSignal, forester.signal, loops.all, focusController),
         TimingRows(
           stepSignal,
           forester,

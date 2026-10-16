@@ -1,0 +1,50 @@
+/* Amber like the cards' warnings: it isn't an error in the step, but it mustn't be overlooked */
+.notice {
+  margin: 0;
+  padding: 6px 8px;
+
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  border: 1px solid color-mix(in srgb, var(--warning) 55%, transparent);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--warning) 12%, var(--navy-panel));
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.notice svg {
+  flex: none;
+  width: 12px;
+  color: var(--warning);
+}
+
+.text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* Focuses the step that stops */
+.step {
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
+
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.step:hover, .step:focus-visible {
+  text-decoration: underline;
+}
