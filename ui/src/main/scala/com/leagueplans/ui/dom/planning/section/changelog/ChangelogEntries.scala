@@ -6,6 +6,17 @@ import com.leagueplans.ui.dom.planning.section.changelog.ChangelogEntry.Date
 /** Newest first */
 object ChangelogEntries {
   val all: List[ChangelogEntry] = List(
+    ChangelogEntry(Date(2026, 10, 16), "Repeat a step until a goal is met")(
+      Para(
+        "A step can now repeat until a skill reaches a level or an amount of xp, until you've gathered or used" +
+          " up enough of an item, until your inventory is full, or until the step or the plan reaches a time." +
+          " Switch the step's Repeat row from ×N to Until, then add a condition."
+      ),
+      Para(
+        "The planner works out how many times the step needs to run and shows the count beside it. If the step" +
+          " would never reach its goal, it tells you why."
+      )
+    ),
     ChangelogEntry(Date(2026, 10, 10), "Revamped plan management")(
       Para(
         "The site now opens straight into the plan you last had open. To switch to another plan, click your" +
