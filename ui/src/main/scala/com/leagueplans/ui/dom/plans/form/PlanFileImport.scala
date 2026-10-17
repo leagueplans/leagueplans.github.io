@@ -8,7 +8,7 @@ import com.leagueplans.ui.storage.model.{PlanExport, PlanMetadata}
 import com.raquo.airstream.core.{EventStream, Observer, Signal}
 import com.raquo.airstream.state.{Val, Var}
 import com.raquo.laminar.api.{L, eventPropToProcessor, seqToModifier}
-import org.scalajs.dom.{DragEvent, File}
+import org.scalajs.dom.{DragEvent, Element, File, Node}
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 import scala.concurrent.{Future, Promise}
@@ -62,7 +62,9 @@ object PlanFileImport {
   ): L.Modifier[L.HtmlElement] =
     List(
       L.onDragOver.preventDefault --> Observer[Any](_ => isDragging.set(true)),
-      L.onDragLeave --> Observer[Any](_ => isDragging.set(false)),
+      L.inContext(self =>
+        L.onDragLeave.filter(event => !isWithin(event, self.ref)) --> Observer[Any](_ => isDragging.set(false))
+      ),
       L.onDrop.preventDefault --> Observer[Any](_ => isDragging.set(false)),
       L.onDrop.preventDefault.compose(_.flatMapSwitch(dropped)) --> Observer[Either[String, Option[File]]] {
         case Right(dropped) =>
@@ -73,6 +75,18 @@ object PlanFileImport {
           failure.set(Some(reason))
       }
     )
+
+  /** Whether a dragleave is only moving between the element's own descendants. Browsers don't
+    * always say where the pointer went, so without that it goes by where the pointer is.
+    */
+  private def isWithin(event: DragEvent, element: Element): Boolean =
+    event.relatedTarget match {
+      case node: Node => element.contains(node)
+      case _ =>
+        val bounds = element.getBoundingClientRect()
+        event.clientX > bounds.left && event.clientX < bounds.right &&
+          event.clientY > bounds.top && event.clientY < bounds.bottom
+    }
 
   /** The file dropped, if any. Extracting a .plan.gz can leave the plan in a folder named after it,
     * so a folder holding one plan file counts as that file.
