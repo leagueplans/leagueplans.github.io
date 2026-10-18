@@ -17,6 +17,20 @@
   font-size: 0.79rem;
 }
 
+/* As an effect row with a problem */
+.bad {
+  background-color: var(--red-tint);
+}
+
+.box:focus {
+  outline: none;
+}
+
+.box:focus-visible {
+  outline: 1px solid var(--navy-accent);
+  outline-offset: 1px;
+}
+
 /* Not in the plan until its number is typed */
 .draft {
   border-color: var(--navy-accent);

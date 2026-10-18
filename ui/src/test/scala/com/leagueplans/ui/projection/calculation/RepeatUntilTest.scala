@@ -217,12 +217,29 @@ final class RepeatUntilTest extends AsyncFreeSpec with Matchers with LoneElement
       val loop = step("loop", until(condition), addFeathers(-3), fishing(50))
       find(forest(stock -> None, trip -> None, loop -> Some(trip))).map { findings =>
         LoopMessages.forPasses(findings.loops(loop.id), condition, "loop", cache.items) shouldBe List(
-          LoopMessages.Problem("Feather runs out before this step stops", List("trip (1st time) › loop (2nd time)")),
+          LoopMessages.Problem(
+            "Feather runs out before this step stops",
+            List("trip (1st time) › loop (2nd time)"),
+            List(feathersAtMost(0, stopBefore = true))
+          ),
           LoopMessages.Problem(
             "Feather has already run out and Fishing is already level 3, so this step doesn't run",
-            List("trip (2nd time)")
+            List("trip (2nd time)"),
+            List(feathersAtMost(0, stopBefore = true), fishingLevel(3))
           )
         )
+      }
+    }
+
+    "ties a problem to the conditions at fault, or to none for the loop as a whole" in {
+      // Getting no closer to a lone condition is that condition's fault; being too slow is the loop's
+      val stuck = step("stuck", until(fishingLevel(2)), Effect.GainExp(Skill.Cooking, 1, Exp(50)))
+      val slow = step("slow", until(fishingLevel(99)), fishing(1))
+      find(forest(stuck -> None, slow -> None)).map { findings =>
+        LoopMessages.forPasses(findings.loops(stuck.id), fishingLevel(2), "stuck", cache.items).map(_.conditions) shouldBe
+          List(List(fishingLevel(2)))
+        LoopMessages.forPasses(findings.loops(slow.id), fishingLevel(99), "slow", cache.items).map(_.conditions) shouldBe
+          List(List.empty)
       }
     }
 

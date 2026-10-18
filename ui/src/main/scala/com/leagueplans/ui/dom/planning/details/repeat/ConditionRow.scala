@@ -26,6 +26,8 @@ import scala.scalajs.js.annotation.JSImport
   * @param onChange told about a setting changed
   * @param onCommit told about a number saved
   * @param subjectPicker the list to change the condition's skill or item, for a condition with one
+  * @param problems what's wrong with the condition, if anything, which turns it red as an effect
+  *                 row with a problem is
   */
 object ConditionRow {
   def apply(
@@ -37,6 +39,7 @@ object ConditionRow {
     onCommit: Observer[Leaf],
     onRemove: () => Unit,
     subjectPicker: Leaf => Option[L.HtmlElement],
+    problems: Signal[Option[L.HtmlElement]],
     popover: Popover
   ): L.Div = {
     var current = initial
@@ -187,7 +190,11 @@ object ConditionRow {
       L.div(
         L.cls(Styles.box),
         L.when(isDraft)(L.cls(Styles.draft)),
-        lines
+        L.cls(Styles.bad) <-- problems.map(_.nonEmpty),
+        // Focused by the repeat row's count of problems
+        L.tabIndex(-1),
+        lines,
+        L.child.maybe <-- problems
       ),
       L.child <-- number.error.map {
         case Some(error) => L.p(L.cls(Styles.error), error)
@@ -196,6 +203,9 @@ object ConditionRow {
       }
     )
   }
+
+  /** The class of a condition with a problem, by which the repeat row finds them */
+  def problemClass: String = Styles.bad
 
   /** The step's limit on its repetitions, laid out as a condition. It stops the step whatever the
     * conditions say, so it reads as an "or" even when they're all needed. A draft waits for its
@@ -332,6 +342,7 @@ object ConditionRow {
     val condition: String = js.native
     val box: String = js.native
     val draft: String = js.native
+    val bad: String = js.native
     val line: String = js.native
     val subject: String = js.native
     val open: String = js.native

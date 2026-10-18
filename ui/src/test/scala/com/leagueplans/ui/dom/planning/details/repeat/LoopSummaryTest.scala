@@ -119,7 +119,7 @@ final class LoopSummaryTest extends AnyFreeSpec with Matchers {
 
       "gives a loop's problems" in {
         result(hunter60, run(0, LoopRun.Outcome.AlreadyMet(List(hunter60)))) shouldBe
-          Result.Problems(List(LoopMessages.Problem("Hunter is already level 60, so this step doesn't run", List.empty)))
+          Result.Problems(List(LoopMessages.Problem("Hunter is already level 60, so this step doesn't run", List.empty, List(hunter60))))
       }
     }
   }

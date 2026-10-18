@@ -109,7 +109,32 @@ object RepeatRow {
         case (_, None) => Some(None)
         case (step, Some(known)) => Some(Some((LoopSummary.result(known.loop, step.description, cache.items), known.current)))
       }.distinct
-    val hasProblems = result.map(_.flatten.exists(_._1.isInstanceOf[LoopSummary.Result.Problems])).distinct
+    // The loop's problems as last worked out, and whether they're current
+    val problems =
+      result.map {
+        case Some(Some((LoopSummary.Result.Problems(problems), current))) => (problems, current)
+        case _ => (List.empty, true)
+      }.distinct
+    var editor = Option.empty[org.scalajs.dom.HTMLElement]
+
+    /** A condition's own problems, under it */
+    def problemsOf(leaf: Signal[Leaf]): Signal[Option[L.HtmlElement]] =
+      Signal.combine(leaf, problems).map { case (leaf, (problems, current)) =>
+        toProblems(problems.filter(_.conditions.contains(leaf)), current, tooltip)
+      }
+
+    /** Moves to the condition with a problem after the one that has the focus, as the effects'
+      * count of problems moves to the next row with one */
+    def focusNextProblem(): Unit =
+      editor.foreach { editor =>
+        val found = editor.querySelectorAll(s".${ConditionRow.problemClass}")
+        val withProblems = (0 until found.length).map(found(_).asInstanceOf[org.scalajs.dom.HTMLElement]).toList
+        val focused = withProblems.indexWhere(_.contains(org.scalajs.dom.document.activeElement))
+        withProblems.lift((focused + 1) % withProblems.size.max(1)).foreach { next =>
+          next.focus()
+          next.asInstanceOf[js.Dynamic].scrollIntoView(js.Dynamic.literal(block = "nearest"))
+        }
+      }
 
     def saveGroup(leaves: List[Leaf], combinator: Combinator, max: Option[Int]): Unit =
       current.foreach { step =>
@@ -242,6 +267,7 @@ object RepeatRow {
             onCommit = replace,
             onRemove = () => editGroup((leaves, c, max) => (leaves.patch(index, Nil, 1), c, max)),
             subjectPicker(replace.onNext),
+            problemsOf(leafAndIndex.map(_._1)),
             popover
           )
       }
@@ -262,13 +288,13 @@ object RepeatRow {
           }),
           onRemove = drop,
           subjectPicker(change.onNext),
+          problems = Signal.fromValue(None),
           popover
         )
       }
 
     L.div(
       L.cls(Styles.repeat),
-      L.cls(Styles.hasProblems) <-- hasProblems,
       stepSignal --> { step =>
         current = Some(step)
         step.repetitions match {
@@ -281,7 +307,10 @@ object RepeatRow {
       L.child.maybe <-- showsUntil.map(Option.when(_)(
         L.div(
           L.cls(Styles.editor),
-          L.child.maybe <-- result.map(_.map(toResultLine(_, tooltip))),
+          L.onMountUnmountCallback(ctx => editor = Some(ctx.thisNode.ref), _ => editor = None),
+          L.child.maybe <-- Signal.combine(result, group).map((result, group) =>
+            result.map(toResultLine(_, group._1.fold(List.empty)(_._1), () => focusNextProblem(), tooltip))
+          ),
           L.child.maybe <-- group.map((group, _) => group.filter(_._1.size >= 2).map((_, combinator) =>
             toCombinatorLine(combinator, picked => editGroup((leaves, _, max) => (leaves, picked, max)))
           )),
@@ -454,15 +483,45 @@ object RepeatRow {
 
   private val maxPlacesShown = 5
 
-  private def toResultLine(result: Option[(LoopSummary.Result, Boolean)], tooltip: Tooltip): L.Div =
+  /** How the loop ended, or how many problems it has, styled as the effects' count of them. The
+    * problems of the loop as a whole, rather than of a condition, follow, such as reaching the limit.
+    *
+    * @param leaves the conditions on show, whose own problems are under them
+    * @param onProblems told when the count of problems is clicked
+    */
+  private def toResultLine(
+    result: Option[(LoopSummary.Result, Boolean)],
+    leaves: List[Leaf],
+    onProblems: () => Unit,
+    tooltip: Tooltip
+  ): L.Div =
     result match {
       case None =>
         L.div(L.cls(Styles.pending), "Working out how many times that takes…")
       case Some((LoopSummary.Result.Stops(text), current)) =>
         L.div(L.cls(Styles.met), L.when(!current)(L.cls(Styles.stale)), s"✓ $text")
       case Some((LoopSummary.Result.Problems(problems), current)) =>
-        L.div(L.cls(Styles.problems), L.when(!current)(L.cls(Styles.stale)), problems.map(toProblem(_, tooltip)))
+        val count = if (problems.size == 1) "1 problem" else s"${problems.size} problems"
+        val own = problems.filterNot(_.conditions.exists(leaves.contains))
+        L.div(
+          L.cls(Styles.result),
+          L.button(
+            L.cls(Styles.problemCount),
+            L.typ("button"),
+            L.aria.label(
+              if (problems.size > own.size) s"$count. Move to the next condition with a problem." else count
+            ),
+            count,
+            L.onClick --> (_ => onProblems())
+          ),
+          toProblems(own, current, tooltip)
+        )
     }
+
+  private def toProblems(problems: List[LoopMessages.Problem], current: Boolean, tooltip: Tooltip): Option[L.Div] =
+    Option.when(problems.nonEmpty)(
+      L.div(L.cls(Styles.problems), L.when(!current)(L.cls(Styles.stale)), problems.map(toProblem(_, tooltip)))
+    )
 
   /** A problem with a step inside others that repeat says where it happened in its tooltip */
   private def toProblem(problem: LoopMessages.Problem, tooltip: Tooltip): L.HtmlElement =
@@ -510,7 +569,6 @@ object RepeatRow {
   @js.native @JSImport("/styles/planning/details/repeatRow.module.css", JSImport.Default)
   private object Styles extends js.Object {
     val repeat: String = js.native
-    val hasProblems: String = js.native
     val top: String = js.native
     val icon: String = js.native
     val label: String = js.native
@@ -533,6 +591,8 @@ object RepeatRow {
     val open: String = js.native
     val met: String = js.native
     val problems: String = js.native
+    val result: String = js.native
+    val problemCount: String = js.native
     val placed: String = js.native
     val hint: String = js.native
     val stale: String = js.native

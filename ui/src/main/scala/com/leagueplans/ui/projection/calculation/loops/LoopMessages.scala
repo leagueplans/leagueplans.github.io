@@ -9,8 +9,10 @@ import com.leagueplans.uicommon.utils.scala.IntOps.{ordinal, withCommas}
 object LoopMessages {
   /** @param where for a step inside others that repeat, where the problem happened, such as
     *              "Fishing trip (2nd time) › Fly fish (13th time)", once for each place
+    * @param conditions the conditions at fault, or none for a problem with the loop as a whole,
+    *                   such as reaching the limit
     */
-  final case class Problem(message: String, where: List[String])
+  final case class Problem(message: String, where: List[String], conditions: List[StopCondition])
 
   /** One problem for each different thing that went wrong across the step's passes.
     *
@@ -24,38 +26,39 @@ object LoopMessages {
     val nested = runs.exists(_.where.nonEmpty)
     val found =
       runs.flatMap(run =>
-        problems(run, condition, items, nested).map((message, ownRep) =>
-          message -> (run.where.map(place => s"${place.step} (${place.rep.ordinal} time)") ++
-            ownRep.map(rep => s"$step (${rep.ordinal} time)")).mkString(" › ")
+        problems(run, condition, items, nested).map((message, ownRep, conditions) =>
+          (message, (run.where.map(place => s"${place.step} (${place.rep.ordinal} time)") ++
+            ownRep.map(rep => s"$step (${rep.ordinal} time)")).mkString(" › "), conditions)
         )
       )
-    found.map(_._1).distinct.map(message =>
-      Problem(message, if (nested) found.collect { case (`message`, place) => place }.distinct else List.empty)
-    )
+    found.map(_._1).distinct.map { message =>
+      val same = found.filter(_._1 == message)
+      Problem(message, if (nested) same.map(_._2).distinct else List.empty, same.flatMap(_._3).distinct)
+    }
   }
 
   /** The problems with a pass, each with the step's own repetition it happened on, if it happened
-    * on one */
+    * on one, and the conditions at fault */
   private def problems(
     run: LoopRun,
     condition: StopCondition,
     items: Item.ID => Item,
     nested: Boolean
-  ): List[(String, Option[Int])] = {
+  ): List[(String, Option[Int], List[StopCondition])] = {
     val outcome = run.outcome match {
       case LoopRun.Outcome.AlreadyMet(met) =>
         val leaves = met.collect { case leaf: StopConditions.Leaf => StopConditions.describeAlreadyMet(leaf, items) }
-        Some(s"${capitalise(if (leaves.isEmpty) "its condition is already met" else leaves.mkString(" and "))}, so this step doesn't run")
+        Some((s"${capitalise(if (leaves.isEmpty) "its condition is already met" else leaves.mkString(" and "))}, so this step doesn't run", met))
       case LoopRun.Outcome.NoProgress =>
-        val approach = StopConditions.leaves(condition) match {
-          case List(leaf) => StopConditions.describeApproach(leaf, items)
-          case _ => "this step closer to stopping"
+        // Only a lone condition is known to be the one that gets no closer
+        StopConditions.leaves(condition) match {
+          case List(leaf) => Some((s"Running this step again doesn't bring ${StopConditions.describeApproach(leaf, items)}", List(leaf)))
+          case _ => Some(("Running this step again doesn't bring this step closer to stopping", List.empty))
         }
-        Some(s"Running this step again doesn't bring $approach")
       case LoopRun.Outcome.TooSlow(estimate) =>
-        Some(s"At this rate, this step would need to run about ${String.format("%,d", estimate)} times, so it ${runs(run.reps)}")
+        Some((s"At this rate, this step would need to run about ${String.format("%,d", estimate)} times, so it ${runs(run.reps)}", List.empty))
       case LoopRun.Outcome.ReachedCap(cap) =>
-        Some(s"This step stops at the limit of ${cap.withCommas} times")
+        Some((s"This step stops at the limit of ${cap.withCommas} times", List.empty))
       case LoopRun.Outcome.Met(_) | LoopRun.Outcome.ReachedMax(_) | LoopRun.Outcome.StoppedBefore(_) =>
         None
     }
@@ -63,10 +66,10 @@ object LoopMessages {
       val passing = capitalise(
         passed.conditions.collect { case leaf: StopConditions.Leaf => StopConditions.describeStoppingBefore(leaf, items) }.mkString(" and ")
       )
-      if (nested) (s"$passing before this step stops", Some(passed.rep))
-      else (s"$passing the ${passed.rep.ordinal} time this step runs", None)
+      if (nested) (s"$passing before this step stops", Some(passed.rep), passed.conditions)
+      else (s"$passing the ${passed.rep.ordinal} time this step runs", None, passed.conditions)
     }
-    outcome.map(_ -> None).toList ++ passed
+    outcome.map((message, conditions) => (message, None, conditions)).toList ++ passed
   }
 
   private def runs(reps: Int): String =

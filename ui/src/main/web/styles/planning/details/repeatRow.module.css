@@ -4,11 +4,6 @@
   flex-direction: column;
 }
 
-/* As an effect row with a problem */
-.hasProblems {
-  background-color: var(--red-tint);
-}
-
 .top {
   display: flex;
   align-items: center;
@@ -205,6 +200,19 @@
   color: var(--green);
   font-size: 0.72rem;
   line-height: 1.4;
+}
+
+/* The count of problems, then the loop's own */
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* As the effects' count of problems */
+.problemCount {
+  composes: problemCount from "./stepDetails.module.css";
 }
 
 /* As an effect row's problems */
