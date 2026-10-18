@@ -1,0 +1,202 @@
+/* A dropdown, drawn in the planning page's navy unless the area it's in says otherwise. Areas
+ * set these on the dropdown, or on anything around it:
+ *
+ *   --select-height, --select-padding, --select-font-size, --select-radius
+ *   --select-background, --select-border, --select-text      the closed dropdown
+ *   --select-chevron                                          its chevron's colour
+ *   --select-accent                                           hovered and open borders, the ✓ and
+ *                                                             the keyboard's place in the list
+ *   --select-open-background, --select-open-text              the dropdown while open
+ *   --select-focus-border, --select-focus-ring,
+ *   --select-focus-outline                                    keyboard focus
+ *   --select-list-background, --select-list-border,
+ *   --select-list-shadow                                      the open list
+ *   --select-option-text, --select-option-font-size,
+ *   --select-option-padding, --select-option-hover            its options
+ *   --select-heading, --select-rule                           its group headings, and the rule
+ *                                                             between groups
+ *   --select-scrollbar-thumb, --select-scrollbar-track        its scrollbar
+ */
+
+.select {
+  display: inline-flex;
+  min-width: 0;
+  height: var(--select-height, 22px);
+  vertical-align: middle;
+}
+
+.button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--select-padding, 1px 6px 1px 7px);
+
+  border: 1px solid var(--select-border, var(--navy-border));
+  border-radius: var(--select-radius, 4px);
+  background-color: var(--select-background, var(--navy-bar));
+  color: var(--select-text, var(--text-soft));
+  font-family: var(--font-ui);
+  font-size: var(--select-font-size, 0.74rem);
+  line-height: normal;
+  text-align: start;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--select-accent, var(--navy-accent));
+}
+
+.button:focus-visible {
+  border-color: var(--select-focus-border, var(--select-accent, var(--navy-accent)));
+  box-shadow: var(--select-focus-ring, 0 0 0 1px var(--navy-accent));
+  outline: var(--select-focus-outline, none);
+  outline-offset: 1px;
+}
+
+.open .button {
+  border-color: var(--select-accent, var(--navy-accent));
+  background-color: var(--select-open-background, var(--navy-bar-hover));
+  color: var(--select-open-text, var(--text-bright));
+}
+
+/* The labels share one cell, so that the widest sets the width */
+.value {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sizer, .current {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sizer {
+  visibility: hidden;
+}
+
+.chevron {
+  flex: none;
+  width: 0.76em;
+  height: 0.76em;
+  color: var(--select-chevron, var(--text-dim));
+  transition: transform 0.12s;
+}
+
+.open .chevron {
+  transform: rotate(180deg);
+}
+
+/* Shown in the top layer, as a popover, which the browser otherwise centres in the window.
+ * Without popovers it's an ordinary fixed element, shown by .shown, and under any modal. */
+.list {
+  position: fixed;
+  z-index: 1000;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  max-height: 400px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+
+  border: 1px solid var(--select-list-border, var(--navy-border));
+  border-radius: 6px;
+  background-color: var(--select-list-background, var(--navy-deep));
+  box-shadow: var(--select-list-shadow, 0 8px 24px rgba(0, 0, 0, 0.6));
+  color: var(--select-option-text, var(--text-soft));
+  font-family: var(--font-ui);
+  font-size: var(--select-option-font-size, 0.78rem);
+  /* It inherits from where the dropdown sits, such as a heading */
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: normal;
+  text-align: start;
+  text-shadow: none;
+  text-transform: none;
+  scrollbar-color: var(--select-scrollbar-thumb, var(--navy-border)) var(--select-scrollbar-track, var(--navy-panel));
+  scrollbar-width: thin;
+}
+
+/* Only while open: a display here would otherwise show the list while it's closed */
+.list:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.list:not([popover]) {
+  display: none;
+}
+
+.list:not([popover]).shown {
+  display: flex;
+  flex-direction: column;
+}
+
+.list:focus {
+  outline: none;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  padding: 4px 8px 1px;
+  color: var(--select-heading, var(--text-dim));
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.group + .group > .heading {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px solid var(--select-rule, var(--navy-line));
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--select-option-padding, 4px 8px);
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.option:hover {
+  background-color: var(--select-option-hover, var(--navy-bar-hover));
+  color: var(--text-bright);
+}
+
+.chosen {
+  color: var(--text-bright);
+  font-weight: 500;
+}
+
+/* Outlined, so that the keyboard's place reads apart from the mouse's */
+.active {
+  background-color: var(--select-option-hover, var(--navy-bar-hover));
+  box-shadow: inset 0 0 0 1px var(--select-accent, var(--navy-accent));
+  color: var(--text-bright);
+}
+
+.tick {
+  flex: none;
+  width: 10px;
+  color: var(--select-accent, var(--navy-accent));
+  font-size: 0.92em;
+  text-align: center;
+}

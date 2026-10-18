@@ -8,7 +8,7 @@ import com.raquo.laminar.api.L
 
 /** A dropdown of the game modes, grouped by the kind of game they're for, newest first */
 object ModeSelect {
-  def apply(id: String, selection: Var[Mode]): (L.Select, L.Label) =
+  def apply(id: String, selection: Var[Mode]): (L.Div, L.Label) =
     Select.grouped(id, groups.map((heading, modes) => Group(Some(heading), modes.map(toOpt))), selection)
 
   private[plans] val groups: List[(String, List[Mode])] =
