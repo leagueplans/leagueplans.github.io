@@ -45,6 +45,21 @@ final class RequirementTest extends CodecSpec {
       )
     }
 
+    "Where" - {
+      "encoding values to and decoding values from an expected encoding" - {
+        def test(where: Requirement.Where, discriminant: Byte): Assertion =
+          testRoundTripSerialisation(
+            where,
+            Decoder.decodeMessage,
+            Array(0, discriminant, 0b1100, 0)
+          )
+
+        "Inventory" in test(Requirement.Where.Inventory, 0)
+        "Equipped" in test(Requirement.Where.Equipped, 0b1)
+        "InventoryOrEquipped" in test(Requirement.Where.InventoryOrEquipped, 0b10)
+      }
+    }
+
     "held" - {
       def item(equipmentType: Option[EquipmentType]): Item =
         Item(

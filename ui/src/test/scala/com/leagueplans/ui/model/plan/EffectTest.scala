@@ -10,6 +10,20 @@ import org.scalatest.Assertion
 
 final class EffectTest extends CodecSpec {
   "Effect" - {
+    "DepositSource" - {
+      "encoding values to and decoding values from an expected encoding" - {
+        def test(source: Effect.DepositSource, discriminant: Byte): Assertion =
+          testRoundTripSerialisation(
+            source,
+            Decoder.decodeMessage,
+            Array(0, discriminant, 0b1100, 0)
+          )
+
+        "Inventory" in test(Effect.DepositSource.Inventory, 0)
+        "Equipment" in test(Effect.DepositSource.Equipment, 0b1)
+      }
+    }
+
     "encoding values to and decoding values from an expected encoding" - {
       def test(effect: Effect, expectedEncoding: Array[Byte]): Assertion =
         testRoundTripSerialisation(effect, Decoder.decodeMessage, expectedEncoding)

@@ -1,80 +1,99 @@
 package com.leagueplans.ui.model.plan
 
 import com.leagueplans.ui.model.plan.ItemQuantity.Problem
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+import com.leagueplans.codec.codecs.CodecSpec
+import com.leagueplans.codec.decoding.Decoder
+import com.leagueplans.codec.encoding.Encoder
+import org.scalatest.Assertion
 
-final class ItemQuantityTest extends AnyFreeSpec with Matchers {
-  "ItemQuantity.parseCount" - {
-    "reads whole numbers, ignoring commas and spaces around them" in {
-      ItemQuantity.parseCount("250") shouldBe Right(250)
-      ItemQuantity.parseCount(" 1,250 ") shouldBe Right(1250)
+final class ItemQuantityTest extends CodecSpec {
+  "ItemQuantity" - {
+    "parseCount" - {
+      "reads whole numbers, ignoring commas and spaces around them" in {
+        ItemQuantity.parseCount("250") shouldBe Right(250)
+        ItemQuantity.parseCount(" 1,250 ") shouldBe Right(1250)
+      }
+
+      "reads the bank's k, m and b shortcuts, in either case" in {
+        ItemQuantity.parseCount("10k") shouldBe Right(10000)
+        ItemQuantity.parseCount("10K") shouldBe Right(10000)
+        ItemQuantity.parseCount("3m") shouldBe Right(3000000)
+        ItemQuantity.parseCount("2b") shouldBe Right(2000000000)
+      }
+
+      "reads decimals, rounding the count down" in {
+        ItemQuantity.parseCount("1.5k") shouldBe Right(1500)
+        ItemQuantity.parseCount("1.2345k") shouldBe Right(1234)
+        ItemQuantity.parseCount(".5m") shouldBe Right(500000)
+        ItemQuantity.parseCount("2.9") shouldBe Right(2)
+      }
+
+      "rejects letters that combine, or that aren't shortcuts" in {
+        ItemQuantity.parseCount("1km") shouldBe Left(Problem.Unreadable)
+        ItemQuantity.parseCount("1e5") shouldBe Left(Problem.Unreadable)
+        ItemQuantity.parseCount("k") shouldBe Left(Problem.Unreadable)
+        ItemQuantity.parseCount("lots") shouldBe Left(Problem.Unreadable)
+      }
+
+      "rejects counts below 1" in {
+        ItemQuantity.parseCount("0") shouldBe Left(Problem.BelowOne)
+        ItemQuantity.parseCount("0k") shouldBe Left(Problem.BelowOne)
+        ItemQuantity.parseCount("0.5") shouldBe Left(Problem.BelowOne)
+        ItemQuantity.parseCount("-5") shouldBe Left(Problem.BelowOne)
+      }
+
+      "rejects counts a stack can't hold" in {
+        ItemQuantity.parseCount("3b") shouldBe Left(Problem.AboveMax)
+        ItemQuantity.parseCount("99999999999") shouldBe Left(Problem.AboveMax)
+        ItemQuantity.parseCount("2147483647") shouldBe Right(Int.MaxValue)
+      }
     }
 
-    "reads the bank's k, m and b shortcuts, in either case" in {
-      ItemQuantity.parseCount("10k") shouldBe Right(10000)
-      ItemQuantity.parseCount("10K") shouldBe Right(10000)
-      ItemQuantity.parseCount("3m") shouldBe Right(3000000)
-      ItemQuantity.parseCount("2b") shouldBe Right(2000000000)
+    "stepped" - {
+      "steps a count up and down by one, writing it out in full" in {
+        ItemQuantity.stepped("10", 1) shouldBe Some("11")
+        ItemQuantity.stepped("10k", -1) shouldBe Some("9999")
+        ItemQuantity.stepped("1.5", 1) shouldBe Some("2")
+      }
+
+      "stays from 1 to the most a stack holds" in {
+        ItemQuantity.stepped("1", -1) shouldBe Some("1")
+        ItemQuantity.stepped("", 1) shouldBe Some("1")
+        ItemQuantity.stepped("0", -1) shouldBe Some("1")
+        ItemQuantity.stepped("2147483647", 1) shouldBe Some("2147483647")
+        ItemQuantity.stepped("5b", -1) shouldBe Some("2147483647")
+      }
+
+      "leaves max and other text alone" in {
+        ItemQuantity.stepped("max", 1) shouldBe None
+        ItemQuantity.stepped("lots", -1) shouldBe None
+      }
     }
 
-    "reads decimals, rounding the count down" in {
-      ItemQuantity.parseCount("1.5k") shouldBe Right(1500)
-      ItemQuantity.parseCount("1.2345k") shouldBe Right(1234)
-      ItemQuantity.parseCount(".5m") shouldBe Right(500000)
-      ItemQuantity.parseCount("2.9") shouldBe Right(2)
+    "parse" - {
+      "reads max and all as Max" in {
+        ItemQuantity.parse("Max") shouldBe Right(ItemQuantity.Max)
+        ItemQuantity.parse(" all ") shouldBe Right(ItemQuantity.Max)
+      }
+
+      "reads counts as Exact" in {
+        ItemQuantity.parse("25k") shouldBe Right(ItemQuantity.Exact(25000))
+      }
     }
 
-    "rejects letters that combine, or that aren't shortcuts" in {
-      ItemQuantity.parseCount("1km") shouldBe Left(Problem.Unreadable)
-      ItemQuantity.parseCount("1e5") shouldBe Left(Problem.Unreadable)
-      ItemQuantity.parseCount("k") shouldBe Left(Problem.Unreadable)
-      ItemQuantity.parseCount("lots") shouldBe Left(Problem.Unreadable)
-    }
+    "encoding values to and decoding values from an expected encoding" - {
+      def test(quantity: ItemQuantity, expectedEncoding: Array[Byte]): Assertion =
+        testRoundTripSerialisation(quantity, Decoder.decodeMessage, expectedEncoding)
 
-    "rejects counts below 1" in {
-      ItemQuantity.parseCount("0") shouldBe Left(Problem.BelowOne)
-      ItemQuantity.parseCount("0k") shouldBe Left(Problem.BelowOne)
-      ItemQuantity.parseCount("0.5") shouldBe Left(Problem.BelowOne)
-      ItemQuantity.parseCount("-5") shouldBe Left(Problem.BelowOne)
-    }
+      "Exact" in {
+        val countEnc = Encoder.encode(30).getBytes
+        test(
+          ItemQuantity.Exact(30),
+          Array[Byte](0, 0, 0b1100, (1 + countEnc.length).toByte, 0) ++ countEnc
+        )
+      }
 
-    "rejects counts a stack can't hold" in {
-      ItemQuantity.parseCount("3b") shouldBe Left(Problem.AboveMax)
-      ItemQuantity.parseCount("99999999999") shouldBe Left(Problem.AboveMax)
-      ItemQuantity.parseCount("2147483647") shouldBe Right(Int.MaxValue)
-    }
-  }
-
-  "ItemQuantity.stepped" - {
-    "steps a count up and down by one, writing it out in full" in {
-      ItemQuantity.stepped("10", 1) shouldBe Some("11")
-      ItemQuantity.stepped("10k", -1) shouldBe Some("9999")
-      ItemQuantity.stepped("1.5", 1) shouldBe Some("2")
-    }
-
-    "stays from 1 to the most a stack holds" in {
-      ItemQuantity.stepped("1", -1) shouldBe Some("1")
-      ItemQuantity.stepped("", 1) shouldBe Some("1")
-      ItemQuantity.stepped("0", -1) shouldBe Some("1")
-      ItemQuantity.stepped("2147483647", 1) shouldBe Some("2147483647")
-      ItemQuantity.stepped("5b", -1) shouldBe Some("2147483647")
-    }
-
-    "leaves max and other text alone" in {
-      ItemQuantity.stepped("max", 1) shouldBe None
-      ItemQuantity.stepped("lots", -1) shouldBe None
-    }
-  }
-
-  "ItemQuantity.parse" - {
-    "reads max and all as Max" in {
-      ItemQuantity.parse("Max") shouldBe Right(ItemQuantity.Max)
-      ItemQuantity.parse(" all ") shouldBe Right(ItemQuantity.Max)
-    }
-
-    "reads counts as Exact" in {
-      ItemQuantity.parse("25k") shouldBe Right(ItemQuantity.Exact(25000))
+      "Max" in test(ItemQuantity.Max, Array[Byte](0, 0b1, 0b1100, 0))
     }
   }
 }
