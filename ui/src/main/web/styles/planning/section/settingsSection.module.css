@@ -115,3 +115,31 @@
   line-height: 1.5;
 }
 
+
+/* The game mode's dropdown, in the fields' browns */
+.select {
+  flex: 1;
+  --select-height: 32px;
+  --select-padding: 0 9px;
+  --select-font-size: 0.84rem;
+  --select-background: #1d1813;
+  --select-border: #6b5c47;
+  --select-text: var(--text-bright);
+  --select-chevron: #a8977a;
+  --select-accent: #ff981f;
+  --select-open-background: #1d1813;
+  --select-focus-border: #6b5c47;
+  --select-focus-ring: none;
+  --select-focus-outline: 2px solid #ff981f;
+  --select-list-background: #1d1813;
+  --select-list-border: #6b5c47;
+  --select-list-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+  --select-option-text: #e4dacb;
+  --select-option-font-size: 0.82rem;
+  --select-option-padding: 5px 8px;
+  --select-option-hover: #4a3f31;
+  --select-heading: #a8977a;
+  --select-rule: #4a3f31;
+  --select-scrollbar-thumb: #6b5c47;
+  --select-scrollbar-track: #2b251d;
+}

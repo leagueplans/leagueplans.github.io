@@ -62,14 +62,8 @@
 
 .devPages {
   margin-right: 0.5rem;
-  padding: 1px 4px;
-
-  border: 1px solid var(--navy-border);
-  border-radius: 4px;
-  background-color: var(--navy-well);
-  color: var(--text-soft);
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
+  --select-background: var(--navy-well);
+  --select-font-size: 0.75rem;
 }
 
 .status {

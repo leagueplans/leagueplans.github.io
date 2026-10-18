@@ -43,7 +43,7 @@ object NewPlanDialog {
           )
         ),
         modeLabel.amend(L.cls(Styles.label), "Game mode"),
-        modeSelect.amend(L.cls(Styles.field)),
+        modeSelect.amend(L.cls(Styles.select)),
         L.span(L.cls(Styles.hint), "You can rename the plan or change its mode later, in Settings."),
         L.child.maybe <-- failure.signal.map(_.map(message =>
           L.p(L.cls(Styles.error), L.role("alert"), message)

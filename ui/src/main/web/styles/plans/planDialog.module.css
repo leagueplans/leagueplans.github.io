@@ -88,6 +88,20 @@ dialog:has(.dialog) {
   outline-offset: 1px;
 }
 
+/* A dropdown, sized and coloured as the text fields are */
+.select {
+  --select-height: 32px;
+  --select-padding: 0 10px;
+  --select-radius: 5px;
+  --select-font-size: 0.84rem;
+  --select-background: var(--navy-well);
+  --select-text: var(--text-bright);
+  --select-open-background: var(--navy-well);
+  --select-focus-border: var(--navy-border);
+  --select-focus-ring: none;
+  --select-focus-outline: 2px solid var(--navy-accent);
+}
+
 .hint {
   color: var(--text-dim);
   font-size: 0.75rem;

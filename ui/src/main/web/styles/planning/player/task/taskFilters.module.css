@@ -22,15 +22,23 @@
 }
 
 .input {
-  border-radius: 0.3rem;
-  border-color: black;
-
   width: 8rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 
-  background-color: #494034;
-  color: orange;
-  text-shadow: 1px 1px black;
-  scrollbar-color: #61553e #252019;
+  --select-radius: 0.3rem;
+  --select-font-size: 0.8rem;
+  --select-background: #494034;
+  --select-border: black;
+  --select-text: orange;
+  --select-chevron: #c8b48a;
+  --select-accent: orange;
+  --select-open-background: #5a4f40;
+  --select-open-text: orange;
+  --select-focus-border: orange;
+  --select-focus-ring: none;
+  --select-list-background: #252019;
+  --select-list-border: #61553e;
+  --select-option-text: #e4dacb;
+  --select-option-hover: #4a3f31;
+  --select-scrollbar-thumb: #61553e;
+  --select-scrollbar-track: #252019;
 }

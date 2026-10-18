@@ -21,6 +21,7 @@ object PlanDialog {
     val body: String = js.native
     val label: String = js.native
     val field: String = js.native
+    val select: String = js.native
     val hint: String = js.native
     val note: String = js.native
     val error: String = js.native

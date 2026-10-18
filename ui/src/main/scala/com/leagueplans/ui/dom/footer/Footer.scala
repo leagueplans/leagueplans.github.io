@@ -5,13 +5,14 @@ import com.leagueplans.ui.model.status.StatusTracker
 import com.leagueplans.ui.projection.client.ProjectionClient
 import com.leagueplans.ui.storage.client.StorageClient
 import com.leagueplans.uicommon.dom.Tooltip
+import com.leagueplans.uicommon.dom.form.Select
 import com.leagueplans.uicommon.facades.floatingui.Placement
 import com.leagueplans.uicommon.facades.fontawesome.freebrands.FreeBrands
 import com.leagueplans.uicommon.facades.fontawesome.freesolid.FreeSolid
 import com.leagueplans.uicommon.utils.laminar.FontAwesome
 import com.leagueplans.uicommon.wrappers.floatingui.FloatingConfig
-import com.raquo.airstream.core.Observer
-import com.raquo.laminar.api.{L, eventPropToProcessor, optionToModifier, seqToModifier, textToTextNode}
+import com.raquo.airstream.core.{Observer, Signal}
+import com.raquo.laminar.api.{L, optionToModifier, textToTextNode}
 import org.scalajs.dom.window
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.HTMLParagraphElement
@@ -33,15 +34,15 @@ object Footer {
         L.cls(Styles.statuses),
         // Pages that are otherwise hard to get to, which are easy to forget about
         Option.when(DevMode.isOn)(
-          L.select(
-            L.cls(Styles.devPages),
-            L.aria.label("Show a page, for development"),
-            L.option(L.value(""), "Dev pages…"),
-            DevMode.Page.values.toList.map(page => L.option(L.value(page.key), page.label)),
-            L.onChange.mapToValue --> Observer[String](key =>
-              DevMode.Page.values.find(_.key == key).foreach(page => window.location.href = DevMode.url(page))
-            )
-          )
+          Select.dropdown[Option[DevMode.Page]](
+            Signal.fromValue(List(Select.Group(
+              None,
+              Select.Opt(None, "Dev pages…") +: DevMode.Page.values.toList.map(page => Select.Opt(Some(page), page.label))
+            ))),
+            value = Signal.fromValue(None),
+            onPick = Observer(_.foreach(page => window.location.href = DevMode.url(page))),
+            ariaLabel = Some("Show a page, for development")
+          ).amend(L.cls(Styles.devPages))
         ),
         toStatus("Rendering", id = ProjectionClient.projectionStatusKey, statusTracker, tooltip),
         toStatus("File system", id = StorageClient.statusKey, statusTracker, tooltip),

@@ -75,7 +75,7 @@ object SettingsSection {
             modeLabel.amend(L.cls(Styles.label), "Game mode"),
             L.div(
               L.cls(Styles.inline),
-              modeSelect.amend(L.cls(Styles.field)),
+              modeSelect.amend(L.cls(Styles.select)),
               Button.submit().amend(
                 L.cls(Styles.button),
                 L.disabled <-- isModeChange.map(!_),
@@ -145,6 +145,7 @@ object SettingsSection {
     val label: String = js.native
     val inline: String = js.native
     val field: String = js.native
+    val select: String = js.native
     val button: String = js.native
     val danger: String = js.native
     val buttons: String = js.native
