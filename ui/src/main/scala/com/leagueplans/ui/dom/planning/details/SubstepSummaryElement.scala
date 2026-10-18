@@ -22,8 +22,7 @@ object SubstepSummaryElement {
   def apply(
     stepSignal: Signal[Step],
     forestSignal: Signal[Forest[Step.ID, Step]],
-    playerBefore: Signal[Player],
-    playerAfterAll: Signal[Player],
+    playersAround: Signal[Option[(Player, Player)]],
     cache: Cache
   ): L.Div = {
     val title =
@@ -40,13 +39,17 @@ object SubstepSummaryElement {
         L.sectionTag(
           L.cls(Styles.summary),
           L.h3(L.cls(Styles.title), title),
-          L.children <-- Signal.combine(playerBefore, playerAfterAll).map((before, after) =>
-            // Miniquests are the quests that give no quest points, as in the quest list
-            SubstepSummary.between(before, after, cache.items(_).fullName, quest => cache.quests(quest).points == 0) match {
-              case Nil => List(L.p(L.cls(Styles.none), "No net change."))
-              case changes => changes.map(toLine(_, cache))
-            }
-          )
+          // Empty until the worker catches up with a change of focus, rather than showing what the
+          // step focused before changes
+          L.children <-- playersAround.map {
+            case None => List.empty
+            case Some((before, after)) =>
+              // Miniquests are the quests that give no quest points, as in the quest list
+              SubstepSummary.between(before, after, cache.items(_).fullName, quest => cache.quests(quest).points == 0) match {
+                case Nil => List(L.p(L.cls(Styles.none), "No net change."))
+                case changes => changes.map(toLine(_, cache))
+              }
+          }
         )
       ))
     )

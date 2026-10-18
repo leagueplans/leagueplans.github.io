@@ -37,4 +37,11 @@ final class FocusContext(
 
   val playerAfterAllRepsOfCurrentFocus: Signal[Player] =
     projection.map(_.playerAfterAllReps)
+
+  /** The players before the focused step and after all its repetitions, once the worker has worked
+    * them out for that step */
+  val playersAroundFocusIfCurrent: Signal[Option[(Player, Player)]] =
+    Signal.combine(focusID, projection).map((focus, projection) =>
+      Option.when(focus.nonEmpty && projection.focusID == focus)((projection.playerBeforeStep, projection.playerAfterAllReps))
+    )
 }

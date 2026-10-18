@@ -163,7 +163,7 @@ object PlanningPage {
             settings,
             focusContext.playerBeforeCurrentFocus,
             stepEditor,
-            focusContext.playerAfterAllRepsOfCurrentFocus,
+            focusContext.playersAroundFocusIfCurrent,
             fieldEditRequests.events,
             contextMenu,
             tooltip,

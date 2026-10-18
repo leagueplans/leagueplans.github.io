@@ -42,7 +42,7 @@ object StepDetails {
     settings: Signal[Plan.Settings],
     playerBefore: Signal[Player],
     stepEditor: StepEditor,
-    playerAfterAll: Signal[Player],
+    playersAround: Signal[Option[(Player, Player)]],
     fieldEditRequests: EventStream[EditRequest],
     contextMenu: ContextMenu,
     tooltip: Tooltip,
@@ -164,7 +164,7 @@ object StepDetails {
           tooltip
         )
       ),
-      SubstepSummaryElement(stepSignal, forester.signal, playerBefore, playerAfterAll, cache)
+      SubstepSummaryElement(stepSignal, forester.signal, playersAround, cache)
     )
   }
 

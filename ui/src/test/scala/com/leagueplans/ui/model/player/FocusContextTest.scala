@@ -41,5 +41,24 @@ final class FocusContextTest extends AnyFreeSpec with Matchers {
         playerBefore.now() shouldBe None
       )(using _.killSubscriptions()).get
     }
+
+    "only gives the players around the focus once the projection was worked out for that step" in {
+      val after = player.copy(completedQuests = Set(1))
+      val focus = Var(Option(first))
+      val projection = Var(Projection(player, after, after, Some(first)))
+      val context = FocusContext(focus.signal, Var(Forest.empty[Step.ID, Step]).signal, projection.signal)
+
+      Using(new ManualOwner)(owner =>
+        val players = context.playersAroundFocusIfCurrent.observe(using owner)
+        players.now() shouldBe Some((player, after))
+
+        // The worker hasn't caught up with the new focus yet, so the first step's players are hidden
+        focus.set(Some(second))
+        players.now() shouldBe None
+
+        projection.set(projectionFor(Some(second)))
+        players.now() shouldBe Some((player, player))
+      )(using _.killSubscriptions()).get
+    }
   }
 }
