@@ -11,6 +11,11 @@ object ChangelogSeen {
 
   private val newest = ChangelogEntries.all.map(_.date).max
 
+  /** The last entry from before the changelog moved off the landing page, which is when this
+    * browser started remembering what it had seen */
+  private[changelog] val lastSeenOnLandingPage: Date = Date(2026, 10, 7)
+
+  // Declared after the vals above, which it reads while the object is being set up
   private val seen: Var[Date] = {
     val initial = initialSeen(LocalStorage.get(key).flatMap(Date.parse), newest, isReturning(LocalStorage.keys()))
     LocalStorage.set(key, initial.stored)
@@ -31,10 +36,6 @@ object ChangelogSeen {
     LocalStorage.set(key, newest.stored)
     previous
   }
-
-  /** The last entry from before the changelog moved off the landing page, which is when this
-    * browser started remembering what it had seen */
-  private[changelog] val lastSeenOnLandingPage: Date = Date(2026, 10, 7)
 
   /** A browser with nothing stored is new to the site, so everything counts as seen. Browsers that
     * used the site before the changelog moved have nothing stored either, but they saw the
