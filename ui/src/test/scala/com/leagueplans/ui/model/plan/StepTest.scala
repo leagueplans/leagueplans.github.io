@@ -45,14 +45,15 @@ final class StepTest extends CodecSpec {
         directEffects = EffectList(List(Effect.GainExp(Skill.Woodcutting, 1, Exp(25)))),
         requirements = List(Requirement.Holds(Item.ID(241), Requirement.Where.Equipped)),
         repetitions = Repetitions.Fixed(2),
-        duration = Duration.seconds(15)
+        duration = Duration.seconds(15),
+        location = Some(WorldPoint(3222, 3218, 1))
       )
 
       testRoundTripSerialisation(
         Step(id, details),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b10) ++ Encoder.encode(id).getBytes ++
-          Array[Byte](0b1100, 0b111111) ++ Encoder.encode(details).getBytes
+          Array[Byte](0b1100, 0b1001001) ++ Encoder.encode(details).getBytes
       )
     }
   }

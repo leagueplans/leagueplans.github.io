@@ -13,7 +13,7 @@ final class TimeKeeperTest extends AnyFreeSpec with Matchers {
   // ---- helpers ----
 
   private def step(id: String, reps: Int = 1, dur: StepDuration = StepDuration.ticks(0)): Step =
-    Step(Step.ID.fromString(id), StepDetails("", EffectList(List.empty), List.empty, Repetitions.Fixed(reps), dur))
+    Step(Step.ID.fromString(id), StepDetails("", EffectList(List.empty), List.empty, Repetitions.Fixed(reps), dur, location = None))
 
   private def forest(
     nodes: Map[Step.ID, Step],

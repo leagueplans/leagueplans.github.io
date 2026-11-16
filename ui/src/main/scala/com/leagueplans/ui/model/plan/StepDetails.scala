@@ -10,9 +10,10 @@ object StepDetails {
       EffectList.empty,
       requirements = List.empty,
       repetitions = Repetitions.once,
-      duration = Duration.ticks(0)
+      duration = Duration.ticks(0),
+      location = None
     )
-  
+
   given Encoder[StepDetails] = Encoder.derived
   given Decoder[StepDetails] = Decoder.derived
 }
@@ -22,5 +23,6 @@ final case class StepDetails(
   directEffects: EffectList,
   requirements: List[Requirement],
   repetitions: Repetitions,
-  duration: Duration
+  duration: Duration,
+  location: Option[WorldPoint]
 )

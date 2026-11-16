@@ -62,7 +62,8 @@ final class PlanTest extends CodecSpec {
           directEffects = EffectList(List(Effect.GainExp(Skill.Woodcutting, 1, Exp(25)))),
           requirements = List(Requirement.Holds(Item.ID(241), Requirement.Where.Equipped)),
           repetitions = Repetitions.Fixed(2),
-          duration = Duration.seconds(15)
+          duration = Duration.seconds(15),
+          location = Some(WorldPoint(3222, 3218, 1))
         )
       )
 
@@ -76,7 +77,7 @@ final class PlanTest extends CodecSpec {
         Plan(name, forest, deferredSettings),
         Decoder.decodeMessage,
         Array[Byte](0b11, 0b11000) ++ Encoder.encode(name).getBytes ++
-          Array[Byte](0b1100, 0b1010111) ++ Encoder.encode(forest).getBytes ++
+          Array[Byte](0b1100, 0b1100001) ++ Encoder.encode(forest).getBytes ++
           Array[Byte](0b10100, 0b1111) ++ Encoder.encode[Plan.Settings](deferredSettings).getBytes
       )
     }
