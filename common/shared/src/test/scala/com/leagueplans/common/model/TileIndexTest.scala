@@ -1,9 +1,7 @@
-package com.leagueplans.maprender
+package com.leagueplans.common.model
 
 import com.leagueplans.common.JsonSpec
 import io.circe.{Json, KeyDecoder}
-
-import java.nio.file.Files
 
 final class TileIndexTest extends JsonSpec {
   "TileIndex" - {
@@ -57,34 +55,5 @@ final class TileIndexTest extends JsonSpec {
       }
     }
 
-    "read" - {
-      "lists the tiles on disk, ignoring other files" in
-        TempDirectory("index") { out =>
-          List("0/2/50_-51.png", "0/1/25_-26.png", "1/2/50_-51.png").foreach { path =>
-            Files.createDirectories(out.resolve(path).getParent)
-            Files.write(out.resolve(path), Array.emptyByteArray)
-          }
-          Files.write(out.resolve(".nojekyll"), Array.emptyByteArray)
-          Files.write(out.resolve("0/2/notes.txt"), Array.emptyByteArray)
-          Files.createDirectories(out.resolve("docs"))
-
-          TileIndex.read(out).toSet shouldBe Set(
-            TileKey(0, 2, 50, -51),
-            TileKey(0, 1, 25, -26),
-            TileKey(1, 2, 50, -51)
-          )
-        }
-    }
-
-    "write" - {
-      "writes the index for what's on disk" in
-        TempDirectory("index") { out =>
-          Files.createDirectories(out.resolve("0/2"))
-          Files.write(out.resolve("0/2/50_-51.png"), Array.emptyByteArray)
-
-          TileIndex.write(out) shouldBe 1
-          Files.readString(out.resolve(TileIndex.fileName)) shouldBe """{"tiles":{"0/2":["50_-51"]}}"""
-        }
-    }
   }
 }

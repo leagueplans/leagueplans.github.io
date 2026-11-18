@@ -79,12 +79,10 @@ lazy val mapRenderer =
         // Pinned: a game update can change the cache format, so this is bumped deliberately.
         // Its slf4j-simple is swapped for logback, which can filter out its noisiest warning.
         ("net.runelite" % "cache" % "1.13.6").exclude("org.slf4j", "slf4j-simple"),
-        "ch.qos.logback" % "logback-classic" % logbackVersion,
-        "io.circe" %% "circe-core" % circeVersion,
-        "io.circe" %% "circe-generic" % circeVersion
+        "ch.qos.logback" % "logback-classic" % logbackVersion
       )
     )
-    .dependsOn(common.jvm % "test->test")
+    .dependsOn(common.jvm % "compile->compile;test->test")
 
 val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 

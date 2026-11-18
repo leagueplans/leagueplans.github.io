@@ -1,4 +1,4 @@
-package com.leagueplans.maprender
+package com.leagueplans.common.model
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
@@ -6,6 +6,9 @@ import io.circe.{Codec, Decoder, Encoder}
 import scala.util.Try
 
 object Place {
+  /** Where the map tiles publish the places, relative to the tiles' root */
+  val fileName = "places.json"
+
   given Codec[Place] = deriveCodec
 
   enum Kind {
@@ -22,19 +25,13 @@ object Place {
   object Kind {
     given Encoder[Kind] = Encoder[String].contramap(_.toString)
     given Decoder[Kind] = Decoder[String].emapTry(s => Try(Kind.valueOf(s)))
-
-    /** The kind of world map label, from its text size. Fails on a size the game didn't use
-      * when this was written, so that a change shows up when rendering rather than as
-      * mislabelled places. */
-    def fromTextScale(textScale: Int): Kind =
-      textScale match {
-        case 0 => Local
-        case 1 => Town
-        case 2 => Kingdom
-        case other => throw IllegalArgumentException(s"Unknown world map text scale: $other")
-      }
   }
 }
 
-/** A named place from the game's own world map, published in [[Places]] */
+/** A named place from the game's own world map, for the map's labels and place search.
+  *
+  * The map tiles publish a list of these as [[Place.fileName]], with `kind` the name of a
+  * [[Place.Kind]]. The app reads it, so it's a published format: fields and kinds may be added,
+  * never renamed or removed. A reader should skip a place whose kind it doesn't know.
+  */
 final case class Place(name: String, x: Int, y: Int, plane: Int, kind: Place.Kind)

@@ -1,4 +1,4 @@
-package com.leagueplans.maprender
+package com.leagueplans.common.model
 
 import com.leagueplans.common.JsonSpec
 import io.circe.Json
@@ -31,19 +31,6 @@ final class PlaceTest extends JsonSpec {
 
       "refuses an unknown kind" in {
         Json.fromString("Village").as[Place.Kind].isLeft shouldBe true
-      }
-
-      "fromTextScale" - {
-        def test(textScale: Int, expected: Place.Kind): Assertion =
-          Place.Kind.fromTextScale(textScale) shouldBe expected
-
-        "0 is Local" in test(0, Place.Kind.Local)
-        "1 is Town" in test(1, Place.Kind.Town)
-        "2 is Kingdom" in test(2, Place.Kind.Kingdom)
-
-        "fails on any other size" in {
-          an[IllegalArgumentException] should be thrownBy Place.Kind.fromTextScale(3)
-        }
       }
     }
   }

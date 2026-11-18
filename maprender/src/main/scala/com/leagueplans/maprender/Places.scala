@@ -1,5 +1,6 @@
 package com.leagueplans.maprender
 
+import com.leagueplans.common.model.Place
 import io.circe.syntax.*
 import net.runelite.cache.definitions.loaders.WorldMapLoader
 import net.runelite.cache.fs.Store
@@ -8,15 +9,8 @@ import net.runelite.cache.{AreaManager, IndexType, WorldMapManager}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
 
-/** Named places to search for on the map, from the game's own world map.
-  *
-  * Published as `places.json`: a list of `{name, x, y, plane, kind}`, with `kind` the name of a
-  * [[Place.Kind]]. The app reads this, so it's a published format: fields and kinds may be added,
-  * never renamed or removed.
-  */
+/** Reads the named places from the game's own world map, and writes them as [[Place.fileName]] */
 object Places {
-  val fileName = "places.json"
-
   /** The labels on the world map, by their text size, and the named maps away from the surface,
     * at their origin. Names repeat, since many places share a name. */
   def read(store: Store): List[Place] = {
@@ -30,7 +24,7 @@ object Places {
         area <- Option(areas.getArea(element.getAreaDefinitionId))
         name = clean(area.getName) if name.nonEmpty
         position = element.getWorldPosition
-      } yield Place(name, position.getX, position.getY, position.getZ, Place.Kind.fromTextScale(area.getTextScale))
+      } yield Place(name, position.getX, position.getY, position.getZ, kindOf(area.getTextScale))
 
     val archive = store.getIndex(IndexType.WORLDMAP).getArchive(0)
     val maps =
@@ -52,9 +46,20 @@ object Places {
       .replaceAll("\\s+", " ")
       .trim
 
+  /** The kind of world map label, from its text size. Fails on a size the game didn't use when
+    * this was written, so that a change shows up when rendering rather than as mislabelled
+    * places. */
+  def kindOf(textScale: Int): Place.Kind =
+    textScale match {
+      case 0 => Place.Kind.Local
+      case 1 => Place.Kind.Town
+      case 2 => Place.Kind.Kingdom
+      case other => throw IllegalArgumentException(s"Unknown world map text scale: $other")
+    }
+
   def write(store: Store, out: Path): Int = {
     val places = read(store)
-    Files.writeString(out.resolve(fileName), places.asJson.noSpaces)
+    Files.writeString(out.resolve(Place.fileName), places.asJson.noSpaces)
     places.size
   }
 }

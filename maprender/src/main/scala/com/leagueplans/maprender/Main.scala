@@ -1,5 +1,6 @@
 package com.leagueplans.maprender
 
+import com.leagueplans.common.model.{Place, TileIndex, TileKey}
 import com.leagueplans.maprender.Directories.deleteRecursively
 import net.runelite.cache.fs.Store
 import org.slf4j.LoggerFactory
@@ -9,7 +10,7 @@ import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.Using
 
 /** Renders the map from a game cache into a directory laid out for publishing: tiles at
-  * `<plane>/<zoom>/<x>_<y>.png`, plus [[TileIndex]] and [[Places]].
+  * `<plane>/<zoom>/<x>_<y>.png`, plus the [[TileIndex]] and the [[Place]]s.
   *
   * Usage: `maprender <cache directory> <output directory>`. The cache directory is an unzipped
   * OpenRS2 disk cache (the folder holding `main_file_cache.dat2`).
@@ -42,7 +43,7 @@ object Main {
     try {
       render(cacheDir, staging)
       replaceOwned(staging, output)
-      logger.info(s"Replaced the plane folders, ${TileIndex.fileName} and ${Places.fileName} in $output")
+      logger.info(s"Replaced the plane folders, ${TileIndex.fileName} and ${Place.fileName} in $output")
     } finally deleteRecursively(staging)
     logger.info(s"Done in ${Progress.format((System.nanoTime() - startedAt).nanos)}")
   }
@@ -78,13 +79,13 @@ object Main {
         logger.info(s"Plane $plane done, tiles by zoom: $counts")
       }
       logger.info(s"Drew every plane in ${Progress.format(drawing.elapsed)}")
-      logger.info(s"Indexed ${TileIndex.write(out)} tiles")
+      logger.info(s"Indexed ${TileIndexFile.write(out)} tiles")
     }
 
   /** Replaces what a previous render wrote with what this one did, so that tiles which no
     * longer exist disappear */
   private def replaceOwned(from: Path, to: Path): Unit = {
-    val owned = planes.map(_.toString) ++ List(TileIndex.fileName, Places.fileName)
+    val owned = planes.map(_.toString) ++ List(TileIndex.fileName, Place.fileName)
     owned.map(to.resolve).foreach(deleteRecursively)
     owned.map(from.resolve).filter(Files.exists(_)).foreach(path => Files.move(path, to.resolve(path.getFileName)))
   }

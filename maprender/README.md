@@ -18,7 +18,7 @@ A render replaces everything it owns in the output directory: the plane folders 
 
 The renderer uses RuneLite's [cache library](https://github.com/runelite/runelite/tree/master/cache), pinned in `build.sbt`. Game updates can change the cache's format, so a new cache may need a newer version. If a render fails, or its tiles look wrong, try the latest version of the library.
 
-To bump the library, change its version in `build.sbt`, run `sbt mapRenderer/test`, then render and look over the result as above. The tests cover tile keys, the zoom pyramid, the index and the place list, but not drawing. The renderer calls one of the library's private methods, `MapImageDumper.drawMapIcons`, to draw icons that cross region borders (see `RegionRenderer`). If a new version renames or changes it, the render fails on the first region it draws.
+To bump the library, change its version in `build.sbt`, run `sbt mapRenderer/test`, then render and look over the result as above. The tests cover the zoom pyramid, writing the index and reading places, but not drawing. The renderer calls one of the library's private methods, `MapImageDumper.drawMapIcons`, to draw icons that cross region borders (see `RegionRenderer`). If a new version renames or changes it, the render fails on the first region it draws.
 
 ## What it writes
 
@@ -26,4 +26,4 @@ To bump the library, change its version in `build.sbt`, run `sbt mapRenderer/tes
 - `index.json`: every tile that exists, so the map never requests a missing one.
 - `places.json`: the place names on the game's world map, for the map's labels and place search.
 
-The app reads all three, and it is deployed separately from the tiles, so these layouts are published formats. Add fields to the JSON files rather than renaming or removing them, and keep each tile's path a function of game coordinates alone.
+The app reads all three, and it is deployed separately from the tiles, so these layouts are published formats. Add fields to the JSON files rather than renaming or removing them, and keep each tile's path a function of game coordinates alone. The formats are defined once, in `common` (`TileKey`, `TileIndex` and `Place`), which the renderer and the app share.

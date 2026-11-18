@@ -1,5 +1,7 @@
 package com.leagueplans.maprender
 
+import com.leagueplans.common.model.TileKey
+
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path}

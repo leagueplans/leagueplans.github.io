@@ -1,4 +1,4 @@
-package com.leagueplans.maprender
+package com.leagueplans.common.model
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers

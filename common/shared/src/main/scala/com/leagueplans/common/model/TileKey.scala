@@ -1,4 +1,4 @@
-package com.leagueplans.maprender
+package com.leagueplans.common.model
 
 object TileKey {
   /** A tile's width and height in pixels */
