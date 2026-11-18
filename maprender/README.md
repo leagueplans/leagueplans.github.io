@@ -2,23 +2,29 @@
 
 Renders the map's tiles from the Old School RuneScape game cache, for the [map-tiles](https://github.com/leagueplans/map-tiles) repository. GitHub Pages serves that repository at `https://www.leagueplans.com/map-tiles/`, and the app's map loads its tiles from there.
 
-## Rendering a new tile set
+## Updates
 
-1. Download the newest live `oldschool` cache from the [OpenRS2 archive](https://archive.openrs2.org/caches) in the `.dat2`/`.idx` format, and unzip it. The cache directory is the folder holding `main_file_cache.dat2`.
-2. Render into the `docs` folder of a map-tiles checkout. It takes around 15 minutes.
-   ```bash
-   sbt "mapRenderer/run <cache directory> <map-tiles checkout>/docs"
-   ```
-3. Check the tiles in the app before publishing them. Start its dev server as in [ui/README.md](../ui/README.md), with `MAP_TILES_DIR` set to the same `docs` folder. Without it, the dev server loads tiles from the live site.
-4. Commit in the map-tiles checkout. Pushing publishes the tiles. Responses are cached for up to four hours, so changed tiles can take that long to appear.
+The map-tiles repository's [Update the map](https://github.com/leagueplans/map-tiles/blob/main/.github/workflows/update-map.yml) workflow runs the renderer every Thursday, after the game's weekly update, and opens a pull request with whatever changed. The pull request's description is the render's report, with a link to its overview. Merging it publishes the tiles. Responses are cached for up to four hours, so changed tiles can take that long to appear.
 
-A render replaces everything it owns in the output directory: the plane folders `0` to `3`, `index.json` and `places.json`. Tiles that no longer exist disappear, and other files, such as `.nojekyll`, are left alone. The render is written to a temporary folder beside the output directory and only moved in once it has succeeded, so a failed render leaves the output as it was.
+## Rendering by hand
+
+To try a change to the renderer, render into the `docs` folder of a map-tiles checkout. It takes around 20 minutes.
+
+```bash
+sbt "mapRenderer/run --latest <download directory> <map-tiles checkout>/docs [<results directory>]"
+```
+
+`--latest` downloads the newest live cache from the [OpenRS2 archive](https://archive.openrs2.org/caches) into the download directory first. To render a cache already on disk, give its directory instead, the folder holding `main_file_cache.dat2`: `sbt "mapRenderer/run <cache directory> <map-tiles checkout>/docs"`. The results directory gets `report.md`, which says in Markdown what changed, and `overview.png`, the whole map with the regions that changed highlighted, one panel per plane with changes. Without a results directory, neither is written.
+
+Check the tiles in the app by starting its dev server as in [ui/README.md](../ui/README.md), with `MAP_TILES_DIR` set to the same `docs` folder. Without it, the dev server loads tiles from the live site.
+
+The render is written to a temporary folder beside the output directory, then compared with what's there. Only tiles whose pixels changed are written, so the repository only changes when the map does. Tiles that no longer exist are deleted, `index.json` and `places.json` are replaced, and other files, such as `.nojekyll`, are left alone. If a render has more than 5% fewer tiles than the output, the report opens with a warning, since that is what a cache the library can't fully read looks like. The removed regions are filled red in the overview.
 
 ## The cache library
 
 The renderer uses RuneLite's [cache library](https://github.com/runelite/runelite/tree/master/cache), pinned in `build.sbt`. Game updates can change the cache's format, so a new cache may need a newer version. If a render fails, or its tiles look wrong, try the latest version of the library.
 
-To bump the library, change its version in `build.sbt`, run `sbt mapRenderer/test`, then render and look over the result as above. The tests cover the zoom pyramid, writing the index and reading places, but not drawing. The renderer calls one of the library's private methods, `MapImageDumper.drawMapIcons`, to draw icons that cross region borders (see `RegionRenderer`). If a new version renames or changes it, the render fails on the first region it draws.
+To bump the library, change its version in `build.sbt`, run `sbt mapRenderer/test`, then render and look over the result as above. The tests cover the zoom pyramid, the index, reading places, choosing a cache, publishing, the report and the overview, but not drawing the map. The renderer calls one of the library's private methods, `MapImageDumper.drawMapIcons`, to draw icons that cross region borders (see `RegionRenderer`). If a new version renames or changes it, the render fails on the first region it draws.
 
 ## What it writes
 

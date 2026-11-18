@@ -1,6 +1,6 @@
 package com.leagueplans.maprender
 
-import com.leagueplans.common.model.{Place, TileIndex, TileKey}
+import com.leagueplans.common.model.TileKey
 import com.leagueplans.maprender.Directories.deleteRecursively
 import net.runelite.cache.fs.Store
 import org.slf4j.LoggerFactory
@@ -9,16 +9,21 @@ import java.nio.file.{Files, Path}
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.Using
 
-/** Renders the map from a game cache into a directory laid out for publishing: tiles at
-  * `<plane>/<zoom>/<x>_<y>.png`, plus the [[TileIndex]] and the [[Place]]s.
+/** Renders the map from a game cache into a checkout of the map tiles: tiles at
+  * `<plane>/<zoom>/<x>_<y>.png`, plus the tile index and the places.
   *
-  * Usage: `maprender <cache directory> <output directory>`. The cache directory is an unzipped
-  * OpenRS2 disk cache (the folder holding `main_file_cache.dat2`).
+  * Usage:
+  *   - `maprender <cache directory> <output directory> [<results directory>]` renders a cache on
+  *     disk, an unzipped OpenRS2 disk cache (the folder holding `main_file_cache.dat2`).
+  *   - `maprender --latest <download directory> <output directory> [<results directory>]`
+  *     downloads the game's newest cache from OpenRS2 into the download directory first.
   *
-  * Anything this tool owns in the output directory is replaced: the plane folders and the two
-  * JSON files. Anything else there, such as `.nojekyll`, is left alone. The render happens in a
-  * temporary folder beside the output directory, and the output is only touched once it has
-  * succeeded, so a cache the library can't read leaves the output as it was.
+  * The render happens in a temporary folder beside the output directory, and only once it has
+  * succeeded is it published there, changing only the tiles whose pixels changed (see
+  * [[Publisher]]). Anything else in the output directory, such as `.nojekyll`, is left alone.
+  *
+  * The results directory gets `report.md`, which says in Markdown what changed, and an
+  * [[Overview]] of where, for reviewing the change before it's merged.
   */
 object Main {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -26,15 +31,24 @@ object Main {
   /** The game's floors */
   private val planes = 0 until 4
 
+  private val usage =
+    """Usage: maprender <cache directory> <output directory> [<results directory>]
+      |       maprender --latest <download directory> <output directory> [<results directory>]""".stripMargin
+
   def main(args: Array[String]): Unit =
-    args match {
-      case Array(cache, out) => run(Path.of(cache), Path.of(out))
+    args.toList match {
+      case "--latest" :: download :: out :: results if results.size <= 1 =>
+        val (entry, cache) = CacheFetcher.fetch(Path.of(download))
+        run(cache, entry.describe, Path.of(out), results.headOption.map(Path.of(_)))
+      case cache :: out :: results if results.size <= 1 && !cache.startsWith("--") =>
+        run(Path.of(cache), s"the cache in $cache", Path.of(out), results.headOption.map(Path.of(_)))
       case _ =>
-        System.err.println("Usage: maprender <cache directory> <output directory>")
+        System.err.println(usage)
         sys.exit(2)
     }
 
-  def run(cacheDir: Path, out: Path): Unit = {
+  /** @param source where the cache came from, for the report */
+  def run(cacheDir: Path, source: String, out: Path, results: Option[Path]): Unit = {
     val startedAt = System.nanoTime()
     val output = out.toAbsolutePath
     Files.createDirectories(output)
@@ -42,10 +56,34 @@ object Main {
     val staging = Files.createTempDirectory(output.getParent, ".maprender-")
     try {
       render(cacheDir, staging)
-      replaceOwned(staging, output)
-      logger.info(s"Replaced the plane folders, ${TileIndex.fileName} and ${Place.fileName} in $output")
+      logger.info(s"Comparing the render with what's published in $output")
+      val changes = Publisher.compare(staging, output)
+      if (changes.shrank)
+        logger.warn(s"The render has ${changes.after} tiles, down from ${changes.before}. See the report.")
+      // Before publishing, while the removed tiles still frame the overview
+      results.foreach(writeResults(_, source, staging, output, changes))
+      Publisher.publish(staging, output, changes)
+      logger.info(
+        s"Published ${changes.added.size} added, ${changes.changed.size} changed and ${changes.removed.size} removed tiles, " +
+          s"and ${changes.places.added.size} added and ${changes.places.removed.size} removed places"
+      )
     } finally deleteRecursively(staging)
     logger.info(s"Done in ${Progress.format((System.nanoTime() - startedAt).nanos)}")
+  }
+
+  private def writeResults(directory: Path, source: String, render: Path, published: Path, changes: Publisher.Changes): Unit = {
+    Files.createDirectories(directory)
+    val report = directory.resolve("report.md")
+    Files.writeString(report, Report(source, changes))
+    logger.info(s"Wrote the report to $report")
+
+    val overview = directory.resolve(Overview.fileName)
+    // A stale overview from an earlier run would describe the wrong changes
+    Files.deleteIfExists(overview)
+    Overview.draw(render, published, changes).foreach { image =>
+      Overview.write(image, overview)
+      logger.info(s"Drew the overview of the changes, ${image.getWidth} × ${image.getHeight} px, to $overview")
+    }
   }
 
   private def render(cacheDir: Path, out: Path): Unit =
@@ -81,12 +119,4 @@ object Main {
       logger.info(s"Drew every plane in ${Progress.format(drawing.elapsed)}")
       logger.info(s"Indexed ${TileIndexFile.write(out)} tiles")
     }
-
-  /** Replaces what a previous render wrote with what this one did, so that tiles which no
-    * longer exist disappear */
-  private def replaceOwned(from: Path, to: Path): Unit = {
-    val owned = planes.map(_.toString) ++ List(TileIndex.fileName, Place.fileName)
-    owned.map(to.resolve).foreach(deleteRecursively)
-    owned.map(from.resolve).filter(Files.exists(_)).foreach(path => Files.move(path, to.resolve(path.getFileName)))
-  }
 }
