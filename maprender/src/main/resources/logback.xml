@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+
+<configuration>
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="com.leagueplans.maprender.RevisionMismatchFilter"/>
+
+    <root level="info">
+        <appender-ref ref="stdout"/>
+    </root>
+
+    <appender name="stdout" class="ConsoleAppender">
+        <target>System.out</target>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>[%d{HH:mm:ss.SSS}] [%-5level] [%logger{24}] %msg%n</pattern>
+        </encoder>
+        <filter class="RevisionMismatchFilter"/>
+    </appender>
+</configuration>

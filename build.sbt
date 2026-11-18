@@ -19,6 +19,7 @@ lazy val root =
       codec.jvm, codec.js,
       common.jvm, common.js,
       wikiScraper,
+      mapRenderer,
       uicommon,
       ui,
       taskimporter,
@@ -47,6 +48,7 @@ lazy val common =
     )
     .dependsOn(codec % "compile->compile;test->test")
 
+val logbackVersion = "1.6.4"
 val zioVersion = "2.1.26"
 val zioLoggingVersion = "2.5.3"
 
@@ -54,7 +56,7 @@ lazy val wikiScraper =
   project.in(file("scraper"))
     .settings(
       libraryDependencies ++= List(
-        "ch.qos.logback" % "logback-classic" % "1.6.4",
+        "ch.qos.logback" % "logback-classic" % logbackVersion,
         "dev.zio" %% "zio" % zioVersion,
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-http" % "3.11.6",
@@ -64,6 +66,25 @@ lazy val wikiScraper =
       )
     )
     .dependsOn(common.jvm)
+
+/** Renders the map's tiles from the game cache, for publishing to the map-tiles repository.
+  *
+  * A JVM tool. Nothing in it reaches the app's bundle.
+  */
+lazy val mapRenderer =
+  project.in(file("maprender"))
+    .settings(
+      resolvers += "RuneLite" at "https://repo.runelite.net",
+      libraryDependencies ++= List(
+        // Pinned: a game update can change the cache format, so this is bumped deliberately.
+        // Its slf4j-simple is swapped for logback, which can filter out its noisiest warning.
+        ("net.runelite" % "cache" % "1.13.6").exclude("org.slf4j", "slf4j-simple"),
+        "ch.qos.logback" % "logback-classic" % logbackVersion,
+        "io.circe" %% "circe-core" % circeVersion,
+        "io.circe" %% "circe-generic" % circeVersion
+      )
+    )
+    .dependsOn(common.jvm % "test->test")
 
 val fullLinkOutputDir = taskKey[String]("output directory for `npm run build`")
 
