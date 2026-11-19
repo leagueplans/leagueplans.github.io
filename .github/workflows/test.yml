@@ -3,12 +3,19 @@ on:
   push:
   pull_request:
 
+# The tests run third-party code (npm packages, and the build's plugins and libraries), so they
+# get only read access, and the checkout doesn't save its token.
+permissions:
+  contents: read
+
 jobs:
   test:
     # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
 
     # The Scala.js tests import npm packages (scrapereview's use fuse.js), which have to be
     # installed for them to link.

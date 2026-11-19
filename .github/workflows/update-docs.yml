@@ -2,12 +2,25 @@ name: Update docs
 on: push
 
 # Builds the deployed site and publishes it to docs/.
+#
+# The build runs third-party code (npm packages, and the build's plugins and libraries), so it
+# gets no write access: it hands the bundle to a second job, which publishes it. That keeps the
+# build from pushing anything else to the repository, though not from changing the bundle, which
+# building it inevitably allows.
+permissions: {}
+
 jobs:
-  update-docs:
+  build:
     # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      built: ${{ steps.bundle-js.outcome == 'success' }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Identify changes
       uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -58,8 +71,8 @@ jobs:
 
     # Publishing to docs/ is a deployment, so it has to be gated on the tests for the code
     # being deployed. Running them here rather than depending on the Test workflow keeps
-    # that guarantee in one job: if this step fails, the bundle is never built and docs/ is
-    # never touched.
+    # that guarantee in one workflow: if this step fails, the bundle is never built and docs/
+    # is never touched.
     #
     # Only the modules that reach the bundle. The scraper and the dev tools are covered by
     # the Test workflow, and a regression in one of those should not hold up a release.
@@ -72,8 +85,33 @@ jobs:
       if: steps.identify-changes.outputs.sources == 'true'
       run: npm run build
 
+    - name: Upload the bundle
+      if: (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success')
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: bundle
+        path: ui/target/vite
+        include-hidden-files: true
+        if-no-files-found: error
+        retention-days: 1
+
+  publish:
+    needs: build
+    if: (github.ref == 'refs/heads/master') && (needs.build.outputs.built == 'true')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    # With the token saved in the checkout, which commit_docs.sh pushes with. Nothing but trusted
+    # steps runs in this job.
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: bundle
+        path: ui/target/vite
+
     - name: Sync docs
-      if: ${{ (github.ref == 'refs/heads/master') && (steps.bundle-js.outcome == 'success') }}
       run: |
         ./.github/scripts/sync_docs.sh
         ./.github/scripts/commit_docs.sh
