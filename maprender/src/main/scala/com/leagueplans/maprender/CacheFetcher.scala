@@ -52,6 +52,10 @@ object CacheFetcher {
     * @param timestamp when the game first served the cache
     */
   final case class Entry(id: Int, build: Option[Int], timestamp: Instant) {
+    /** Such as "cache 2772 (build 242)" */
+    def name: String =
+      s"cache $id (${build.fold("an unknown build")(major => s"build $major")})"
+
     def describe: String =
       s"cache $id (${build.fold("an unknown build")(major => s"build $major")}, archived $timestamp)"
   }

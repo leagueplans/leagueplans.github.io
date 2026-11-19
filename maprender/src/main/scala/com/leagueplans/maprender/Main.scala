@@ -22,8 +22,9 @@ import scala.util.Using
   * succeeded is it published there, changing only the tiles whose pixels changed (see
   * [[Publisher]]). Anything else in the output directory, such as `.nojekyll`, is left alone.
   *
-  * The results directory gets `report.md`, which says in Markdown what changed, and an
-  * [[Overview]] of where, for reviewing the change before it's merged.
+  * The results directory gets `report.md`, which says in Markdown what changed, an [[Overview]]
+  * of where, for reviewing the change before it's merged, and `commit-message.txt`, for the
+  * commit that publishes it.
   */
 object Main {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -39,16 +40,17 @@ object Main {
     args.toList match {
       case "--latest" :: download :: out :: results if results.size <= 1 =>
         val (entry, cache) = CacheFetcher.fetch(Path.of(download))
-        run(cache, entry.describe, Path.of(out), results.headOption.map(Path.of(_)))
+        run(cache, Report.Source(entry.name, entry.describe), Path.of(out), results.headOption.map(Path.of(_)))
       case cache :: out :: results if results.size <= 1 && !cache.startsWith("--") =>
-        run(Path.of(cache), s"the cache in $cache", Path.of(out), results.headOption.map(Path.of(_)))
+        val source = s"the cache in $cache"
+        run(Path.of(cache), Report.Source(source, source), Path.of(out), results.headOption.map(Path.of(_)))
       case _ =>
         System.err.println(usage)
         sys.exit(2)
     }
 
   /** @param source where the cache came from, for the report */
-  def run(cacheDir: Path, source: String, out: Path, results: Option[Path]): Unit = {
+  def run(cacheDir: Path, source: Report.Source, out: Path, results: Option[Path]): Unit = {
     val startedAt = System.nanoTime()
     val output = out.toAbsolutePath
     Files.createDirectories(output)
@@ -71,11 +73,12 @@ object Main {
     logger.info(s"Done in ${Progress.format((System.nanoTime() - startedAt).nanos)}")
   }
 
-  private def writeResults(directory: Path, source: String, render: Path, published: Path, changes: Publisher.Changes): Unit = {
+  private def writeResults(directory: Path, source: Report.Source, render: Path, published: Path, changes: Publisher.Changes): Unit = {
     Files.createDirectories(directory)
     val report = directory.resolve("report.md")
     Files.writeString(report, Report(source, changes))
     logger.info(s"Wrote the report to $report")
+    Files.writeString(directory.resolve("commit-message.txt"), Report.commitMessage(source, changes))
 
     val overview = directory.resolve(Overview.fileName)
     // A stale overview from an earlier run would describe the wrong changes

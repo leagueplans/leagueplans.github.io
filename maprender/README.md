@@ -4,7 +4,7 @@ Renders the map's tiles from the Old School RuneScape game cache, for the [map-t
 
 ## Updates
 
-The map-tiles repository's [Update the map](https://github.com/leagueplans/map-tiles/blob/main/.github/workflows/update-map.yml) workflow runs the renderer every Thursday, after the game's weekly update, and opens a pull request with whatever changed. The pull request's description is the render's report, with a link to its overview. Merging it publishes the tiles. Responses are cached for up to four hours, so changed tiles can take that long to appear.
+The map-tiles repository's [Update the map](https://github.com/leagueplans/map-tiles/blob/main/.github/workflows/update-map.yml) workflow runs the renderer every Thursday, after the game's weekly update, and opens a pull request with whatever changed. The pull request's description is the render's report, with a link to its overview, and its title and commit name the cache it was rendered from. Merging it publishes the tiles. Responses are cached for up to four hours, so changed tiles can take that long to appear.
 
 ## Rendering by hand
 
@@ -14,7 +14,7 @@ To try a change to the renderer, render into the `docs` folder of a map-tiles ch
 sbt "mapRenderer/run --latest <download directory> <map-tiles checkout>/docs [<results directory>]"
 ```
 
-`--latest` downloads the newest live cache from the [OpenRS2 archive](https://archive.openrs2.org/caches) into the download directory first. To render a cache already on disk, give its directory instead, the folder holding `main_file_cache.dat2`: `sbt "mapRenderer/run <cache directory> <map-tiles checkout>/docs"`. The results directory gets `report.md`, which says in Markdown what changed, and `overview.png`, the whole map with the regions that changed highlighted, one panel per plane with changes. Without a results directory, neither is written.
+`--latest` downloads the newest live cache from the [OpenRS2 archive](https://archive.openrs2.org/caches) into the download directory first. To render a cache already on disk, give its directory instead, the folder holding `main_file_cache.dat2`: `sbt "mapRenderer/run <cache directory> <map-tiles checkout>/docs"`. The results directory gets `report.md`, which says in Markdown what changed; `overview.png`, the whole map with the regions that changed highlighted, one panel per plane with changes; and `commit-message.txt`, a commit message for publishing the render, whose title names the cache. Without a results directory, none of them is written.
 
 Check the tiles in the app by starting its dev server as in [ui/README.md](../ui/README.md), with `MAP_TILES_DIR` set to the same `docs` folder. Without it, the dev server loads tiles from the live site.
 

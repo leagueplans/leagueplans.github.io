@@ -5,16 +5,26 @@ import com.leagueplans.maprender.Publisher.Changes
 
 import java.util.Locale
 
-/** Says in Markdown what a render changed, for the pull request that publishes it */
+/** Says what a render changed: in Markdown, for the pull request that publishes it, and in a
+  * commit message, for the commit that does
+  */
 object Report {
   /** How many regions or places are listed under each heading before the rest are counted */
   private val listLimit = 30
+  /** For a commit message's body */
+  private val lineLength = 72
 
-  /** @param source where the render came from, such as "cache 2762 (build 242, …)" */
-  def apply(source: String, changes: Changes): String =
-    if (changes.isEmpty) s"Rendered from $source. Nothing changed: the render matches what's published.\n"
+  /** Where a render's cache came from
+    *
+    * @param name a short name for it, such as "cache 2772 (build 242)"
+    * @param description its name with whatever else is known about it, such as when it was archived
+    */
+  final case class Source(name: String, description: String)
+
+  def apply(source: Source, changes: Changes): String =
+    if (changes.isEmpty) s"Rendered from ${source.description}. Nothing changed: the render matches what's published.\n"
     else
-      (List(s"Rendered from $source.") ++
+      (List(s"Rendered from ${source.description}.") ++
         Option.when(changes.shrank)(shrinkWarning(changes)) ++
         List(
           s"**${count(changes.after)} tiles**, ${direction(changes.before, changes.after)}: " +
@@ -22,12 +32,34 @@ object Report {
           planeTable(changes)
         ) ++ overview(changes) ++ regions(changes) ++ places(changes)).mkString("", "\n\n", "\n")
 
-  private def shrinkWarning(changes: Changes): String = {
-    val lost = Math.round((changes.before - changes.after) * 100.0 / changes.before)
+  /** A commit message for publishing the render, whose title names the cache it came from */
+  def commitMessage(source: Source, changes: Changes): String = {
+    val tiles =
+      s"${count(changes.after)} tiles, ${direction(changes.before, changes.after)}: ${count(changes.added.size)} added, " +
+        s"${count(changes.changed.size)} changed and ${count(changes.removed.size)} removed."
+    val places = s"Places: ${count(changes.places.added.size)} added and ${count(changes.places.removed.size)} removed."
+    val body =
+      if (changes.isEmpty) s"Rendered from ${source.description}. Nothing changed."
+      else (List(s"Rendered from ${source.description}.") ++ Option.when(changes.shrank)(s"${lost(changes)}% fewer tiles than before.") ++
+        List(tiles, places)).mkString(" ")
+    (s"Update the map from ${source.name}" :: "" :: wrap(body)).mkString("", "\n", "\n")
+  }
+
+  /** Splits the text into lines no longer than [[lineLength]], between words */
+  private def wrap(text: String): List[String] =
+    text.split(' ').foldLeft(List.empty[String]) {
+      case (line :: earlier, word) if line.length + 1 + word.length <= lineLength => s"$line $word" :: earlier
+      case (lines, word) => word :: lines
+    }.reverse
+
+  /** How much smaller the map is, as a whole percentage */
+  private def lost(changes: Changes): Long =
+    Math.round((changes.before - changes.after) * 100.0 / changes.before)
+
+  private def shrinkWarning(changes: Changes): String =
     // Not a multi-line literal, whose line endings would follow how the source was checked out
     s"> [!WARNING]\n" +
-      s"> The map has $lost% fewer tiles than before. That's what a cache the renderer's library can't fully read looks like. Check the removed regions in the overview before merging, and if they shouldn't have gone, try the latest version of the library."
-  }
+      s"> The map has ${lost(changes)}% fewer tiles than before. That's what a cache the renderer's library can't fully read looks like. Check the removed regions in the overview before merging, and if they shouldn't have gone, try the latest version of the library."
 
   private def overview(changes: Changes): Option[String] = {
     val planes = Overview.planes(changes)

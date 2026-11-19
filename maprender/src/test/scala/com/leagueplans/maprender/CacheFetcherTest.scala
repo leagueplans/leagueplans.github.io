@@ -24,6 +24,13 @@ final class CacheFetcherTest extends AnyFreeSpec with Matchers {
   private val client = HttpClient.newHttpClient()
 
   "CacheFetcher" - {
+    "Entry" - {
+      "is named by its ID and build" in {
+        Entry(2772, Some(242), Instant.parse(later)).name shouldBe "cache 2772 (build 242)"
+        Entry(1, None, Instant.parse(later)).name shouldBe "cache 1 (an unknown build)"
+      }
+    }
+
     "newest" - {
       "reads the archive's entries" in {
         // An entry from caches.json as it was on 2026-09-27
