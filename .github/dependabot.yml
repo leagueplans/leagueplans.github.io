@@ -1,0 +1,15 @@
+# The workflows' actions are pinned to commits, since a tag can be moved to point at anything.
+# Dependabot moves the pins, and waits a week after each release first, so that a compromised
+# release is likely to have been caught and pulled before it's proposed.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - "*"
