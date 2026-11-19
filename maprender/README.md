@@ -1,6 +1,6 @@
 # maprender
 
-Renders the map's tiles from the Old School RuneScape game cache, for the [map-tiles](https://github.com/leagueplans/map-tiles) repository. GitHub Pages serves that repository at `https://www.leagueplans.com/map-tiles/`, and the app's map loads its tiles from there.
+Renders the map's tiles from the Old School RuneScape game cache, for the [map-tiles](https://github.com/leagueplans/map-tiles) repository. GitHub Pages serves that repository at `https://map.leagueplans.com/`, and the app's map loads its tiles from there.
 
 ## Updates
 
