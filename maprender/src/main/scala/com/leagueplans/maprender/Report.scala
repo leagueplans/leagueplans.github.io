@@ -71,11 +71,24 @@ object Report {
     }
 
   private def places(changes: Changes): List[String] = {
-    def describe(place: Place): String = s"${place.name} (${place.x}, ${place.y}, plane ${place.plane}, ${place.kind})"
+    def describe(place: Place): String = s"${escaped(place.name)} (${place.x}, ${place.y}, plane ${place.plane}, ${place.kind})"
     List("Places added" -> changes.places.added, "Places removed" -> changes.places.removed).flatMap((heading, places) =>
       Option.when(places.nonEmpty)(s"$heading:\n${list(places.map(describe))}")
     )
   }
+
+  /** For text from the cache, which isn't trusted, so that Markdown or HTML in it shows as written
+    * rather than becoming links, images or structure in the pull request. Line breaks become spaces.
+    */
+  private def escaped(text: String): String =
+    text.flatMap {
+      case char if char.isControl => " "
+      case char if markdownPunctuation.contains(char) => s"\\$char"
+      case char => char.toString
+    }
+
+  /** What can start or end Markdown or HTML, each of which GitHub shows as written after a backslash */
+  private val markdownPunctuation = """\`*_{}[]()<>#+-.!|~&"""
 
   private def list(items: List[String]): String =
     (items.take(listLimit).map(item => s"- $item") ++

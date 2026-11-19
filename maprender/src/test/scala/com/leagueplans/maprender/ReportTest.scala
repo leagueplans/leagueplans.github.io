@@ -65,6 +65,12 @@ final class ReportTest extends AnyFreeSpec with Matchers {
         not include "WARNING"
     }
 
+    "shows place names as written, not as Markdown or HTML" in {
+      val place = Place("<img src=x> [a](b)\n# c", 1, 2, 0, Place.Kind.Town)
+      Report("cache 2762", Changes(List.empty, List.empty, List.empty, 7, 7, PlaceChanges(added = List(place), removed = List.empty))) should
+        include("""- \<img src=x\> \[a\]\(b\) \# c (1, 2, plane 0, Town)""")
+    }
+
     "says when nothing changed" in {
       Report("cache 2762", Changes(List.empty, List.empty, List.empty, 7, 7, PlaceChanges(List.empty, List.empty))) shouldBe
         "Rendered from cache 2762. Nothing changed: the render matches what's published.\n"

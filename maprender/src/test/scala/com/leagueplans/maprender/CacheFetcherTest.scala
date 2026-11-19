@@ -5,15 +5,23 @@ import io.circe.Json
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import com.sun.net.httpserver.HttpServer
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
+import java.net.http.HttpClient
+import java.net.{InetAddress, InetSocketAddress, URI}
 import java.nio.file.Files
-import java.time.Instant
+import java.time.{Duration, Instant}
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
+import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 final class CacheFetcherTest extends AnyFreeSpec with Matchers {
   // Declared before the tests that use them, or -Wsafe-init warns
   private val earlier = "2026-09-16T10:30:00Z"
   private val later = "2026-09-23T10:30:00Z"
+  private val client = HttpClient.newHttpClient()
 
   "CacheFetcher" - {
     "newest" - {
@@ -72,21 +80,84 @@ final class CacheFetcherTest extends AnyFreeSpec with Matchers {
       }
     }
 
-    "unzip" - {
-      "extracts every file" in
-        TempDirectory("unzip") { into =>
-          CacheFetcher.unzip(zip("cache/main_file_cache.dat2" -> "data", "cache/main_file_cache.idx0" -> "index"), into)
-
-          Files.readString(into.resolve("cache/main_file_cache.dat2")) shouldBe "data"
-          Files.readString(into.resolve("cache/main_file_cache.idx0")) shouldBe "index"
+    "download" - {
+      "writes the body to the file" in
+        TempDirectory("download") { into =>
+          serving(200 -> "listing") { uri =>
+            CacheFetcher.download(client, uri, into.resolve("caches.json"), limit = 100, Duration.ZERO)
+            Files.readString(into.resolve("caches.json")) shouldBe "listing"
+          }
         }
 
-      "refuses a file that would land outside the directory" in
-        TempDirectory("unzip") { into =>
-          an[IllegalArgumentException] shouldBe thrownBy(CacheFetcher.unzip(zip("../escaped" -> "data"), into))
-          Files.exists(into.resolve("../escaped")) shouldBe false
+      "retries after a server error" in
+        TempDirectory("download") { into =>
+          serving(503 -> "", 429 -> "", 200 -> "listing") { uri =>
+            CacheFetcher.download(client, uri, into.resolve("caches.json"), limit = 100, Duration.ZERO)
+            Files.readString(into.resolve("caches.json")) shouldBe "listing"
+          }
+        }
+
+      "gives up after three attempts" in
+        TempDirectory("download") { into =>
+          serving(503 -> "", 503 -> "", 503 -> "", 200 -> "listing") { uri =>
+            an[IOException] shouldBe thrownBy(CacheFetcher.download(client, uri, into.resolve("caches.json"), limit = 100, Duration.ZERO))
+          }
+        }
+
+      "doesn't retry a request the archive refuses" in
+        TempDirectory("download") { into =>
+          serving(404 -> "", 200 -> "listing") { uri =>
+            an[IllegalStateException] shouldBe thrownBy(CacheFetcher.download(client, uri, into.resolve("caches.json"), limit = 100, Duration.ZERO))
+          }
+        }
+
+      "refuses a body larger than the limit, without retrying" in
+        TempDirectory("download") { into =>
+          serving(200 -> "x" * 101) { uri =>
+            an[IllegalStateException] shouldBe thrownBy(CacheFetcher.download(client, uri, into.resolve("caches.json"), limit = 100, Duration.ZERO))
+          }
         }
     }
+
+    "unzip" - {
+      "extracts the cache's files" in
+        TempDirectory("unzip") { into =>
+          CacheFetcher.unzip(zip("cache/" -> "", "cache/main_file_cache.dat2" -> "data", "cache/main_file_cache.idx255" -> "index"), into)
+
+          Files.readString(into.resolve("cache/main_file_cache.dat2")) shouldBe "data"
+          Files.readString(into.resolve("cache/main_file_cache.idx255")) shouldBe "index"
+        }
+
+      "refuses a file that isn't part of a cache" in
+        TempDirectory("unzip") { into =>
+          List("cache/index.html", "main_file_cache.dat2", "../escaped", "cache/../../main_file_cache.dat2").foreach(name =>
+            an[IllegalStateException] shouldBe thrownBy(CacheFetcher.unzip(zip(name -> "data"), into))
+          )
+          Files.exists(into.resolve("../escaped")) shouldBe false
+        }
+
+      "stops at the size limit" in
+        TempDirectory("unzip") { into =>
+          an[IllegalStateException] shouldBe thrownBy(
+            CacheFetcher.unzip(zip("cache/main_file_cache.dat2" -> "x" * 60, "cache/main_file_cache.idx0" -> "x" * 60), into, limit = 100)
+          )
+        }
+    }
+  }
+
+  /** Answers each request with the next response, on a local port */
+  private def serving[A](responses: (Int, String)*)(test: URI => A): A = {
+    val remaining = ConcurrentLinkedQueue(responses.asJava)
+    val server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress, 0), 0)
+    server.createContext("/", exchange => {
+      val (status, body) = remaining.remove()
+      val bytes = body.getBytes
+      exchange.sendResponseHeaders(status, if (bytes.isEmpty) -1 else bytes.length)
+      Using.resource(exchange.getResponseBody)(_.write(bytes))
+    })
+    server.start()
+    try test(URI.create(s"http://localhost:${server.getAddress.getPort}/file"))
+    finally server.stop(0)
   }
 
   /** A complete live cache in `caches.json`, with any fields replaced */
